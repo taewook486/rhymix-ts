@@ -18,6 +18,9 @@
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:firefox": "playwright test --project=firefox",
     "test:e2e:webkit": "playwright test --project=webkit",
+    "test:e2e:install": "playwright test tests/e2e/install.test.ts",
+    "test:e2e:install:ui": "playwright test tests/e2e/install.test.ts --ui",
+    "test:e2e:install:debug": "playwright test tests/e2e/install.test.ts --debug",
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
