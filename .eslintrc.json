@@ -1,0 +1,4 @@
+{
+  "extends": "next/core-web-vitals",
+  "ignorePatterns": ["lib/supabase/database.types.ts", "node_modules/", ".next/", "out/"]
+}
