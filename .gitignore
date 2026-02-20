@@ -195,3 +195,10 @@ dist-ssr/
 .vercel/
 .netlify/
 .firebase/
+
+# ===========================================
+# E2E Test Results
+# ===========================================
+test-results/
+playwright-report/
+playwright/.cache/
