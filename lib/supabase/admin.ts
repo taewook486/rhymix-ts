@@ -120,13 +120,15 @@ export async function createAdminUser(
     }
 
     // Create or update profile with admin role
-    const { error: profileError } = await adminClient.from('profiles').upsert({
-      id: authData.user.id,
-      email: authData.user.email!,
-      display_name: displayName,
-      role: 'admin',
-      email_verified: new Date().toISOString(),
-    })
+    const { error: profileError } = await adminClient
+      .from('profiles')
+      .upsert({
+        id: authData.user.id,
+        email: authData.user.email!,
+        display_name: displayName,
+        role: 'admin',
+        email_verified: new Date().toISOString(),
+      } as any) // Type assertion to bypass generic inference issue
 
     if (profileError) {
       // Attempt to clean up the auth user if profile creation fails

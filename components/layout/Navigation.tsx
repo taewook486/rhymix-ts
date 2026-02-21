@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, Home, FileText, LogIn, UserPlus, User, Settings, LogOut, Shield, LayoutDashboard } from 'lucide-react'
+import { Menu, X, Home, FileText, LogIn, UserPlus, User as UserIcon, Settings, LogOut, Shield, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -131,7 +131,7 @@ export function Navigation() {
       {/* User Dropdown Trigger */}
       <div className="relative group">
         <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-          <User className="h-4 w-4" />
+          <UserIcon className="h-4 w-4" />
           <span className="hidden sm:inline">
             {profile?.display_name || user.email?.split('@')[0]}
           </span>
