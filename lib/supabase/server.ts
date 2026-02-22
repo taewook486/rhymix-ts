@@ -33,3 +33,29 @@ export async function createClient() {
     }
   )
 }
+
+// Admin client with service role key for privileged operations
+export async function createAdminClient() {
+  const cookieStore = await cookies()
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet: readonly Cookie[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options as any)
+            )
+          } catch {
+            // Ignore in Server Components
+          }
+        },
+      },
+    }
+  )
+}

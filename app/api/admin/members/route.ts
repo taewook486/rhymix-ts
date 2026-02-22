@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Create user using Supabase Admin API
     // Note: This requires service role key in server-side operations
-    const adminSupabase = await createClient()
+    const adminSupabase = await createAdminClient()
 
     // Create auth user
     const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
