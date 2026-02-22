@@ -2,7 +2,12 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DocumentForm } from '@/app/(main)/documents/new/DocumentForm'
 
-export default async function NewDocumentPage() {
+interface NewDocumentPageProps {
+  params: Promise<{ locale: string }>
+}
+
+export default async function NewDocumentPage({ params }: NewDocumentPageProps) {
+  const { locale } = await params
   const supabase = await createClient()
 
   // Check authentication
@@ -11,7 +16,7 @@ export default async function NewDocumentPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/member/signin?redirect=/documents/new')
+    redirect(`/${locale}/signin?redirect=/${locale}/documents/new`)
   }
 
   return (

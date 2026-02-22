@@ -8,7 +8,7 @@ interface EditDocumentPageProps {
 }
 
 export default async function EditDocumentPage({ params }: EditDocumentPageProps) {
-  const { id } = await params
+  const { id, locale } = await params
   const supabase = await createClient()
 
   // Check authentication
@@ -17,7 +17,7 @@ export default async function EditDocumentPage({ params }: EditDocumentPageProps
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/member/signin?redirect=/documents/${id}/edit`)
+    redirect(`/${locale}/signin?redirect=/${locale}/documents/${id}/edit`)
   }
 
   // Get document
@@ -74,7 +74,7 @@ export default async function EditDocumentPage({ params }: EditDocumentPageProps
   const isAdmin = profile?.role === 'admin' || profile?.role === 'moderator'
 
   if (!isAuthor && !isAdmin) {
-    redirect(`/documents/${id}`)
+    redirect(`/${locale}/documents/${id}`)
   }
 
   return (
