@@ -183,7 +183,7 @@ async function DashboardContent() {
       <div>
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Link href="/admin/boards/new">
+          <Link href="/admin/boards">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -195,7 +195,7 @@ async function DashboardContent() {
             </Card>
           </Link>
 
-          <Link href="/admin/pages/new">
+          <Link href="/documents/new">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
