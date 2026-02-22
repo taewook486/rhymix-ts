@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { locales } from '@/lib/i18n/config'
 import type { User } from '@supabase/supabase-js'
 import type { Menu as MenuType, MenuItem } from '@/lib/supabase/database.types'
 
@@ -54,8 +55,11 @@ export function Navigation() {
   const supabase = createClient()
 
   // Extract locale from pathname (e.g., '/ko/home' -> 'ko')
-  const locale = pathname.split('/')[1] || 'ko'
-  const localePrefix = `/${locale}`
+  // Only set localePrefix if pathname starts with a valid locale
+  const firstSegment = pathname.split('/')[1]
+  const isValidLocale = locales.includes(firstSegment as any)
+  const locale = isValidLocale ? firstSegment : 'ko'
+  const localePrefix = isValidLocale ? `/${locale}` : ''
 
   useEffect(() => {
     // Get initial session
