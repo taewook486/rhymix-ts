@@ -2,9 +2,9 @@ import { Suspense } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { AddWidgetDialog } from '@/components/admin/AddWidgetDialog'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Layout, ToggleLeft, ToggleRight, Settings, GripVertical } from 'lucide-react'
+import { Layout, ToggleLeft, ToggleRight, Settings, GripVertical } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 // Skeleton component
@@ -237,10 +237,7 @@ export default async function AdminWidgetsPage() {
           <h1 className="text-2xl font-bold">Widgets</h1>
           <p className="text-muted-foreground">Manage site widgets and their positions</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Widget
-        </Button>
+        <AddWidgetDialog />
       </div>
 
       <WidgetPositions widgets={widgets} />

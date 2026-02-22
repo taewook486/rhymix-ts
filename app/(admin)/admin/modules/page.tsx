@@ -2,9 +2,9 @@ import { Suspense } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { InstallModuleDialog } from '@/components/admin/InstallModuleDialog'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Package, ToggleLeft, ToggleRight, Settings, Download } from 'lucide-react'
+import { Package, ToggleLeft, ToggleRight, Settings, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 // Skeleton component
@@ -199,10 +199,7 @@ export default async function AdminModulesPage() {
           <h1 className="text-2xl font-bold">Modules</h1>
           <p className="text-muted-foreground">Manage installed modules and extensions</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Install Module
-        </Button>
+        <InstallModuleDialog />
       </div>
 
       <Card>

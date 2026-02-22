@@ -2,8 +2,8 @@ import { Suspense } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Plus, FileText, Eye, EyeOff, Clock, User } from 'lucide-react'
+import { AddPageDialog } from '@/components/admin/AddPageDialog'
+import { FileText, Eye, EyeOff, Clock, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 // Skeleton component
@@ -147,10 +147,7 @@ export default async function AdminPagesPage() {
           <h1 className="text-2xl font-bold">Pages</h1>
           <p className="text-muted-foreground">Manage static pages and content</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Page
-        </Button>
+        <AddPageDialog />
       </div>
 
       <Card>

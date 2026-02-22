@@ -2,9 +2,9 @@ import { Suspense } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { AddPermissionDialog } from '@/components/admin/AddPermissionDialog'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Shield, Lock, Unlock } from 'lucide-react'
+import { Shield, Lock, Unlock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 // Skeleton component
@@ -146,10 +146,7 @@ export default async function AdminPermissionsPage() {
           <h1 className="text-2xl font-bold">Permissions</h1>
           <p className="text-muted-foreground">Manage access control permissions</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Permission
-        </Button>
+        <AddPermissionDialog />
       </div>
 
       <Card>
