@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Create user using Supabase Admin API
     // Note: This requires service role key in server-side operations
-    const adminSupabase = createClient()
+    const adminSupabase = await createClient()
 
     // Create auth user
     const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
