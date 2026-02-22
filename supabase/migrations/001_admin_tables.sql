@@ -3,9 +3,18 @@
 -- Or in Supabase Dashboard: Database → SQL Editor
 
 -- ============================================
+-- Clean up existing tables/policies first
+-- ============================================
+DROP TABLE IF EXISTS public.group_permissions CASCADE;
+DROP TABLE IF EXISTS public.site_modules CASCADE;
+DROP TABLE IF EXISTS public.pages CASCADE;
+DROP TABLE IF EXISTS public.permissions CASCADE;
+DROP TABLE IF EXISTS public.groups CASCADE;
+
+-- ============================================
 -- 1. GROUPS Table
 -- ============================================
-CREATE TABLE IF NOT EXISTS public.groups (
+CREATE TABLE public.groups (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   description TEXT,
@@ -16,7 +25,6 @@ CREATE TABLE IF NOT EXISTS public.groups (
 -- RLS for groups
 ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Admins can do anything on groups" ON public.groups;
 CREATE POLICY "Admins can do anything on groups"
   ON public.groups FOR ALL
   USING (
@@ -26,7 +34,6 @@ CREATE POLICY "Admins can do anything on groups"
     )
   );
 
-DROP POLICY IF EXISTS "Anyone can view groups" ON public.groups;
 CREATE POLICY "Anyone can view groups"
   ON public.groups FOR SELECT
   USING (true);
@@ -34,7 +41,7 @@ CREATE POLICY "Anyone can view groups"
 -- ============================================
 -- 2. PERMISSIONS Table
 -- ============================================
-CREATE TABLE IF NOT EXISTS public.permissions (
+CREATE TABLE public.permissions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   description TEXT,
@@ -44,7 +51,6 @@ CREATE TABLE IF NOT EXISTS public.permissions (
 
 ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Admins can do anything on permissions" ON public.permissions;
 CREATE POLICY "Admins can do anything on permissions"
   ON public.permissions FOR ALL
   USING (
@@ -54,7 +60,6 @@ CREATE POLICY "Admins can do anything on permissions"
     )
   );
 
-DROP POLICY IF EXISTS "Anyone can view permissions" ON public.permissions;
 CREATE POLICY "Anyone can view permissions"
   ON public.permissions FOR SELECT
   USING (true);
@@ -62,7 +67,7 @@ CREATE POLICY "Anyone can view permissions"
 -- ============================================
 -- 3. PAGES Table
 -- ============================================
-CREATE TABLE IF NOT EXISTS public.pages (
+CREATE TABLE public.pages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
@@ -76,7 +81,6 @@ CREATE TABLE IF NOT EXISTS public.pages (
 
 ALTER TABLE public.pages ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Admins can do anything on pages" ON public.pages;
 CREATE POLICY "Admins can do anything on pages"
   ON public.pages FOR ALL
   USING (
@@ -86,12 +90,10 @@ CREATE POLICY "Admins can do anything on pages"
     )
   );
 
-DROP POLICY IF EXISTS "Published pages are viewable by everyone" ON public.pages;
 CREATE POLICY "Published pages are viewable by everyone"
   ON public.pages FOR SELECT
   USING (status = 'published');
 
-DROP POLICY IF EXISTS "Authors can view their own pages" ON public.pages;
 CREATE POLICY "Authors can view their own pages"
   ON public.pages FOR SELECT
   USING (author_id = auth.uid());
@@ -99,7 +101,7 @@ CREATE POLICY "Authors can view their own pages"
 -- ============================================
 -- 4. GROUP_PERMISSIONS junction table
 -- ============================================
-CREATE TABLE IF NOT EXISTS public.group_permissions (
+CREATE TABLE public.group_permissions (
   group_id UUID REFERENCES public.groups(id) ON DELETE CASCADE,
   permission_id UUID REFERENCES public.permissions(id) ON DELETE CASCADE,
   PRIMARY KEY (group_id, permission_id)
@@ -107,7 +109,6 @@ CREATE TABLE IF NOT EXISTS public.group_permissions (
 
 ALTER TABLE public.group_permissions ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Admins can do anything on group_permissions" ON public.group_permissions;
 CREATE POLICY "Admins can do anything on group_permissions"
   ON public.group_permissions FOR ALL
   USING (
@@ -120,7 +121,7 @@ CREATE POLICY "Admins can do anything on group_permissions"
 -- ============================================
 -- 5. SITE_MODULES Table
 -- ============================================
-CREATE TABLE IF NOT EXISTS public.site_modules (
+CREATE TABLE public.site_modules (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   title TEXT NOT NULL,
@@ -134,7 +135,6 @@ CREATE TABLE IF NOT EXISTS public.site_modules (
 
 ALTER TABLE public.site_modules ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Admins can do anything on site_modules" ON public.site_modules;
 CREATE POLICY "Admins can do anything on site_modules"
   ON public.site_modules FOR ALL
   USING (
@@ -144,7 +144,6 @@ CREATE POLICY "Admins can do anything on site_modules"
     )
   );
 
-DROP POLICY IF EXISTS "Anyone can view site_modules" ON public.site_modules;
 CREATE POLICY "Anyone can view site_modules"
   ON public.site_modules FOR SELECT
   USING (true);
@@ -152,11 +151,11 @@ CREATE POLICY "Anyone can view site_modules"
 -- ============================================
 -- Indexes for better performance
 -- ============================================
-CREATE INDEX IF NOT EXISTS idx_groups_name ON public.groups(name);
-CREATE INDEX IF NOT EXISTS idx_permissions_name ON public.permissions(name);
-CREATE INDEX IF NOT EXISTS idx_permissions_module ON public.permissions(module);
-CREATE INDEX IF NOT EXISTS idx_pages_slug ON public.pages(slug);
-CREATE INDEX IF NOT EXISTS idx_pages_status ON public.pages(status);
-CREATE INDEX IF NOT EXISTS idx_pages_author_id ON public.pages(author_id);
-CREATE INDEX IF NOT EXISTS idx_site_modules_name ON public.site_modules(name);
-CREATE INDEX IF NOT EXISTS idx_site_modules_is_active ON public.site_modules(is_active);
+CREATE INDEX idx_groups_name ON public.groups(name);
+CREATE INDEX idx_permissions_name ON public.permissions(name);
+CREATE INDEX idx_permissions_module ON public.permissions(module);
+CREATE INDEX idx_pages_slug ON public.pages(slug);
+CREATE INDEX idx_pages_status ON public.pages(status);
+CREATE INDEX idx_pages_author_id ON public.pages(author_id);
+CREATE INDEX idx_site_modules_name ON public.site_modules(name);
+CREATE INDEX idx_site_modules_is_active ON public.site_modules(is_active);
