@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/select'
 import { Plus, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useRouter } from 'next/navigation'
 
 interface CreatePageResponse {
   success: boolean
@@ -39,15 +38,14 @@ export function AddPageDialog() {
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [isCreating, setIsCreating] = useState(false)
   const { toast } = useToast()
-  const router = useRouter()
 
   const handleCreatePage = async () => {
     // Validation
     if (!title.trim()) {
       toast({
         variant: 'destructive',
-        title: 'Input Error',
-        description: 'Page title is required.',
+        title: '입력 오류',
+        description: '페이지 제목을 입력해주세요.',
       })
       return
     }
@@ -55,8 +53,8 @@ export function AddPageDialog() {
     if (!slug.trim()) {
       toast({
         variant: 'destructive',
-        title: 'Input Error',
-        description: 'Page slug is required.',
+        title: '입력 오류',
+        description: '페이지 슬러그를 입력해주세요.',
       })
       return
     }
@@ -65,8 +63,8 @@ export function AddPageDialog() {
     if (!/^[a-z0-9-]+$/.test(slug)) {
       toast({
         variant: 'destructive',
-        title: 'Input Error',
-        description: 'Slug can only contain lowercase letters, numbers, and hyphens.',
+        title: '입력 오류',
+        description: '슬러그는 소문자, 숫자, 하이픈만 사용할 수 있습니다.',
       })
       return
     }
@@ -99,17 +97,21 @@ export function AddPageDialog() {
       setSlug('')
       setContent('')
       setStatus('draft')
-      router.refresh()
 
       toast({
-        title: 'Page Created',
-        description: `Page "${title}" has been created successfully.`,
+        title: '페이지 생성 완료',
+        description: `"${title}" 페이지가 생성되었습니다.`,
       })
+
+      // Use setTimeout to avoid potential race conditions
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Creation Failed',
-        description: error instanceof Error ? error.message : 'Please try again.',
+        title: '페이지 생성 실패',
+        description: error instanceof Error ? error.message : '다시 시도해주세요.',
       })
     } finally {
       setIsCreating(false)
@@ -135,22 +137,22 @@ export function AddPageDialog() {
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
-          New Page
+          새 페이지
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Page</DialogTitle>
+          <DialogTitle>새 페이지 만들기</DialogTitle>
           <DialogDescription>
-            Create a static page for your website. Pages can be used for about, contact, privacy policy, etc.
+            정적 페이지를 생성합니다. 소개 페이지, 연락처, 개인정보처리방침 등을 만들 수 있습니다.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="page-title">Title</Label>
+            <Label htmlFor="page-title">제목</Label>
             <Input
               id="page-title"
-              placeholder="e.g., About Us"
+              placeholder="예: 소개 페이지"
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
               disabled={isCreating}
@@ -159,22 +161,22 @@ export function AddPageDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="page-slug">Slug</Label>
+            <Label htmlFor="page-slug">슬러그</Label>
             <Input
               id="page-slug"
-              placeholder="e.g., about-us"
+              placeholder="예: about-us"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               disabled={isCreating}
               autoComplete="off"
             />
             <p className="text-xs text-muted-foreground">
-              URL path: /pages/{slug || 'about-us'}
+              URL 경로: /pages/{slug || 'about-us'}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="page-status">Status</Label>
+            <Label htmlFor="page-status">상태</Label>
             <Select
               value={status}
               onValueChange={(value: 'draft' | 'published') => setStatus(value)}
@@ -191,10 +193,10 @@ export function AddPageDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="page-content">Content</Label>
+            <Label htmlFor="page-content">내용</Label>
             <Textarea
               id="page-content"
-              placeholder="Page content (supports Markdown)..."
+              placeholder="페이지 내용 (Markdown 지원)..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               disabled={isCreating}
@@ -208,18 +210,18 @@ export function AddPageDialog() {
             onClick={() => setOpen(false)}
             disabled={isCreating}
           >
-            Cancel
+            취소
           </Button>
           <Button onClick={handleCreatePage} disabled={isCreating}>
             {isCreating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                생성 중...
               </>
             ) : (
               <>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Page
+                페이지 만들기
               </>
             )}
           </Button>

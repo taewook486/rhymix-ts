@@ -2,6 +2,9 @@ import { redirect } from 'next/navigation'
 import { getInstallationStatus } from '@/lib/install/installation-state'
 import { CompleteClient } from './client'
 
+// Force dynamic rendering for installation pages
+export const dynamic = 'force-dynamic'
+
 export default async function InstallCompletePage() {
   // Check installation status
   const status = await getInstallationStatus()

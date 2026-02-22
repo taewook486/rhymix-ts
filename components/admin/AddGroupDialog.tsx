@@ -72,16 +72,21 @@ export function AddGroupDialog() {
         throw new Error(data.error || 'Failed to create group')
       }
 
-      // Success
-      setOpen(false)
-      setName('')
-      setDescription('')
-      router.refresh()
-
+      // Success - use window.location.reload() instead of router.refresh() to avoid infinite loop
       toast({
         title: 'Group Created',
         description: `Group "${name}" has been created successfully.`,
       })
+
+      // Reset form and close dialog
+      setOpen(false)
+      setName('')
+      setDescription('')
+
+      // Use setTimeout to avoid potential race conditions
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     } catch (error) {
       toast({
         variant: 'destructive',

@@ -102,24 +102,28 @@ export function MenuItemEditor({
     setIsSubmitting(true)
 
     try {
-      const submitData = new FormData()
-      submitData.append('title', formData.title)
-      submitData.append('url', formData.url)
-      submitData.append('type', formData.type)
-      submitData.append('icon', formData.icon)
-      submitData.append('target', formData.target)
-      submitData.append('required_role', formData.required_role)
-      submitData.append('parent_id', formData.parent_id || '')
-      submitData.append('is_active', formData.is_active ? 'true' : 'false')
-      submitData.append('is_visible', formData.is_visible ? 'true' : 'false')
-      submitData.append('is_new_window', formData.is_new_window ? 'true' : 'false')
-      submitData.append('is_nofollow', formData.is_nofollow ? 'true' : 'false')
-
       let result
       if (isEditing && item) {
-        result = await updateMenuItem(item.id, submitData)
+        // For update, pass only the fields that changed
+        result = await updateMenuItem(item.id, {
+          title: formData.title,
+          url: formData.url,
+          type: formData.type,
+          icon: formData.icon || undefined,
+          target: formData.target,
+          is_active: formData.is_active,
+          is_visible: formData.is_visible,
+        })
       } else {
-        result = await createMenuItem(menuId, submitData)
+        // For create, pass the required fields
+        result = await createMenuItem({
+          menuId,
+          title: formData.title,
+          url: formData.url,
+          type: formData.type,
+          parentId: formData.parent_id || undefined,
+          orderIndex: items.length,
+        })
       }
 
       if (result.success) {

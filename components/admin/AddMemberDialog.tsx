@@ -34,7 +34,7 @@ export function AddMemberDialog() {
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [role, setRole] = useState<'member' | 'admin'>('member')
+  const [role, setRole] = useState<'user' | 'admin'>('user')
   const [password, setPassword] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const { toast } = useToast()
@@ -100,18 +100,23 @@ export function AddMemberDialog() {
         throw new Error(data.error || 'Failed to create member')
       }
 
-      // Success
-      setOpen(false)
-      setEmail('')
-      setDisplayName('')
-      setRole('member')
-      setPassword('')
-      router.refresh()
-
+      // Success - use window.location.reload() instead of router.refresh() to avoid infinite loop
       toast({
         title: '회원 추가 완료',
         description: `${displayName} 님이 추가되었습니다.`,
       })
+
+      // Reset form and close dialog
+      setOpen(false)
+      setEmail('')
+      setDisplayName('')
+      setRole('user')
+      setPassword('')
+
+      // Use setTimeout to avoid potential race conditions
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -168,14 +173,14 @@ export function AddMemberDialog() {
             <Label htmlFor="role">Role</Label>
             <Select
               value={role}
-              onValueChange={(value: 'member' | 'admin') => setRole(value)}
+              onValueChange={(value: 'user' | 'admin') => setRole(value)}
               disabled={isCreating}
             >
               <SelectTrigger id="role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="member">Member</SelectItem>
+                <SelectItem value="user">User</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>

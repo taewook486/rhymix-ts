@@ -8,7 +8,6 @@ import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -18,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { RichTextEditor } from '@/components/editor/RichTextEditor'
 import type { Category } from '@/lib/supabase/database.types'
 
 const postFormSchema = z.object({
@@ -140,12 +140,12 @@ export function PostForm({
       {/* Content */}
       <div className="space-y-2">
         <Label htmlFor="content">Content</Label>
-        <Textarea
-          id="content"
-          placeholder="Write your post content..."
-          className="min-h-[300px] resize-y"
-          {...register('content')}
-          disabled={isSubmitting}
+        <RichTextEditor
+          content={watch('content')}
+          onChange={(html) => setValue('content', html)}
+          placeholder="글 내용을 입력하세요..."
+          editable={!isSubmitting}
+          className="min-h-[300px]"
         />
         {errors.content && (
           <p className="text-sm text-destructive">{errors.content.message}</p>

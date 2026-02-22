@@ -53,7 +53,16 @@ export function MenuEditor({
   const handleCreate = async (formData: FormData) => {
     setIsSubmitting(true)
     try {
-      const result = await createMenu(formData)
+      const name = formData.get('name') as string
+      const title = formData.get('title') as string
+      const location = formData.get('location') as string
+
+      if (!name || !title || !location) {
+        alert('모든 필수 항목을 입력해주세요.')
+        return
+      }
+
+      const result = await createMenu({ name, title, location })
       if (result.success) {
         setShowCreateDialog(false)
         onMenusChange()
@@ -74,7 +83,16 @@ export function MenuEditor({
     if (!editingMenu) return
     setIsSubmitting(true)
     try {
-      const result = await updateMenu(editingMenu.id, formData)
+      const updates: Record<string, string | boolean> = {}
+      const name = formData.get('name') as string
+      const title = formData.get('title') as string
+      const location = formData.get('location') as string
+
+      if (name) updates.name = name
+      if (title) updates.title = title
+      if (location) updates.location = location
+
+      const result = await updateMenu(editingMenu.id, updates)
       if (result.success) {
         setShowEditDialog(false)
         setEditingMenu(null)

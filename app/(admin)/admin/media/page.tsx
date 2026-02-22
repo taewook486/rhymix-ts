@@ -3,7 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Plus, Upload, Image, FileText, Film, Music, HardDrive, Calendar, Download, Trash2, Eye } from 'lucide-react'
+import { Plus, Upload, Image, FileText, Film, Music, HardDrive, Calendar, Download, Trash2, Eye, RefreshCw } from 'lucide-react'
+import { getFiles } from '@/app/actions/media'
+
+// Force dynamic rendering for authenticated pages
+export const dynamic = 'force-dynamic'
 
 // Skeleton component for loading state
 function MediaSkeleton() {
@@ -20,55 +24,6 @@ function MediaSkeleton() {
     </div>
   )
 }
-
-// Mock data for media files
-const mockMediaFiles = [
-  {
-    id: '1',
-    name: 'hero-banner.jpg',
-    type: 'image',
-    size: 2457600,
-    uploaded_by: 'admin',
-    created_at: '2026-02-20T10:30:00Z',
-    url: '/uploads/hero-banner.jpg',
-  },
-  {
-    id: '2',
-    name: 'logo.svg',
-    type: 'image',
-    size: 15360,
-    uploaded_by: 'admin',
-    created_at: '2026-02-19T14:20:00Z',
-    url: '/uploads/logo.svg',
-  },
-  {
-    id: '3',
-    name: 'user-guide.pdf',
-    type: 'document',
-    size: 5242880,
-    uploaded_by: 'moderator',
-    created_at: '2026-02-18T09:15:00Z',
-    url: '/uploads/user-guide.pdf',
-  },
-  {
-    id: '4',
-    name: 'welcome-video.mp4',
-    type: 'video',
-    size: 52428800,
-    uploaded_by: 'admin',
-    created_at: '2026-02-17T16:45:00Z',
-    url: '/uploads/welcome-video.mp4',
-  },
-  {
-    id: '5',
-    name: 'notification.mp3',
-    type: 'audio',
-    size: 512000,
-    uploaded_by: 'admin',
-    created_at: '2026-02-21T08:00:00Z',
-    url: '/uploads/notification.mp3',
-  },
-]
 
 // Helper functions
 function formatFileSize(bytes: number): string {
@@ -109,27 +64,6 @@ function getFileTypeBadgeVariant(type: string): 'default' | 'secondary' | 'outli
   }
 }
 
-// Server Actions placeholder
-async function uploadFile(formData: FormData) {
-  'use server'
-  // TODO: Implement file upload logic
-  // 1. Validate file type and size
-  // 2. Generate unique filename
-  // 3. Upload to storage (Supabase Storage or local)
-  // 4. Save metadata to database
-  // 5. Return file URL
-  console.log('Upload file action called')
-}
-
-async function deleteFile(fileId: string) {
-  'use server'
-  // TODO: Implement file deletion logic
-  // 1. Verify user permissions
-  // 2. Delete from storage
-  // 3. Delete metadata from database
-  console.log('Delete file action called for:', fileId)
-}
-
 // Statistics Card Component
 function StatCard({
   title,
@@ -158,8 +92,40 @@ function StatCard({
   )
 }
 
-// Upload Area Component
+// Upload Area Component - Client Component
 function UploadArea() {
+  'use client'
+
+  const { useState } = require('react')
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+
+    try {
+      const { uploadFile } = await import('@/app/actions/media')
+      const result = await uploadFile({ file })
+
+      if (result.success) {
+        const { useRouter } = await import('next/navigation')
+        const router = useRouter()
+        router.refresh()
+      } else {
+        alert(`Upload failed: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Upload failed. Please try again.')
+    } finally {
+      setIsUploading(false)
+      // Reset input
+      e.target.value = ''
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -170,37 +136,72 @@ function UploadArea() {
         <CardDescription>Drag and drop files here or click to browse</CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={uploadFile} className="space-y-4">
-          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-            <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground mb-2">
-              Drop files here or click to upload
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Supported formats: JPG, PNG, GIF, SVG, PDF, MP4, MP3 (Max 50MB)
-            </p>
+        <div className="space-y-4">
+          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer relative">
+            {isUploading ? (
+              <div className="space-y-2">
+                <div className="h-10 w-10 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm text-muted-foreground">Uploading...</p>
+              </div>
+            ) : (
+              <>
+                <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground mb-2">
+                  Drop files here or click to upload
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Supported formats: JPG, PNG, GIF, SVG, PDF, MP4, MP3 (Max 50MB)
+                </p>
+              </>
+            )}
             <input
               type="file"
               name="file"
-              multiple
               accept="image/*,video/*,audio/*,.pdf"
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              onChange={handleFileChange}
+              disabled={isUploading}
             />
           </div>
-          <div className="flex justify-end">
-            <Button type="submit">
-              <Plus className="mr-2 h-4 w-4" />
-              Upload Files
-            </Button>
-          </div>
-        </form>
+        </div>
       </CardContent>
     </Card>
   )
 }
 
 // Media Files Table Component
-function MediaTable({ files }: { files: typeof mockMediaFiles }) {
+function MediaTable({ files }: { files: any[] }) {
+  'use client'
+
+  const { useState } = require('react')
+  const [isDeleting, setIsDeleting] = useState(null)
+
+  const handleDelete = async (fileId: string) => {
+    if (!confirm('Are you sure you want to delete this file?')) {
+      return
+    }
+
+    setIsDeleting(fileId)
+
+    try {
+      const { deleteFile } = await import('@/app/actions/media')
+      const result = await deleteFile(fileId)
+
+      if (result.success) {
+        const { useRouter } = await import('next/navigation')
+        const router = useRouter()
+        router.refresh()
+      } else {
+        alert(`Delete failed: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      alert('Delete failed. Please try again.')
+    } finally {
+      setIsDeleting(null)
+    }
+  }
+
   if (files.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -224,7 +225,7 @@ function MediaTable({ files }: { files: typeof mockMediaFiles }) {
       </TableHeader>
       <TableBody>
         {files.map((file) => {
-          const Icon = getFileIcon(file.type)
+          const Icon = getFileIcon(file.mime_type.split('/')[0] || 'file')
           return (
             <TableRow key={file.id}>
               <TableCell>
@@ -232,28 +233,34 @@ function MediaTable({ files }: { files: typeof mockMediaFiles }) {
                   <Icon className="h-5 w-5 text-muted-foreground" />
                 </div>
               </TableCell>
-              <TableCell className="font-medium">{file.name}</TableCell>
+              <TableCell className="font-medium">{file.filename}</TableCell>
               <TableCell>
-                <Badge variant={getFileTypeBadgeVariant(file.type)}>
-                  {file.type}
+                <Badge variant={getFileTypeBadgeVariant(file.mime_type.split('/')[0])}>
+                  {file.mime_type.split('/')[0]}
                 </Badge>
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {formatFileSize(file.size)}
+                {formatFileSize(file.file_size)}
               </TableCell>
-              <TableCell className="text-muted-foreground">{file.uploaded_by}</TableCell>
+              <TableCell className="text-muted-foreground">{file.uploader_email || 'Unknown'}</TableCell>
               <TableCell className="text-muted-foreground">
                 {new Date(file.created_at).toLocaleDateString('ko-KR')}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="sm" title="View">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" title="Download">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" title="Delete" className="text-destructive hover:text-destructive">
+                  <a href={file.storage_url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="ghost" size="sm" title="View">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </a>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Delete"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(file.id)}
+                    disabled={isDeleting === file.id}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -267,13 +274,13 @@ function MediaTable({ files }: { files: typeof mockMediaFiles }) {
 }
 
 export default async function AdminMediaPage() {
-  // Use mock data for now
-  // In production, this would fetch from Supabase storage
-  const files = mockMediaFiles
+  // Fetch real data from database
+  const result = await getFiles()
+  const files = result.success && result.data ? result.data : []
 
   // Calculate statistics
   const totalFiles = files.length
-  const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+  const totalSize = files.reduce((sum, file) => sum + (file.file_size || 0), 0)
   const todayUploads = files.filter((file) => {
     const today = new Date()
     const uploadDate = new Date(file.created_at)

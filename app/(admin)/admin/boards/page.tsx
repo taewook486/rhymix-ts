@@ -10,14 +10,23 @@ import { BoardsTable, CreateBoardDialog } from './BoardsTable'
 async function getBoards() {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.from('boards').select('*').order('created_at', { ascending: false })
+  const { data, error } = await supabase
+    .from('boards')
+    .select('*')
+    .eq('is_hidden', false)
+    .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Error fetching boards:', error)
     return []
   }
 
-  return data || []
+  // Transform DB data to match Board interface (title -> name, is_hidden -> is_active)
+  return (data || []).map(board => ({
+    ...board,
+    name: board.title,
+    is_active: !board.is_hidden,
+  }))
 }
 
 function BoardsSkeleton() {

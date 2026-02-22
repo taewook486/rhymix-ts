@@ -217,7 +217,14 @@ export async function getAdminBoards(): Promise<ActionResult<Board[]>> {
       return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
     }
 
-    return { success: true, data: data || [] }
+    // Transform is_hidden to is_active for frontend
+    const boards = (data || []).map((board: any) => ({
+      ...board,
+      name: board.title,
+      is_active: !board.is_hidden,
+    }))
+
+    return { success: true, data: boards }
   } catch (error) {
     console.error('Unexpected error in getAdminBoards:', error)
     return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
@@ -236,10 +243,10 @@ export async function createBoard(input: BoardInput): Promise<ActionResult<Board
     const { data, error } = await supabase
       .from('boards')
       .insert({
-        name: input.name,
+        title: input.name,
         slug: input.slug,
         description: input.description || null,
-        is_active: input.is_active !== false,
+        is_hidden: input.is_active === false,
         is_locked: input.is_locked || false,
       })
       .select()
@@ -250,7 +257,14 @@ export async function createBoard(input: BoardInput): Promise<ActionResult<Board
       return { success: false, error: ERROR_MESSAGES.CREATE_FAILED }
     }
 
-    return { success: true, data, message: '게시판이 생성되었습니다.' }
+    // Transform is_hidden to is_active for frontend
+    const board = {
+      ...data,
+      name: data.title,
+      is_active: !data.is_hidden,
+    }
+
+    return { success: true, data: board, message: '게시판이 생성되었습니다.' }
   } catch (error) {
     console.error('Unexpected error in createBoard:', error)
     return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
@@ -266,12 +280,26 @@ export async function updateBoard(boardId: UUID, input: Partial<BoardInput>): Pr
 
     const supabase = await createClient()
 
+    // Transform input to match database schema
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+    }
+    if (input.name !== undefined) {
+      updateData.title = input.name
+    }
+    if (input.description !== undefined) {
+      updateData.description = input.description
+    }
+    if (input.is_active !== undefined) {
+      updateData.is_hidden = input.is_active === false
+    }
+    if (input.is_locked !== undefined) {
+      updateData.is_locked = input.is_locked
+    }
+
     const { data, error } = await supabase
       .from('boards')
-      .update({
-        ...input,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', boardId)
       .select()
       .single()
@@ -281,7 +309,14 @@ export async function updateBoard(boardId: UUID, input: Partial<BoardInput>): Pr
       return { success: false, error: ERROR_MESSAGES.UPDATE_FAILED }
     }
 
-    return { success: true, data, message: '게시판이 수정되었습니다.' }
+    // Transform is_hidden to is_active for frontend
+    const board = {
+      ...data,
+      name: data.title,
+      is_active: !data.is_hidden,
+    }
+
+    return { success: true, data: board, message: '게시판이 수정되었습니다.' }
   } catch (error) {
     console.error('Unexpected error in updateBoard:', error)
     return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }

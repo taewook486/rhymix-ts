@@ -345,11 +345,11 @@ function EditBoardDialog({ board, open, onOpenChange }: { board: Board; open: bo
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
   const [formData, setFormData] = useState({
-    name: board.name,
-    slug: board.slug,
+    name: board.name || '',
+    slug: board.slug || '',
     description: board.description || '',
-    is_active: board.is_active,
-    is_locked: board.is_locked,
+    is_active: board.is_active ?? true,
+    is_locked: board.is_locked ?? false,
   })
 
   const handleChange = (field: string, value: string | boolean) => {

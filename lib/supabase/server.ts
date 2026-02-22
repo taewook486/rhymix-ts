@@ -35,27 +35,18 @@ export async function createClient() {
 }
 
 // Admin client with service role key for privileged operations
+// Uses createClient from supabase-js for admin API operations (no cookies needed)
 export async function createAdminClient() {
-  const cookieStore = await cookies()
+  const { createClient } = await import('@supabase/supabase-js')
 
-  return createServerClient(
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet: readonly Cookie[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options as any)
-            )
-          } catch {
-            // Ignore in Server Components
-          }
-        },
-      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     }
   )
 }

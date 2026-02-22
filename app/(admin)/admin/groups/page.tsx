@@ -4,7 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AddGroupDialog } from '@/components/admin/AddGroupDialog'
-import { Users, Shield } from 'lucide-react'
+import { EditGroupDialog } from '@/components/admin/EditGroupDialog'
+import { Users, Shield, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 // Skeleton component for loading state
@@ -26,56 +27,54 @@ function GroupsSkeleton() {
 async function getGroups() {
   const supabase = await createClient()
 
-  // Try to get from groups table first (if it exists)
+  // Get custom groups from groups table
   const { data: groupsData, error: groupsError } = await supabase
     .from('groups')
-    .select(`
-      *,
-      group_members(count)
-    `)
+    .select('*')
     .order('created_at', { ascending: false })
 
-  // If groups table exists, return that data
-  if (!groupsError) {
-    return groupsData?.map((group: any) => ({
-      ...group,
-      user_count: group.group_members?.[0]?.count || 0,
-    })) || []
-  }
+  const customGroups = (!groupsError && groupsData ? groupsData : []).map((group: any) => ({
+    ...group,
+    user_count: 0, // Will be calculated when group_members table is implemented
+    is_fallback: false,
+  }))
 
-  // Fallback: Get groups by role from profiles table
+  // Get system groups by role from profiles table
   const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
     .select('role, created_at')
 
-  if (profilesError) {
-    console.error('Error fetching profiles:', profilesError)
-    return []
+  let systemGroups: any[] = []
+
+  if (!profilesError && profiles) {
+    // Group by role and count
+    const roleCounts = (profiles || []).reduce((acc, profile) => {
+      const role = profile.role || 'user'
+      acc[role] = acc[role] || { count: 0, created_at: profile.created_at }
+      acc[role].count++
+      return acc
+    }, {} as Record<string, { count: number; created_at: string }>)
+
+    // Convert to array format
+    const roleDescriptions: Record<string, string> = {
+      admin: 'Full system access',
+      moderator: 'Content moderation permissions',
+      user: 'Regular user permissions',
+      guest: 'Limited guest access',
+    }
+
+    systemGroups = Object.entries(roleCounts).map(([role, data]) => ({
+      id: `system_${role}`,
+      name: role.charAt(0).toUpperCase() + role.slice(1) + 's',
+      description: roleDescriptions[role] || 'Custom role',
+      user_count: data.count,
+      created_at: data.created_at,
+      is_fallback: true, // Mark as system group (cannot be edited)
+    }))
   }
 
-  // Group by role and count
-  const roleCounts = (profiles || []).reduce((acc, profile) => {
-    const role = profile.role || 'user'
-    acc[role] = acc[role] || { count: 0, created_at: profile.created_at }
-    acc[role].count++
-    return acc
-  }, {} as Record<string, { count: number; created_at: string }>)
-
-  // Convert to array format
-  const roleDescriptions: Record<string, string> = {
-    admin: 'Full system access',
-    moderator: 'Content moderation permissions',
-    user: 'Regular user permissions',
-    guest: 'Limited guest access',
-  }
-
-  return Object.entries(roleCounts).map(([role, data]) => ({
-    id: role,
-    name: role.charAt(0).toUpperCase() + role.slice(1) + 's',
-    description: roleDescriptions[role] || 'Custom role',
-    user_count: data.count,
-    created_at: data.created_at,
-  }))
+  // Combine system groups and custom groups
+  return [...systemGroups, ...customGroups]
 }
 
 // Groups Table Component
@@ -112,9 +111,13 @@ function GroupsTable({ groups }: { groups: any[] }) {
             </TableCell>
             <TableCell>{new Date(group.created_at).toLocaleDateString()}</TableCell>
             <TableCell className="text-right">
-              <Button variant="ghost" size="sm">
-                Edit
-              </Button>
+              {group.is_fallback ? (
+                <span className="text-muted-foreground text-sm">System group</span>
+              ) : (
+                <div className="flex justify-end gap-2">
+                  <EditGroupDialog group={group} />
+                </div>
+              )}
             </TableCell>
           </TableRow>
         ))}

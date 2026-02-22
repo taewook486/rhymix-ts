@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -54,8 +54,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const adminSupabase = await createAdminClient()
+
     // Check if slug already exists
-    const { data: existingPage } = await supabase
+    const { data: existingPage } = await adminSupabase
       .from('pages')
       .select('id')
       .ilike('slug', slug.trim())
@@ -68,8 +70,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Try to insert into pages table
-    const { data: newPage, error: insertError } = await supabase
+    // Try to insert into pages table using admin client (bypasses RLS)
+    const { data: newPage, error: insertError } = await adminSupabase
       .from('pages')
       .insert({
         title: title.trim(),

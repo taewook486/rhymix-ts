@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -21,148 +22,140 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 import { Plus, Loader2, LayoutGrid } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { createWidget } from '@/app/actions/widget'
+import { widgetRegistry } from '@/lib/widgets/WidgetRegistry'
 
-interface CreateWidgetResponse {
-  success: boolean
-  error?: string
-  message?: string
-}
-
-const WIDGET_TYPES = [
-  'html',
-  'text',
-  'menu',
-  'recent_posts',
-  'recent_comments',
-  'tags',
-  'calendar',
-  'search',
-  'custom',
-]
-
-const POSITIONS = [
-  'sidebar_left',
-  'sidebar_right',
-  'header',
-  'footer',
-  'content_top',
-  'content_bottom',
+const WIDGET_POSITIONS = [
+  { value: 'header', label: 'Header' },
+  { value: 'content_top', label: 'Content Top' },
+  { value: 'sidebar_left', label: 'Left Sidebar' },
+  { value: 'sidebar_right', label: 'Right Sidebar' },
+  { value: 'content_bottom', label: 'Content Bottom' },
+  { value: 'footer', label: 'Footer' },
 ]
 
 export function AddWidgetDialog() {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [isPending, startTransition] = useTransition()
+  const { toast } = useToast()
+
+  // Form state
   const [name, setName] = useState('')
   const [title, setTitle] = useState('')
   const [type, setType] = useState('')
   const [position, setPosition] = useState('')
-  const [content, setContent] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
-  const { toast } = useToast()
+  const [isActive, setIsActive] = useState(true)
 
-  const handleCreateWidget = async () => {
-    // Validation
-    if (!name.trim()) {
+  const widgetTypes = widgetRegistry.getAll()
+
+  const handleCreateWidget = () => {
+    if (!name.trim() || !type || !position) {
       toast({
         variant: 'destructive',
-        title: 'Input Error',
-        description: 'Widget name is required.',
+        title: '입력 오류',
+        description: '필수 항목을 모두 입력해주세요.',
       })
       return
     }
 
-    if (!type) {
-      toast({
-        variant: 'destructive',
-        title: 'Input Error',
-        description: 'Please select a widget type.',
+    startTransition(async () => {
+      const widgetDef = widgetRegistry.get(type)
+      const result = await createWidget({
+        name,
+        title: title || widgetDef?.title || name,
+        type,
+        position,
+        config: widgetDef?.defaultConfig || {},
+        is_active: isActive,
       })
-      return
-    }
 
-    if (!position) {
-      toast({
-        variant: 'destructive',
-        title: 'Input Error',
-        description: 'Please select a position.',
-      })
-      return
-    }
-
-    setIsCreating(true)
-
-    // For now, just show a message since widget management requires more complex setup
-    setTimeout(() => {
-      setOpen(false)
-      setName('')
-      setTitle('')
-      setType('')
-      setPosition('')
-      setContent('')
-      setIsCreating(false)
-
-      toast({
-        title: 'Widget Creation',
-        description: 'Widget creation requires widget renderer implementation. This feature will be available after widget system completion.',
-      })
-    }, 1500)
+      if (result.success) {
+        toast({
+          title: '위젯 생성 완료',
+          description: `"${title}" 위젯이 생성되었습니다.`,
+        })
+        setOpen(false)
+        // Reset form
+        setName('')
+        setTitle('')
+        setType('')
+        setPosition('')
+        setIsActive(true)
+        router.refresh()
+      } else {
+        toast({
+          variant: 'destructive',
+          title: '오류',
+          description: result.error || '위젯 생성에 실패했습니다.',
+        })
+      }
+    })
   }
+
+  const selectedWidget = type ? widgetRegistry.get(type) : null
+  const availablePositions = selectedWidget
+    ? WIDGET_POSITIONS.filter((p) => selectedWidget.allowedPositions.includes(p.value))
+    : WIDGET_POSITIONS
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
-          Add Widget
+          위젯 추가
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Widget</DialogTitle>
+          <DialogTitle>새 위젯 추가</DialogTitle>
           <DialogDescription>
-            Create a widget to display content in specific areas of your site.
+            사이트의 특정 영역에 표시할 위젯을 생성합니다.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="widget-name">Widget Name</Label>
+            <Label htmlFor="widget-name">위젯 이름 *</Label>
             <Input
               id="widget-name"
-              placeholder="e.g., recent_posts_widget"
+              placeholder="예: latest_posts_main"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={isCreating}
-              autoComplete="off"
+              disabled={isPending}
             />
             <p className="text-xs text-muted-foreground">
-              Unique identifier for this widget
+              위젯을 식별하는 고유한 이름
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="widget-title">Display Title</Label>
+            <Label htmlFor="widget-title">표시 제목</Label>
             <Input
               id="widget-title"
-              placeholder="e.g., Recent Posts"
+              placeholder="예: 최신 게시글"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              disabled={isCreating}
-              autoComplete="off"
+              disabled={isPending}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="widget-type">Type</Label>
-              <Select value={type} onValueChange={setType} disabled={isCreating}>
+              <Label htmlFor="widget-type">위젯 유형 *</Label>
+              <Select value={type} onValueChange={setType} disabled={isPending}>
                 <SelectTrigger id="widget-type">
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="유형 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {WIDGET_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t.replace('_', ' ').toUpperCase()}
+                  {widgetTypes.map((w) => (
+                    <SelectItem key={w.name} value={w.name}>
+                      <div className="flex items-center gap-2">
+                        <span>{w.title}</span>
+                        <Badge variant="outline" className="text-xs">{w.category}</Badge>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -170,15 +163,19 @@ export function AddWidgetDialog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="widget-position">Position</Label>
-              <Select value={position} onValueChange={setPosition} disabled={isCreating}>
+              <Label htmlFor="widget-position">위치 *</Label>
+              <Select
+                value={position}
+                onValueChange={setPosition}
+                disabled={isPending}
+              >
                 <SelectTrigger id="widget-position">
-                  <SelectValue placeholder="Position" />
+                  <SelectValue placeholder="위치 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {POSITIONS.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p.replace('_', ' ').toUpperCase()}
+                  {availablePositions.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -186,39 +183,41 @@ export function AddWidgetDialog() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="widget-content">Content (Optional)</Label>
-            <Textarea
-              id="widget-content"
-              placeholder="Widget content or configuration (JSON)..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              disabled={isCreating}
-              rows={4}
+          {selectedWidget && (
+            <div className="p-3 bg-muted rounded-md">
+              <p className="text-sm font-medium mb-1">{selectedWidget.title}</p>
+              <p className="text-xs text-muted-foreground">{selectedWidget.description}</p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="widget-active">활성화</Label>
+            <Switch
+              id="widget-active"
+              checked={isActive}
+              onCheckedChange={setIsActive}
+              disabled={isPending}
             />
-            <p className="text-xs text-muted-foreground">
-              For HTML widgets, enter HTML code. For others, enter JSON configuration.
-            </p>
           </div>
         </div>
         <DialogFooter>
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
-            disabled={isCreating}
+            disabled={isPending}
           >
-            Cancel
+            취소
           </Button>
-          <Button onClick={handleCreateWidget} disabled={isCreating}>
-            {isCreating ? (
+          <Button onClick={handleCreateWidget} disabled={isPending}>
+            {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
+                생성 중...
               </>
             ) : (
               <>
                 <LayoutGrid className="mr-2 h-4 w-4" />
-                Add Widget
+                위젯 추가
               </>
             )}
           </Button>

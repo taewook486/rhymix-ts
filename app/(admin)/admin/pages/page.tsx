@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AddPageDialog } from '@/components/admin/AddPageDialog'
+import { EditPageDialog } from '@/components/admin/EditPageDialog'
 import { FileText, Eye, EyeOff, Clock, User } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
@@ -23,42 +24,44 @@ function PagesSkeleton() {
   )
 }
 
-// Get pages from documents table (module='page')
+// Get pages from pages table
 async function getPages() {
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('documents')
+    .from('pages')
     .select('*')
-    .eq('module', 'page')
     .order('updated_at', { ascending: false })
 
-  if (error) throw error
+  if (error) {
+    console.error('Pages fetch error:', error)
+    return []
+  }
 
   // Transform data to match expected format
   const pages = await Promise.all(
-    (data || []).map(async (doc) => {
+    (data || []).map(async (page) => {
       // Get author display name separately
       let authorName = 'Unknown'
-      if (doc.author_id) {
+      if (page.author_id) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('display_name')
-          .eq('id', doc.author_id)
+          .eq('id', page.author_id)
           .single()
         authorName = profile?.display_name || 'Unknown'
       }
 
       return {
-        id: doc.id,
-        title: doc.title,
-        slug: doc.slug || '',
-        content: doc.content,
-        status: doc.status,
+        id: page.id,
+        title: page.title,
+        slug: page.slug || '',
+        content: page.content,
+        status: page.status,
         author: authorName,
-        view_count: doc.view_count,
-        created_at: doc.created_at,
-        updated_at: doc.updated_at,
+        view_count: page.view_count || 0,
+        created_at: page.created_at,
+        updated_at: page.updated_at,
       }
     })
   )
@@ -71,7 +74,7 @@ function PagesTable({ pages }: { pages: any[] }) {
   if (pages.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No pages found. Create your first page to get started.
+        페이지가 없습니다. 첫 번째 페이지를 만들어보세요.
       </div>
     )
   }
@@ -80,13 +83,13 @@ function PagesTable({ pages }: { pages: any[] }) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Title</TableHead>
-          <TableHead>Slug</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Author</TableHead>
-          <TableHead className="text-center">Views</TableHead>
-          <TableHead>Last Updated</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
+          <TableHead>제목</TableHead>
+          <TableHead>슬러그</TableHead>
+          <TableHead>상태</TableHead>
+          <TableHead>작성자</TableHead>
+          <TableHead className="text-center">조회수</TableHead>
+          <TableHead>마지막 수정</TableHead>
+          <TableHead className="text-right">작업</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -101,12 +104,12 @@ function PagesTable({ pages }: { pages: any[] }) {
                 {page.status === 'published' ? (
                   <>
                     <Eye className="h-3 w-3 mr-1" />
-                    Published
+                    공개
                   </>
                 ) : (
                   <>
                     <EyeOff className="h-3 w-3 mr-1" />
-                    Draft
+                    비공개
                   </>
                 )}
               </Badge>
@@ -127,9 +130,7 @@ function PagesTable({ pages }: { pages: any[] }) {
               </div>
             </TableCell>
             <TableCell className="text-right">
-              <Button variant="ghost" size="sm">
-                Edit
-              </Button>
+              <EditPageDialog page={page} />
             </TableCell>
           </TableRow>
         ))}
@@ -145,8 +146,8 @@ export default async function AdminPagesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Pages</h1>
-          <p className="text-muted-foreground">Manage static pages and content</p>
+          <h1 className="text-2xl font-bold">페이지</h1>
+          <p className="text-muted-foreground">정적 페이지와 콘텐츠를 관리합니다</p>
         </div>
         <AddPageDialog />
       </div>
@@ -155,9 +156,9 @@ export default async function AdminPagesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            All Pages
+            모든 페이지
           </CardTitle>
-          <CardDescription>Create and manage static content pages</CardDescription>
+          <CardDescription>정적 콘텐츠 페이지를 생성하고 관리합니다</CardDescription>
         </CardHeader>
         <CardContent>
           <Suspense fallback={<PagesSkeleton />}>
@@ -169,7 +170,7 @@ export default async function AdminPagesPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Pages</CardTitle>
+            <CardTitle className="text-sm font-medium">전체 페이지</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pages.length}</div>
@@ -179,7 +180,7 @@ export default async function AdminPagesPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Eye className="h-4 w-4" />
-              Published
+              공개
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -190,7 +191,7 @@ export default async function AdminPagesPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <EyeOff className="h-4 w-4" />
-              Drafts
+              비공개
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -199,7 +200,7 @@ export default async function AdminPagesPage() {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <CardTitle className="text-sm font-medium">전체 조회수</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pages.reduce((sum, p) => sum + p.view_count, 0).toLocaleString()}</div>

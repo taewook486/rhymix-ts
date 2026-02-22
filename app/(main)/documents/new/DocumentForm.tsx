@@ -7,7 +7,6 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -17,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { RichTextEditor } from '@/components/editor/RichTextEditor'
 import { createDocument, updateDocument } from '@/app/actions/document'
 import type { DocumentWithAuthor } from '@/types/document'
 
@@ -158,7 +158,7 @@ export function DocumentForm({ mode, document }: DocumentFormProps) {
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-2">
-                <Label htmlFor="content">Content (Markdown)</Label>
+                <Label htmlFor="content">Content</Label>
                 {isPreview ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert min-h-[400px] p-4 border rounded-lg bg-muted/30">
                     {content || (
@@ -168,12 +168,12 @@ export function DocumentForm({ mode, document }: DocumentFormProps) {
                     )}
                   </div>
                 ) : (
-                  <Textarea
-                    id="content"
-                    placeholder="Write your document content in Markdown..."
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="min-h-[400px] font-mono"
+                  <RichTextEditor
+                    content={content}
+                    onChange={setContent}
+                    placeholder="문서 내용을 입력하세요..."
+                    editable={!isLoading}
+                    className="min-h-[400px]"
                   />
                 )}
               </div>

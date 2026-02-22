@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, display_name, role = 'member', password } = body
+    const { email, display_name, role = 'user', password } = body
 
     // Validation
     if (!email || !display_name || !password) {
@@ -50,6 +50,17 @@ export async function POST(request: NextRequest) {
     // Note: This requires service role key in server-side operations
     const adminSupabase = await createAdminClient()
 
+    // Check if user with this email already exists
+    const { data: existingUsers } = await adminSupabase.auth.admin.listUsers()
+    const userExists = existingUsers.users.find(u => u.email === email)
+
+    if (userExists) {
+      return NextResponse.json(
+        { success: false, error: 'User with this email already exists' },
+        { status: 409 }
+      )
+    }
+
     // Create auth user
     const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
       email,
@@ -68,16 +79,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create profile entry
-    const { error: profileError } = await supabase
+    // Create profile entry using upsert (handles if profile somehow already exists)
+    const { error: profileError } = await adminSupabase
       .from('profiles')
-      .insert({
+      .upsert({
         id: authData.user.id,
         email,
         display_name,
         role,
         avatar_url: null,
         created_at: new Date().toISOString(),
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false,
       })
 
     if (profileError) {
@@ -85,7 +99,7 @@ export async function POST(request: NextRequest) {
       // Rollback auth user if profile creation fails
       await adminSupabase.auth.admin.deleteUser(authData.user.id)
       return NextResponse.json(
-        { success: false, error: 'Failed to create profile' },
+        { success: false, error: `Failed to create profile: ${profileError.message}` },
         { status: 500 }
       )
     }

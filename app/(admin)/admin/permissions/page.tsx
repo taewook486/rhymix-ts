@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AddPermissionDialog } from '@/components/admin/AddPermissionDialog'
-import { Switch } from '@/components/ui/switch'
+import { EditPermissionDialog } from '@/components/admin/EditPermissionDialog'
 import { Shield, Lock, Unlock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
@@ -27,64 +27,133 @@ function PermissionsSkeleton() {
 async function getPermissions() {
   const supabase = await createClient()
 
-  // Try to get from permissions table first (if it exists)
+  // Get custom permissions from permissions table
   const { data, error } = await supabase
     .from('permissions')
-    .select(`
-      *,
-      permission_groups(
-        groups(id, name)
-      )
-    `)
+    .select('*')
     .order('module', { ascending: true })
 
-  // If permissions table exists, return that data
-  if (!error) {
-    return data?.map((permission: any) => ({
-      ...permission,
-      groups: permission.permission_groups?.map((pg: any) => pg.groups?.name).filter(Boolean) || [],
-    })) || []
+  // Get all group_permissions for custom permissions
+  const { data: groupPermissions, error: groupPermError } = await supabase
+    .from('group_permissions')
+    .select('group_id, permission_id')
+
+  // Get all groups to build a map
+  const { data: allGroups, error: groupsError } = await supabase
+    .from('groups')
+    .select('id, name')
+
+  // Build group map for quick lookup
+  const groupMap = new Map(
+    (!groupsError && allGroups ? allGroups : []).map((g: any) => [g.id, g.name])
+  )
+
+  // System group name mapping
+  const systemGroupNames: Record<string, string> = {
+    system_admin: 'Administrators',
+    system_moderator: 'Moderators',
+    system_user: 'Users',
+    system_guest: 'Guests',
   }
 
-  // Fallback: Return mock data until permissions table is created
-  // TODO: Create permissions table migration
-  return [
+  // Build permission to groups map
+  const permissionGroupMap = new Map<string, string[]>()
+  const permissionGroupIdMap = new Map<string, string[]>() // Store group IDs for EditPermissionDialog
+  const permissionSystemGroupIdMap = new Map<string, string[]>() // Store system group IDs
+
+  if (!groupPermError && groupPermissions) {
+    for (const gp of groupPermissions) {
+      const groupName = groupMap.get(gp.group_id)
+      if (groupName) {
+        if (!permissionGroupMap.has(gp.permission_id)) {
+          permissionGroupMap.set(gp.permission_id, [])
+          permissionGroupIdMap.set(gp.permission_id, [])
+        }
+        permissionGroupMap.get(gp.permission_id)!.push(groupName)
+        permissionGroupIdMap.get(gp.permission_id)!.push(gp.group_id)
+      }
+    }
+  }
+
+  const customPermissions = (!error && data ? data : []).map((permission: any) => {
+    // Get custom group IDs and names for this permission
+    const customGroupIds = permissionGroupIdMap.get(permission.id) || []
+    const customGroupNames = permissionGroupMap.get(permission.id) || []
+
+    // Get system group IDs from permission.system_groups array
+    const systemGroupIds = permission.system_groups || []
+
+    // Convert system group IDs to names
+    const mappedSystemGroupNames = systemGroupIds
+      .map((id: string) => systemGroupNames[id] || id)
+      .filter(Boolean)
+
+    // Combine all group names for display
+    const allGroupNames = [
+      ...customGroupNames,
+      ...mappedSystemGroupNames
+    ]
+
+    // Combine all group IDs for EditPermissionDialog
+    const allGroupIds = [
+      ...customGroupIds,
+      ...systemGroupIds
+    ]
+
+    return {
+      ...permission,
+      groups: allGroupNames,
+      group_ids: allGroupIds,
+      is_fallback: false,
+    }
+  })
+
+  // System permissions (built-in, always available)
+  const systemPermissions = [
     {
-      id: '1',
+      id: 'system_board_create',
       name: 'board.create',
       description: 'Create new posts',
       module: 'board',
       groups: ['Administrators', 'Moderators', 'Members'],
+      is_fallback: true,
     },
     {
-      id: '2',
+      id: 'system_board_delete',
       name: 'board.delete',
       description: 'Delete posts',
       module: 'board',
       groups: ['Administrators', 'Moderators'],
+      is_fallback: true,
     },
     {
-      id: '3',
+      id: 'system_user_manage',
       name: 'user.manage',
       description: 'Manage users',
       module: 'member',
       groups: ['Administrators'],
+      is_fallback: true,
     },
     {
-      id: '4',
+      id: 'system_settings_update',
       name: 'settings.update',
       description: 'Update site settings',
       module: 'admin',
       groups: ['Administrators'],
+      is_fallback: true,
     },
     {
-      id: '5',
+      id: 'system_comment_moderate',
       name: 'comment.moderate',
       description: 'Moderate comments',
       module: 'comment',
       groups: ['Administrators', 'Moderators'],
+      is_fallback: true,
     },
   ]
+
+  // Combine system permissions and custom permissions
+  return [...systemPermissions, ...customPermissions]
 }
 
 // Permissions Table Component
@@ -126,9 +195,11 @@ function PermissionsTable({ permissions }: { permissions: any[] }) {
               </div>
             </TableCell>
             <TableCell className="text-right">
-              <Button variant="ghost" size="sm">
-                Edit
-              </Button>
+              {permission.is_fallback ? (
+                <span className="text-muted-foreground text-sm">System permission</span>
+              ) : (
+                <EditPermissionDialog permission={permission} />
+              )}
             </TableCell>
           </TableRow>
         ))}
