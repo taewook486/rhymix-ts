@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Eye, MessageCircle, ThumbsUp, Clock, User } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +24,7 @@ export interface PostWithAuthor {
   comment_count: number
   created_at: string
   updated_at: string
+  thumbnail_url?: string | null
   category?: {
     id: string
     name: string
@@ -83,6 +85,18 @@ export function PostItem({ post, boardSlug }: PostItemProps) {
       >
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
+            {/* Thumbnail on the left */}
+            {post.thumbnail_url && (
+              <div className="relative w-20 h-20 shrink-0 overflow-hidden rounded-md bg-muted">
+                <Image
+                  src={post.thumbnail_url}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  sizes="80px"
+                />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               {/* Title row */}
               <div className="flex items-center gap-2 mb-1">

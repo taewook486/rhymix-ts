@@ -12,90 +12,105 @@ import {
   LayoutGrid,
   Menu as MenuIcon,
   Package,
-  Activity
+  Activity,
+  MessageCircle,
 } from 'lucide-react'
 import Link from 'next/link'
+import { StatCard } from '@/components/admin/StatCard'
+import { RecentActivity } from '@/components/admin/RecentActivity'
 
 async function getDashboardStats() {
   const supabase = await createClient()
 
   try {
-    // Get user count
-    const { count: userCount } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-
-    // Get post count (from posts table)
-    const { count: postCount } = await supabase
-      .from('posts')
-      .select('*', { count: 'exact', head: true })
-
-    // Get board count
-    const { count: boardCount } = await supabase
-      .from('boards')
-      .select('*', { count: 'exact', head: true })
+    // Get counts in parallel
+    const [usersResult, postsResult, commentsResult, boardsResult] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('posts').select('*', { count: 'exact', head: true }).is('deleted_at', null),
+      supabase.from('comments').select('*', { count: 'exact', head: true }).is('deleted_at', null),
+      supabase.from('boards').select('*', { count: 'exact', head: true }),
+    ])
 
     // Get recent activities
-    const { data: recentPosts } = await supabase
-      .from('posts')
-      .select('id, title, created_at, boards(title)')
-      .order('created_at', { ascending: false })
-      .limit(5)
+    const [recentPosts, recentComments, recentMembers] = await Promise.all([
+      supabase
+        .from('posts')
+        .select('id, title, author_name, created_at')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('comments')
+        .select('id, content, author_name, created_at')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('profiles')
+        .select('id, display_name, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5),
+    ])
+
+    // Combine activities
+    const activities: Array<{
+      id: string
+      type: 'post' | 'comment' | 'member'
+      title: string
+      user_name: string | null
+      created_at: string
+    }> = []
+
+    ;(recentPosts.data || []).forEach((post) => {
+      activities.push({
+        id: post.id,
+        type: 'post',
+        title: post.title,
+        user_name: post.author_name,
+        created_at: post.created_at,
+      })
+    })
+
+    ;(recentComments.data || []).forEach((comment) => {
+      activities.push({
+        id: comment.id,
+        type: 'comment',
+        title: comment.content?.substring(0, 50) || 'Comment',
+        user_name: comment.author_name,
+        created_at: comment.created_at,
+      })
+    })
+
+    ;(recentMembers.data || []).forEach((member) => {
+      activities.push({
+        id: member.id,
+        type: 'member',
+        title: 'New member joined',
+        user_name: member.display_name,
+        created_at: member.created_at,
+      })
+    })
+
+    // Sort by created_at
+    activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
     return {
-      userCount: userCount || 0,
-      postCount: postCount || 0,
-      boardCount: boardCount || 0,
-      recentPosts: recentPosts || [],
+      userCount: usersResult.count || 0,
+      postCount: postsResult.count || 0,
+      commentCount: commentsResult.count || 0,
+      boardCount: boardsResult.count || 0,
+      activities: activities.slice(0, 10),
     }
   } catch (error) {
     console.error('Error fetching dashboard stats:', error)
     return {
       userCount: 0,
       postCount: 0,
+      commentCount: 0,
       boardCount: 0,
-      recentPosts: [],
+      activities: [],
     }
   }
-}
-
-function StatCard({
-  title,
-  value,
-  description,
-  icon,
-  href,
-}: {
-  title: string
-  value: number | string
-  description: string
-  icon: React.ReactNode
-  href?: string
-}) {
-  const content = (
-    <>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </CardContent>
-    </>
-  )
-
-  if (href) {
-    return (
-      <Link href={href}>
-        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-          {content}
-        </Card>
-      </Link>
-    )
-  }
-
-  return <Card className="h-full">{content}</Card>
 }
 
 function DashboardSkeleton() {
@@ -130,9 +145,7 @@ async function DashboardContent() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Admin Panel</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Manage your Rhymix TS site.
-        </p>
+        <p className="text-muted-foreground">Welcome back! Manage your Rhymix TS site.</p>
       </div>
 
       {/* Stats Grid */}
@@ -141,28 +154,28 @@ async function DashboardContent() {
           title="Total Users"
           value={stats.userCount}
           description="Registered members"
-          icon={<Users className="h-4 w-4 text-muted-foreground" />}
+          icon={<Users className="h-4 w-4" />}
           href="/admin/members"
         />
         <StatCard
           title="Total Posts"
           value={stats.postCount}
           description="Across all boards"
-          icon={<MessageSquare className="h-4 w-4 text-muted-foreground" />}
-          href="/admin/posts"
+          icon={<FileText className="h-4 w-4" />}
+          href="/admin/boards"
+        />
+        <StatCard
+          title="Comments"
+          value={stats.commentCount}
+          description="Total comments"
+          icon={<MessageCircle className="h-4 w-4" />}
         />
         <StatCard
           title="Boards"
           value={stats.boardCount}
           description="Active forums"
-          icon={<LayoutGrid className="h-4 w-4 text-muted-foreground" />}
+          icon={<LayoutGrid className="h-4 w-4" />}
           href="/admin/boards"
-        />
-        <StatCard
-          title="Online Now"
-          value="0"
-          description="Active visitors"
-          icon={<Activity className="h-4 w-4 text-muted-foreground" />}
         />
       </div>
 
@@ -171,43 +184,37 @@ async function DashboardContent() {
         <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Link href="/admin/boards/new">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <LayoutGrid className="h-5 w-5" />
                   Create Board
                 </CardTitle>
-                <CardDescription>
-                  Create a new discussion board
-                </CardDescription>
+                <CardDescription>Create a new discussion board</CardDescription>
               </CardHeader>
             </Card>
           </Link>
 
           <Link href="/admin/pages/new">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   New Page
                 </CardTitle>
-                <CardDescription>
-                  Create a static page
-                </CardDescription>
+                <CardDescription>Create a static page</CardDescription>
               </CardHeader>
             </Card>
           </Link>
 
           <Link href="/admin/menus">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MenuIcon className="h-5 w-5" />
                   Manage Menus
                 </CardTitle>
-                <CardDescription>
-                  Configure navigation menus
-                </CardDescription>
+                <CardDescription>Configure navigation menus</CardDescription>
               </CardHeader>
             </Card>
           </Link>
@@ -215,36 +222,11 @@ async function DashboardContent() {
       </div>
 
       {/* Recent Activity */}
-      {stats.recentPosts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Posts</CardTitle>
-            <CardDescription>Latest content from your community</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {stats.recentPosts.map((post: any) => (
-                <div key={post.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{post.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {post.boards?.title || 'Unknown Board'}
-                    </p>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(post.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <RecentActivity activities={stats.activities} />
 
-      {/* Admin Menu Sections */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Administration</h2>
-        <div className="grid gap-4 md:grid-cols-2">
+        {/* Admin Menu Sections */}
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -270,66 +252,6 @@ async function DashboardContent() {
                 <Link href="/admin/permissions">
                   <Shield className="mr-2 h-4 w-4" />
                   Permissions
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <LayoutGrid className="h-5 w-5" />
-                Content Management
-              </CardTitle>
-              <CardDescription>Boards, pages, and media</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/admin/boards">
-                  <LayoutGrid className="mr-2 h-4 w-4" />
-                  Boards
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/admin/pages">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Pages
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/admin/media">
-                  <Package className="mr-2 h-4 w-4" />
-                  Media Library
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MenuIcon className="h-5 w-5" />
-                Appearance
-              </CardTitle>
-              <CardDescription>Menus, themes, and layout</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/admin/menus">
-                  <MenuIcon className="mr-2 h-4 w-4" />
-                  Menus
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/admin/widgets">
-                  <LayoutGrid className="mr-2 h-4 w-4" />
-                  Widgets
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full justify-start">
-                <Link href="/admin/themes">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Themes
                 </Link>
               </Button>
             </CardContent>

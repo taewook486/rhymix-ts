@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhymix-TS 팀 작업 현황 대시보드</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .overall-progress {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .overall-progress h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #f1f5f9;
+        }
+
+        .progress-bar-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #a855f7);
+            background-size: 200% 100%;
+            animation: shimmer 2s linear infinite;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            transition: width 0.5s ease;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .team-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .team-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .team-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .team-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .team-avatar.backend {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .team-avatar.frontend {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .team-avatar.admin {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .team-info h3 {
+            font-size: 1.3rem;
+            color: #f1f5f9;
+            margin-bottom: 5px;
+        }
+
+        .team-role {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .team-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .status-active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-pending {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+        }
+
+        .status-completed {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #475569;
+            border-radius: 4px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .task-checkbox.checked {
+            background: #22c55e;
+            border-color: #22c55e;
+        }
+
+        .task-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        .task-text code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: #a78bfa;
+        }
+
+        .task-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        .task-priority-p0 {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .task-priority-p1 {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+        }
+
+        .task-priority-p2 {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+
+        .refresh-info span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .icon-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 MoAI Team Dashboard</h1>
+            <p>Rhymix-TS SPEC-RHYMIX-001 구현 팀 작업 현황</p>
+        </div>
+
+        <div class="overall-progress">
+            <h2>전체 진행률</h2>
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: 0%">
+                    <span id="progress-text">대기 중...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-tasks">0</div>
+                <div class="stat-label">총 작업</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="completed-tasks">0</div>
+                <div class="stat-label">완료됨</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="active-members">0</div>
+                <div class="stat-label">활성 팀원</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="team-members">5</div>
+                <div class="stat-label">팀원 수</div>
+            </div>
+        </div>
+
+        <div class="refresh-info">
+            <span><span class="icon-spin">↻</span> 페이지를 새로고침하여 최신 상태 확인</span>
+        </div>
+
+        <div class="team-grid" id="team-grid">
+            <!-- Team cards will be inserted here by JavaScript -->
+        </div>
+
+        <div class="footer">
+            <p>팀: moai-rhymix-impl | 생성일: 2026-02-21 | 프로젝트: Rhymix-TS</p>
+            <p style="margin-top: 10px;">SPEC-RHYMIX-001 구현 계획에 따라 진행 중</p>
+        </div>
+    </div>
+
+    <script>
+        // Team data
+        const teamData = [
+            {
+                id: 'backend-dev',
+                name: 'Backend Developer',
+                role: 'expert-backend',
+                avatar: 'BE',
+                avatarClass: 'backend',
+                status: 'active',
+                statusText: '작업 중',
+                tasks: [
+                    { file: 'app/actions/board.ts', status: 'pending', priority: 'P0' },
+                    { file: 'app/actions/post.ts', status: 'pending', priority: 'P0' },
+                    { file: 'app/actions/comment.ts', status: 'pending', priority: 'P0' },
+                    { file: 'app/actions/member.ts', status: 'pending', priority: 'P0' },
+                    { file: 'app/actions/document.ts', status: 'pending', priority: 'P0' },
+                    { file: 'app/actions/menu.ts', status: 'pending', priority: 'P0' },
+                    { file: 'app/actions/settings.ts', status: 'pending', priority: 'P0' }
+                ]
+            },
+            {
+                id: 'frontend-dev-comments',
+                name: 'Frontend Developer (Comments)',
+                role: 'expert-frontend',
+                avatar: 'FE-C',
+                avatarClass: 'frontend',
+                status: 'active',
+                statusText: '작업 중',
+                tasks: [
+                    { file: 'components/comment/CommentList.tsx', status: 'pending', priority: 'P0' },
+                    { file: 'components/comment/CommentItem.tsx', status: 'pending', priority: 'P0' },
+                    { file: 'components/comment/CommentForm.tsx', status: 'pending', priority: 'P0' },
+                    { file: 'components/comment/CommentEditor.tsx', status: 'pending', priority: 'P0' }
+                ]
+            },
+            {
+                id: 'frontend-dev-docs',
+                name: 'Frontend Developer (Docs)',
+                role: 'expert-frontend',
+                avatar: 'FE-D',
+                avatarClass: 'frontend',
+                status: 'active',
+                statusText: '작업 중',
+                tasks: [
+                    { file: 'app/(main)/documents/page.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'app/(main)/documents/[id]/page.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'app/(main)/documents/new/page.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'app/(main)/documents/[id]/edit/page.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'components/document/DocumentList.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'components/document/DocumentDetail.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'components/document/VersionHistory.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'components/document/VersionViewer.tsx', status: 'pending', priority: 'P1' }
+                ]
+            },
+            {
+                id: 'frontend-dev-menu',
+                name: 'Frontend Developer (Menu)',
+                role: 'expert-frontend',
+                avatar: 'FE-M',
+                avatarClass: 'frontend',
+                status: 'active',
+                statusText: '작업 중',
+                tasks: [
+                    { file: 'components/menu/MenuEditor.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'components/menu/MenuItemEditor.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'components/menu/MenuTree.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'app/(admin)/admin/menus/page.tsx (update)', status: 'pending', priority: 'P1' },
+                    { file: 'components/layout/Navigation.tsx (update)', status: 'pending', priority: 'P1' }
+                ]
+            },
+            {
+                id: 'frontend-dev-admin',
+                name: 'Frontend Developer (Admin)',
+                role: 'expert-frontend',
+                avatar: 'FE-A',
+                avatarClass: 'admin',
+                status: 'active',
+                statusText: '작업 중',
+                tasks: [
+                    { file: 'app/(admin)/admin/page.tsx (dashboard)', status: 'pending', priority: 'P1' },
+                    { file: 'app/(admin)/admin/settings/page.tsx (update)', status: 'pending', priority: 'P1' },
+                    { file: 'app/(admin)/admin/boards/page.tsx (update)', status: 'pending', priority: 'P1' },
+                    { file: 'app/(admin)/admin/members/page.tsx (update)', status: 'pending', priority: 'P1' },
+                    { file: 'components/admin/StatCard.tsx', status: 'pending', priority: 'P1' },
+                    { file: 'components/admin/RecentActivity.tsx', status: 'pending', priority: 'P1' }
+                ]
+            }
+        ];
+
+        // Function to create team card HTML
+        function createTeamCard(member) {
+            const statusClass = member.status === 'active' ? 'status-active' :
+                              member.status === 'completed' ? 'status-completed' : 'status-pending';
+
+            const tasksHtml = member.tasks.map(task => {
+                const checkboxClass = task.status === 'completed' ? 'checked' : '';
+                const priorityClass = `task-priority-${task.priority.toLowerCase()}`;
+
+                return `
+                    <li class="task-item">
+                        <div class="task-checkbox ${checkboxClass}"></div>
+                        <div class="task-text">
+                            <code>${task.file}</code>
+                            <br>
+                            <span class="task-tag ${priorityClass}">${task.priority}</span>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+
+            return `
+                <div class="team-card">
+                    <div class="team-header">
+                        <div class="team-avatar ${member.avatarClass}">${member.avatar}</div>
+                        <div class="team-info">
+                            <h3>${member.name}</h3>
+                            <div class="team-role">${member.role}</div>
+                        </div>
+                        <span class="team-status ${statusClass} pulse">${member.statusText}</span>
+                    </div>
+                    <ul class="task-list">
+                        ${tasksHtml}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Function to update stats
+        function updateStats() {
+            const totalTasks = teamData.reduce((sum, member) => sum + member.tasks.length, 0);
+            const completedTasks = teamData.reduce((sum, member) =>
+                sum + member.tasks.filter(t => t.status === 'completed').length, 0);
+            const activeMembers = teamData.filter(m => m.status === 'active').length;
+            const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            document.getElementById('total-tasks').textContent = totalTasks;
+            document.getElementById('completed-tasks').textContent = completedTasks;
+            document.getElementById('active-members').textContent = activeMembers;
+
+            const progressBar = document.querySelector('.progress-bar');
+            const progressText = document.getElementById('progress-text');
+
+            progressBar.style.width = progress + '%';
+            progressText.textContent = `${progress}% (${completedTasks}/${totalTasks} 완료)`;
+        }
+
+        // Function to render team grid
+        function renderTeamGrid() {
+            const teamGrid = document.getElementById('team-grid');
+            teamGrid.innerHTML = teamData.map(member => createTeamCard(member)).join('');
+        }
+
+        // Initialize dashboard
+        function init() {
+            renderTeamGrid();
+            updateStats();
+
+            // Auto-refresh every 10 seconds
+            setTimeout(() => {
+                location.reload();
+            }, 10000);
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

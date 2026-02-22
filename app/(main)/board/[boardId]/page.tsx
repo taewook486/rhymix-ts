@@ -5,12 +5,21 @@ import type { Database, PostListItem as DbPostListItem, Category as DbCategory }
 
 type Board = Database['public']['Tables']['boards']['Row']
 type Category = DbCategory
+type FileData = {
+  thumbnail_path: string | null
+  cdn_url: string | null
+  storage_path: string
+  is_image: boolean
+}
+
 type PostListItem = DbPostListItem & {
   category?: Category | null
   author?: {
     display_name: string | null
     avatar_url: string | null
   } | null
+  thumbnail_url?: string | null
+  files?: FileData[]
 }
 
 const ITEMS_PER_PAGE = 20
@@ -52,7 +61,7 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
     .eq('is_hidden', false)
     .order('order_index', { ascending: true })
 
-  // Build post query
+  // Build post query with thumbnail from files table (left join)
   let query = supabase
     .from('posts')
     .select(
@@ -73,7 +82,13 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
       created_at,
       updated_at,
       category:categories(id, name, slug),
-      author:profiles!posts_author_id_fkey(display_name, avatar_url)
+      author:profiles!posts_author_id_fkey(display_name, avatar_url),
+      files(
+        thumbnail_path,
+        cdn_url,
+        storage_path,
+        is_image
+      )
     `,
       { count: 'exact' }
     )
@@ -102,11 +117,27 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
 
   const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE)
 
+  // Process posts to extract thumbnail URL from files
+  const processedPosts = (posts as unknown as PostListItem[])?.map((post) => {
+    // Find the first image file to use as thumbnail
+    const firstImageFile = post.files?.find((file) => file.is_image)
+    const thumbnailUrl = firstImageFile?.thumbnail_path
+      || firstImageFile?.cdn_url
+      || (firstImageFile?.storage_path ? `/api/files/${firstImageFile.storage_path}` : null)
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { files, ...postWithoutFiles } = post
+    return {
+      ...postWithoutFiles,
+      thumbnail_url: thumbnailUrl,
+    }
+  }) || []
+
   return (
     <div className="container mx-auto py-8 px-4">
       <BoardList
         board={board}
-        posts={(posts as unknown as PostListItem[]) || []}
+        posts={processedPosts}
         categories={categories || []}
         currentPage={currentPage}
         totalPages={totalPages}

@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default function SignUpPage() {
   return (
-    <Card>
+    <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Create Account</CardTitle>
         <CardDescription>Sign up for a new account to get started.</CardDescription>

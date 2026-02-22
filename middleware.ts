@@ -1,5 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import {
+  locales,
+  defaultLocale,
+  isValidLocale,
+  LOCALE_COOKIE_NAME,
+  getPathWithoutLocale,
+} from '@/lib/i18n/config'
 
 interface Cookie {
   name: string
@@ -18,6 +25,23 @@ const INSTALLATION_ALLOWED_PATHS = [
   '/_next',
   '/favicon.ico',
   '/robots.txt',
+]
+
+// Paths that should not be localized
+const I18N_EXCLUDED_PATHS = [
+  '/api',
+  '/_next',
+  '/favicon.ico',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/install',
+  '/admin',
+  '/signin',
+  '/signup',
+  '/login',
+  '/register',
+  '/reset-password',
+  '/auth',
 ]
 
 // Note: Installation check is applied to all non-allowed paths in the middleware matcher
@@ -74,6 +98,69 @@ async function checkInstallationComplete(request: NextRequest): Promise<boolean>
 }
 
 /**
+ * Parse Accept-Language header and return the best matching locale
+ */
+function getLocaleFromHeader(acceptLanguage: string): string | null {
+  const languages = acceptLanguage
+    .split(',')
+    .map((lang) => {
+      const [code, q = 'q=1'] = lang.trim().split(';')
+      const quality = parseFloat(q.split('=')[1]) || 0
+      return { code: code.toLowerCase(), quality }
+    })
+    .sort((a, b) => b.quality - a.quality)
+
+  for (const { code } of languages) {
+    // Exact match
+    if (isValidLocale(code)) {
+      return code
+    }
+
+    // Language code match (e.g., 'ko-KR' -> 'ko')
+    const langCode = code.split('-')[0]
+    if (isValidLocale(langCode)) {
+      return langCode
+    }
+  }
+
+  return null
+}
+
+/**
+ * Check if path should be excluded from i18n routing
+ */
+function isExcludedFromI18n(pathname: string): boolean {
+  // Special case: exact root path
+  if (pathname === '/') {
+    return true
+  }
+
+  // Static files
+  if (
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.json')
+  ) {
+    return true
+  }
+
+  return I18N_EXCLUDED_PATHS.some((path) => pathname.startsWith(path))
+}
+
+/**
+ * Check if pathname already has a locale prefix
+ */
+function hasLocalePrefix(pathname: string): boolean {
+  return locales.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  )
+}
+
+/**
  * Check if the path is allowed during installation
  */
 function isAllowedDuringInstallation(pathname: string): boolean {
@@ -114,6 +201,36 @@ function isAllowedDuringInstallation(pathname: string): boolean {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+
+  // Step 0: Handle i18n locale detection
+  // Only redirect non-locale paths to locale-prefixed paths
+  // Let Next.js naturally handle app/[locale]/... routes without rewrite
+  if (!isExcludedFromI18n(pathname)) {
+    const pathnameHasLocale = hasLocalePrefix(pathname)
+
+    if (!pathnameHasLocale) {
+      // URL has no locale prefix (e.g., /home, /board) - redirect with locale
+      const cookieLocale = request.cookies.get(LOCALE_COOKIE_NAME)?.value
+      const acceptLanguage = request.headers.get('accept-language') || ''
+      const headerLocale = getLocaleFromHeader(acceptLanguage)
+
+      let locale: string = defaultLocale
+      if (cookieLocale && isValidLocale(cookieLocale)) {
+        locale = cookieLocale
+      } else if (headerLocale) {
+        locale = headerLocale
+      }
+
+      // REDIRECT to locale-prefixed URL
+      // /home -> /ko/home
+      // /board -> /ko/board
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}${pathname}`
+      return NextResponse.redirect(url)
+    }
+    // If pathname has locale (e.g., /ko/home), let Next.js handle it naturally
+    // It will match to app/[locale]/... routes without any rewrite
+  }
 
   // Step 1: Check installation status for protected routes
   if (!isAllowedDuringInstallation(pathname)) {
@@ -173,11 +290,25 @@ export async function middleware(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser()
 
+  // Helper to check if path matches (with or without locale prefix)
+  const pathMatchesLocaleAware = (basePath: string) => {
+    // Check direct match
+    if (pathname.startsWith(basePath)) return true
+    // Check with locale prefix (e.g., /ko/admin, /en/member)
+    for (const locale of locales) {
+      if (pathname.startsWith(`/${locale}${basePath}`)) return true
+    }
+    return false
+  }
+
   // Step 4: Protect admin routes
-  if (pathname.startsWith('/admin')) {
+  if (pathMatchesLocaleAware('/admin')) {
     if (!data.user) {
       const url = request.nextUrl.clone()
-      url.pathname = '/signin'
+      // Extract locale from pathname and preserve it in redirect
+      const pathParts = pathname.split('/')
+      const locale = locales.includes(pathParts[1] as any) ? pathParts[1] : defaultLocale
+      url.pathname = `/${locale}/signin`
       url.searchParams.set('redirect', pathname)
       return NextResponse.redirect(url)
     }
@@ -187,18 +318,29 @@ export async function middleware(request: NextRequest) {
   }
 
   // Step 5: Protect member routes
-  if (pathname.startsWith('/member')) {
-    // Allow /member/profile/[username] for public profiles
+  if (pathMatchesLocaleAware('/member')) {
+    // Check if it's a public profile
     const pathParts = pathname.split('/')
-    const isPublicProfile =
-      pathParts.length === 4 &&
-      pathParts[1] === 'member' &&
-      pathParts[2] !== 'settings' &&
-      pathParts[3] !== 'settings'
+    // Pattern: /{locale}/member/{username} or /member/{username}
+    let isPublicProfile = false
+
+    // Check /{locale}/member/{username} pattern
+    // /ko/member/{username} is public IF {username} is NOT 'profile' or 'settings'
+    if (pathParts.length === 4 && locales.includes(pathParts[1] as any)) {
+      const thirdSegment = pathParts[3] // {username}
+      isPublicProfile = thirdSegment !== 'profile' && thirdSegment !== 'settings'
+    }
+    // Check /member/{username} pattern
+    else if (pathParts.length === 3 && pathParts[1] === 'member') {
+      const thirdSegment = pathParts[2] // {username}
+      isPublicProfile = thirdSegment !== 'profile' && thirdSegment !== 'settings'
+    }
 
     if (!isPublicProfile && !data.user) {
       const url = request.nextUrl.clone()
-      url.pathname = '/signin'
+      // Extract locale from pathname and preserve it in redirect
+      const locale = locales.includes(pathParts[1] as any) ? pathParts[1] : defaultLocale
+      url.pathname = `/${locale}/signin`
       url.searchParams.set('redirect', pathname)
       return NextResponse.redirect(url)
     }

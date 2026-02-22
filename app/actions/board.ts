@@ -1116,3 +1116,311 @@ export async function toggleVote(
     return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
   }
 }
+
+// =====================================================
+// Board Management Actions
+// =====================================================
+
+export interface BoardFilters {
+  is_hidden?: boolean
+  is_notice?: boolean
+  is_locked?: boolean
+  search?: string
+}
+
+/**
+ * Create a new board
+ */
+export async function createBoard(input: {
+  slug: string
+  title: string
+  description?: string
+  content?: string
+  icon?: string
+  banner_url?: string
+  config?: Record<string, unknown>
+  skin?: string
+  list_order?: string
+  sort_order?: string
+  is_notice?: boolean
+  is_hidden?: boolean
+  is_locked?: boolean
+  is_secret?: boolean
+  admin_id?: string
+}): Promise<ActionResult<{ id: UUID; slug: string; title: string }>> {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
+    }
+
+    // Check admin role
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
+    }
+
+    // Check if slug already exists
+    const { data: existingBoard } = await supabase.from('boards').select('id').eq('slug', input.slug).single()
+
+    if (existingBoard) {
+      return { success: false, error: '이미 존재하는 게시판 슬러그입니다.' }
+    }
+
+    const { data, error } = await supabase
+      .from('boards')
+      .insert({
+        slug: input.slug,
+        title: input.title,
+        description: input.description || null,
+        content: input.content || null,
+        icon: input.icon || null,
+        banner_url: input.banner_url || null,
+        config: input.config || {},
+        skin: input.skin || 'default',
+        list_order: input.list_order || 'latest',
+        sort_order: input.sort_order || 'desc',
+        is_notice: input.is_notice || false,
+        is_hidden: input.is_hidden || false,
+        is_locked: input.is_locked || false,
+        is_secret: input.is_secret || false,
+        admin_id: input.admin_id || user.id,
+      })
+      .select('id, slug, title')
+      .single()
+
+    if (error) {
+      console.error('Error creating board:', error)
+      return { success: false, error: ERROR_MESSAGES.CREATE_FAILED }
+    }
+
+    return { success: true, data: data as { id: UUID; slug: string; title: string }, message: '게시판이 생성되었습니다.' }
+  } catch (error) {
+    console.error('Unexpected error in createBoard:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}
+
+/**
+ * Update a board
+ */
+export async function updateBoard(
+  boardId: UUID,
+  input: {
+    title?: string
+    description?: string
+    content?: string
+    icon?: string
+    banner_url?: string
+    config?: Record<string, unknown>
+    skin?: string
+    list_order?: string
+    sort_order?: string
+    is_notice?: boolean
+    is_hidden?: boolean
+    is_locked?: boolean
+    is_secret?: boolean
+    admin_id?: string
+  }
+): Promise<ActionResult<{ id: UUID; slug: string; title: string }>> {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
+    }
+
+    // Check admin role
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
+    }
+
+    const { data, error } = await supabase
+      .from('boards')
+      .update(input)
+      .eq('id', boardId)
+      .select('id, slug, title')
+      .single()
+
+    if (error) {
+      console.error('Error updating board:', error)
+      return { success: false, error: ERROR_MESSAGES.UPDATE_FAILED }
+    }
+
+    return { success: true, data: data as { id: UUID; slug: string; title: string }, message: '게시판이 수정되었습니다.' }
+  } catch (error) {
+    console.error('Unexpected error in updateBoard:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}
+
+/**
+ * Delete a board (soft delete)
+ */
+export async function deleteBoard(boardId: UUID): Promise<ActionResult> {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
+    }
+
+    // Check admin role
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
+    }
+
+    // Soft delete
+    const { error } = await supabase.from('boards').update({ deleted_at: new Date().toISOString() }).eq('id', boardId)
+
+    if (error) {
+      console.error('Error deleting board:', error)
+      return { success: false, error: ERROR_MESSAGES.DELETE_FAILED }
+    }
+
+    return { success: true, message: '게시판이 삭제되었습니다.' }
+  } catch (error) {
+    console.error('Unexpected error in deleteBoard:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}
+
+/**
+ * Get all boards with optional filters
+ */
+export async function getBoards(filters: BoardFilters = {}): Promise<ActionResult<Array<{
+  id: UUID
+  slug: string
+  title: string
+  description: string | null
+  icon: string | null
+  banner_url: string | null
+  post_count: number
+  comment_count: number
+  is_notice: boolean
+  is_hidden: boolean
+  is_locked: boolean
+  created_at: string
+  updated_at: string
+}>>> {
+  try {
+    const supabase = await createClient()
+
+    let query = supabase
+      .from('boards')
+      .select(`
+        id,
+        slug,
+        title,
+        description,
+        icon,
+        banner_url,
+        post_count,
+        comment_count,
+        is_notice,
+        is_hidden,
+        is_locked,
+        created_at,
+        updated_at
+      `)
+      .is('deleted_at', null)
+      .order('title', { ascending: true })
+
+    // Apply filters
+    if (typeof filters.is_hidden === 'boolean') {
+      query = query.eq('is_hidden', filters.is_hidden)
+    }
+
+    if (typeof filters.is_notice === 'boolean') {
+      query = query.eq('is_notice', filters.is_notice)
+    }
+
+    if (typeof filters.is_locked === 'boolean') {
+      query = query.eq('is_locked', filters.is_locked)
+    }
+
+    if (filters.search) {
+      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error('Error fetching boards:', error)
+      return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+    }
+
+    return { success: true, data: data || [] }
+  } catch (error) {
+    console.error('Unexpected error in getBoards:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}
+
+/**
+ * Get a board by slug
+ */
+export async function getBoardBySlug(slug: string): Promise<ActionResult<{
+  id: UUID
+  slug: string
+  title: string
+  description: string | null
+  content: string | null
+  icon: string | null
+  banner_url: string | null
+  config: Record<string, unknown>
+  skin: string
+  list_order: string
+  sort_order: string
+  view_count: number
+  post_count: number
+  comment_count: number
+  is_notice: boolean
+  is_hidden: boolean
+  is_locked: boolean
+  is_secret: boolean
+  admin_id: UUID | null
+  created_at: string
+  updated_at: string
+}>> {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('boards')
+      .select('*')
+      .eq('slug', slug)
+      .is('deleted_at', null)
+      .single()
+
+    if (error || !data) {
+      return { success: false, error: ERROR_MESSAGES.BOARD_NOT_FOUND }
+    }
+
+    return { success: true, data: data as typeof data & { config: Record<string, unknown> } }
+  } catch (error) {
+    console.error('Unexpected error in getBoardBySlug:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}

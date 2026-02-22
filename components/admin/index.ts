@@ -1,2 +1,6 @@
 export { AdminSidebar } from './AdminSidebar'
 export { AdminHeader } from './AdminHeader'
+export { StatCard, type StatCardProps } from './StatCard'
+export { RecentActivity, type RecentActivityProps, type Activity } from './RecentActivity'
+export { ThemeCard, type Theme } from './ThemeCard'
+export { InstallThemeDialog } from './InstallThemeDialog'

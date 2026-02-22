@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 export default function SignInPage() {
   return (
-    <Card>
+    <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Sign In</CardTitle>
         <CardDescription>Welcome back! Sign in to your account.</CardDescription>

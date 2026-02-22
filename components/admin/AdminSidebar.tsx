@@ -16,7 +16,7 @@ import {
   LogOut,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -75,10 +75,72 @@ export function AdminSidebar() {
   const router = useRouter()
   const supabase = createClient()
 
+  // Extract locale from pathname for locale-aware navigation
+  const locale = useMemo(() => {
+    const parts = pathname?.split('/') || []
+    // Check if the first segment is a locale (ko, en, ja, zh)
+    const locales = ['ko', 'en', 'ja', 'zh']
+    if (parts[1] && locales.includes(parts[1])) {
+      return parts[1]
+    }
+    return '' // No locale prefix
+  }, [pathname])
+
+  const localePrefix = locale ? `/${locale}` : ''
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push('/')
+    router.push(localePrefix ? `${localePrefix}/signin` : '/signin')
   }
+
+  // Build nav items with locale prefix
+  const navItemsWithLocale = [
+    {
+      title: 'Dashboard',
+      href: `${localePrefix}/admin`,
+      icon: LayoutDashboard,
+    },
+    {
+      title: 'Members',
+      href: `${localePrefix}/admin/members`,
+      icon: Users,
+      children: [
+        { title: 'All Members', href: `${localePrefix}/admin/members` },
+        { title: 'Groups', href: `${localePrefix}/admin/groups` },
+        { title: 'Permissions', href: `${localePrefix}/admin/permissions` },
+      ],
+    },
+    {
+      title: 'Content',
+      href: `${localePrefix}/admin/boards`,
+      icon: LayoutGrid,
+      children: [
+        { title: 'Boards', href: `${localePrefix}/admin/boards` },
+        { title: 'Pages', href: `${localePrefix}/admin/pages` },
+        { title: 'Media Library', href: `${localePrefix}/admin/media` },
+      ],
+    },
+    {
+      title: 'Appearance',
+      href: `${localePrefix}/admin/menus`,
+      icon: MenuIcon,
+      children: [
+        { title: 'Menus', href: `${localePrefix}/admin/menus` },
+        { title: 'Widgets', href: `${localePrefix}/admin/widgets` },
+        { title: 'Themes', href: `${localePrefix}/admin/themes` },
+      ],
+    },
+    {
+      title: 'Configuration',
+      href: `${localePrefix}/admin/settings`,
+      icon: Settings,
+      children: [
+        { title: 'General', href: `${localePrefix}/admin/settings` },
+        { title: 'Modules', href: `${localePrefix}/admin/modules` },
+        { title: 'Analytics', href: `${localePrefix}/admin/analytics` },
+      ],
+    },
+  ]
 
   return (
     <>
@@ -103,7 +165,7 @@ export function AdminSidebar() {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center border-b px-6">
-            <Link href="/admin" className="flex items-center space-x-2">
+            <Link href={`${localePrefix}/admin`} className="flex items-center space-x-2">
               <span className="text-xl font-bold">Rhymix</span>
               <span className="text-xs text-muted-foreground">Admin</span>
             </Link>
@@ -111,7 +173,7 @@ export function AdminSidebar() {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-            {navItems.map((item) => {
+            {navItemsWithLocale.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
 
