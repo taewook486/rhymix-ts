@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS public.groups (
 -- RLS for groups
 ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Admins can do anything on groups"
+DROP POLICY IF EXISTS "Admins can do anything on groups" ON public.groups;
+CREATE POLICY "Admins can do anything on groups"
   ON public.groups FOR ALL
   USING (
     EXISTS (
@@ -25,7 +26,8 @@ CREATE POLICY IF NOT EXISTS "Admins can do anything on groups"
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Anyone can view groups"
+DROP POLICY IF EXISTS "Anyone can view groups" ON public.groups;
+CREATE POLICY "Anyone can view groups"
   ON public.groups FOR SELECT
   USING (true);
 
@@ -42,7 +44,8 @@ CREATE TABLE IF NOT EXISTS public.permissions (
 
 ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Admins can do anything on permissions"
+DROP POLICY IF EXISTS "Admins can do anything on permissions" ON public.permissions;
+CREATE POLICY "Admins can do anything on permissions"
   ON public.permissions FOR ALL
   USING (
     EXISTS (
@@ -51,7 +54,8 @@ CREATE POLICY IF NOT EXISTS "Admins can do anything on permissions"
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Anyone can view permissions"
+DROP POLICY IF EXISTS "Anyone can view permissions" ON public.permissions;
+CREATE POLICY "Anyone can view permissions"
   ON public.permissions FOR SELECT
   USING (true);
 
@@ -72,7 +76,8 @@ CREATE TABLE IF NOT EXISTS public.pages (
 
 ALTER TABLE public.pages ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Admins can do anything on pages"
+DROP POLICY IF EXISTS "Admins can do anything on pages" ON public.pages;
+CREATE POLICY "Admins can do anything on pages"
   ON public.pages FOR ALL
   USING (
     EXISTS (
@@ -81,11 +86,13 @@ CREATE POLICY IF NOT EXISTS "Admins can do anything on pages"
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Published pages are viewable by everyone"
+DROP POLICY IF EXISTS "Published pages are viewable by everyone" ON public.pages;
+CREATE POLICY "Published pages are viewable by everyone"
   ON public.pages FOR SELECT
   USING (status = 'published');
 
-CREATE POLICY IF NOT EXISTS "Authors can view their own pages"
+DROP POLICY IF EXISTS "Authors can view their own pages" ON public.pages;
+CREATE POLICY "Authors can view their own pages"
   ON public.pages FOR SELECT
   USING (author_id = auth.uid());
 
@@ -100,7 +107,8 @@ CREATE TABLE IF NOT EXISTS public.group_permissions (
 
 ALTER TABLE public.group_permissions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Admins can do anything on group_permissions"
+DROP POLICY IF EXISTS "Admins can do anything on group_permissions" ON public.group_permissions;
+CREATE POLICY "Admins can do anything on group_permissions"
   ON public.group_permissions FOR ALL
   USING (
     EXISTS (
@@ -126,7 +134,8 @@ CREATE TABLE IF NOT EXISTS public.site_modules (
 
 ALTER TABLE public.site_modules ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Admins can do anything on site_modules"
+DROP POLICY IF EXISTS "Admins can do anything on site_modules" ON public.site_modules;
+CREATE POLICY "Admins can do anything on site_modules"
   ON public.site_modules FOR ALL
   USING (
     EXISTS (
@@ -135,7 +144,8 @@ CREATE POLICY IF NOT EXISTS "Admins can do anything on site_modules"
     )
   );
 
-CREATE POLICY IF NOT EXISTS "Anyone can view site_modules"
+DROP POLICY IF EXISTS "Anyone can view site_modules" ON public.site_modules;
+CREATE POLICY "Anyone can view site_modules"
   ON public.site_modules FOR SELECT
   USING (true);
 
