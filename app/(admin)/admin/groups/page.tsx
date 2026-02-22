@@ -2,8 +2,8 @@ import { Suspense } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Plus, Users, Shield } from 'lucide-react'
+import { AddGroupDialog } from '@/components/admin/AddGroupDialog'
+import { Users, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 // Skeleton component for loading state
@@ -132,10 +132,7 @@ export default async function AdminGroupsPage() {
           <h1 className="text-2xl font-bold">Groups</h1>
           <p className="text-muted-foreground">Manage user groups and permissions</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Group
-        </Button>
+        <AddGroupDialog />
       </div>
 
       <Card>

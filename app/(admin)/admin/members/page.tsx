@@ -1,8 +1,7 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { UserPlus } from 'lucide-react'
+import { AddMemberDialog } from '@/components/admin/AddMemberDialog'
 import { MembersTable } from './MembersTable'
 
 async function getMembers() {
@@ -46,10 +45,7 @@ export default async function AdminMembersPage() {
           <h1 className="text-2xl font-bold">Members</h1>
           <p className="text-muted-foreground">Manage user accounts and permissions</p>
         </div>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Add Member
-        </Button>
+        <AddMemberDialog />
       </div>
 
       <Card>
