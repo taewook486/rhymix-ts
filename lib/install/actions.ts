@@ -13,7 +13,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createSupabaseClient } from '@supabase/ssr'
+import { createServerClient as createSupabaseClient } from '@supabase/ssr'
 import {
   saveSupabaseConfig,
   saveAdminInfo,
