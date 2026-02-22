@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/signin')
+    redirect('/member/signin')
   }
 
   return (

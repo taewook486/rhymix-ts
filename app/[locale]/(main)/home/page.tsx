@@ -176,6 +176,8 @@ export default async function LocaleHomePage({ params }: HomePageProps) {
     getRecentPosts(),
   ])
 
+  const localePrefix = `/${locale}`
+
   return (
     <div className="container mx-auto py-8 px-4">
       {/* Notice Widget - At the top with emphasized styling */}
@@ -184,7 +186,7 @@ export default async function LocaleHomePage({ params }: HomePageProps) {
           <NoticeWidget
             title={t.widget.notice}
             notices={notices}
-            moreLink="/board"
+            moreLink={`${localePrefix}/board`}
             limit={5}
           />
         </div>
@@ -207,7 +209,7 @@ export default async function LocaleHomePage({ params }: HomePageProps) {
               title={t.widget.recentPosts}
               description={t.widget.latestPosts}
               posts={recentPosts}
-              moreLink="/board"
+              moreLink={`${localePrefix}/board`}
               showThumbnail={true}
               showExcerpt={true}
             />
@@ -227,7 +229,7 @@ export default async function LocaleHomePage({ params }: HomePageProps) {
             </div>
             <div className="p-6 pt-0 space-y-2">
               <a
-                href="/board"
+                href={`${localePrefix}/board`}
                 className="flex items-center justify-between rounded-md border p-3 hover:bg-accent transition-colors"
               >
                 <span className="flex items-center gap-2">
@@ -238,7 +240,7 @@ export default async function LocaleHomePage({ params }: HomePageProps) {
                 <span>→</span>
               </a>
               <a
-                href="/documents"
+                href={`${localePrefix}/documents`}
                 className="flex items-center justify-between rounded-md border p-3 hover:bg-accent transition-colors"
               >
                 <span className="flex items-center gap-2">

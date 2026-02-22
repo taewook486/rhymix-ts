@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/signin')
+    redirect('/member/signin')
   }
 
   const { data: profile } = await supabase
@@ -24,7 +24,7 @@ export default async function ProfilePage() {
     .single()
 
   if (!profile) {
-    redirect('/signin')
+    redirect('/member/signin')
   }
 
   return (
