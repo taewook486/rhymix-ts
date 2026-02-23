@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AddGroupDialog } from '@/components/admin/AddGroupDialog'
 import { EditGroupDialog } from '@/components/admin/EditGroupDialog'
-import { Users, Shield, Trash2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { Users, Shield } from 'lucide-react'
+import { getGroups } from '@/app/actions/groups'
 
 // Skeleton component for loading state
 function GroupsSkeleton() {
@@ -22,59 +22,6 @@ function GroupsSkeleton() {
       </div>
     </div>
   )
-}
-
-async function getGroups() {
-  const supabase = await createClient()
-
-  // Get custom groups from groups table
-  const { data: groupsData, error: groupsError } = await supabase
-    .from('groups')
-    .select('*')
-    .order('created_at', { ascending: false })
-
-  const customGroups = (!groupsError && groupsData ? groupsData : []).map((group: any) => ({
-    ...group,
-    user_count: 0, // Will be calculated when group_members table is implemented
-    is_fallback: false,
-  }))
-
-  // Get system groups by role from profiles table
-  const { data: profiles, error: profilesError } = await supabase
-    .from('profiles')
-    .select('role, created_at')
-
-  let systemGroups: any[] = []
-
-  if (!profilesError && profiles) {
-    // Group by role and count
-    const roleCounts = (profiles || []).reduce((acc, profile) => {
-      const role = profile.role || 'user'
-      acc[role] = acc[role] || { count: 0, created_at: profile.created_at }
-      acc[role].count++
-      return acc
-    }, {} as Record<string, { count: number; created_at: string }>)
-
-    // Convert to array format
-    const roleDescriptions: Record<string, string> = {
-      admin: 'Full system access',
-      moderator: 'Content moderation permissions',
-      user: 'Regular user permissions',
-      guest: 'Limited guest access',
-    }
-
-    systemGroups = Object.entries(roleCounts).map(([role, data]) => ({
-      id: `system_${role}`,
-      name: role.charAt(0).toUpperCase() + role.slice(1) + 's',
-      description: roleDescriptions[role] || 'Custom role',
-      user_count: data.count,
-      created_at: data.created_at,
-      is_fallback: true, // Mark as system group (cannot be edited)
-    }))
-  }
-
-  // Combine system groups and custom groups
-  return [...systemGroups, ...customGroups]
 }
 
 // Groups Table Component
@@ -102,16 +49,16 @@ function GroupsTable({ groups }: { groups: any[] }) {
         {groups.map((group) => (
           <TableRow key={group.id}>
             <TableCell className="font-medium">{group.name}</TableCell>
-            <TableCell className="text-muted-foreground">{group.description}</TableCell>
+            <TableCell className="text-muted-foreground">{group.description || '-'}</TableCell>
             <TableCell className="text-center">
               <Badge variant="secondary" className="flex items-center gap-1 w-fit mx-auto">
                 <Users className="h-3 w-3" />
-                {group.user_count}
+                {group.member_count || 0}
               </Badge>
             </TableCell>
             <TableCell>{new Date(group.created_at).toLocaleDateString()}</TableCell>
             <TableCell className="text-right">
-              {group.is_fallback ? (
+              {group.is_system ? (
                 <span className="text-muted-foreground text-sm">System group</span>
               ) : (
                 <div className="flex justify-end gap-2">
@@ -126,19 +73,21 @@ function GroupsTable({ groups }: { groups: any[] }) {
   )
 }
 
-export default async function AdminGroupsPage() {
-  const groups = await getGroups()
+async function GroupsPageContent() {
+  const result = await getGroups()
+
+  if (!result.success || !result.data) {
+    return (
+      <div className="p-4 border border-destructive/50 rounded-lg bg-destructive/10">
+        <p className="text-destructive">Failed to load groups: {result.error}</p>
+      </div>
+    )
+  }
+
+  const groups = result.data
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Groups</h1>
-          <p className="text-muted-foreground">Manage user groups and permissions</p>
-        </div>
-        <AddGroupDialog />
-      </div>
-
+    <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -148,9 +97,7 @@ export default async function AdminGroupsPage() {
           <CardDescription>Create and manage user groups for role-based access control</CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<GroupsSkeleton />}>
-            <GroupsTable groups={groups} />
-          </Suspense>
+          <GroupsTable groups={groups} />
         </CardContent>
       </Card>
 
@@ -168,7 +115,7 @@ export default async function AdminGroupsPage() {
             <CardTitle className="text-sm font-medium">Total Members</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{groups.reduce((sum, g) => sum + g.user_count, 0)}</div>
+            <div className="text-2xl font-bold">{groups.reduce((sum, g) => sum + (g.member_count || 0), 0)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -177,11 +124,29 @@ export default async function AdminGroupsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {groups.filter((g) => g.name.toLowerCase().includes('admin')).length}
+              {groups.filter((g) => g.is_admin).length}
             </div>
           </CardContent>
         </Card>
       </div>
+    </>
+  )
+}
+
+export default async function AdminGroupsPage() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Groups</h1>
+          <p className="text-muted-foreground">Manage user groups and permissions</p>
+        </div>
+        <AddGroupDialog />
+      </div>
+
+      <Suspense fallback={<GroupsSkeleton />}>
+        <GroupsPageContent />
+      </Suspense>
     </div>
   )
 }

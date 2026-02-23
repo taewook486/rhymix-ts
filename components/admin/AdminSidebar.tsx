@@ -15,6 +15,7 @@ import {
   Shield,
   LogOut,
   X,
+  Languages,
 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
@@ -63,6 +64,7 @@ const navItems = [
     icon: Settings,
     children: [
       { title: 'General', href: '/admin/settings' },
+      { title: 'Translations', href: '/admin/translations' },
       { title: 'Modules', href: '/admin/modules' },
       { title: 'Analytics', href: '/admin/analytics' },
     ],
@@ -136,6 +138,7 @@ export function AdminSidebar() {
       icon: Settings,
       children: [
         { title: 'General', href: `${localePrefix}/admin/settings` },
+        { title: 'Translations', href: `${localePrefix}/admin/translations` },
         { title: 'Modules', href: `${localePrefix}/admin/modules` },
         { title: 'Analytics', href: `${localePrefix}/admin/analytics` },
       ],

@@ -8,13 +8,14 @@ import { CommentItem } from './CommentItem'
 import { CommentForm } from './CommentForm'
 import { CommentEditor } from './CommentEditor'
 import { cn } from '@/lib/utils'
-import type { CommentWithAuthor, CreateCommentInput } from '@/types/board'
+import type { CommentWithAuthor, CreateCommentInput, BoardConfig } from '@/types/board'
 
 interface CommentListProps {
   comments: CommentWithAuthor[]
   postId: string
   currentUserId?: string | null
   postAuthorId?: string | null
+  boardConfig?: BoardConfig
   onCreateComment: (input: CreateCommentInput) => Promise<{ success: boolean; error?: string }>
   onUpdateComment: (commentId: string, content: string, isSecret?: boolean) => Promise<{ success: boolean; error?: string }>
   onDeleteComment: (commentId: string) => Promise<{ success: boolean; error?: string }>
@@ -28,6 +29,7 @@ export function CommentList({
   postId,
   currentUserId,
   postAuthorId,
+  boardConfig,
   onCreateComment,
   onUpdateComment,
   onDeleteComment,
@@ -70,16 +72,27 @@ export function CommentList({
     setError(null)
   }, [])
 
-  const handleSubmitComment = async (content: string, isSecret: boolean) => {
+  const handleSubmitComment = async (data: {
+    content: string
+    isSecret: boolean
+    guest_name?: string
+    guest_password?: string
+    captcha_token?: string
+    captcha_answer?: string
+  }) => {
     setIsSubmitting(true)
     setError(null)
 
     try {
       const input: CreateCommentInput = {
         post_id: postId,
-        content,
-        is_secret: isSecret,
+        content: data.content,
+        is_secret: data.isSecret,
         ...(replyingTo && { parent_id: replyingTo.id }),
+        ...(data.guest_name && { guest_name: data.guest_name }),
+        ...(data.guest_password && { guest_password: data.guest_password }),
+        ...(data.captcha_token && { captcha_token: data.captcha_token }),
+        ...(data.captcha_answer && { captcha_answer: data.captcha_answer }),
       }
 
       const result = await onCreateComment(input)
@@ -171,6 +184,8 @@ export function CommentList({
             isSubmitting={isSubmitting}
             placeholder="Write a comment..."
             submitLabel="Post Comment"
+            isLoggedIn={!!currentUserId}
+            boardConfig={boardConfig}
           />
         </div>
 
@@ -198,6 +213,8 @@ export function CommentList({
                       isSubmitting={isSubmitting}
                       placeholder="Write a reply..."
                       submitLabel="Post Reply"
+                      isLoggedIn={!!currentUserId}
+                      boardConfig={boardConfig}
                     />
                   </div>
                 )}
@@ -244,6 +261,8 @@ export function CommentList({
                               isSubmitting={isSubmitting}
                               placeholder="Write a reply..."
                               submitLabel="Post Reply"
+                              isLoggedIn={!!currentUserId}
+                              boardConfig={boardConfig}
                             />
                           </div>
                         )}

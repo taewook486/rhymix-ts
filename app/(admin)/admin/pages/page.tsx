@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { AddPageDialog } from '@/components/admin/AddPageDialog'
 import { EditPageDialog } from '@/components/admin/EditPageDialog'
 import { FileText, Eye, EyeOff, Clock, User } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { getPages } from '@/app/actions/pages'
 
 // Skeleton component
 function PagesSkeleton() {
@@ -22,51 +22,6 @@ function PagesSkeleton() {
       </div>
     </div>
   )
-}
-
-// Get pages from pages table
-async function getPages() {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('pages')
-    .select('*')
-    .order('updated_at', { ascending: false })
-
-  if (error) {
-    console.error('Pages fetch error:', error)
-    return []
-  }
-
-  // Transform data to match expected format
-  const pages = await Promise.all(
-    (data || []).map(async (page) => {
-      // Get author display name separately
-      let authorName = 'Unknown'
-      if (page.author_id) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', page.author_id)
-          .single()
-        authorName = profile?.display_name || 'Unknown'
-      }
-
-      return {
-        id: page.id,
-        title: page.title,
-        slug: page.slug || '',
-        content: page.content,
-        status: page.status,
-        author: authorName,
-        view_count: page.view_count || 0,
-        created_at: page.created_at,
-        updated_at: page.updated_at,
-      }
-    })
-  )
-
-  return pages
 }
 
 // Pages Table Component
@@ -117,7 +72,7 @@ function PagesTable({ pages }: { pages: any[] }) {
             <TableCell>
               <div className="flex items-center gap-2">
                 <User className="h-3 w-3 text-muted-foreground" />
-                {page.author}
+                {page.author?.display_name || 'Unknown'}
               </div>
             </TableCell>
             <TableCell className="text-center">
@@ -139,19 +94,22 @@ function PagesTable({ pages }: { pages: any[] }) {
   )
 }
 
-export default async function AdminPagesPage() {
-  const pages = await getPages()
+// Pages Page Content Component
+async function PagesPageContent() {
+  const result = await getPages()
+
+  if (!result.success || !result.data) {
+    return (
+      <div className="p-4 border border-destructive/50 rounded-lg bg-destructive/10">
+        <p className="text-destructive">페이지를 불러오는데 실패했습니다: {result.error}</p>
+      </div>
+    )
+  }
+
+  const pages = result.data
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">페이지</h1>
-          <p className="text-muted-foreground">정적 페이지와 콘텐츠를 관리합니다</p>
-        </div>
-        <AddPageDialog />
-      </div>
-
+    <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -161,9 +119,7 @@ export default async function AdminPagesPage() {
           <CardDescription>정적 콘텐츠 페이지를 생성하고 관리합니다</CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<PagesSkeleton />}>
-            <PagesTable pages={pages} />
-          </Suspense>
+          <PagesTable pages={pages} />
         </CardContent>
       </Card>
 
@@ -207,6 +163,24 @@ export default async function AdminPagesPage() {
           </CardContent>
         </Card>
       </div>
+    </>
+  )
+}
+
+export default async function AdminPagesPage() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">페이지</h1>
+          <p className="text-muted-foreground">정적 페이지와 콘텐츠를 관리합니다</p>
+        </div>
+        <AddPageDialog />
+      </div>
+
+      <Suspense fallback={<PagesSkeleton />}>
+        <PagesPageContent />
+      </Suspense>
     </div>
   )
 }

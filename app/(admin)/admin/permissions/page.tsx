@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { AddPermissionDialog } from '@/components/admin/AddPermissionDialog'
 import { EditPermissionDialog } from '@/components/admin/EditPermissionDialog'
 import { Shield, Lock, Unlock } from 'lucide-react'
+import { getPermissions } from '@/app/actions/permissions'
 import { createClient } from '@/lib/supabase/server'
 
 // Skeleton component
@@ -24,11 +25,12 @@ function PermissionsSkeleton() {
   )
 }
 
-async function getPermissions() {
+// Helper function to get group info for permissions
+async function getPermissionsWithGroups() {
   const supabase = await createClient()
 
   // Get custom permissions from permissions table
-  const { data, error } = await supabase
+  const { data: permissionsData, error: permError } = await supabase
     .from('permissions')
     .select('*')
     .order('module', { ascending: true })
@@ -58,8 +60,7 @@ async function getPermissions() {
 
   // Build permission to groups map
   const permissionGroupMap = new Map<string, string[]>()
-  const permissionGroupIdMap = new Map<string, string[]>() // Store group IDs for EditPermissionDialog
-  const permissionSystemGroupIdMap = new Map<string, string[]>() // Store system group IDs
+  const permissionGroupIdMap = new Map<string, string[]>()
 
   if (!groupPermError && groupPermissions) {
     for (const gp of groupPermissions) {
@@ -75,26 +76,20 @@ async function getPermissions() {
     }
   }
 
-  const customPermissions = (!error && data ? data : []).map((permission: any) => {
-    // Get custom group IDs and names for this permission
+  const customPermissions = (!permError && permissionsData ? permissionsData : []).map((permission: any) => {
     const customGroupIds = permissionGroupIdMap.get(permission.id) || []
     const customGroupNames = permissionGroupMap.get(permission.id) || []
-
-    // Get system group IDs from permission.system_groups array
     const systemGroupIds = permission.system_groups || []
 
-    // Convert system group IDs to names
     const mappedSystemGroupNames = systemGroupIds
       .map((id: string) => systemGroupNames[id] || id)
       .filter(Boolean)
 
-    // Combine all group names for display
     const allGroupNames = [
       ...customGroupNames,
       ...mappedSystemGroupNames
     ]
 
-    // Combine all group IDs for EditPermissionDialog
     const allGroupIds = [
       ...customGroupIds,
       ...systemGroupIds
@@ -113,46 +108,55 @@ async function getPermissions() {
     {
       id: 'system_board_create',
       name: 'board.create',
+      slug: 'board.create',
       description: 'Create new posts',
       module: 'board',
       groups: ['Administrators', 'Moderators', 'Members'],
       is_fallback: true,
+      is_system: true,
     },
     {
       id: 'system_board_delete',
       name: 'board.delete',
+      slug: 'board.delete',
       description: 'Delete posts',
       module: 'board',
       groups: ['Administrators', 'Moderators'],
       is_fallback: true,
+      is_system: true,
     },
     {
       id: 'system_user_manage',
       name: 'user.manage',
+      slug: 'user.manage',
       description: 'Manage users',
       module: 'member',
       groups: ['Administrators'],
       is_fallback: true,
+      is_system: true,
     },
     {
       id: 'system_settings_update',
       name: 'settings.update',
+      slug: 'settings.update',
       description: 'Update site settings',
       module: 'admin',
       groups: ['Administrators'],
       is_fallback: true,
+      is_system: true,
     },
     {
       id: 'system_comment_moderate',
       name: 'comment.moderate',
+      slug: 'comment.moderate',
       description: 'Moderate comments',
       module: 'comment',
       groups: ['Administrators', 'Moderators'],
       is_fallback: true,
+      is_system: true,
     },
   ]
 
-  // Combine system permissions and custom permissions
   return [...systemPermissions, ...customPermissions]
 }
 
@@ -208,19 +212,11 @@ function PermissionsTable({ permissions }: { permissions: any[] }) {
   )
 }
 
-export default async function AdminPermissionsPage() {
-  const permissions = await getPermissions()
+async function PermissionsPageContent() {
+  const permissions = await getPermissionsWithGroups()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Permissions</h1>
-          <p className="text-muted-foreground">Manage access control permissions</p>
-        </div>
-        <AddPermissionDialog />
-      </div>
-
+    <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -232,9 +228,7 @@ export default async function AdminPermissionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<PermissionsSkeleton />}>
-            <PermissionsTable permissions={permissions} />
-          </Suspense>
+          <PermissionsTable permissions={permissions} />
         </CardContent>
       </Card>
 
@@ -287,6 +281,24 @@ export default async function AdminPermissionsPage() {
           </CardContent>
         </Card>
       </div>
+    </>
+  )
+}
+
+export default async function AdminPermissionsPage() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Permissions</h1>
+          <p className="text-muted-foreground">Manage access control permissions</p>
+        </div>
+        <AddPermissionDialog />
+      </div>
+
+      <Suspense fallback={<PermissionsSkeleton />}>
+        <PermissionsPageContent />
+      </Suspense>
     </div>
   )
 }

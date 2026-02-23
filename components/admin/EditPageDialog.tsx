@@ -23,6 +23,8 @@ import {
 } from '@/components/ui/select'
 import { Pencil, Loader2, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { updatePage, deletePage } from '@/app/actions/pages'
+import { useRouter } from 'next/navigation'
 
 interface EditPageDialogProps {
   page: {
@@ -35,13 +37,6 @@ interface EditPageDialogProps {
   onDelete?: () => void
 }
 
-interface UpdatePageResponse {
-  success: boolean
-  error?: string
-  message?: string
-  page?: any
-}
-
 export function EditPageDialog({ page, onDelete }: EditPageDialogProps) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(page.title)
@@ -51,6 +46,7 @@ export function EditPageDialog({ page, onDelete }: EditPageDialogProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const handleUpdatePage = async () => {
     // Validation
@@ -72,11 +68,11 @@ export function EditPageDialog({ page, onDelete }: EditPageDialogProps) {
       return
     }
 
-    if (!/^[a-z0-9-]+$/.test(slug)) {
+    if (!/^[a-z0-9_-]+$/.test(slug)) {
       toast({
         variant: 'destructive',
         title: '입력 오류',
-        description: '슬러그는 소문자, 숫자, 하이픈만 사용할 수 있습니다.',
+        description: '슬러그는 소문자, 숫자, 하이픈, 언더스코어만 사용할 수 있습니다.',
       })
       return
     }
@@ -84,23 +80,15 @@ export function EditPageDialog({ page, onDelete }: EditPageDialogProps) {
     setIsUpdating(true)
 
     try {
-      const response = await fetch(`/api/admin/pages/${page.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          slug: slug.trim(),
-          content: content.trim(),
-          status,
-        }),
+      const result = await updatePage(page.id, {
+        title: title.trim(),
+        slug: slug.trim(),
+        content: content.trim(),
+        status,
       })
 
-      const data: UpdatePageResponse = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '페이지 수정 실패')
+      if (!result.success) {
+        throw new Error(result.error || '페이지 수정 실패')
       }
 
       // Success
@@ -111,10 +99,8 @@ export function EditPageDialog({ page, onDelete }: EditPageDialogProps) {
 
       setOpen(false)
 
-      // Use setTimeout to avoid potential race conditions
-      setTimeout(() => {
-        window.location.reload()
-      }, 100)
+      // Refresh the page to show the updated page
+      router.refresh()
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -134,14 +120,10 @@ export function EditPageDialog({ page, onDelete }: EditPageDialogProps) {
     setIsDeleting(true)
 
     try {
-      const response = await fetch(`/api/admin/pages/${page.id}`, {
-        method: 'DELETE',
-      })
+      const result = await deletePage(page.id)
 
-      const data: UpdatePageResponse = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || '페이지 삭제 실패')
+      if (!result.success) {
+        throw new Error(result.error || '페이지 삭제 실패')
       }
 
       // Success
@@ -156,9 +138,8 @@ export function EditPageDialog({ page, onDelete }: EditPageDialogProps) {
         onDelete()
       }
 
-      setTimeout(() => {
-        window.location.reload()
-      }, 100)
+      // Refresh the page to show the updated list
+      router.refresh()
     } catch (error) {
       toast({
         variant: 'destructive',

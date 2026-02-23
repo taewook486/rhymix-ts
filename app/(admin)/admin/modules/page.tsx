@@ -4,9 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { InstallModuleDialog } from '@/components/admin/InstallModuleDialog'
-import { Switch } from '@/components/ui/switch'
+import { ToggleModuleButton } from '@/components/admin/ToggleModuleButton'
 import { Package, ToggleLeft, ToggleRight, Settings, Download } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { getModules, getModuleStats } from '@/app/actions/modules'
 
 // Skeleton component
 function ModulesSkeleton() {
@@ -24,97 +24,28 @@ function ModulesSkeleton() {
   )
 }
 
-// Get modules from site_modules table or return mock data
-async function getModules() {
-  const supabase = await createClient()
-
-  // Try to get from site_modules table first (if it exists)
-  const { data, error } = await supabase
-    .from('site_modules')
-    .select('*')
-    .order('is_core', { ascending: false })
-    .order('name', { ascending: true })
-
-  // If site_modules table exists, return that data
-  if (!error) {
-    return data || []
-  }
-
-  // Fallback: Try modules table (legacy name)
-  const { data: legacyData, error: legacyError } = await supabase
-    .from('modules')
-    .select('*')
-    .order('is_core', { ascending: false })
-    .order('name', { ascending: true })
-
-  if (!legacyError) {
-    return legacyData || []
-  }
-
-  // Final fallback: Return mock data until site_modules table is created
-  // TODO: Create site_modules table migration
-  return [
-    {
-      id: '1',
-      name: 'board',
-      title: 'Board Module',
-      description: 'Forum and discussion board functionality',
-      version: '1.0.0',
-      is_active: true,
-      is_core: true,
-      author: 'Rhymix',
-      installed_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '2',
-      name: 'member',
-      title: 'Member Module',
-      description: 'User registration and profile management',
-      version: '1.0.0',
-      is_active: true,
-      is_core: true,
-      author: 'Rhymix',
-      installed_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '3',
-      name: 'document',
-      title: 'Document Module',
-      description: 'Document and wiki content management',
-      version: '1.0.0',
-      is_active: true,
-      is_core: true,
-      author: 'Rhymix',
-      installed_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '4',
-      name: 'comment',
-      title: 'Comment Module',
-      description: 'Comment system for posts and documents',
-      version: '1.0.0',
-      is_active: true,
-      is_core: true,
-      author: 'Rhymix',
-      installed_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '5',
-      name: 'rss',
-      title: 'RSS Feed Module',
-      description: 'RSS feed generation for content',
-      version: '1.0.0',
-      is_active: false,
-      is_core: false,
-      author: 'Rhymix',
-      installed_at: '2024-01-05T00:00:00Z',
-    },
-  ]
+// Module Type Badge Colors
+const moduleTypeColors: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+  module: 'default',
+  widget: 'secondary',
+  addon: 'outline',
+  layout: 'secondary',
+  theme: 'outline'
 }
 
 // Modules Table Component
-function ModulesTable({ modules }: { modules: any[] }) {
-  if (modules.length === 0) {
+async function ModulesTable() {
+  const { data: modules, error } = await getModules(true) // Include disabled modules
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-destructive">
+        Error loading modules: {error}
+      </div>
+    )
+  }
+
+  if (!modules || modules.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         No modules found. Install your first module to get started.
@@ -139,15 +70,19 @@ function ModulesTable({ modules }: { modules: any[] }) {
           <TableRow key={module.id}>
             <TableCell>
               <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-muted-foreground" />
+                {module.icon ? (
+                  <span className="text-lg">{module.icon}</span>
+                ) : (
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                )}
                 <div>
                   <div className="font-medium">{module.title}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{module.name}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{module.slug}</div>
                 </div>
               </div>
             </TableCell>
             <TableCell className="text-muted-foreground max-w-xs truncate">
-              {module.description}
+              {module.description || 'No description'}
             </TableCell>
             <TableCell>
               <Badge variant="outline" className="font-mono">
@@ -156,27 +91,39 @@ function ModulesTable({ modules }: { modules: any[] }) {
             </TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
-                {module.is_active ? (
+                {module.is_enabled ? (
                   <ToggleRight className="h-4 w-4 text-green-500" />
                 ) : (
                   <ToggleLeft className="h-4 w-4 text-muted-foreground" />
                 )}
-                <Badge variant={module.is_active ? 'default' : 'secondary'}>
-                  {module.is_active ? 'Active' : 'Inactive'}
+                <Badge variant={module.is_enabled ? 'default' : 'secondary'}>
+                  {module.is_enabled ? 'Enabled' : 'Disabled'}
                 </Badge>
               </div>
             </TableCell>
             <TableCell>
-              <Badge variant={module.is_core ? 'default' : 'outline'}>
-                {module.is_core ? 'Core' : 'Add-on'}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant={moduleTypeColors[module.module_type] || 'outline'}>
+                  {module.module_type}
+                </Badge>
+                {module.is_system && (
+                  <Badge variant="destructive" className="text-xs">
+                    System
+                  </Badge>
+                )}
+              </div>
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-2">
+                <ToggleModuleButton
+                  moduleId={module.id}
+                  isEnabled={module.is_enabled}
+                  isSystem={module.is_system}
+                />
                 <Button variant="ghost" size="sm">
                   <Settings className="h-4 w-4" />
                 </Button>
-                {!module.is_core && (
+                {!module.is_system && (
                   <Button variant="ghost" size="sm">
                     <Download className="h-4 w-4" />
                   </Button>
@@ -190,9 +137,56 @@ function ModulesTable({ modules }: { modules: any[] }) {
   )
 }
 
-export default async function AdminModulesPage() {
-  const modules = await getModules()
+// Module Stats Cards
+async function ModuleStatsCards() {
+  const { data: stats } = await getModuleStats()
 
+  if (!stats) {
+    return null
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">Total Modules</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.total}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <ToggleRight className="h-4 w-4 text-green-500" />
+            Enabled
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.enabled}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">System Modules</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.system}</div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium">Add-ons</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.addons}</div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export default async function AdminModulesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -215,48 +209,14 @@ export default async function AdminModulesPage() {
         </CardHeader>
         <CardContent>
           <Suspense fallback={<ModulesSkeleton />}>
-            <ModulesTable modules={modules} />
+            <ModulesTable />
           </Suspense>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Modules</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{modules.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ToggleRight className="h-4 w-4 text-green-500" />
-              Active
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{modules.filter((m) => m.is_active).length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Core Modules</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{modules.filter((m) => m.is_core).length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Add-ons</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{modules.filter((m) => !m.is_core).length}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <Suspense fallback={null}>
+        <ModuleStatsCards />
+      </Suspense>
     </div>
   )
 }

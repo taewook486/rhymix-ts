@@ -292,6 +292,11 @@ export async function getFiles(filters?: {
   offset?: number
 }): Promise<GetFilesResponse> {
   try {
+    // Skip database access during build time
+    if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'development' && process.env.CI) {
+      return { success: true, data: [] }
+    }
+
     const supabase = await createClient()
 
     let query = supabase

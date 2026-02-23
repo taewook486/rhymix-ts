@@ -633,53 +633,6 @@ export async function getRecentActivities(limit: number = 10): Promise<
 }
 
 // =====================================================
-// Groups Types
-// =====================================================
-
-export interface Group {
-  id: string
-  name: string
-  description: string | null
-  user_count: number
-  created_at: string
-}
-
-export interface GroupInput {
-  name: string
-  description?: string
-}
-
-export interface GroupUpdate {
-  name?: string
-  description?: string
-}
-
-// =====================================================
-// Permissions Types
-// =====================================================
-
-export interface Permission {
-  id: string
-  name: string
-  description: string | null
-  module: string
-  groups: string[]
-  created_at: string
-}
-
-export interface PermissionInput {
-  name: string
-  description?: string
-  module: string
-}
-
-export interface PermissionUpdate {
-  name?: string
-  description?: string
-  module?: string
-}
-
-// =====================================================
 // Modules Types
 // =====================================================
 
@@ -693,36 +646,6 @@ export interface Module {
   is_core: boolean
   author: string
   installed_at: string
-}
-
-// =====================================================
-// Pages Types
-// =====================================================
-
-export interface Page {
-  id: string
-  title: string
-  slug: string
-  content: string
-  status: 'draft' | 'published'
-  author: string
-  view_count: number
-  created_at: string
-  updated_at: string
-}
-
-export interface PageInput {
-  title: string
-  slug: string
-  content: string
-  status?: 'draft' | 'published'
-}
-
-export interface PageUpdate {
-  title?: string
-  slug?: string
-  content?: string
-  status?: 'draft' | 'published'
 }
 
 // =====================================================
@@ -758,493 +681,15 @@ export interface AnalyticsData {
 
 // =====================================================
 // Groups Actions
+// Import from groups.ts: getGroups, getGroup, getGroupBySlug, createGroup, updateGroup, deleteGroup, getGroupMembers, addGroupMember, removeGroupMember, getUserGroups
+// Types: Group, GroupInput, GroupUpdate, GroupMember
 // =====================================================
-
-/**
- * Get all user groups
- * TODO: Replace mock data with actual Supabase query when groups table is created
- */
-export async function getGroups(): Promise<ActionResult<Group[]>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    // TODO: Implement actual Supabase query
-    // const supabase = await createClient()
-    // const { data, error } = await supabase
-    //   .from('groups')
-    //   .select(`
-    //     id,
-    //     name,
-    //     description,
-    //     created_at,
-    //     user_groups(count)
-    //   `)
-    //   .order('created_at', { ascending: false })
-    //
-    // if (error) {
-    //   console.error('Error fetching groups:', error)
-    //   return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-    // }
-    //
-    // const groups: Group[] = (data || []).map((group) => ({
-    //   id: group.id,
-    //   name: group.name,
-    //   description: group.description,
-    //   user_count: group.user_groups?.[0]?.count || 0,
-    //   created_at: group.created_at,
-    // }))
-    //
-    // return { success: true, data: groups }
-
-    // Mock data for now - replace when groups table is implemented
-    const mockGroups: Group[] = [
-      {
-        id: '1',
-        name: 'Administrators',
-        description: 'Full system access',
-        user_count: 3,
-        created_at: '2024-01-01T00:00:00Z',
-      },
-      {
-        id: '2',
-        name: 'Moderators',
-        description: 'Content moderation permissions',
-        user_count: 5,
-        created_at: '2024-01-02T00:00:00Z',
-      },
-      {
-        id: '3',
-        name: 'Members',
-        description: 'Regular user permissions',
-        user_count: 42,
-        created_at: '2024-01-03T00:00:00Z',
-      },
-    ]
-
-    return { success: true, data: mockGroups }
-  } catch (error) {
-    console.error('Unexpected error in getGroups:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Create a new user group
- * TODO: Replace mock data with actual Supabase insert when groups table is created
- */
-export async function createGroup(name: string, description: string): Promise<ActionResult<Group>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!name || name.trim().length === 0) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase insert
-    // const supabase = await createClient()
-    // const { data, error } = await supabase
-    //   .from('groups')
-    //   .insert({
-    //     name: name.trim(),
-    //     description: description?.trim() || null,
-    //   })
-    //   .select()
-    //   .single()
-    //
-    // if (error) {
-    //   console.error('Error creating group:', error)
-    //   return { success: false, error: ERROR_MESSAGES.CREATE_FAILED }
-    // }
-    //
-    // return { success: true, data: { ...data, user_count: 0 }, message: '그룹이 생성되었습니다.' }
-
-    // Mock response for now
-    const newGroup: Group = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      description: description?.trim() || null,
-      user_count: 0,
-      created_at: new Date().toISOString(),
-    }
-
-    return { success: true, data: newGroup, message: '그룹이 생성되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in createGroup:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Update an existing user group
- * TODO: Replace mock data with actual Supabase update when groups table is created
- */
-export async function updateGroup(id: string, data: GroupUpdate): Promise<ActionResult<Group>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!id) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase update
-    // const supabase = await createClient()
-    // const { data: updatedGroup, error } = await supabase
-    //   .from('groups')
-    //   .update({
-    //     ...data,
-    //     updated_at: new Date().toISOString(),
-    //   })
-    //   .eq('id', id)
-    //   .select(`
-    //     id,
-    //     name,
-    //     description,
-    //     created_at,
-    //     user_groups(count)
-    //   `)
-    //   .single()
-    //
-    // if (error) {
-    //   console.error('Error updating group:', error)
-    //   return { success: false, error: ERROR_MESSAGES.UPDATE_FAILED }
-    // }
-    //
-    // return { success: true, data: updatedGroup, message: '그룹이 수정되었습니다.' }
-
-    // Mock response for now
-    const mockGroup: Group = {
-      id,
-      name: data.name || 'Updated Group',
-      description: data.description || null,
-      user_count: 0,
-      created_at: new Date().toISOString(),
-    }
-
-    return { success: true, data: mockGroup, message: '그룹이 수정되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in updateGroup:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Delete a user group
- * TODO: Replace mock response with actual Supabase delete when groups table is created
- */
-export async function deleteGroup(id: string): Promise<ActionResult> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!id) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase delete
-    // const supabase = await createClient()
-    // const { error } = await supabase.from('groups').delete().eq('id', id)
-    //
-    // if (error) {
-    //   console.error('Error deleting group:', error)
-    //   return { success: false, error: ERROR_MESSAGES.DELETE_FAILED }
-    // }
-    //
-    // return { success: true, message: '그룹이 삭제되었습니다.' }
-
-    return { success: true, message: '그룹이 삭제되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in deleteGroup:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
 
 // =====================================================
 // Permissions Actions
+// Import from permissions.ts: getPermissions, getPermission, getPermissionBySlug, createPermission, updatePermission, deletePermission, getGroupPermissions, assignPermissionToGroup, revokePermissionFromGroup, getUserPermissions, hasPermission
+// Types: Permission, PermissionInput, PermissionUpdate, GroupPermission
 // =====================================================
-
-/**
- * Get all permissions
- * TODO: Replace mock data with actual Supabase query when permissions table is created
- */
-export async function getPermissions(): Promise<ActionResult<Permission[]>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    // TODO: Implement actual Supabase query
-    // const supabase = await createClient()
-    // const { data, error } = await supabase
-    //   .from('permissions')
-    //   .select(`
-    //     id,
-    //     name,
-    //     description,
-    //     module,
-    //     created_at,
-    //     group_permissions(
-    //       groups(name)
-    //     )
-    //   `)
-    //   .order('module', { ascending: true })
-    //   .order('name', { ascending: true })
-    //
-    // if (error) {
-    //   console.error('Error fetching permissions:', error)
-    //   return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-    // }
-    //
-    // const permissions: Permission[] = (data || []).map((perm) => ({
-    //   id: perm.id,
-    //   name: perm.name,
-    //   description: perm.description,
-    //   module: perm.module,
-    //   groups: perm.group_permissions?.map((gp: any) => gp.groups?.name).filter(Boolean) || [],
-    //   created_at: perm.created_at,
-    // }))
-    //
-    // return { success: true, data: permissions }
-
-    // Mock data for now - replace when permissions table is implemented
-    const mockPermissions: Permission[] = [
-      {
-        id: '1',
-        name: 'board.create',
-        description: 'Create new posts',
-        module: 'board',
-        groups: ['Administrators', 'Moderators', 'Members'],
-        created_at: '2024-01-01T00:00:00Z',
-      },
-      {
-        id: '2',
-        name: 'board.delete',
-        description: 'Delete posts',
-        module: 'board',
-        groups: ['Administrators', 'Moderators'],
-        created_at: '2024-01-01T00:00:00Z',
-      },
-      {
-        id: '3',
-        name: 'user.manage',
-        description: 'Manage users',
-        module: 'member',
-        groups: ['Administrators'],
-        created_at: '2024-01-01T00:00:00Z',
-      },
-      {
-        id: '4',
-        name: 'settings.update',
-        description: 'Update site settings',
-        module: 'admin',
-        groups: ['Administrators'],
-        created_at: '2024-01-01T00:00:00Z',
-      },
-      {
-        id: '5',
-        name: 'comment.moderate',
-        description: 'Moderate comments',
-        module: 'comment',
-        groups: ['Administrators', 'Moderators'],
-        created_at: '2024-01-01T00:00:00Z',
-      },
-    ]
-
-    return { success: true, data: mockPermissions }
-  } catch (error) {
-    console.error('Unexpected error in getPermissions:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Create a new permission
- * TODO: Replace mock data with actual Supabase insert when permissions table is created
- */
-export async function createPermission(
-  name: string,
-  description: string,
-  module: string
-): Promise<ActionResult<Permission>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!name || !module) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase insert
-    // const supabase = await createClient()
-    // const { data, error } = await supabase
-    //   .from('permissions')
-    //   .insert({
-    //     name: name.trim(),
-    //     description: description?.trim() || null,
-    //     module: module.trim(),
-    //   })
-    //   .select()
-    //   .single()
-    //
-    // if (error) {
-    //   console.error('Error creating permission:', error)
-    //   return { success: false, error: ERROR_MESSAGES.CREATE_FAILED }
-    // }
-    //
-    // return { success: true, data: { ...data, groups: [] }, message: '권한이 생성되었습니다.' }
-
-    // Mock response for now
-    const newPermission: Permission = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      description: description?.trim() || null,
-      module: module.trim(),
-      groups: [],
-      created_at: new Date().toISOString(),
-    }
-
-    return { success: true, data: newPermission, message: '권한이 생성되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in createPermission:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Update an existing permission
- * TODO: Replace mock data with actual Supabase update when permissions table is created
- */
-export async function updatePermission(id: string, data: PermissionUpdate): Promise<ActionResult<Permission>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!id) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase update
-    // const supabase = await createClient()
-    // const { data: updatedPermission, error } = await supabase
-    //   .from('permissions')
-    //   .update({
-    //     ...data,
-    //     updated_at: new Date().toISOString(),
-    //   })
-    //   .eq('id', id)
-    //   .select()
-    //   .single()
-    //
-    // if (error) {
-    //   console.error('Error updating permission:', error)
-    //   return { success: false, error: ERROR_MESSAGES.UPDATE_FAILED }
-    // }
-    //
-    // return { success: true, data: { ...updatedPermission, groups: [] }, message: '권한이 수정되었습니다.' }
-
-    // Mock response for now
-    const mockPermission: Permission = {
-      id,
-      name: data.name || 'updated.permission',
-      description: data.description || null,
-      module: data.module || 'general',
-      groups: [],
-      created_at: new Date().toISOString(),
-    }
-
-    return { success: true, data: mockPermission, message: '권한이 수정되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in updatePermission:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Delete a permission
- * TODO: Replace mock response with actual Supabase delete when permissions table is created
- */
-export async function deletePermission(id: string): Promise<ActionResult> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!id) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase delete
-    // const supabase = await createClient()
-    // const { error } = await supabase.from('permissions').delete().eq('id', id)
-    //
-    // if (error) {
-    //   console.error('Error deleting permission:', error)
-    //   return { success: false, error: ERROR_MESSAGES.DELETE_FAILED }
-    // }
-    //
-    // return { success: true, message: '권한이 삭제되었습니다.' }
-
-    return { success: true, message: '권한이 삭제되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in deletePermission:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Assign a permission to a group
- * TODO: Replace mock response with actual Supabase insert when group_permissions table is created
- */
-export async function assignPermissionToGroup(
-  groupId: string,
-  permissionId: string
-): Promise<ActionResult> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!groupId || !permissionId) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase insert
-    // const supabase = await createClient()
-    // const { error } = await supabase.from('group_permissions').insert({
-    //   group_id: groupId,
-    //   permission_id: permissionId,
-    // })
-    //
-    // if (error) {
-    //   console.error('Error assigning permission to group:', error)
-    //   return { success: false, error: ERROR_MESSAGES.UPDATE_FAILED }
-    // }
-    //
-    // return { success: true, message: '권한이 그룹에 할당되었습니다.' }
-
-    return { success: true, message: '권한이 그룹에 할당되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in assignPermissionToGroup:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
 
 // =====================================================
 // Modules Actions
@@ -1406,248 +851,9 @@ export async function toggleModule(id: string, isActive: boolean): Promise<Actio
 
 // =====================================================
 // Pages Actions
+// Import from pages.ts: getPages, getPage, getPageBySlug, getHomepage, createPage, updatePage, deletePage, incrementPageViewCount, getPagesByAuthor, getPublishedPages
+// Types: Page, PageInput, PageUpdate
 // =====================================================
-
-/**
- * Get all static pages
- * TODO: Replace mock data with actual Supabase query when pages table is created
- */
-export async function getPages(): Promise<ActionResult<Page[]>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    // TODO: Implement actual Supabase query
-    // const supabase = await createClient()
-    // const { data, error } = await supabase
-    //   .from('pages')
-    //   .select('*')
-    //   .order('updated_at', { ascending: false })
-    //
-    // if (error) {
-    //   console.error('Error fetching pages:', error)
-    //   return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-    // }
-    //
-    // return { success: true, data: data || [] }
-
-    // Mock data for now - replace when pages table is implemented
-    const mockPages: Page[] = [
-      {
-        id: '1',
-        title: 'About Us',
-        slug: 'about',
-        content: 'Learn about our company...',
-        status: 'published',
-        author: 'admin',
-        view_count: 1234,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-15T00:00:00Z',
-      },
-      {
-        id: '2',
-        title: 'Contact',
-        slug: 'contact',
-        content: 'Get in touch with us...',
-        status: 'published',
-        author: 'admin',
-        view_count: 567,
-        created_at: '2024-01-02T00:00:00Z',
-        updated_at: '2024-01-10T00:00:00Z',
-      },
-      {
-        id: '3',
-        title: 'Privacy Policy',
-        slug: 'privacy',
-        content: 'Our privacy policy...',
-        status: 'published',
-        author: 'admin',
-        view_count: 890,
-        created_at: '2024-01-03T00:00:00Z',
-        updated_at: '2024-01-05T00:00:00Z',
-      },
-      {
-        id: '4',
-        title: 'Terms of Service',
-        slug: 'terms',
-        content: 'Terms and conditions...',
-        status: 'published',
-        author: 'admin',
-        view_count: 445,
-        created_at: '2024-01-04T00:00:00Z',
-        updated_at: '2024-01-04T00:00:00Z',
-      },
-      {
-        id: '5',
-        title: 'FAQ Draft',
-        slug: 'faq-draft',
-        content: 'Frequently asked questions...',
-        status: 'draft',
-        author: 'admin',
-        view_count: 0,
-        created_at: '2024-01-20T00:00:00Z',
-        updated_at: '2024-01-20T00:00:00Z',
-      },
-    ]
-
-    return { success: true, data: mockPages }
-  } catch (error) {
-    console.error('Unexpected error in getPages:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Create a new static page
- * TODO: Replace mock data with actual Supabase insert when pages table is created
- */
-export async function createPage(
-  title: string,
-  slug: string,
-  content: string,
-  status: 'draft' | 'published' = 'draft'
-): Promise<ActionResult<Page>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!title || !slug) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase insert
-    // const supabase = await createClient()
-    // const { data, error } = await supabase
-    //   .from('pages')
-    //   .insert({
-    //     title: title.trim(),
-    //     slug: slug.trim().toLowerCase(),
-    //     content: content || '',
-    //     status,
-    //     author: access.user.email || 'unknown',
-    //     view_count: 0,
-    //   })
-    //   .select()
-    //   .single()
-    //
-    // if (error) {
-    //   console.error('Error creating page:', error)
-    //   return { success: false, error: ERROR_MESSAGES.CREATE_FAILED }
-    // }
-    //
-    // return { success: true, data, message: '페이지가 생성되었습니다.' }
-
-    // Mock response for now
-    const newPage: Page = {
-      id: crypto.randomUUID(),
-      title: title.trim(),
-      slug: slug.trim().toLowerCase(),
-      content: content || '',
-      status,
-      author: 'admin',
-      view_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    return { success: true, data: newPage, message: '페이지가 생성되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in createPage:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Update an existing static page
- * TODO: Replace mock data with actual Supabase update when pages table is created
- */
-export async function updatePage(id: string, data: PageUpdate): Promise<ActionResult<Page>> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!id) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase update
-    // const supabase = await createClient()
-    // const { data: updatedPage, error } = await supabase
-    //   .from('pages')
-    //   .update({
-    //     ...data,
-    //     slug: data.slug?.trim().toLowerCase(),
-    //     updated_at: new Date().toISOString(),
-    //   })
-    //   .eq('id', id)
-    //   .select()
-    //   .single()
-    //
-    // if (error) {
-    //   console.error('Error updating page:', error)
-    //   return { success: false, error: ERROR_MESSAGES.UPDATE_FAILED }
-    // }
-    //
-    // return { success: true, data: updatedPage, message: '페이지가 수정되었습니다.' }
-
-    // Mock response for now
-    const mockPage: Page = {
-      id,
-      title: data.title || 'Updated Page',
-      slug: data.slug?.toLowerCase() || 'updated-page',
-      content: data.content || '',
-      status: data.status || 'draft',
-      author: 'admin',
-      view_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    return { success: true, data: mockPage, message: '페이지가 수정되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in updatePage:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
-
-/**
- * Delete a static page
- * TODO: Replace mock response with actual Supabase delete when pages table is created
- */
-export async function deletePage(id: string): Promise<ActionResult> {
-  try {
-    const access = await checkAdminAccess()
-    if (!access) {
-      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
-    }
-
-    if (!id) {
-      return { success: false, error: ERROR_MESSAGES.INVALID_INPUT }
-    }
-
-    // TODO: Implement actual Supabase delete
-    // const supabase = await createClient()
-    // const { error } = await supabase.from('pages').delete().eq('id', id)
-    //
-    // if (error) {
-    //   console.error('Error deleting page:', error)
-    //   return { success: false, error: ERROR_MESSAGES.DELETE_FAILED }
-    // }
-    //
-    // return { success: true, message: '페이지가 삭제되었습니다.' }
-
-    return { success: true, message: '페이지가 삭제되었습니다.' }
-  } catch (error) {
-    console.error('Unexpected error in deletePage:', error)
-    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
-  }
-}
 
 // =====================================================
 // Analytics Actions
@@ -1655,7 +861,6 @@ export async function deletePage(id: string): Promise<ActionResult> {
 
 /**
  * Get analytics data for the admin dashboard
- * TODO: Replace mock data with actual Supabase queries for real analytics
  */
 export async function getAnalytics(): Promise<ActionResult<AnalyticsData>> {
   try {
@@ -1664,116 +869,166 @@ export async function getAnalytics(): Promise<ActionResult<AnalyticsData>> {
       return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
     }
 
-    // TODO: Implement actual Supabase queries
-    // const supabase = await createClient()
-    //
-    // // Get current stats
-    // const [usersResult, postsResult, commentsResult] = await Promise.all([
-    //   supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    //   supabase.from('posts').select('*', { count: 'exact', head: true }).is('deleted_at', null),
-    //   supabase.from('comments').select('*', { count: 'exact', head: true }).is('deleted_at', null),
-    // ])
-    //
-    // // Get views from post metadata or analytics table
-    // const { data: viewsData } = await supabase
-    //   .from('posts')
-    //   .select('view_count')
-    //   .is('deleted_at', null)
-    //
-    // const totalViews = viewsData?.reduce((sum, post) => sum + (post.view_count || 0), 0) || 0
-    //
-    // // Get previous month stats for growth calculation
-    // const lastMonth = new Date()
-    // lastMonth.setMonth(lastMonth.getMonth() - 1)
-    //
-    // const [lastMonthUsers, lastMonthPosts, lastMonthComments] = await Promise.all([
-    //   supabase.from('profiles').select('*', { count: 'exact', head: true }).lt('created_at', lastMonth.toISOString()),
-    //   supabase.from('posts').select('*', { count: 'exact', head: true }).is('deleted_at', null).lt('created_at', lastMonth.toISOString()),
-    //   supabase.from('comments').select('*', { count: 'exact', head: true }).is('deleted_at', null).lt('created_at', lastMonth.toISOString()),
-    // ])
-    //
-    // // Calculate growth percentages
-    // const calculateGrowth = (current: number, previous: number) => {
-    //   if (previous === 0) return current > 0 ? 100 : 0
-    //   return Math.round(((current - previous) / previous) * 100)
-    // }
-    //
-    // // Get top content by views
-    // const { data: topContent } = await supabase
-    //   .from('posts')
-    //   .select('id, title, view_count')
-    //   .is('deleted_at', null)
-    //   .order('view_count', { ascending: false })
-    //   .limit(5)
-    //
-    // // Get recent activity
-    // const { data: recentActivity } = await supabase
-    //   .from('activity_log')
-    //   .select('id, action, user_id, created_at, profiles(display_name)')
-    //   .order('created_at', { ascending: false })
-    //   .limit(5)
-    //
-    // return {
-    //   success: true,
-    //   data: {
-    //     stats: {
-    //       totalUsers: usersResult.count || 0,
-    //       totalPosts: postsResult.count || 0,
-    //       totalComments: commentsResult.count || 0,
-    //       totalViews,
-    //     },
-    //     growth: {
-    //       users: calculateGrowth(usersResult.count || 0, lastMonthUsers.count || 0),
-    //       posts: calculateGrowth(postsResult.count || 0, lastMonthPosts.count || 0),
-    //       comments: calculateGrowth(commentsResult.count || 0, lastMonthComments.count || 0),
-    //       views: 23, // Placeholder - would need analytics table
-    //     },
-    //     topContent: topContent?.map(item => ({
-    //       id: item.id,
-    //       title: item.title,
-    //       views: item.view_count || 0,
-    //       type: 'post',
-    //     })) || [],
-    //     recentActivity: recentActivity?.map(activity => ({
-    //       id: activity.id,
-    //       action: activity.action,
-    //       user: activity.profiles?.display_name || 'Unknown',
-    //       time: formatTimeAgo(activity.created_at),
-    //     })) || [],
-    //   },
-    // }
+    const supabase = await createClient()
 
-    // Mock data for now - replace when analytics implementation is ready
-    const mockAnalytics: AnalyticsData = {
-      stats: {
-        totalUsers: 156,
-        totalPosts: 842,
-        totalComments: 2341,
-        totalViews: 45678,
-      },
-      growth: {
-        users: 12,
-        posts: 8,
-        comments: 15,
-        views: 23,
-      },
-      topContent: [
-        { id: '1', title: 'Welcome to Rhymix TS', views: 1234, type: 'post' },
-        { id: '2', title: 'Getting Started Guide', views: 987, type: 'document' },
-        { id: '3', title: 'API Documentation', views: 765, type: 'document' },
-        { id: '4', title: 'Community Guidelines', views: 543, type: 'post' },
-        { id: '5', title: 'FAQ', views: 432, type: 'document' },
-      ],
-      recentActivity: [
-        { id: '1', action: 'New post', user: 'john_doe', time: '5 minutes ago' },
-        { id: '2', action: 'Comment added', user: 'jane_smith', time: '15 minutes ago' },
-        { id: '3', action: 'User registered', user: 'new_user', time: '1 hour ago' },
-        { id: '4', action: 'Document updated', user: 'admin', time: '2 hours ago' },
-        { id: '5', action: 'New board created', user: 'admin', time: '3 hours ago' },
-      ],
+    // Helper function to calculate growth percentage
+    const calculateGrowth = (current: number, previous: number): number => {
+      if (previous === 0) return current > 0 ? 100 : 0
+      return Math.round(((current - previous) / previous) * 100)
     }
 
-    return { success: true, data: mockAnalytics }
+    // Helper function to format time ago
+    const formatTimeAgo = (dateString: string): string => {
+      const now = new Date()
+      const date = new Date(dateString)
+      const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+      if (seconds < 60) return `${seconds} seconds ago`
+      const minutes = Math.floor(seconds / 60)
+      if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`
+      const hours = Math.floor(minutes / 60)
+      if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`
+      const days = Math.floor(hours / 24)
+      return `${days} day${days > 1 ? 's' : ''} ago`
+    }
+
+    // Get current stats
+    const [usersCount, postsCount, commentsCount] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('posts').select('*', { count: 'exact', head: true }).is('deleted_at', null),
+      supabase.from('comments').select('*', { count: 'exact', head: true }).is('deleted_at', null),
+    ])
+
+    // Get total views from posts and pages
+    const [postsViewsData, pagesViewsData] = await Promise.all([
+      supabase.from('posts').select('view_count').is('deleted_at', null),
+      supabase.from('pages').select('view_count'),
+    ])
+
+    const postsViews = postsViewsData.data?.reduce((sum, post) => sum + (post.view_count || 0), 0) || 0
+    const pagesViews = pagesViewsData.data?.reduce((sum, page) => sum + (page.view_count || 0), 0) || 0
+    const totalViews = postsViews + pagesViews
+
+    // Get previous month stats for growth calculation
+    const lastMonth = new Date()
+    lastMonth.setMonth(lastMonth.getMonth() - 1)
+
+    const [lastMonthUsers, lastMonthPosts, lastMonthComments] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).lt('created_at', lastMonth.toISOString()),
+      supabase.from('posts').select('*', { count: 'exact', head: true }).is('deleted_at', null).lt('created_at', lastMonth.toISOString()),
+      supabase.from('comments').select('*', { count: 'exact', head: true }).is('deleted_at', null).lt('created_at', lastMonth.toISOString()),
+    ])
+
+    // Get top content by views (posts and pages combined)
+    const [topPosts, topPages] = await Promise.all([
+      supabase
+        .from('posts')
+        .select('id, title, view_count')
+        .is('deleted_at', null)
+        .order('view_count', { ascending: false })
+        .limit(5),
+      supabase
+        .from('pages')
+        .select('id, title, view_count')
+        .eq('status', 'published')
+        .order('view_count', { ascending: false })
+        .limit(5),
+    ])
+
+    // Combine and sort top content
+    const allContent = [
+      ...(topPosts.data || []).map(item => ({ ...item, type: 'post' as const })),
+      ...(topPages.data || []).map(item => ({ ...item, type: 'page' as const })),
+    ].sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+      .slice(0, 5)
+
+    const topContent = allContent.map(item => ({
+      id: item.id,
+      title: item.title,
+      views: item.view_count || 0,
+      type: item.type,
+    }))
+
+    // Get recent activity from recent posts, comments, and new users
+    const now = new Date()
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+    const [recentPosts, recentComments, recentUsers] = await Promise.all([
+      supabase
+        .from('posts')
+        .select('id, created_at, profiles!inner(display_name)')
+        .is('deleted_at', null)
+        .gte('created_at', weekAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(3),
+      supabase
+        .from('comments')
+        .select('id, created_at, profiles!inner(display_name)')
+        .is('deleted_at', null)
+        .gte('created_at', weekAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(3),
+      supabase
+        .from('profiles')
+        .select('id, created_at, display_name')
+        .gte('created_at', weekAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(3),
+    ])
+
+    // Build recent activity list
+    const recentActivity: Array<{ id: string; action: string; user: string; time: string }> = []
+
+    recentPosts.data?.forEach(post => {
+      recentActivity.push({
+        id: post.id,
+        action: 'New post',
+        user: (post as any).profiles?.display_name || 'Unknown',
+        time: formatTimeAgo(post.created_at),
+      })
+    })
+
+    recentComments.data?.forEach(comment => {
+      recentActivity.push({
+        id: comment.id,
+        action: 'Comment added',
+        user: (comment as any).profiles?.display_name || 'Unknown',
+        time: formatTimeAgo(comment.created_at),
+      })
+    })
+
+    recentUsers.data?.forEach(user => {
+      recentActivity.push({
+        id: user.id,
+        action: 'User registered',
+        user: user.display_name || 'Unknown',
+        time: formatTimeAgo(user.created_at),
+      })
+    })
+
+    // Sort by time and limit
+    recentActivity.sort((a, b) => b.time.localeCompare(a.time))
+    recentActivity.splice(5)
+
+    return {
+      success: true,
+      data: {
+        stats: {
+          totalUsers: usersCount.count || 0,
+          totalPosts: postsCount.count || 0,
+          totalComments: commentsCount.count || 0,
+          totalViews,
+        },
+        growth: {
+          users: calculateGrowth(usersCount.count || 0, lastMonthUsers.count || 0),
+          posts: calculateGrowth(postsCount.count || 0, lastMonthPosts.count || 0),
+          comments: calculateGrowth(commentsCount.count || 0, lastMonthComments.count || 0),
+          views: 0, // Would need historical views tracking
+        },
+        topContent,
+        recentActivity,
+      },
+    }
   } catch (error) {
     console.error('Unexpected error in getAnalytics:', error)
     return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }

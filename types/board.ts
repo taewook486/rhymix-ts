@@ -35,7 +35,7 @@ export interface CommentQueryParams {
 
 export interface CreatePostInput {
   board_id: UUID
-  category_id?: UUID
+  category_id?: UUID | null
   title: string
   content: string
   content_html?: string
@@ -47,6 +47,12 @@ export interface CreatePostInput {
   visibility?: 'all' | 'member' | 'admin' | 'only_me'
   allow_comment?: boolean
   notify_message?: boolean
+  // Guest posting fields
+  is_guest?: boolean
+  guest_name?: string
+  guest_password?: string
+  captcha_token?: string
+  captcha_answer?: string
 }
 
 export interface UpdatePostInput {
@@ -70,6 +76,12 @@ export interface CreateCommentInput {
   content: string
   content_html?: string
   is_secret?: boolean
+  // Guest posting fields
+  is_guest?: boolean
+  guest_name?: string
+  guest_password?: string
+  captcha_token?: string
+  captcha_answer?: string
 }
 
 export interface UpdateCommentInput {
@@ -205,4 +217,68 @@ export interface VoteResult {
   vote_count: number
   vote_type: 'up' | 'down' | null
   has_voted: boolean
+}
+
+// =====================================================
+// Board Configuration Types
+// =====================================================
+
+export interface BoardConfig {
+  post_permission: 'all' | 'member' | 'admin'
+  comment_permission: 'all' | 'member' | 'admin'
+  list_count: number
+  search_list_count: number
+  page_count: number
+  anonymous: boolean
+  use_category: boolean
+  use_tags: boolean
+  use_editor: boolean
+  use_file: boolean
+  max_file_size: number
+  allowed_file_extensions: string[]
+  max_file_count: number
+  thumbnail_type: string
+  thumbnail_width: number
+  thumbnail_height: number
+  allow_captcha: boolean
+  allow_anonymous: boolean
+  allow_signup: boolean
+  hide_category: boolean
+  list_categories: boolean
+  protect_content: boolean
+  protect_comment: boolean
+  protect_view_count: boolean
+  protect_voted_count: boolean
+  protect_blamed_count: boolean
+  protect_noticed: boolean
+  protect_secret: boolean
+  protect_document_category: boolean
+  non_login_vote: boolean
+  only_image: boolean
+  only_image_extension: string[]
+  disable_copy: boolean
+}
+
+export interface BoardWithConfig {
+  id: UUID
+  slug: string
+  title: string
+  description: string | null
+  content: string | null
+  icon: string | null
+  banner_url: string | null
+  config: BoardConfig
+  skin: string
+  list_order: string
+  sort_order: string
+  view_count: number
+  post_count: number
+  comment_count: number
+  is_notice: boolean
+  is_hidden: boolean
+  is_locked: boolean
+  is_secret: boolean
+  admin_id: UUID | null
+  created_at: TIMESTAMPTZ
+  updated_at: TIMESTAMPTZ
 }

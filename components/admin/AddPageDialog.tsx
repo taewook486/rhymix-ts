@@ -23,12 +23,8 @@ import {
 } from '@/components/ui/select'
 import { Plus, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-
-interface CreatePageResponse {
-  success: boolean
-  error?: string
-  message?: string
-}
+import { createPage } from '@/app/actions/pages'
+import { useRouter } from 'next/navigation'
 
 export function AddPageDialog() {
   const [open, setOpen] = useState(false)
@@ -38,6 +34,7 @@ export function AddPageDialog() {
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [isCreating, setIsCreating] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const handleCreatePage = async () => {
     // Validation
@@ -60,11 +57,11 @@ export function AddPageDialog() {
     }
 
     // Validate slug format
-    if (!/^[a-z0-9-]+$/.test(slug)) {
+    if (!/^[a-z0-9_-]+$/.test(slug)) {
       toast({
         variant: 'destructive',
         title: '입력 오류',
-        description: '슬러그는 소문자, 숫자, 하이픈만 사용할 수 있습니다.',
+        description: '슬러그는 소문자, 숫자, 하이픈, 언더스코어만 사용할 수 있습니다.',
       })
       return
     }
@@ -72,23 +69,15 @@ export function AddPageDialog() {
     setIsCreating(true)
 
     try {
-      const response = await fetch('/api/admin/pages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          slug: slug.trim(),
-          content: content.trim(),
-          status,
-        }),
+      const result = await createPage({
+        title: title.trim(),
+        slug: slug.trim(),
+        content: content.trim(),
+        status,
       })
 
-      const data: CreatePageResponse = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to create page')
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create page')
       }
 
       // Success
@@ -103,10 +92,8 @@ export function AddPageDialog() {
         description: `"${title}" 페이지가 생성되었습니다.`,
       })
 
-      // Use setTimeout to avoid potential race conditions
-      setTimeout(() => {
-        window.location.reload()
-      }, 100)
+      // Refresh the page to show the new page
+      router.refresh()
     } catch (error) {
       toast({
         variant: 'destructive',

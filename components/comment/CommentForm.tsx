@@ -1,16 +1,27 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Send, X, Lock, Loader2 } from 'lucide-react'
+import { Send, X, Lock, Loader2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { CaptchaInput } from '@/components/captcha'
 import { cn } from '@/lib/utils'
+import type { BoardConfig } from '@/types/board'
 
 const MAX_CONTENT_LENGTH = 5000
 const MIN_CONTENT_LENGTH = 1
 
 interface CommentFormProps {
-  onSubmit: (content: string, isSecret: boolean) => Promise<{ success: boolean; error?: string }>
+  onSubmit: (data: {
+    content: string
+    isSecret: boolean
+    guest_name?: string
+    guest_password?: string
+    captcha_token?: string
+    captcha_answer?: string
+  }) => Promise<{ success: boolean; error?: string }>
   onCancel?: () => void
   isSubmitting?: boolean
   placeholder?: string
@@ -19,6 +30,9 @@ interface CommentFormProps {
   initialSecret?: boolean
   className?: string
   showSecretOption?: boolean
+  // Guest posting support
+  isLoggedIn?: boolean
+  boardConfig?: BoardConfig
 }
 
 export function CommentForm({
@@ -31,11 +45,22 @@ export function CommentForm({
   initialSecret = false,
   className,
   showSecretOption = true,
+  isLoggedIn = true,
+  boardConfig,
 }: CommentFormProps) {
   const [content, setContent] = useState(initialContent)
   const [isSecret, setIsSecret] = useState(initialSecret)
   const [error, setError] = useState<string | null>(null)
   const [focused, setFocused] = useState(false)
+  // Guest posting state
+  const [guestName, setGuestName] = useState('')
+  const [guestPassword, setGuestPassword] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaAnswer, setCaptchaAnswer] = useState('')
+
+  const allowAnonymous = boardConfig?.allow_anonymous || false
+  const allowCaptcha = boardConfig?.allow_captcha || false
+  const isGuestMode = !isLoggedIn && allowAnonymous
 
   const characterCount = content.length
   const isOverLimit = characterCount > MAX_CONTENT_LENGTH
@@ -45,16 +70,54 @@ export function CommentForm({
   const handleSubmit = useCallback(async () => {
     if (!isValid || isSubmitting) return
 
+    // Validate guest fields
+    if (isGuestMode) {
+      if (!guestName || guestName.trim().length < 2) {
+        setError('Name must be at least 2 characters.')
+        return
+      }
+      if (!guestPassword || guestPassword.length < 4) {
+        setError('Password must be at least 4 characters.')
+        return
+      }
+      if (allowCaptcha && !captchaAnswer) {
+        setError('Please complete the captcha.')
+        return
+      }
+    }
+
     setError(null)
-    const result = await onSubmit(content.trim(), isSecret)
+    const result = await onSubmit({
+      content: content.trim(),
+      isSecret,
+      guest_name: isGuestMode ? guestName.trim() : undefined,
+      guest_password: isGuestMode ? guestPassword : undefined,
+      captcha_token: isGuestMode && allowCaptcha ? captchaToken : undefined,
+      captcha_answer: isGuestMode && allowCaptcha ? captchaAnswer : undefined,
+    })
 
     if (result.success) {
       setContent('')
       setIsSecret(false)
+      setGuestName('')
+      setGuestPassword('')
+      setCaptchaAnswer('')
     } else {
       setError(result.error || 'Failed to submit comment')
     }
-  }, [content, isSecret, isValid, isSubmitting, onSubmit])
+  }, [
+    content,
+    isSecret,
+    isValid,
+    isSubmitting,
+    onSubmit,
+    isGuestMode,
+    guestName,
+    guestPassword,
+    allowCaptcha,
+    captchaToken,
+    captchaAnswer,
+  ])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -71,11 +134,58 @@ export function CommentForm({
     setContent('')
     setIsSecret(false)
     setError(null)
+    setGuestName('')
+    setGuestPassword('')
+    setCaptchaAnswer('')
     onCancel?.()
   }, [onCancel])
 
   return (
     <div className={cn('space-y-3', className)}>
+      {/* Guest Information (only show for non-logged-in users when guest posting is enabled) */}
+      {isGuestMode && (
+        <div className="space-y-3 p-3 bg-muted/30 rounded-lg border">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <User className="h-4 w-4" />
+            Guest Information
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="guest_name" className="text-xs">Name *</Label>
+              <Input
+                id="guest_name"
+                placeholder="Your name"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                disabled={isSubmitting}
+                className="h-8"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="guest_password" className="text-xs">Password *</Label>
+              <Input
+                id="guest_password"
+                type="password"
+                placeholder="Password"
+                value={guestPassword}
+                onChange={(e) => setGuestPassword(e.target.value)}
+                disabled={isSubmitting}
+                className="h-8"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Captcha (show for guests when captcha is enabled) */}
+      {isGuestMode && allowCaptcha && (
+        <CaptchaInput
+          onTokenChange={setCaptchaToken}
+          onAnswerChange={setCaptchaAnswer}
+          disabled={isSubmitting}
+        />
+      )}
+
       {/* Textarea */}
       <div className="relative">
         <Textarea

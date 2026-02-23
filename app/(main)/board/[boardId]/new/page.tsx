@@ -1,7 +1,9 @@
 import { notFound, redirect } from 'next/navigation'
 import { PostForm } from '@/components/board'
 import { createClient } from '@/lib/supabase/server'
+import { createPost as createPostAction } from '@/app/actions/board'
 import type { Database } from '@/lib/supabase/database.types'
+import type { BoardConfig } from '@/types/board'
 
 type Category = Database['public']['Tables']['categories']['Row']
 
@@ -19,10 +21,6 @@ export default async function NewPostPage({ params }: NewPostPageProps) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect(`/login?redirect=/board/${boardId}/new`)
-  }
-
   // Get board
   const { data: board, error: boardError } = await supabase
     .from('boards')
@@ -32,6 +30,15 @@ export default async function NewPostPage({ params }: NewPostPageProps) {
 
   if (boardError || !board) {
     notFound()
+  }
+
+  // Get board config
+  const boardConfig = (board.config as BoardConfig) || {}
+  const allowAnonymous = boardConfig.allow_anonymous || false
+
+  // Redirect to login if not logged in and guest posting not allowed
+  if (!user && !allowAnonymous) {
+    redirect(`/signin?redirect=/board/${boardId}/new`)
   }
 
   // Check if board allows posting
@@ -63,18 +70,12 @@ export default async function NewPostPage({ params }: NewPostPageProps) {
     category_id?: string
     is_secret?: boolean
     tags?: string
+    guest_name?: string
+    guest_password?: string
+    captcha_token?: string
+    captcha_answer?: string
   }) {
     'use server'
-
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      throw new Error('You must be logged in to create a post')
-    }
 
     // Parse tags
     const tags = data.tags
@@ -84,21 +85,23 @@ export default async function NewPostPage({ params }: NewPostPageProps) {
           .filter(Boolean)
       : []
 
-    // Create post
-    const { error } = await supabase.from('posts').insert({
+    const result = await createPostAction({
       board_id: board.id,
-      author_id: user.id,
       title: data.title,
       content: data.content,
-      category_id: data.category_id || null,
+      category_id: data.category_id || undefined,
       is_secret: data.is_secret || false,
       tags,
       status: 'published',
-      published_at: new Date().toISOString(),
+      is_guest: !!(data.guest_name && data.guest_password),
+      guest_name: data.guest_name,
+      guest_password: data.guest_password,
+      captcha_token: data.captcha_token,
+      captcha_answer: data.captcha_answer,
     })
 
-    if (error) {
-      throw new Error(error.message)
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create post')
     }
   }
 
@@ -108,6 +111,8 @@ export default async function NewPostPage({ params }: NewPostPageProps) {
       <PostForm
         boardSlug={boardId}
         categories={categories || []}
+        boardConfig={boardConfig}
+        isLoggedIn={!!user}
         onSubmit={createPost}
         isEditing={false}
       />

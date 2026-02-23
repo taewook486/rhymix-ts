@@ -196,9 +196,7 @@ dist-ssr/
 .netlify/
 .firebase/
 
-# ===========================================
-# E2E Test Results
-# ===========================================
+# User Custom Patterns (preserved by moai update)
 test-results/
 playwright-report/
 playwright/.cache/

@@ -7,7 +7,7 @@ import type { ActionResult } from '@/types/board'
 // Search Types
 // =====================================================
 
-export type SearchResultType = 'post' | 'comment' | 'document' | 'board'
+export type SearchResultType = 'post' | 'comment' | 'document' | 'page' | 'board'
 
 export interface SearchFilters {
   type?: SearchResultType | SearchResultType[]
@@ -90,6 +90,8 @@ function generateResultUrl(type: SearchResultType, id: string, boardId?: string)
       return `/comment/${id}`
     case 'document':
       return `/document/${id}`
+    case 'page':
+      return `/pages/${id}`
     case 'board':
       return `/board/${id}`
     default:
@@ -175,7 +177,7 @@ export async function searchContent(
       ? Array.isArray(type)
         ? type
         : [type]
-      : ['post', 'comment', 'document']
+      : ['post', 'comment', 'document', 'page']
 
     const results: SearchResult[] = []
     let total = 0
@@ -226,6 +228,22 @@ export async function searchContent(
       if (documentResults.success && documentResults.data) {
         results.push(...documentResults.data.results)
         total += documentResults.data.total
+      }
+    }
+
+    // Search pages
+    if (searchTypes.includes('page')) {
+      const pageResults = await searchPages(supabase, tsQuery, trigramQuery, {
+        author_id,
+        date_from,
+        date_to,
+        limit,
+        offset,
+      })
+
+      if (pageResults.success && pageResults.data) {
+        results.push(...pageResults.data.results)
+        total += pageResults.data.total
       }
     }
 
@@ -700,6 +718,88 @@ async function searchDocumentsFallback(
 }
 
 /**
+ * Search pages with full-text search
+ */
+async function searchPages(
+  supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
+  tsQuery: string,
+  trigramQuery: string,
+  options: {
+    author_id?: string
+    date_from?: string
+    date_to?: string
+    limit: number
+    offset: number
+  }
+): Promise<ActionResult<{ results: SearchResult[]; total: number }>> {
+  try {
+    const { author_id, date_from, date_to, limit, offset } = options
+
+    let query = supabase
+      .from('pages')
+      .select(
+        `
+        id,
+        title,
+        content,
+        slug,
+        author_id,
+        created_at,
+        profiles:author_id (
+          display_name
+        )
+      `,
+        { count: 'exact' }
+      )
+      .eq('status', 'published')
+
+    if (author_id) {
+      query = query.eq('author_id', author_id)
+    }
+
+    if (date_from) {
+      query = query.gte('created_at', date_from)
+    }
+
+    if (date_to) {
+      query = query.lte('created_at', date_to)
+    }
+
+    // Use ILIKE for page search (pages may not have search_vector)
+    if (trigramQuery) {
+      query = query.or(`title.ilike.%${trigramQuery}%,content.ilike.%${trigramQuery}%`)
+    }
+
+    query = query.range(offset, offset + limit - 1).order('created_at', { ascending: false })
+
+    const { data, error, count } = await query
+
+    if (error) {
+      console.error('Error searching pages:', error)
+      return { success: true, data: { results: [], total: 0 } }
+    }
+
+    const results: SearchResult[] = (data || []).map((page: any) => ({
+      type: 'page' as SearchResultType,
+      id: page.id,
+      title: page.title,
+      excerpt: highlightExcerpt(
+        truncateText(page.content?.replace(/<[^>]*>/g, '') || ''),
+        trigramQuery
+      ),
+      url: generateResultUrl('page', page.slug),
+      author: page.profiles?.display_name || null,
+      created_at: page.created_at,
+    }))
+
+    return { success: true, data: { results, total: count || 0 } }
+  } catch (error) {
+    console.error('Error in searchPages:', error)
+    return { success: false, error: ERROR_MESSAGES.SEARCH_FAILED }
+  }
+}
+
+/**
  * Get search suggestions based on partial query
  * Returns matching titles and popular terms
  */
@@ -745,6 +845,22 @@ export async function getSearchSuggestions(query: string): Promise<ActionResult<
       documents.forEach((doc) => {
         if (doc.title) {
           suggestions.add(doc.title)
+        }
+      })
+    }
+
+    // Get matching page titles
+    const { data: pages } = await supabase
+      .from('pages')
+      .select('title')
+      .eq('status', 'published')
+      .ilike('title', `%${trimmedQuery}%`)
+      .limit(5)
+
+    if (pages) {
+      pages.forEach((page) => {
+        if (page.title) {
+          suggestions.add(page.title)
         }
       })
     }

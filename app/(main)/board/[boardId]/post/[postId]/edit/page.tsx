@@ -130,6 +130,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
           is_secret: post.is_secret,
           tags: post.tags || [],
         }}
+        isLoggedIn={!!user}
         onSubmit={updatePost}
         isEditing={true}
       />

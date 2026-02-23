@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { verifyCaptcha } from '@/lib/captcha'
+import { createHash } from 'crypto'
 import type { UUID } from '@/lib/supabase/database.types'
 import type {
   QueryParams,
@@ -17,6 +19,7 @@ import type {
   CommentWithAuthor,
   CategoryWithChildren,
   VoteResult,
+  BoardConfig,
 } from '@/types/board'
 
 // =====================================================
@@ -279,14 +282,10 @@ export async function createPost(input: CreatePostInput): Promise<ActionResult<P
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) {
-      return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
-    }
-
-    // Check if board is locked
+    // Get board configuration
     const { data: board, error: boardError } = await supabase
       .from('boards')
-      .select('is_locked')
+      .select('is_locked, config')
       .eq('id', input.board_id)
       .single()
 
@@ -298,30 +297,71 @@ export async function createPost(input: CreatePostInput): Promise<ActionResult<P
       return { success: false, error: ERROR_MESSAGES.BOARD_LOCKED }
     }
 
+    const config = (board.config as BoardConfig) || {}
+    const allowAnonymous = config.allow_anonymous || false
+    const allowCaptcha = config.allow_captcha || false
+
+    // Handle guest posting
+    if (!user) {
+      // Check if guest posting is allowed
+      if (!allowAnonymous) {
+        return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
+      }
+
+      // Verify captcha if required
+      if (allowCaptcha && input.captcha_token && input.captcha_answer) {
+        const isCaptchaValid = verifyCaptcha(input.captcha_token, input.captcha_answer)
+        if (!isCaptchaValid) {
+          return { success: false, error: '캡차 인증에 실패했습니다. 다시 시도해주세요.' }
+        }
+      } else if (allowCaptcha) {
+        return { success: false, error: '캡차 인증이 필요합니다.' }
+      }
+
+      // Validate guest name and password
+      if (!input.guest_name || input.guest_name.trim().length < 2) {
+        return { success: false, error: '이름을 2자 이상 입력해주세요.' }
+      }
+      if (!input.guest_password || input.guest_password.length < 4) {
+        return { success: false, error: '비밀번호를 4자 이상 입력해주세요.' }
+      }
+    }
+
     // Create excerpt from content
     const excerpt = input.excerpt || input.content.replace(/<[^>]*>/g, '').substring(0, 200)
 
+    // Hash guest password if provided
+    const guestPasswordHash = input.guest_password
+      ? createHash('sha256').update(input.guest_password).digest('hex')
+      : null
+
+    const insertData: Record<string, unknown> = {
+      board_id: input.board_id,
+      category_id: input.category_id || null,
+      author_id: user?.id || null,
+      author_name: user
+        ? (await supabase.from('profiles').select('display_name').eq('id', user.id).single())
+            .data?.display_name
+        : input.guest_name,
+      author_password: guestPasswordHash,
+      title: input.title,
+      content: input.content,
+      content_html: input.content_html || null,
+      excerpt,
+      status: input.status || 'published',
+      visibility: input.visibility || 'all',
+      is_secret: input.is_secret || false,
+      is_notice: input.is_notice || false,
+      tags: input.tags || [],
+      allow_comment: input.allow_comment !== false,
+      notify_message: input.notify_message || false,
+      published_at: input.status === 'published' ? new Date().toISOString() : null,
+      ip_address: null, // IP would be captured at edge level
+    }
+
     const { data, error } = await supabase
       .from('posts')
-      .insert({
-        board_id: input.board_id,
-        category_id: input.category_id || null,
-        author_id: user.id,
-        author_name: (await supabase.from('profiles').select('display_name').eq('id', user.id).single())
-          .data?.display_name,
-        title: input.title,
-        content: input.content,
-        content_html: input.content_html || null,
-        excerpt,
-        status: input.status || 'published',
-        visibility: input.visibility || 'all',
-        is_secret: input.is_secret || false,
-        is_notice: input.is_notice || false,
-        tags: input.tags || [],
-        allow_comment: input.allow_comment !== false,
-        notify_message: input.notify_message || false,
-        published_at: input.status === 'published' ? new Date().toISOString() : null,
-      })
+      .insert(insertData)
       .select(
         `
         id,
@@ -613,14 +653,16 @@ export async function createComment(input: CreateCommentInput): Promise<ActionRe
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) {
-      return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
-    }
-
-    // Check if post allows comments
+    // Check if post allows comments and get board config for guest posting
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('allow_comment, is_locked')
+      .select(`
+        allow_comment,
+        is_locked,
+        board:boards (
+          config
+        )
+      `)
       .eq('id', input.post_id)
       .single()
 
@@ -630,6 +672,36 @@ export async function createComment(input: CreateCommentInput): Promise<ActionRe
 
     if (!post.allow_comment || post.is_locked) {
       return { success: false, error: ERROR_MESSAGES.POST_LOCKED }
+    }
+
+    const boardConfig = ((post.board as any)?.config as BoardConfig) || {}
+    const allowAnonymous = boardConfig.allow_anonymous || false
+    const allowCaptcha = boardConfig.allow_captcha || false
+
+    // Handle guest commenting
+    if (!user) {
+      // Check if guest commenting is allowed
+      if (!allowAnonymous) {
+        return { success: false, error: ERROR_MESSAGES.UNAUTHORIZED }
+      }
+
+      // Verify captcha if required
+      if (allowCaptcha && input.captcha_token && input.captcha_answer) {
+        const isCaptchaValid = verifyCaptcha(input.captcha_token, input.captcha_answer)
+        if (!isCaptchaValid) {
+          return { success: false, error: '캡차 인증에 실패했습니다. 다시 시도해주세요.' }
+        }
+      } else if (allowCaptcha) {
+        return { success: false, error: '캡차 인증이 필요합니다.' }
+      }
+
+      // Validate guest name and password
+      if (!input.guest_name || input.guest_name.trim().length < 2) {
+        return { success: false, error: '이름을 2자 이상 입력해주세요.' }
+      }
+      if (!input.guest_password || input.guest_password.length < 4) {
+        return { success: false, error: '비밀번호를 4자 이상 입력해주세요.' }
+      }
     }
 
     // Calculate depth and path for threaded comments
@@ -662,21 +734,30 @@ export async function createComment(input: CreateCommentInput): Promise<ActionRe
       orderIndex = (lastComment?.order_index || 0) + 1
     }
 
+    // Hash guest password if provided
+    const guestPasswordHash = input.guest_password
+      ? createHash('sha256').update(input.guest_password).digest('hex')
+      : null
+
+    const insertData: Record<string, unknown> = {
+      post_id: input.post_id,
+      parent_id: input.parent_id || null,
+      author_id: user?.id || null,
+      author_name: user
+        ? (await supabase.from('profiles').select('display_name').eq('id', user.id).single()).data?.display_name
+        : input.guest_name,
+      author_password: guestPasswordHash,
+      content: input.content,
+      content_html: input.content_html || null,
+      is_secret: input.is_secret || false,
+      depth,
+      path,
+      order_index: orderIndex,
+    }
+
     const { data, error } = await supabase
       .from('comments')
-      .insert({
-        post_id: input.post_id,
-        parent_id: input.parent_id || null,
-        author_id: user.id,
-        author_name: (await supabase.from('profiles').select('display_name').eq('id', user.id).single()).data
-          ?.display_name,
-        content: input.content,
-        content_html: input.content_html || null,
-        is_secret: input.is_secret || false,
-        depth,
-        path,
-        order_index: orderIndex,
-      })
+      .insert(insertData)
       .select(
         `
         id,
