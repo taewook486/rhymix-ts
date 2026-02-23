@@ -40,21 +40,16 @@ const mockNotifications = [
 ]
 
 // Mock Supabase client
-const mockFrom = vi.fn(() => ({
-  select: vi.fn(() => ({
-    eq: vi.fn(() => ({
-      order: vi.fn(() => ({
-        limit: vi.fn(() => Promise.resolve({ data: mockNotifications, error: null })),
-      })),
-    })),
-  })),
-  update: vi.fn(() => ({
-    eq: vi.fn(() => Promise.resolve({ error: null })),
-  })),
-  delete: vi.fn(() => ({
-    eq: vi.fn(() => Promise.resolve({ error: null })),
-  })),
-}))
+const mockQueryBuilder = {
+  select: vi.fn(() => mockQueryBuilder),
+  eq: vi.fn(() => mockQueryBuilder),
+  order: vi.fn(() => mockQueryBuilder),
+  limit: vi.fn(() => Promise.resolve({ data: mockNotifications, error: null })),
+  update: vi.fn(() => mockQueryBuilder),
+  delete: vi.fn(() => mockQueryBuilder),
+}
+
+const mockFrom = vi.fn(() => mockQueryBuilder)
 
 const mockChannel = {
   on: vi.fn().mockReturnThis(),
@@ -238,6 +233,7 @@ describe('useNotifications', () => {
   it('should handle fetch errors', async () => {
     // Mock error response
     mockFrom.mockImplementationOnce(() => ({
+      // @ts-expect-error - Test-specific mock override with different structure
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           order: vi.fn(() => ({
