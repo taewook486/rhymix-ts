@@ -52,10 +52,17 @@ function createMockQuery(data = null, error = null) {
     delete: jest.fn(() => createMockQuery(data, error)),
     eq: jest.fn(() => createMockQuery(data, error)),
     gte: jest.fn(() => createMockQuery(data, error)),
+    lte: jest.fn(() => createMockQuery(data, error)),
+    gt: jest.fn(() => createMockQuery(data, error)),
+    or: jest.fn(() => createMockQuery(data, error)),
+    is: jest.fn(() => createMockQuery(data, error)),
     order: jest.fn(() => createMockQuery(data, error)),
     limit: jest.fn(() => createMockQuery(data, error)),
+    range: jest.fn(() => createMockQuery(data, error)),
+    upsert: jest.fn(() => createMockQuery(data, error)),
     single: jest.fn(() => Promise.resolve({ data, error })),
     maybeSingle: jest.fn(() => Promise.resolve({ data, error })),
+    rpc: jest.fn(() => Promise.resolve({ data, error })),
   }
 }
 

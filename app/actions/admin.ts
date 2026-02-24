@@ -1034,3 +1034,350 @@ export async function getAnalytics(): Promise<ActionResult<AnalyticsData>> {
     return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
   }
 }
+
+// =====================================================
+// Activity Log Types
+// =====================================================
+
+export interface ActivityLog {
+  id: UUID
+  user_id: UUID | null
+  action: string
+  target_type: string | null
+  target_id: UUID | null
+  description: string | null
+  ip_address: string | null
+  user_agent: string | null
+  metadata: Record<string, any> | null
+  severity: 'debug' | 'info' | 'warning' | 'error' | 'critical'
+  module: string | null
+  created_at: string
+  // Joined fields
+  user_email?: string
+  user_display_name?: string
+}
+
+export interface ActivityLogFilters {
+  user_id?: UUID
+  action?: string
+  target_type?: string
+  severity?: string
+  module?: string
+  date_from?: string
+  date_to?: string
+  search?: string
+}
+
+export interface ActivityLogExport {
+  logs: ActivityLog[]
+  total_count: number
+  filtered_count: number
+  export_date: string
+  filters: ActivityLogFilters
+}
+
+// =====================================================
+// Activity Log Actions
+// =====================================================
+
+export async function getActivityLogs(
+  page: number = 1,
+  perPage: number = 50,
+  filters: ActivityLogFilters = {}
+): Promise<ActionResult<{ logs: ActivityLog[]; total_count: number }>> {
+  try {
+    const access = await checkAdminAccess()
+    if (!access) {
+      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
+    }
+
+    const supabase = await createClient()
+
+    // Build query with filters
+    let query = supabase
+      .from('activity_log')
+      .select('*, profiles!inner(email, display_name)', { count: 'exact' })
+
+    // Apply filters
+    if (filters.user_id) {
+      query = query.eq('user_id', filters.user_id)
+    }
+    if (filters.action) {
+      query = query.eq('action', filters.action)
+    }
+    if (filters.target_type) {
+      query = query.eq('target_type', filters.target_type)
+    }
+    if (filters.severity) {
+      query = query.eq('severity', filters.severity)
+    }
+    if (filters.module) {
+      query = query.eq('module', filters.module)
+    }
+    if (filters.date_from) {
+      query = query.gte('created_at', filters.date_from)
+    }
+    if (filters.date_to) {
+      query = query.lte('created_at', filters.date_to)
+    }
+    if (filters.search) {
+      query = query.or(`description.ilike.%${filters.search}%,metadata.ilike.%${filters.search}%`)
+    }
+
+    // Apply pagination and ordering
+    const from = (page - 1) * perPage
+    const to = from + perPage - 1
+
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(from, to)
+
+    if (error) {
+      console.error('Error fetching activity logs:', error)
+      return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+    }
+
+    // Transform data to include user fields
+    const logs: ActivityLog[] = (data || []).map((log: any) => ({
+      id: log.id,
+      user_id: log.user_id,
+      action: log.action,
+      target_type: log.target_type,
+      target_id: log.target_id,
+      description: log.description,
+      ip_address: log.ip_address,
+      user_agent: log.user_agent,
+      metadata: log.metadata,
+      severity: log.severity,
+      module: log.module,
+      created_at: log.created_at,
+      user_email: log.profiles?.email,
+      user_display_name: log.profiles?.display_name,
+    }))
+
+    return {
+      success: true,
+      data: {
+        logs,
+        total_count: count || 0,
+      },
+    }
+  } catch (error) {
+    console.error('Unexpected error in getActivityLogs:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}
+
+export async function getActivityLogById(logId: UUID): Promise<ActionResult<ActivityLog>> {
+  try {
+    const access = await checkAdminAccess()
+    if (!access) {
+      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
+    }
+
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('activity_log')
+      .select('*, profiles!inner(email, display_name)')
+      .eq('id', logId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching activity log:', error)
+      return { success: false, error: ERROR_MESSAGES.NOT_FOUND }
+    }
+
+    const log: ActivityLog = {
+      id: data.id,
+      user_id: data.user_id,
+      action: data.action,
+      target_type: data.target_type,
+      target_id: data.target_id,
+      description: data.description,
+      ip_address: data.ip_address,
+      user_agent: data.user_agent,
+      metadata: data.metadata,
+      severity: data.severity,
+      module: data.module,
+      created_at: data.created_at,
+      user_email: (data as any).profiles?.email,
+      user_display_name: (data as any).profiles?.display_name,
+    }
+
+    return { success: true, data: log }
+  } catch (error) {
+    console.error('Unexpected error in getActivityLogById:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}
+
+export async function getActivityLogFilters(): Promise<{
+  actions: string[]
+  target_types: string[]
+  severities: string[]
+  modules: string[]
+}> {
+  try {
+    const supabase = await createClient()
+
+    // Get distinct values for filters
+    const [actionsResult, targetTypesResult, modulesResult] = await Promise.all([
+      supabase.from('activity_log').select('action'),
+      supabase.from('activity_log').select('target_type'),
+      supabase.from('activity_log').select('module'),
+    ])
+
+    const actions = [...new Set((actionsResult.data || []).map((l: any) => l.action))].filter(Boolean).sort()
+    const target_types = [
+      ...new Set((targetTypesResult.data || []).map((l: any) => l.target_type)),
+    ]
+      .filter(Boolean)
+      .sort()
+    const modules = [...new Set((modulesResult.data || []).map((l: any) => l.module))].filter(Boolean).sort()
+
+    const severities = ['debug', 'info', 'warning', 'error', 'critical']
+
+    return {
+      actions,
+      target_types,
+      severities,
+      modules,
+    }
+  } catch (error) {
+    console.error('Unexpected error in getActivityLogFilters:', error)
+    return {
+      actions: [],
+      target_types: [],
+      severities: ['debug', 'info', 'warning', 'error', 'critical'],
+      modules: [],
+    }
+  }
+}
+
+export async function exportActivityLogsToCsv(
+  filters: ActivityLogFilters = {}
+): Promise<ActionResult<ActivityLogExport>> {
+  try {
+    const access = await checkAdminAccess()
+    if (!access) {
+      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
+    }
+
+    const supabase = await createClient()
+
+    // Get all logs matching filters (no pagination for export)
+    let query = supabase
+      .from('activity_log')
+      .select('*, profiles!inner(email, display_name)', { count: 'exact' })
+
+    // Apply filters
+    if (filters.user_id) {
+      query = query.eq('user_id', filters.user_id)
+    }
+    if (filters.action) {
+      query = query.eq('action', filters.action)
+    }
+    if (filters.target_type) {
+      query = query.eq('target_type', filters.target_type)
+    }
+    if (filters.severity) {
+      query = query.eq('severity', filters.severity)
+    }
+    if (filters.module) {
+      query = query.eq('module', filters.module)
+    }
+    if (filters.date_from) {
+      query = query.gte('created_at', filters.date_from)
+    }
+    if (filters.date_to) {
+      query = query.lte('created_at', filters.date_to)
+    }
+    if (filters.search) {
+      query = query.or(`description.ilike.%${filters.search}%,metadata.ilike.%${filters.search}%`)
+    }
+
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .limit(10000) // Max export limit
+
+    if (error) {
+      console.error('Error exporting activity logs:', error)
+      return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+    }
+
+    const logs: ActivityLog[] = (data || []).map((log: any) => ({
+      id: log.id,
+      user_id: log.user_id,
+      action: log.action,
+      target_type: log.target_type,
+      target_id: log.target_id,
+      description: log.description,
+      ip_address: log.ip_address,
+      user_agent: log.user_agent,
+      metadata: log.metadata,
+      severity: log.severity,
+      module: log.module,
+      created_at: log.created_at,
+      user_email: (log as any).profiles?.email,
+      user_display_name: (log as any).profiles?.display_name,
+    }))
+
+    const exportData: ActivityLogExport = {
+      logs,
+      total_count: count || 0,
+      filtered_count: logs.length,
+      export_date: new Date().toISOString(),
+      filters,
+    }
+
+    return { success: true, data: exportData }
+  } catch (error) {
+    console.error('Unexpected error in exportActivityLogsToCsv:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}
+
+export async function getRecentActivityLogs(limit: number = 20): Promise<ActionResult<ActivityLog[]>> {
+  try {
+    const access = await checkAdminAccess()
+    if (!access) {
+      return { success: false, error: ERROR_MESSAGES.PERMISSION_DENIED }
+    }
+
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from('activity_log')
+      .select('*, profiles!inner(email, display_name)')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('Error fetching recent activity logs:', error)
+      return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+    }
+
+    const logs: ActivityLog[] = (data || []).map((log: any) => ({
+      id: log.id,
+      user_id: log.user_id,
+      action: log.action,
+      target_type: log.target_type,
+      target_id: log.target_id,
+      description: log.description,
+      ip_address: log.ip_address,
+      user_agent: log.user_agent,
+      metadata: log.metadata,
+      severity: log.severity,
+      module: log.module,
+      created_at: log.created_at,
+      user_email: (log as any).profiles?.email,
+      user_display_name: (log as any).profiles?.display_name,
+    }))
+
+    return { success: true, data: logs }
+  } catch (error) {
+    console.error('Unexpected error in getRecentActivityLogs:', error)
+    return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}

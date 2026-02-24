@@ -115,6 +115,7 @@ export default async function NewPostPage({ params }: NewPostPageProps) {
         isLoggedIn={!!user}
         onSubmit={createPost}
         isEditing={false}
+        postId={undefined}
       />
     </div>
   )

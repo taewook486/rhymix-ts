@@ -58,6 +58,11 @@ export interface NotificationSettings {
   email: boolean;
   push: boolean;
   comment: boolean;
+  mention?: boolean;
+  like?: boolean;
+  reply?: boolean;
+  system?: boolean;
+  admin?: boolean;
 }
 
 /**
@@ -918,6 +923,130 @@ export interface Notification {
  */
 export interface NotificationWithRelations extends Notification {
   user: Profile;
+}
+
+/**
+ * Notification insert type (all optional fields for partial inserts)
+ */
+export type NotificationInsert = Omit<Partial<Notification>, 'id' | 'created_at'> & {
+  user_id: UUID;
+  type: NotificationType;
+  title: string;
+};
+
+/**
+ * Notification update type
+ */
+export type NotificationUpdate = Partial<Omit<Notification, 'id' | 'user_id' | 'created_at'>>;
+
+/**
+ * Notification with computed fields (from useNotifications hook)
+ */
+export interface NotificationWithMeta extends Notification {
+  /** Time ago string (e.g., "5 minutes ago") */
+  timeAgo?: string;
+  /** Whether this notification is new (just received) */
+  isNew?: boolean;
+}
+
+// =====================================================
+// MESSAGE TYPES
+// =====================================================
+
+/**
+ * Message status enum
+ */
+export type MessageStatus = 'draft' | 'sent' | 'read' | 'deleted';
+
+/**
+ * Message metadata structure
+ */
+export interface MessageMetadata {
+  [key: string]: JsonValue;
+}
+
+/**
+ * Main message type
+ */
+export interface Message {
+  id: UUID;
+  sender_id: UUID;
+  receiver_id: UUID;
+  title: string;
+  content: string;
+  is_read: boolean;
+  read_at: TIMESTAMPTZ | null;
+  is_sender_deleted: boolean;
+  is_receiver_deleted: boolean;
+  sender_deleted_at: TIMESTAMPTZ | null;
+  receiver_deleted_at: TIMESTAMPTZ | null;
+  parent_id: UUID | null;
+  created_at: TIMESTAMPTZ;
+  updated_at: TIMESTAMPTZ;
+}
+
+/**
+ * Message with relations
+ */
+export interface MessageWithRelations extends Message {
+  sender: Profile;
+  receiver: Profile;
+  parent: Message | null;
+}
+
+/**
+ * Message insert type
+ */
+export type MessageInsert = Omit<
+  Partial<Message>,
+  'id' | 'created_at' | 'updated_at' | 'is_read' | 'read_at' | 'is_sender_deleted' | 'is_receiver_deleted' | 'sender_deleted_at' | 'receiver_deleted_at'
+> & {
+  sender_id: UUID;
+  receiver_id: UUID;
+  title: string;
+  content: string;
+  parent_id?: UUID | null;
+};
+
+/**
+ * Message update type
+ */
+export type MessageUpdate = Partial<
+  Pick<Message, 'title' | 'content' | 'is_read' | 'read_at' | 'is_sender_deleted' | 'is_receiver_deleted' | 'sender_deleted_at' | 'receiver_deleted_at'>
+>;
+
+/**
+ * Message block type
+ */
+export interface MessageBlock {
+  id: UUID;
+  blocker_id: UUID;
+  blocked_id: UUID;
+  created_at: TIMESTAMPTZ;
+}
+
+/**
+ * Message block with relations
+ */
+export interface MessageBlockWithRelations extends MessageBlock {
+  blocker: Profile;
+  blocked: Profile;
+}
+
+/**
+ * Message block insert type
+ */
+export type MessageBlockInsert = Omit<MessageBlock, 'id' | 'created_at'>;
+
+/**
+ * Message list filters
+ */
+export interface MessageListFilters {
+  folder: 'inbox' | 'sent';
+  is_read?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
 }
 
 // =====================================================

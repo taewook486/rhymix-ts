@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -19,6 +19,10 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { RichTextEditor } from '@/components/editor/RichTextEditor'
 import { CaptchaInput } from '@/components/captcha'
+import { AutosaveIndicator } from '@/components/editor/AutosaveIndicator'
+import { DraftManager } from '@/components/editor/DraftManager'
+import { useAutosave } from '@/hooks/use-autosave'
+import { getAutosave } from '@/app/actions/editor'
 import type { Category } from '@/lib/supabase/database.types'
 import type { BoardConfig } from '@/types/board'
 
@@ -50,6 +54,7 @@ interface PostFormProps {
   }
   onSubmit: (data: PostFormValues & { captcha_token?: string; captcha_answer?: string }) => Promise<void>
   isEditing?: boolean
+  postId?: string // 게시글 ID (수정 모드)
 }
 
 export function PostForm({
@@ -60,13 +65,16 @@ export function PostForm({
   initialData,
   onSubmit,
   isEditing = false,
+  postId,
 }: PostFormProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string>('')
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('')
   const [captchaError, setCaptchaError] = useState<string | null>(null)
+  const [showDraftRestored, setShowDraftRestored] = useState(false)
 
   const allowAnonymous = boardConfig?.allow_anonymous || false
   const allowCaptcha = boardConfig?.allow_captcha || false
@@ -95,6 +103,72 @@ export function PostForm({
   const isSecret = watch('is_secret')
   const guestName = watch('guest_name')
   const guestPassword = watch('guest_password')
+  const title = watch('title')
+  const content = watch('content')
+
+  // 자동저장 훅 (로그인 사용자만)
+  const { status: autosaveStatus, lastSavedAt, saveNow } = useAutosave({
+    targetType: 'post',
+    targetId: postId,
+    enabled: isLoggedIn && !isEditing, // 신규 게시글 작성 시에만 자동저장
+    interval: 30000, // 30초
+    onSaveSuccess: () => {
+      // 자동저장 성공 시 별도 처리
+    },
+    onSaveError: (errorMessage) => {
+      console.error('Autosave failed:', errorMessage)
+    },
+  })
+
+  // 폼 데이터 변경 시 자동저장 데이터 업데이트
+  useEffect(() => {
+    if (isLoggedIn && !isEditing) {
+      // @ts-ignore - 커스텀 훅 메서드
+      if (typeof useAutosave !== 'function' && (useAutosave as any).updateData) {
+        (useAutosave as any).updateData({
+          title: title || '',
+          content: content || '',
+          content_html: content || '',
+          excerpt: content?.slice(0, 200) || '',
+          metadata: {
+            board_slug: boardSlug,
+            category_id: selectedCategoryId,
+          },
+        })
+      }
+    }
+  }, [title, content, selectedCategoryId, isLoggedIn, isEditing, boardSlug])
+
+  // 드래프트 복구 처리
+  useEffect(() => {
+    const draftId = searchParams.get('draft')
+    if (draftId && isLoggedIn && !isEditing) {
+      handleRestoreDraft(draftId)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  // 드래프트 복구 핸들러
+  const handleRestoreDraft = useCallback(async (draftId: string) => {
+    try {
+      const result = await getAutosave('post', undefined)
+      // TODO: 특정 드래프트 ID로 복구하는 로직 필요
+      if (result.success && result.data) {
+        setValue('title', result.data.title)
+        setValue('content', result.data.content)
+        setShowDraftRestored(true)
+        setTimeout(() => setShowDraftRestored(false), 3000)
+      }
+    } catch (err) {
+      console.error('Failed to restore draft:', err)
+    }
+  }, [setValue, isEditing])
+
+  // 드래프트 관리자에서의 복구 핸들러
+  const handleDraftManagerRestore = useCallback((draftId: string) => {
+    // URL 파라미터를 통해 복구 처리
+    router.push(`?draft=${draftId}`)
+  }, [router])
 
   const handleFormSubmit = async (data: PostFormValues) => {
     setIsSubmitting(true)
@@ -141,6 +215,30 @@ export function PostForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {/* 드래프트 복구 알림 */}
+      {showDraftRestored && (
+        <Alert className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+          <AlertDescription className="text-green-800 dark:text-green-200">
+            드래프트가 복구되었습니다.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* 자동저장 인디케이터 */}
+      {isLoggedIn && !isEditing && (
+        <div className="flex items-center justify-between">
+          <AutosaveIndicator
+            status={autosaveStatus}
+            lastSavedAt={lastSavedAt}
+            onSaveNow={saveNow}
+          />
+          <DraftManager
+            onRestoreDraft={handleDraftManagerRestore}
+            boardId={boardSlug}
+          />
+        </div>
+      )}
+
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>

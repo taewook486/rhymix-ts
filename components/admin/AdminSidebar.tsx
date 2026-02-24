@@ -16,6 +16,7 @@ import {
   LogOut,
   X,
   Languages,
+  ScrollText,
 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
@@ -55,6 +56,7 @@ const navItems = [
     children: [
       { title: 'Menus', href: '/admin/menus' },
       { title: 'Widgets', href: '/admin/widgets' },
+      { title: 'Layouts', href: '/admin/layout' },
       { title: 'Themes', href: '/admin/themes' },
     ],
   },
@@ -68,6 +70,11 @@ const navItems = [
       { title: 'Modules', href: '/admin/modules' },
       { title: 'Analytics', href: '/admin/analytics' },
     ],
+  },
+  {
+    title: 'Logs',
+    href: '/admin/logs',
+    icon: ScrollText,
   },
 ]
 
@@ -129,6 +136,7 @@ export function AdminSidebar() {
       children: [
         { title: 'Menus', href: `${localePrefix}/admin/menus` },
         { title: 'Widgets', href: `${localePrefix}/admin/widgets` },
+        { title: 'Layouts', href: `${localePrefix}/admin/layout` },
         { title: 'Themes', href: `${localePrefix}/admin/themes` },
       ],
     },
@@ -142,6 +150,11 @@ export function AdminSidebar() {
         { title: 'Modules', href: `${localePrefix}/admin/modules` },
         { title: 'Analytics', href: `${localePrefix}/admin/analytics` },
       ],
+    },
+    {
+      title: 'Logs',
+      href: `${localePrefix}/admin/logs`,
+      icon: ScrollText,
     },
   ]
 

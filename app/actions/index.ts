@@ -11,5 +11,7 @@ export * from './theme'
 export * from './poll'
 export * from './spam'
 export * from './search'
+export * from './notifications'
+export * from './layouts'
 // Note: modules.ts is imported directly to avoid naming conflicts with admin.ts
 

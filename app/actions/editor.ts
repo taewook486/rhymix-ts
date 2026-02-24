@@ -3,10 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { auth } from '@/lib/supabase/auth'
+import { uploadFile } from './media'
 
 // =====================================================
 // Types
 // =====================================================
+
+export interface EditorUploadResponse {
+  success: boolean
+  url?: string
+  error?: string
+}
 
 export interface Autosave {
   id: string
@@ -35,6 +42,51 @@ export interface SaveAutosaveInput {
 // =====================================================
 // Server Actions
 // =====================================================
+
+/**
+ * Upload an image/file from the editor
+ * @MX:ANCHOR: Editor-specific upload action
+ * @MX:REASON: Provides optimized upload for editor images
+ */
+export async function uploadEditorMedia(file: File): Promise<EditorUploadResponse> {
+  try {
+    const user = await auth.getUser()
+    if (!user.data?.user) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    // Validate file type (images only for editor)
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+    ]
+
+    if (!allowedTypes.includes(file.type)) {
+      return { success: false, error: 'Only image files are allowed in the editor' }
+    }
+
+    // Use existing uploadFile action
+    const result = await uploadFile({
+      file,
+      target_type: 'editor',
+      target_id: user.data.user.id,
+    })
+
+    if (result.success && result.data) {
+      return { success: true, url: result.data.cdn_url }
+    } else {
+      return { success: false, error: result.error }
+    }
+  } catch (error) {
+    console.error('Editor media upload error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to upload media'
+    }
+  }
+}
 
 /**
  * Save or update autosave draft
