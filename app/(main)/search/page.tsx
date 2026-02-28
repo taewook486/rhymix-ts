@@ -5,8 +5,10 @@ import { PopularSearches } from './popular-searches'
 
 export const metadata = {
   title: 'Search - Rhymix TS',
-  description: 'Search posts, comments, and documents',
+  description: 'Search posts, comments, documents, and pages',
 }
+
+// @MX:NOTE: Supports unified search across all content types
 
 interface SearchPageProps {
   searchParams: Promise<{

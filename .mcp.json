@@ -10,6 +10,10 @@
       "$comment": "Step-by-step reasoning for complex problems",
       "command": "cmd.exe",
       "args": ["/c", "npx -y @modelcontextprotocol/server-sequential-thinking"]
+    },
+    "playwright": {
+      "$comment": "Browser automation for web scraping and testing",
+      "url": "http://localhost:8931/mcp"
     }
   },
   "staggeredStartup": {

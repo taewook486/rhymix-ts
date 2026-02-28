@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { HardDrive, Image, Film, Music, FileText } from 'lucide-react'
 import { getFiles } from '@/app/actions/media'
 import { MediaUploadArea } from './components/MediaUploadArea'
-import { MediaTable } from './components/MediaTable'
+import { FileBrowser } from '@/components/admin/FileBrowser'
+import type { MediaFile } from '@/app/actions/media'
 
 // Force dynamic rendering for authenticated pages
 export const dynamic = 'force-dynamic'
@@ -36,18 +37,15 @@ function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// Statistics Card Component
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  description,
-}: {
+// Statistics Card Component (Server Component)
+interface StatCardProps {
   title: string
   value: string | number
   icon: React.ElementType
   description?: string
-}) {
+}
+
+function StatCard({ title, value, icon: Icon, description }: StatCardProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -64,6 +62,49 @@ function StatCard({
   )
 }
 
+// Statistics Component (Server Component)
+interface StatisticsProps {
+  files: MediaFile[]
+}
+
+function MediaStatistics({ files }: StatisticsProps) {
+  const stats = {
+    total: files.length,
+    images: files.filter(f => f.mime_type.startsWith('image/')).length,
+    videos: files.filter(f => f.mime_type.startsWith('video/')).length,
+    totalSize: files.reduce((sum, f) => sum + f.file_size, 0),
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatCard
+        title="Total Files"
+        value={stats.total}
+        icon={HardDrive}
+        description="All media files"
+      />
+      <StatCard
+        title="Images"
+        value={stats.images}
+        icon={Image}
+        description="Image files"
+      />
+      <StatCard
+        title="Videos"
+        value={stats.videos}
+        icon={Film}
+        description="Video files"
+      />
+      <StatCard
+        title="Total Size"
+        value={formatFileSize(stats.totalSize)}
+        icon={FileText}
+        description="Storage used"
+      />
+    </div>
+  )
+}
+
 async function MediaPageContent() {
   const result = await getFiles()
 
@@ -75,57 +116,22 @@ async function MediaPageContent() {
     )
   }
 
-  const files = result.data
-
-  // Calculate statistics
-  const stats = {
-    total: files.length,
-    images: files.filter(f => f.mime_type.startsWith('image/')).length,
-    videos: files.filter(f => f.mime_type.startsWith('video/')).length,
-    totalSize: files.reduce((sum, f) => sum + f.file_size, 0),
-  }
-
   return (
     <>
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Files"
-          value={stats.total}
-          icon={HardDrive}
-          description="All media files"
-        />
-        <StatCard
-          title="Images"
-          value={stats.images}
-          icon={Image}
-          description="Image files"
-        />
-        <StatCard
-          title="Videos"
-          value={stats.videos}
-          icon={Film}
-          description="Video files"
-        />
-        <StatCard
-          title="Total Size"
-          value={formatFileSize(stats.totalSize)}
-          icon={FileText}
-          description="Storage used"
-        />
-      </div>
+      <MediaStatistics files={result.data} />
 
       {/* Upload Area */}
       <MediaUploadArea />
 
-      {/* Media Files Table */}
+      {/* Enhanced File Browser */}
       <Card>
         <CardHeader>
           <CardTitle>Media Files</CardTitle>
-          <CardDescription>Manage your uploaded media files</CardDescription>
+          <CardDescription>Manage your uploaded media files with enhanced browser</CardDescription>
         </CardHeader>
         <CardContent>
-          <MediaTable files={files} />
+          <FileBrowser files={result.data} />
         </CardContent>
       </Card>
     </>

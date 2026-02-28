@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ExternalLink,
 } from 'lucide-react'
+import { ThemeSwitcher } from '@/components/layout/ThemeSwitcher'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -491,6 +492,7 @@ export function Navigation() {
 
         {/* Desktop Auth Links / User Menu */}
         <div className="hidden md:flex md:items-center md:space-x-4">
+          <ThemeSwitcher />
           {userMenu}
         </div>
 

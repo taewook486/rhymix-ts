@@ -11,35 +11,26 @@ import { auth } from '@/lib/supabase/auth'
 export interface Group {
   id: string
   name: string
-  slug: string
   description: string | null
-  icon: string | null
-  color: string | null
-  is_default: boolean
-  is_admin: boolean
-  is_system: boolean
-  config: Record<string, any>
-  member_count: number
+  permissions: Record<string, any>
   created_at: string
-  updated_at: string
-  deleted_at: string | null
 }
 
 export interface GroupInput {
   name: string
-  slug: string
+  slug?: string
   description?: string
-  icon?: string
-  color?: string
+  icon?: string | null
+  color?: string | null
   is_default?: boolean
   is_admin?: boolean
   is_system?: boolean
   config?: Record<string, any>
+  permissions?: Record<string, any>
 }
 
 export interface GroupUpdate extends Partial<GroupInput> {
   name?: string
-  slug?: string
 }
 
 export interface GroupMember {
@@ -125,22 +116,16 @@ export interface RemoveMemberResponse {
 // =====================================================
 
 /**
- * Get all groups (excluding deleted)
+ * Get all groups
  */
-export async function getGroups(includeDeleted = false): Promise<GetGroupsResponse> {
+export async function getGroups(): Promise<GetGroupsResponse> {
   try {
     const supabase = await createClient()
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('groups')
       .select('*')
       .order('created_at', { ascending: false })
-
-    if (!includeDeleted) {
-      query = query.is('deleted_at', null)
-    }
-
-    const { data, error } = await query
 
     if (error) {
       throw error

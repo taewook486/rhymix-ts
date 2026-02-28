@@ -1,0 +1,139 @@
+[
+  {
+    "url": "http://localhost/",
+    "title": "",
+    "menus": [
+      {
+        "text": "Welcome",
+        "href": "/index"
+      },
+      {
+        "text": "Free Board",
+        "href": "/board"
+      },
+      {
+        "text": "Q&A",
+        "href": "/qna"
+      },
+      {
+        "text": "Notice",
+        "href": "/notice"
+      }
+    ],
+    "tabs": [],
+    "buttons": [
+      "로그인"
+    ],
+    "forms": [
+      {
+        "action": "http://localhost/",
+        "method": "get",
+        "fields": [
+          {
+            "name": "mid",
+            "type": "hidden"
+          },
+          {
+            "name": "act",
+            "type": "hidden"
+          },
+          {
+            "name": "is_keyword",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "action": "/index.php?act=procMemberLogin",
+        "method": "post",
+        "fields": [
+          {
+            "name": "error_return_url",
+            "type": "hidden"
+          },
+          {
+            "name": "mid",
+            "type": "hidden"
+          },
+          {
+            "name": "ruleset",
+            "type": "hidden"
+          },
+          {
+            "name": "act",
+            "type": "hidden"
+          },
+          {
+            "name": "success_return_url",
+            "type": "hidden"
+          },
+          {
+            "name": "xe_validator_id",
+            "type": "hidden"
+          },
+          {
+            "name": "user_id",
+            "type": "text"
+          },
+          {
+            "name": "password",
+            "type": "password"
+          },
+          {
+            "name": "keep_signed",
+            "type": "checkbox"
+          },
+          {
+            "name": "_rx_csrf_token",
+            "type": "hidden"
+          }
+        ]
+      },
+      {
+        "action": "/index.php?act=procMemberLogin",
+        "method": "post",
+        "fields": [
+          {
+            "name": "error_return_url",
+            "type": "hidden"
+          },
+          {
+            "name": "mid",
+            "type": "hidden"
+          },
+          {
+            "name": "act",
+            "type": "hidden"
+          },
+          {
+            "name": "success_return_url",
+            "type": "hidden"
+          },
+          {
+            "name": "xe_validator_id",
+            "type": "hidden"
+          },
+          {
+            "name": "user_id",
+            "type": "text"
+          },
+          {
+            "name": "password",
+            "type": "password"
+          },
+          {
+            "name": "keep_signed",
+            "type": "checkbox"
+          },
+          {
+            "name": "_rx_csrf_token",
+            "type": "hidden"
+          }
+        ]
+      }
+    ],
+    "screenshot": "screenshots\\asis-crawl\\001-.png",
+    "heading": "\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t",
+    "content": "\n\t\n\n\t\n\t\tHELLO, WORLD!\n\t\tWELCOME TO RHYMIX\n\t\tRhymix는 자유로운 웹 콘텐츠 발행을 돕는 CMS입니다.간편한 설치와 다양한 추가 프로그램을 활용하여 자신만의 웹페이지를 쉽고 빠르게 만들 수 있습니다.\n\t\t시작하기\n\t\n\n\t\t\t"
+  }
+]

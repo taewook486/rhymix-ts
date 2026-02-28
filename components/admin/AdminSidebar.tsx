@@ -7,74 +7,137 @@ import {
   LayoutDashboard,
   Users,
   LayoutGrid,
-  FileText,
   Menu as MenuIcon,
   Package,
   Settings,
-  BarChart3,
-  Shield,
+  Bell,
   LogOut,
   X,
-  Languages,
   ScrollText,
+  type LucideIcon,
 } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-const navItems = [
+// @MX:NOTE: Admin menu structure matching ASIS Rhymix 30-item navigation
+// Categories: Dashboard, Site, Member, Content, Notifications, Configuration, Advanced
+// SPEC: SPEC-ADMIN-MENU-001
+
+interface NavChildItem {
+  title: string
+  titleKo: string
+  href: string
+  permission: string
+}
+
+interface NavItem {
+  title: string
+  titleKo: string
+  href: string
+  icon: LucideIcon
+  permission: string
+  children?: NavChildItem[]
+}
+
+// @MX:ANCHOR: Admin navigation menu definition - used across admin layout
+// @MX:REASON: Central menu structure for consistent admin navigation
+const adminMenuItems: NavItem[] = [
   {
     title: 'Dashboard',
+    titleKo: '대시보드',
     href: '/admin',
     icon: LayoutDashboard,
+    permission: 'admin.access',
+  },
+  {
+    title: 'Site',
+    titleKo: '사이트',
+    href: '/admin/menus',
+    icon: MenuIcon,
+    permission: 'site.access',
+    children: [
+      { title: 'Menus', titleKo: '사이트 메뉴', href: '/admin/menus', permission: 'menu.admin' },
+      { title: 'Widgets', titleKo: '위젯', href: '/admin/widgets', permission: 'widget.admin' },
+      { title: 'Layouts', titleKo: '레이아웃', href: '/admin/layout', permission: 'layout.admin' },
+      { title: 'Themes', titleKo: '테마', href: '/admin/themes', permission: 'theme.admin' },
+    ],
   },
   {
     title: 'Members',
+    titleKo: '회원',
     href: '/admin/members',
     icon: Users,
+    permission: 'member.access',
     children: [
-      { title: 'All Members', href: '/admin/members' },
-      { title: 'Groups', href: '/admin/groups' },
-      { title: 'Permissions', href: '/admin/permissions' },
+      { title: 'All Members', titleKo: '회원 목록', href: '/admin/members', permission: 'member.list' },
+      { title: 'Groups', titleKo: '회원 그룹', href: '/admin/groups', permission: 'group.list' },
+      { title: 'Permissions', titleKo: '권한 설정', href: '/admin/permissions', permission: 'permission.admin' },
+      { title: 'Points', titleKo: '포인트', href: '/admin/points', permission: 'point.admin' },
     ],
   },
   {
     title: 'Content',
+    titleKo: '콘텐츠',
     href: '/admin/boards',
     icon: LayoutGrid,
+    permission: 'content.access',
     children: [
-      { title: 'Boards', href: '/admin/boards' },
-      { title: 'Pages', href: '/admin/pages' },
-      { title: 'Media Library', href: '/admin/media' },
+      { title: 'Boards', titleKo: '게시판', href: '/admin/boards', permission: 'board.admin' },
+      { title: 'Pages', titleKo: '페이지', href: '/admin/pages', permission: 'page.admin' },
+      { title: 'Documents', titleKo: '문서', href: '/admin/documents', permission: 'document.list' },
+      { title: 'Comments', titleKo: '댓글', href: '/admin/comments', permission: 'comment.list' },
+      { title: 'Media Library', titleKo: '미디어 라이브러리', href: '/admin/media', permission: 'file.list' },
+      { title: 'Polls', titleKo: '설문', href: '/admin/polls', permission: 'poll.admin' },
+      { title: 'Editor', titleKo: '에디터', href: '/admin/editor', permission: 'editor.admin' },
+      { title: 'Spam Filter', titleKo: '스팸필터', href: '/admin/spam-filter', permission: 'spamfilter.admin' },
+      { title: 'Trash', titleKo: '휴지통', href: '/admin/trash', permission: 'trash.list' },
     ],
   },
   {
-    title: 'Appearance',
-    href: '/admin/menus',
-    icon: MenuIcon,
+    title: 'Notifications',
+    titleKo: '알림',
+    href: '/admin/notifications',
+    icon: Bell,
+    permission: 'notification.access',
     children: [
-      { title: 'Menus', href: '/admin/menus' },
-      { title: 'Widgets', href: '/admin/widgets' },
-      { title: 'Layouts', href: '/admin/layout' },
-      { title: 'Themes', href: '/admin/themes' },
+      { title: 'Mail/SMS/Push', titleKo: '메일/SMS/푸시', href: '/admin/notifications', permission: 'notification.admin' },
+      { title: 'Notification Center', titleKo: '알림 센터', href: '/admin/notification-center', permission: 'ncenterlite.admin' },
     ],
   },
   {
     title: 'Configuration',
+    titleKo: '설정',
     href: '/admin/settings',
     icon: Settings,
+    permission: 'config.access',
     children: [
-      { title: 'General', href: '/admin/settings' },
-      { title: 'Translations', href: '/admin/translations' },
-      { title: 'Modules', href: '/admin/modules' },
-      { title: 'Analytics', href: '/admin/analytics' },
+      { title: 'General', titleKo: '시스템 설정', href: '/admin/settings', permission: 'admin.config' },
+      { title: 'Admin Setup', titleKo: '관리자 설정', href: '/admin/admin-setup', permission: 'admin.setup' },
+      { title: 'Filebox', titleKo: '파일박스', href: '/admin/filebox', permission: 'filebox.admin' },
+      { title: 'Translations', titleKo: '다국어', href: '/admin/translations', permission: 'translation.admin' },
+      { title: 'Modules', titleKo: '모듈', href: '/admin/modules', permission: 'module.admin' },
+      { title: 'Analytics', titleKo: '분석', href: '/admin/analytics', permission: 'analytics.view' },
+    ],
+  },
+  {
+    title: 'Advanced',
+    titleKo: '고급',
+    href: '/admin/easy-install',
+    icon: Package,
+    permission: 'advanced.access',
+    children: [
+      { title: 'Easy Install', titleKo: '쉬운 설치', href: '/admin/easy-install', permission: 'autoinstall.admin' },
+      { title: 'Installed Layouts', titleKo: '설치된 레이아웃', href: '/admin/installed-layouts', permission: 'layout.list' },
     ],
   },
   {
     title: 'Logs',
+    titleKo: '로그',
     href: '/admin/logs',
     icon: ScrollText,
+    permission: 'logs.access',
   },
 ]
 
@@ -103,60 +166,16 @@ export function AdminSidebar() {
   }
 
   // Build nav items with locale prefix
-  const navItemsWithLocale = [
-    {
-      title: 'Dashboard',
-      href: `${localePrefix}/admin`,
-      icon: LayoutDashboard,
-    },
-    {
-      title: 'Members',
-      href: `${localePrefix}/admin/members`,
-      icon: Users,
-      children: [
-        { title: 'All Members', href: `${localePrefix}/admin/members` },
-        { title: 'Groups', href: `${localePrefix}/admin/groups` },
-        { title: 'Permissions', href: `${localePrefix}/admin/permissions` },
-      ],
-    },
-    {
-      title: 'Content',
-      href: `${localePrefix}/admin/boards`,
-      icon: LayoutGrid,
-      children: [
-        { title: 'Boards', href: `${localePrefix}/admin/boards` },
-        { title: 'Pages', href: `${localePrefix}/admin/pages` },
-        { title: 'Media Library', href: `${localePrefix}/admin/media` },
-      ],
-    },
-    {
-      title: 'Appearance',
-      href: `${localePrefix}/admin/menus`,
-      icon: MenuIcon,
-      children: [
-        { title: 'Menus', href: `${localePrefix}/admin/menus` },
-        { title: 'Widgets', href: `${localePrefix}/admin/widgets` },
-        { title: 'Layouts', href: `${localePrefix}/admin/layout` },
-        { title: 'Themes', href: `${localePrefix}/admin/themes` },
-      ],
-    },
-    {
-      title: 'Configuration',
-      href: `${localePrefix}/admin/settings`,
-      icon: Settings,
-      children: [
-        { title: 'General', href: `${localePrefix}/admin/settings` },
-        { title: 'Translations', href: `${localePrefix}/admin/translations` },
-        { title: 'Modules', href: `${localePrefix}/admin/modules` },
-        { title: 'Analytics', href: `${localePrefix}/admin/analytics` },
-      ],
-    },
-    {
-      title: 'Logs',
-      href: `${localePrefix}/admin/logs`,
-      icon: ScrollText,
-    },
-  ]
+  const navItemsWithLocale = useMemo(() => {
+    return adminMenuItems.map((item) => ({
+      ...item,
+      href: `${localePrefix}${item.href}`,
+      children: item.children?.map((child) => ({
+        ...child,
+        href: `${localePrefix}${child.href}`,
+      })),
+    }))
+  }, [localePrefix])
 
   return (
     <>

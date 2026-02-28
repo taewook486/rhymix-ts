@@ -235,27 +235,63 @@ export function EditPermissionDialog({ permission }: EditPermissionDialogProps) 
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading groups...
               </div>
-            ) : groups.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No groups available</p>
             ) : (
-              <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-3">
-                {groups.map((group) => (
-                  <div key={group.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`group-${group.id}`}
-                      checked={selectedGroupIds.includes(group.id)}
-                      onCheckedChange={() => handleGroupToggle(group.id)}
-                      disabled={isUpdating}
-                    />
-                    <label
-                      htmlFor={`group-${group.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {group.name}
-                    </label>
+              <>
+                {/* System Roles */}
+                <div className="mb-2">
+                  <p className="text-xs text-muted-foreground mb-1">System Roles</p>
+                  <div className="space-y-1 max-h-24 overflow-y-auto border rounded-md p-2 bg-muted/30">
+                    {groups
+                      .filter((g) => (g as any).is_fallback)
+                      .map((group) => (
+                        <div key={group.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`group-${group.id}`}
+                            checked={selectedGroupIds.includes(group.id)}
+                            onCheckedChange={() => handleGroupToggle(group.id)}
+                            disabled={isUpdating}
+                          />
+                          <label
+                            htmlFor={`group-${group.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {group.name}
+                            <span className="text-muted-foreground text-xs ml-1">(System Role)</span>
+                          </label>
+                        </div>
+                      ))}
                   </div>
-                ))}
-              </div>
+                </div>
+
+                {/* Custom Groups */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Custom Groups</p>
+                  {groups.filter((g) => !(g as any).is_fallback).length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No custom groups available</p>
+                  ) : (
+                    <div className="space-y-1 max-h-24 overflow-y-auto border rounded-md p-2">
+                      {groups
+                        .filter((g) => !(g as any).is_fallback)
+                        .map((group) => (
+                          <div key={group.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`group-${group.id}`}
+                              checked={selectedGroupIds.includes(group.id)}
+                              onCheckedChange={() => handleGroupToggle(group.id)}
+                              disabled={isUpdating}
+                            />
+                            <label
+                              htmlFor={`group-${group.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {group.name}
+                            </label>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
 

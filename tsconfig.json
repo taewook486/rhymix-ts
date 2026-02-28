@@ -37,6 +37,7 @@
   ],
   "exclude": [
     "node_modules",
-    "lib/supabase/database.types.ts"
+    "lib/supabase/database.types.ts",
+    "scripts"
   ]
 }

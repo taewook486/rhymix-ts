@@ -1,0 +1,25 @@
+{
+  "url": "http://localhost/",
+  "title": "",
+  "mainMenus": [
+    {
+      "text": "Welcome",
+      "href": "/index"
+    },
+    {
+      "text": "Free Board",
+      "href": "/board"
+    },
+    {
+      "text": "Q&A",
+      "href": "/qna"
+    },
+    {
+      "text": "Notice",
+      "href": "/notice"
+    }
+  ],
+  "sideMenus": [],
+  "buttons": [],
+  "forms": []
+}

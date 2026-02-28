@@ -8,6 +8,12 @@ import { EditGroupDialog } from '@/components/admin/EditGroupDialog'
 import { Users, Shield } from 'lucide-react'
 import { getGroups } from '@/app/actions/groups'
 
+// Force dynamic rendering for authenticated pages
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
+
 // Skeleton component for loading state
 function GroupsSkeleton() {
   return (
@@ -40,7 +46,6 @@ function GroupsTable({ groups }: { groups: any[] }) {
         <TableRow>
           <TableHead>Group Name</TableHead>
           <TableHead>Description</TableHead>
-          <TableHead className="text-center">Members</TableHead>
           <TableHead>Created</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -50,21 +55,11 @@ function GroupsTable({ groups }: { groups: any[] }) {
           <TableRow key={group.id}>
             <TableCell className="font-medium">{group.name}</TableCell>
             <TableCell className="text-muted-foreground">{group.description || '-'}</TableCell>
-            <TableCell className="text-center">
-              <Badge variant="secondary" className="flex items-center gap-1 w-fit mx-auto">
-                <Users className="h-3 w-3" />
-                {group.member_count || 0}
-              </Badge>
-            </TableCell>
             <TableCell>{new Date(group.created_at).toLocaleDateString()}</TableCell>
             <TableCell className="text-right">
-              {group.is_system ? (
-                <span className="text-muted-foreground text-sm">System group</span>
-              ) : (
-                <div className="flex justify-end gap-2">
-                  <EditGroupDialog group={group} />
-                </div>
-              )}
+              <div className="flex justify-end gap-2">
+                <EditGroupDialog group={group} />
+              </div>
             </TableCell>
           </TableRow>
         ))}
@@ -112,20 +107,10 @@ async function GroupsPageContent() {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Groups</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{groups.reduce((sum, g) => sum + (g.member_count || 0), 0)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Admin Groups</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {groups.filter((g) => g.is_admin).length}
-            </div>
+            <div className="text-2xl font-bold">{groups.length}</div>
           </CardContent>
         </Card>
       </div>

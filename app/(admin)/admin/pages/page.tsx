@@ -8,6 +8,12 @@ import { EditPageDialog } from '@/components/admin/EditPageDialog'
 import { FileText, Eye, EyeOff, Clock, User } from 'lucide-react'
 import { getPages } from '@/app/actions/pages'
 
+// Force dynamic rendering for authenticated pages
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
+
 // Skeleton component
 function PagesSkeleton() {
   return (

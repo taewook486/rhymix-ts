@@ -1,0 +1,149 @@
+{
+  "url": "http://localhost/",
+  "title": "",
+  "mainMenus": [
+    {
+      "text": "Welcome",
+      "href": "/index"
+    },
+    {
+      "text": "Free Board",
+      "href": "/board"
+    },
+    {
+      "text": "Q&A",
+      "href": "/qna"
+    },
+    {
+      "text": "Notice",
+      "href": "/notice"
+    }
+  ],
+  "adminMenus": [],
+  "tabs": [],
+  "buttons": [
+    {
+      "text": "시작하기",
+      "selector": "a",
+      "type": "a"
+    },
+    {
+      "text": "위로",
+      "selector": "a",
+      "type": "a"
+    }
+  ],
+  "forms": [
+    {
+      "action": "http://localhost/",
+      "method": "get",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden"
+        },
+        {
+          "name": "act",
+          "type": "hidden"
+        },
+        {
+          "name": "is_keyword",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden"
+        },
+        {
+          "name": "mid",
+          "type": "hidden"
+        },
+        {
+          "name": "ruleset",
+          "type": "hidden"
+        },
+        {
+          "name": "act",
+          "type": "hidden"
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden"
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden"
+        },
+        {
+          "name": "user_id",
+          "type": "text"
+        },
+        {
+          "name": "password",
+          "type": "password"
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox"
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden"
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden"
+        },
+        {
+          "name": "mid",
+          "type": "hidden"
+        },
+        {
+          "name": "act",
+          "type": "hidden"
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden"
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden"
+        },
+        {
+          "name": "user_id",
+          "type": "text"
+        },
+        {
+          "name": "password",
+          "type": "password"
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox"
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden"
+        }
+      ]
+    }
+  ],
+  "configuration": [],
+  "screenshots": [
+    "screenshots/01-landing-1772280354100.png",
+    "screenshots/02-admin-dashboard-1772280358043.png"
+  ]
+}

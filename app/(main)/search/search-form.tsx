@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -11,7 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, X, Loader2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Search, X, Loader2, SlidersHorizontal } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { SearchAutocomplete } from '@/components/search/SearchAutocomplete'
 
 interface SearchFormProps {
   initialQuery: string
@@ -26,101 +27,148 @@ const CONTENT_TYPES = [
   { value: 'page', label: 'Pages' },
 ] as const
 
+const DATE_RANGES = [
+  { value: '', label: 'All time' },
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'This week' },
+  { value: 'month', label: 'This month' },
+  { value: 'year', label: 'This year' },
+] as const
+
 export function SearchForm({ initialQuery, initialType }: SearchFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [isPending, startTransition] = useTransition()
   const [query, setQuery] = useState(initialQuery)
   const [type, setType] = useState(initialType)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [dateRange, setDateRange] = useState('')
+  const [isPending, setIsPending] = useState(false)
 
-  const handleSearch = (searchQuery: string, searchType: string) => {
-    const params = new URLSearchParams(searchParams.toString())
+  const handleSearch = (searchQuery: string) => {
+    if (!searchQuery || searchQuery.length < 2) return
 
-    if (searchQuery) {
-      params.set('q', searchQuery)
-    } else {
-      params.delete('q')
-    }
-
-    if (searchType) {
-      params.set('type', searchType)
-    } else {
-      params.delete('type')
-    }
-
-    params.delete('page') // Reset to first page on new search
-
-    startTransition(() => {
-      router.push(`/search?${params.toString()}`)
-    })
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    handleSearch(query, type)
+    setIsPending(true)
+    const params = new URLSearchParams()
+    params.set('q', searchQuery)
+    if (type) params.set('type', type)
+    if (dateRange) params.set('date', dateRange)
+    router.push(`/search?${params.toString()}`)
+    setIsPending(false)
   }
 
   const handleClear = () => {
     setQuery('')
-    handleSearch('', type)
+    router.push('/search')
   }
 
   const handleTypeChange = (newType: string) => {
     setType(newType)
-    handleSearch(query, newType)
+    if (query) {
+      const params = new URLSearchParams()
+      params.set('q', query)
+      if (newType) params.set('type', newType)
+      if (dateRange) params.set('date', dateRange)
+      router.push(`/search?${params.toString()}`)
+    }
+  }
+
+  const handleDateChange = (newDate: string) => {
+    setDateRange(newDate)
+    if (query) {
+      const params = new URLSearchParams()
+      params.set('q', query)
+      if (type) params.set('type', type)
+      if (newDate) params.set('date', newDate)
+      router.push(`/search?${params.toString()}`)
+    }
+  }
+
+  const toggleAdvanced = () => {
+    setShowAdvanced((prev) => !prev)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search..."
+    <div className="space-y-4">
+      {/* Main Search Row */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <SearchAutocomplete
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-10 pr-10"
-            minLength={2}
+            onChange={setQuery}
+            onSearch={handleSearch}
+            placeholder="Search posts, documents, comments..."
+            className="w-full"
           />
-          {query && (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
         </div>
 
-        <Select value={type} onValueChange={handleTypeChange}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent>
-            {CONTENT_TYPES.map((ct) => (
-              <SelectItem key={ct.value} value={ct.value}>
-                {ct.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Button type="submit" disabled={isPending || query.length < 2}>
+        <Button
+          type="button"
+          onClick={() => handleSearch(query)}
+          disabled={isPending || query.length < 2}
+          className="flex-shrink-0"
+        >
           {isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            'Search'
-          )}
+          ) : null}
+          {' '}Search
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={toggleAdvanced}
+          title="Toggle advanced filters"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
         </Button>
       </div>
 
+      {/* Advanced Filters */}
+      {showAdvanced && (
+        <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+          {/* Content Type Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Type:</span>
+            <Select value={type} onValueChange={handleTypeChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All types" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONTENT_TYPES.map((ct) => (
+                  <SelectItem key={ct.value} value={ct.value}>
+                    {ct.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date Range Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Date:</span>
+            <Select value={dateRange} onValueChange={handleDateChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="All time" />
+              </SelectTrigger>
+              <SelectContent>
+                {DATE_RANGES.map((dr) => (
+                  <SelectItem key={dr.value} value={dr.value}>
+                    {dr.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      {/* Query Validation */}
       {query && query.length > 0 && query.length < 2 && (
         <p className="text-sm text-muted-foreground">
           Please enter at least 2 characters
         </p>
       )}
-    </form>
+    </div>
   )
 }

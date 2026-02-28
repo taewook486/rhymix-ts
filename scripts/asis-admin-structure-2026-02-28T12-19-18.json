@@ -1,0 +1,18 @@
+{
+  "url": "http://localhost/index.php?module=admin",
+  "title": "",
+  "links": [
+    {
+      "text": "회원가입",
+      "href": "/index.php?act=dispMemberSignUpForm"
+    },
+    {
+      "text": "ID/PW 찾기",
+      "href": "/index.php?act=dispMemberFindAccount"
+    }
+  ],
+  "buttons": [
+    "로그인"
+  ],
+  "screenshot": "screenshots/admin-direct.png"
+}

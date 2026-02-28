@@ -1,0 +1,142 @@
+{
+  "url": "http://localhost/index.php?module=admin",
+  "title": "Dashboard",
+  "mainMenu": [
+    {
+      "text": "Menu Open/Close",
+      "href": "#gnbNav"
+    },
+    {
+      "text": "대시보드",
+      "href": "/index.php?module=admin"
+    },
+    {
+      "text": "사이트 제작/편집",
+      "href": "/index.php?module=admin&act=dispMenuAdminSiteMap"
+    },
+    {
+      "text": "사이트 메뉴 편집",
+      "href": "/index.php?module=admin&act=dispMenuAdminSiteMap"
+    },
+    {
+      "text": "사이트 디자인 설정",
+      "href": "/index.php?module=admin&act=dispMenuAdminSiteDesign"
+    },
+    {
+      "text": "회원",
+      "href": "/index.php?module=admin&act=dispMemberAdminList"
+    },
+    {
+      "text": "회원 목록",
+      "href": "/index.php?module=admin&act=dispMemberAdminList"
+    },
+    {
+      "text": "회원 설정",
+      "href": "/index.php?module=admin&act=dispMemberAdminConfig"
+    },
+    {
+      "text": "회원 그룹",
+      "href": "/index.php?module=admin&act=dispMemberAdminGroupList"
+    },
+    {
+      "text": "포인트",
+      "href": "/index.php?module=admin&act=dispPointAdminConfig"
+    },
+    {
+      "text": "콘텐츠",
+      "href": "/index.php?module=admin&act=dispBoardAdminContent"
+    },
+    {
+      "text": "게시판",
+      "href": "/index.php?module=admin&act=dispBoardAdminContent"
+    },
+    {
+      "text": "페이지",
+      "href": "/index.php?module=admin&act=dispPageAdminContent"
+    },
+    {
+      "text": "문서",
+      "href": "/index.php?module=admin&act=dispDocumentAdminList"
+    },
+    {
+      "text": "댓글",
+      "href": "/index.php?module=admin&act=dispCommentAdminList"
+    },
+    {
+      "text": "파일",
+      "href": "/index.php?module=admin&act=dispFileAdminList"
+    },
+    {
+      "text": "설문",
+      "href": "/index.php?module=admin&act=dispPollAdminList"
+    },
+    {
+      "text": "에디터",
+      "href": "/index.php?module=admin&act=dispEditorAdminIndex"
+    },
+    {
+      "text": "스팸필터",
+      "href": "/index.php?module=admin&act=dispSpamfilterAdminDeniedIPList"
+    },
+    {
+      "text": "휴지통",
+      "href": "/index.php?module=admin&act=dispTrashAdminList"
+    },
+    {
+      "text": "즐겨찾기",
+      "href": "#favorite"
+    },
+    {
+      "text": "메일, SMS 및 푸시 알림 관리",
+      "href": "/index.php?module=admin&act=dispAdvanced_mailerAdminConfig"
+    },
+    {
+      "text": "알림 센터",
+      "href": "/index.php?module=admin&act=dispNcenterliteAdminConfig"
+    },
+    {
+      "text": "설정",
+      "href": "/index.php?module=admin&act=dispAdminConfigGeneral"
+    },
+    {
+      "text": "시스템 설정",
+      "href": "/index.php?module=admin&act=dispAdminConfigGeneral"
+    },
+    {
+      "text": "관리자 화면 설정",
+      "href": "/index.php?module=admin&act=dispAdminSetup"
+    },
+    {
+      "text": "파일박스",
+      "href": "/index.php?module=admin&act=dispModuleAdminFileBox"
+    },
+    {
+      "text": "고급",
+      "href": "/index.php?module=admin&act=dispAutoinstallAdminIndex"
+    },
+    {
+      "text": "쉬운 설치",
+      "href": "/index.php?module=admin&act=dispAutoinstallAdminIndex"
+    },
+    {
+      "text": "설치된 레이아웃",
+      "href": "/index.php?module=admin&act=dispLayoutAdminInstalledList"
+    }
+  ],
+  "sideMenu": [],
+  "tabs": [],
+  "buttons": [
+    "×",
+    "휴지통",
+    "삭제",
+    "관리자 메뉴 초기화",
+    "캐시파일 재생성",
+    "세션 정리",
+    "취소",
+    "확인"
+  ],
+  "widgets": [],
+  "screenshot": "screenshots/admin-with-cookies.png",
+  "visitedPages": [],
+  "timestamp": "2026-02-28T12:25:41.458Z"
+}
