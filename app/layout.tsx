@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { Navigation } from '@/components/layout/Navigation'
+import { ConditionalHeader } from '@/components/layout/ConditionalHeader'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
@@ -19,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Navigation />
+        <ConditionalHeader />
         {children}
         <Toaster />
       </body>
