@@ -44,6 +44,23 @@ const I18N_EXCLUDED_PATHS = [
   '/auth',
 ]
 
+// Legacy route redirects (Rhymix PHP compatibility)
+// Maps old PHP routes to new Next.js routes
+const LEGACY_REDIRECTS: Record<string, string> = {
+  // Board routes (plural to singular)
+  '/boards': '/board',
+  // Member/Auth routes
+  '/members/login': '/signin',
+  '/members/signin': '/signin',
+  '/members/signup': '/signup',
+  '/members/logout': '/signin', // Redirect to signin after logout
+  '/member/login': '/signin',
+  '/member/signin': '/signin',
+  '/member/signup': '/signup',
+  '/login': '/signin',
+  '/register': '/signup',
+}
+
 // Note: Installation check is applied to all non-allowed paths in the middleware matcher
 
 /**
@@ -202,7 +219,31 @@ function isAllowedDuringInstallation(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  // Step 0: Handle i18n locale detection
+  // Step 0: Handle legacy route redirects (Rhymix PHP compatibility)
+  // Check for legacy routes and redirect to new routes
+  // This handles paths like /ko/boards -> /ko/board, /ko/members/login -> /ko/signin
+  for (const [legacyPath, newPath] of Object.entries(LEGACY_REDIRECTS)) {
+    // Check direct match (without locale)
+    if (pathname === legacyPath) {
+      const url = request.nextUrl.clone()
+      url.pathname = newPath
+      return NextResponse.redirect(url, 301) // Permanent redirect
+    }
+
+    // Check with locale prefix (e.g., /ko/boards -> /ko/board)
+    for (const locale of locales) {
+      const localizedLegacyPath = `/${locale}${legacyPath}`
+      const localizedNewPath = `/${locale}${newPath}`
+
+      if (pathname === localizedLegacyPath) {
+        const url = request.nextUrl.clone()
+        url.pathname = localizedNewPath
+        return NextResponse.redirect(url, 301) // Permanent redirect
+      }
+    }
+  }
+
+  // Step 1: Handle i18n locale detection
   // Only redirect non-locale paths to locale-prefixed paths
   // Let Next.js naturally handle app/[locale]/... routes without rewrite
   if (!isExcludedFromI18n(pathname)) {
@@ -232,7 +273,7 @@ export async function middleware(request: NextRequest) {
     // It will match to app/[locale]/... routes without any rewrite
   }
 
-  // Step 1: Check installation status for protected routes
+  // Step 2: Check installation status for protected routes
   if (!isAllowedDuringInstallation(pathname)) {
     const isInstalled = await checkInstallationComplete(request)
 
@@ -244,7 +285,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Step 2: If installation is complete and user is on /install, redirect to home
+  // Step 3: If installation is complete and user is on /install, redirect to home
   if (pathname.startsWith('/install')) {
     const isInstalled = await checkInstallationComplete(request)
 
@@ -255,7 +296,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Step 3: Handle authentication with Supabase
+  // Step 4: Handle authentication with Supabase
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -301,7 +342,7 @@ export async function middleware(request: NextRequest) {
     return false
   }
 
-  // Step 4: Protect admin routes
+  // Step 5: Protect admin routes
   if (pathMatchesLocaleAware('/admin')) {
     if (!data.user) {
       const url = request.nextUrl.clone()
@@ -317,7 +358,7 @@ export async function middleware(request: NextRequest) {
     // Middleware cannot reliably query user roles without session
   }
 
-  // Step 5: Protect member routes
+  // Step 6: Protect member routes
   if (pathMatchesLocaleAware('/member')) {
     // Check if it's a public profile
     const pathParts = pathname.split('/')

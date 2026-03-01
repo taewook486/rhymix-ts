@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { NoticeWidget, RecentPostsWidget } from '@/components/widgets'
+import { HeroSection } from '@/components/home/HeroSection'
 import { createClient } from '@/lib/supabase/server'
 import type { WidgetPost } from '@/components/widgets'
 import { getLocale } from '@/lib/i18n/config'
@@ -9,7 +10,8 @@ import enTranslations from '@/lib/i18n/locales/en.json'
 import jaTranslations from '@/lib/i18n/locales/ja.json'
 import zhTranslations from '@/lib/i18n/locales/zh.json'
 
-const translations: Record<Locale, typeof koTranslations> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const translations: Record<Locale, any> = {
   ko: koTranslations,
   en: enTranslations,
   ja: jaTranslations,
@@ -179,100 +181,104 @@ export default async function LocaleHomePage({ params }: HomePageProps) {
   const localePrefix = `/${locale}`
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      {/* Notice Widget - At the top with emphasized styling */}
-      {notices.length > 0 && (
-        <div className="mb-8">
-          <NoticeWidget
-            title={t.widget.notice}
-            notices={notices}
-            moreLink={`${localePrefix}/board`}
-            limit={5}
-          />
-        </div>
-      )}
+    <>
+      {/* Hero Section - Full width at the top */}
+      <HeroSection
+        locale={locale}
+        title={t.home.welcome}
+        subtitle={t.home.subtitle}
+        description={t.home.description || 'A modern community platform built with Next.js and Supabase'}
+        ctaText={t.home.getStarted || 'Get Started'}
+        ctaLink="/board"
+        secondaryCtaText={t.home.learnMore || 'Learn More'}
+        secondaryCtaLink="/documents"
+      />
 
-      {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t.home.welcome}</h1>
-        <p className="text-muted-foreground">
-          {t.home.subtitle}
-        </p>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recent Posts - Takes 2 columns on large screens */}
-        <div className="lg:col-span-2">
-          {recentPosts.length > 0 && (
-            <RecentPostsWidget
-              title={t.widget.recentPosts}
-              description={t.widget.latestPosts}
-              posts={recentPosts}
+      <div className="container mx-auto py-8 px-4">
+        {/* Notice Widget - At the top with emphasized styling */}
+        {notices.length > 0 && (
+          <div className="mb-8">
+            <NoticeWidget
+              title={t.widget.notice}
+              notices={notices}
               moreLink={`${localePrefix}/board`}
-              showThumbnail={true}
-              showExcerpt={true}
+              limit={5}
             />
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Quick Links - Takes 1 column */}
-        <div className="space-y-6">
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div className="flex flex-col space-y-1.5 p-6">
-              <h3 className="text-2xl font-semibold leading-none tracking-tight">
-                {t.home.quickLinks}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {t.home.quickLinksDesc}
-              </p>
-            </div>
-            <div className="p-6 pt-0 space-y-2">
-              <a
-                href={`${localePrefix}/board`}
-                className="flex items-center justify-between rounded-md border p-3 hover:bg-accent transition-colors"
-              >
-                <span className="flex items-center gap-2">
-                  <span>📝</span>
-                  <span>{t.board.title}
-                </span>
-                </span>
-                <span>→</span>
-              </a>
-              <a
-                href={`${localePrefix}/documents`}
-                className="flex items-center justify-between rounded-md border p-3 hover:bg-accent transition-colors"
-              >
-                <span className="flex items-center gap-2">
-                  <span>📄</span>
-                  <span>{t.document.title}
-                </span>
-                </span>
-                <span>→</span>
-              </a>
-            </div>
+        {/* Main Content Grid */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Recent Posts - Takes 2 columns on large screens */}
+          <div className="lg:col-span-2">
+            {recentPosts.length > 0 && (
+              <RecentPostsWidget
+                title={t.widget.recentPosts}
+                description={t.widget.latestPosts}
+                posts={recentPosts}
+                moreLink={`${localePrefix}/board`}
+                showThumbnail={true}
+                showExcerpt={true}
+              />
+            )}
           </div>
 
-          {/* Stats Cards */}
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <div className="flex flex-col space-y-1.5 p-6">
-              <h3 className="text-2xl font-semibold leading-none tracking-tight">
-                {t.home.siteStats}
-              </h3>
-            </div>
-            <div className="p-6 pt-0 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">{t.home.posts}</span>
-                <span className="font-semibold">{recentPosts.length}</span>
+          {/* Quick Links - Takes 1 column */}
+          <div className="space-y-6">
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+              <div className="flex flex-col space-y-1.5 p-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                  {t.home.quickLinks}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t.home.quickLinksDesc}
+                </p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">{t.home.notices}</span>
-                <span className="font-semibold">{notices.length}</span>
+              <div className="p-6 pt-0 space-y-2">
+                <a
+                  href={`${localePrefix}/board`}
+                  className="flex items-center justify-between rounded-md border p-3 hover:bg-accent transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>📝</span>
+                    <span>{t.board.title}</span>
+                  </span>
+                  <span>→</span>
+                </a>
+                <a
+                  href={`${localePrefix}/documents`}
+                  className="flex items-center justify-between rounded-md border p-3 hover:bg-accent transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>📄</span>
+                    <span>{t.document.title}</span>
+                  </span>
+                  <span>→</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+              <div className="flex flex-col space-y-1.5 p-6">
+                <h3 className="text-2xl font-semibold leading-none tracking-tight">
+                  {t.home.siteStats}
+                </h3>
+              </div>
+              <div className="p-6 pt-0 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{t.home.posts}</span>
+                  <span className="font-semibold">{recentPosts.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{t.home.notices}</span>
+                  <span className="font-semibold">{notices.length}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -14,7 +14,7 @@ export default defineConfig({
     exclude: ['tests/e2e/**', 'node_modules/**'],
 
     // Setup files
-    setupFiles: ['./tests/setup/vitest.setup.ts'],
+    setupFiles: ['./tests/setup/vitest.setup.tsx'],
 
     // Coverage configuration
     coverage: {

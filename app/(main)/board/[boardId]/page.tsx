@@ -1,7 +1,14 @@
 import { notFound } from 'next/navigation'
-import { BoardList } from '@/components/board'
+import { BoardTable } from '@/components/board'
 import { createClient } from '@/lib/supabase/server'
+import koBoard from '@/lib/i18n/locales/ko.json' with { type: 'json' }
+import enBoard from '@/lib/i18n/locales/en.json' with { type: 'json' }
+import jaBoard from '@/lib/i18n/locales/ja.json' with { type: 'json' }
+import zhBoard from '@/lib/i18n/locales/zh.json' with { type: 'json' }
 import type { Database, PostListItem as DbPostListItem, Category as DbCategory } from '@/lib/supabase/database.types'
+import type { PostWithAuthor } from '@/components/board/PostTableRow'
+import { cookies } from 'next/headers'
+import { getLocale, type Locale } from '@/lib/i18n/config'
 
 type Board = Database['public']['Tables']['boards']['Row']
 type Category = DbCategory
@@ -22,6 +29,16 @@ type PostListItem = DbPostListItem & {
   files?: FileData[]
 }
 
+// Extract only the board translations we need
+type BoardTranslations = typeof koBoard.board
+
+const boardTranslations: Record<Locale, BoardTranslations> = {
+  ko: koBoard.board,
+  en: enBoard.board,
+  ja: jaBoard.board,
+  zh: zhBoard.board,
+}
+
 const ITEMS_PER_PAGE = 20
 
 interface BoardPageProps {
@@ -39,6 +56,12 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
   const currentPage = parseInt(resolvedSearchParams.page || '1', 10)
   const searchQuery = resolvedSearchParams.q || ''
   const selectedCategory = resolvedSearchParams.category || ''
+
+  // Get locale
+  const cookieStore = await cookies()
+  const localeCookie = cookieStore.get('NEXT_LOCALE')?.value
+  const locale = getLocale(undefined, localeCookie) as Locale
+  const t = boardTranslations[locale]
 
   const supabase = await createClient()
 
@@ -118,7 +141,7 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
   const totalPages = Math.ceil((count || 0) / ITEMS_PER_PAGE)
 
   // Process posts to extract thumbnail URL from files
-  const processedPosts = (posts as unknown as PostListItem[])?.map((post) => {
+  const processedPosts: PostWithAuthor[] = (posts as unknown as PostListItem[])?.map((post) => {
     // Find the first image file to use as thumbnail
     const firstImageFile = post.files?.find((file) => file.is_image)
     const thumbnailUrl = firstImageFile?.thumbnail_path
@@ -135,14 +158,26 @@ export default async function BoardPage({ params, searchParams }: BoardPageProps
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <BoardList
+      <BoardTable
         board={board}
         posts={processedPosts}
         categories={categories || []}
         currentPage={currentPage}
         totalPages={totalPages}
+        totalCount={count || 0}
         searchQuery={searchQuery}
         selectedCategory={selectedCategory}
+        translations={{
+          write: t.write,
+          notice: t.notice,
+          secret: t.secret,
+          noPosts: t.noPosts,
+          title: koBoard.common.title, // "제목" from common
+          author: t.author,
+          date: t.createdAt,
+          views: t.views,
+          likes: t.likes,
+        }}
       />
     </div>
   )

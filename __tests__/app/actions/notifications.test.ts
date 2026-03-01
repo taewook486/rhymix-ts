@@ -10,9 +10,8 @@ import {
   createNotification,
   getNotifications,
   getUnreadNotificationCount,
-  type NotificationSettings,
-  type NotificationInsert,
 } from '@/app/actions/notifications'
+import type { NotificationSettings, NotificationInsert } from '@/lib/supabase/database.types'
 
 // Get reference to mocked modules
 const { createClient } = require('@/lib/supabase/server')
@@ -24,12 +23,14 @@ describe('Notification Actions', () => {
   }
 
   const mockSettings: NotificationSettings = {
-    email_notifications: true,
-    push_notifications: false,
-    mention_notifications: true,
-    comment_notifications: true,
-    like_notifications: false,
-    follow_notifications: false,
+    email: true,
+    push: false,
+    mention: true,
+    comment: true,
+    like: false,
+    reply: true,
+    system: true,
+    admin: true,
   }
 
   beforeEach(() => {
@@ -149,8 +150,8 @@ describe('Notification Actions', () => {
   describe('updateNotificationSettings', () => {
     it('should update notification settings', async () => {
       const newSettings: Partial<NotificationSettings> = {
-        email_notifications: false,
-        push_notifications: true,
+        email: false,
+        push: true,
       }
 
       createClient.mockResolvedValue({
@@ -195,13 +196,13 @@ describe('Notification Actions', () => {
       const result = await updateNotificationSettings('user-1', newSettings)
 
       expect(result.success).toBe(true)
-      expect(result.data?.email_notifications).toBe(false)
-      expect(result.data?.push_notifications).toBe(true)
+      expect(result.data?.email).toBe(false)
+      expect(result.data?.push).toBe(true)
     })
 
     it('should merge settings with existing settings', async () => {
       const partialSettings: Partial<NotificationSettings> = {
-        like_notifications: true,
+        like: true,
       }
 
       createClient.mockResolvedValue({
@@ -232,7 +233,7 @@ describe('Notification Actions', () => {
                     data: {
                       notification_settings: {
                         ...mockSettings,
-                        like_notifications: true,
+                        like: true,
                       },
                     },
                     error: null,
@@ -246,8 +247,8 @@ describe('Notification Actions', () => {
       const result = await updateNotificationSettings('user-1', partialSettings)
 
       expect(result.success).toBe(true)
-      expect(result.data?.email_notifications).toBe(true) // Unchanged
-      expect(result.data?.like_notifications).toBe(true) // Updated
+      expect(result.data?.email).toBe(true) // Unchanged
+      expect(result.data?.like).toBe(true) // Updated
     })
 
     it('should deny access for different user', async () => {
@@ -548,7 +549,7 @@ describe('Notification Actions', () => {
         }),
       })
 
-      const result = await getNotifications({ userId: 'user-1', unreadOnly: true })
+      const result = await getNotifications({ userId: 'user-1', isRead: false })
 
       expect(result.success).toBe(true)
     })

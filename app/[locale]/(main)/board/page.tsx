@@ -10,7 +10,8 @@ import enTranslations from '@/lib/i18n/locales/en.json'
 import jaTranslations from '@/lib/i18n/locales/ja.json'
 import zhTranslations from '@/lib/i18n/locales/zh.json'
 
-const translations: Record<Locale, typeof koTranslations> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const translations: Record<Locale, any> = {
   ko: koTranslations,
   en: enTranslations,
   ja: jaTranslations,

@@ -22,7 +22,8 @@ import enTranslations from '@/lib/i18n/locales/en.json'
 import jaTranslations from '@/lib/i18n/locales/ja.json'
 import zhTranslations from '@/lib/i18n/locales/zh.json'
 
-type Translations = typeof koTranslations
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Translations = any
 
 const translations: Record<Locale, Translations> = {
   ko: koTranslations,

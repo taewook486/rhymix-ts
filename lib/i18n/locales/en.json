@@ -75,6 +75,9 @@
   "home": {
     "welcome": "Welcome to Rhymix TS",
     "subtitle": "Modern CMS built with Next.js and Supabase",
+    "description": "A next-generation platform for communities, blogs, and content management. Build fast, secure, and scalable websites.",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More",
     "quickLinks": "Quick Links",
     "quickLinksDesc": "Navigate the site",
     "siteStats": "Site Statistics",

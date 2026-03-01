@@ -75,6 +75,9 @@
   "home": {
     "welcome": "Rhymix TS에 오신 것을 환영합니다",
     "subtitle": "Next.js와 Supabase로 구축된 현대적인 CMS",
+    "description": "커뮤니티, 블로그, 콘텐츠 관리를 위한 차세대 플랫폼입니다. 빠르고 안전하며 확장 가능한 웹사이트를 구축하세요.",
+    "getStarted": "시작하기",
+    "learnMore": "자세히 보기",
     "quickLinks": "빠른 링크",
     "quickLinksDesc": "사이트를 탐색하세요",
     "siteStats": "사이트 통계",

@@ -8,10 +8,8 @@ import {
   getMessages,
   getMessage,
   markAsRead,
-  type MessageInsert,
-  type MessageListFilters,
-  type Message,
 } from '@/app/actions/message'
+import type { MessageInsert, MessageListFilters, Message } from '@/lib/supabase/database.types'
 
 // Get reference to mocked modules
 const { createClient } = require('@/lib/supabase/server')
@@ -40,6 +38,8 @@ describe('Message Actions', () => {
     updated_at: '2024-02-24T10:00:00Z',
     parent_id: null,
     read_at: null,
+    sender_deleted_at: null,
+    receiver_deleted_at: null,
   }
 
   beforeEach(() => {
@@ -48,11 +48,11 @@ describe('Message Actions', () => {
 
   describe('sendMessage', () => {
     it('should send message successfully', async () => {
-      const messageData: MessageInsert = {
+      const messageData = {
         receiver_id: 'user-2',
         title: 'Test Message',
         content: 'Test content',
-      }
+      } as MessageInsert
 
       createClient.mockResolvedValue({
         auth: {
@@ -129,11 +129,11 @@ describe('Message Actions', () => {
     })
 
     it('should deny access for unauthenticated users', async () => {
-      const messageData: MessageInsert = {
+      const messageData = {
         receiver_id: 'user-2',
         title: 'Test',
         content: 'Content',
-      }
+      } as MessageInsert
 
       createClient.mockResolvedValue({
         auth: {
@@ -173,11 +173,11 @@ describe('Message Actions', () => {
     })
 
     it('should check if receiver exists', async () => {
-      const messageData: MessageInsert = {
+      const messageData = {
         receiver_id: 'non-existent-user',
         title: 'Test',
         content: 'Content',
-      }
+      } as MessageInsert
 
       createClient.mockResolvedValue({
         auth: {
@@ -206,11 +206,11 @@ describe('Message Actions', () => {
     })
 
     it('should block sending to blocked users', async () => {
-      const messageData: MessageInsert = {
+      const messageData = {
         receiver_id: 'user-2',
         title: 'Test',
         content: 'Content',
-      }
+      } as MessageInsert
 
       createClient.mockResolvedValue({
         auth: {
@@ -242,11 +242,11 @@ describe('Message Actions', () => {
     })
 
     it('should trim title and content', async () => {
-      const messageData: MessageInsert = {
+      const messageData = {
         receiver_id: 'user-2',
         title: '  Test Title  ',
         content: '  Test Content  ',
-      }
+      } as MessageInsert
 
       createClient.mockResolvedValue({
         auth: {
