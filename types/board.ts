@@ -224,6 +224,7 @@ export interface VoteResult {
 // =====================================================
 
 export interface BoardConfig {
+  // Basic permissions
   post_permission: 'all' | 'member' | 'admin'
   comment_permission: 'all' | 'member' | 'admin'
   list_count: number
@@ -257,6 +258,35 @@ export interface BoardConfig {
   only_image: boolean
   only_image_extension: string[]
   disable_copy: boolean
+
+  // WHW-020: Board Basic Settings
+  module_category: string
+  layout_srl: string | null
+  skin_srl: string | null
+  use_mobile: boolean
+  mobile_layout_srl: string | null
+  mobile_skin_srl: string | null
+  description: string | null
+  header_content: string | null
+  footer_content: string | null
+
+  // WHW-021: Board Content Settings
+  history_tracking: 'none' | 'update' | 'history'
+  use_vote_up: boolean
+  use_vote_down: boolean
+  vote_up_level: 'public' | 'member' | 'disabled'
+  vote_down_level: 'public' | 'member' | 'disabled'
+  allow_vote_same_ip: boolean
+  cancel_vote: boolean
+  allow_vote_guest: boolean
+  use_report: boolean
+  report_target: 'admin' | 'all'
+
+  // WHW-022: Comment Settings
+  comment_count: number
+  comment_page_count: number
+  comment_max_depth: number
+  comment_default_page: 'first' | 'last'
 }
 
 export interface BoardWithConfig {
