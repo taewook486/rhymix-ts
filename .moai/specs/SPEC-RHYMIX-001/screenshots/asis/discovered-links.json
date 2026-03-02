@@ -1,0 +1,154 @@
+[
+  {
+    "href": "http://localhost/admin/#content",
+    "text": "메뉴 건너뛰기"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5",
+    "text": "admin"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=procAdminLogout",
+    "text": "로그아웃"
+  },
+  {
+    "href": "http://localhost/admin/#lang",
+    "text": "한국어"
+  },
+  {
+    "href": "http://localhost/admin/#gnbNav",
+    "text": "Menu Open/Close"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin",
+    "text": "대시보드"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispMenuAdminSiteMap",
+    "text": "사이트 메뉴 편집"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispMenuAdminSiteDesign",
+    "text": "사이트 디자인 설정"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispMemberAdminList",
+    "text": "더보기"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispMemberAdminConfig",
+    "text": "회원 설정"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispMemberAdminGroupList",
+    "text": "회원 그룹"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispPointAdminConfig",
+    "text": "포인트"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispBoardAdminContent",
+    "text": "게시판"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispPageAdminContent",
+    "text": "페이지"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispDocumentAdminList",
+    "text": "더보기"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispCommentAdminList",
+    "text": "더보기"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispFileAdminList",
+    "text": "파일"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispPollAdminList",
+    "text": "설문"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispEditorAdminIndex",
+    "text": "에디터"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispSpamfilterAdminDeniedIPList",
+    "text": "스팸필터"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispTrashAdminList",
+    "text": "휴지통"
+  },
+  {
+    "href": "http://localhost/admin/#favorite",
+    "text": "즐겨찾기"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispAdvanced_mailerAdminConfig",
+    "text": "메일, SMS 및 푸시 알림 관리"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispNcenterliteAdminConfig",
+    "text": "알림 센터"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispAdminConfigGeneral",
+    "text": "시스템 설정"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispAdminSetup",
+    "text": "관리자 화면 설정"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispModuleAdminFileBox",
+    "text": "파일박스"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispAutoinstallAdminIndex",
+    "text": "쉬운 설치"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispLayoutAdminInstalledList",
+    "text": "설치된 레이아웃"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispModuleAdminContent",
+    "text": "설치된 모듈"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispAddonAdminIndex",
+    "text": "설치된 애드온"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispWidgetAdminDownloadedList",
+    "text": "설치된 위젯"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispModuleAdminLangcode",
+    "text": "다국어"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispImporterAdminImportForm",
+    "text": "데이터 들여오기"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispRssAdminIndex",
+    "text": "RSS"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispAdminCleanupList",
+    "text": "코어 파일 정리"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispMemberAdminInsert&member_srl=5",
+    "text": "admin"
+  },
+  {
+    "href": "http://localhost/index.php?module=admin&act=dispAdminViewServerEnv",
+    "text": "서버 환경 표시"
+  }
+]

@@ -275,7 +275,7 @@ export const SMTP_ENCRYPTION_LABELS: Record<
  * 발송이 성공했는지 확인
  */
 export function isDeliverySuccess(status: NotificationStatus): boolean {
-  return status === 'sent' || status === 'delivered'
+  return status === 'sent'
 }
 
 /**

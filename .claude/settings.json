@@ -173,6 +173,7 @@
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
+      "mcp__pencil",
       "AskUserQuestion",
       "BashOutput",
       "Edit",

@@ -1,1495 +1,2349 @@
-/**
- * Rhymix-TS Database Types
- *
- * This file contains TypeScript types that match the Supabase PostgreSQL schema.
- * These types are auto-generated compatible and provide type safety for all database operations.
- *
- * Generated: 2026-02-20
- * Database: Supabase PostgreSQL 16
- */
-
-// =====================================================
-// UTILITY TYPES
-// =====================================================
-
-/**
- * Common JSON field types used across tables
- */
-export interface Json {
-  [key: string]: JsonValue;
-}
-
-export type JsonValue =
+export type Json =
   | string
   | number
   | boolean
   | null
-  | Json
-  | JsonValue[];
-
-/**
- * Timestamp with timezone
- */
-export type TIMESTAMPTZ = string;
-
-/**
- * UUID type
- */
-export type UUID = string;
-
-/**
- * Array of strings (for tags, categories)
- */
-export type TextArray = string[];
-
-// =====================================================
-// PROFILE TYPES
-// =====================================================
-
-/**
- * User role enum
- */
-export type UserRole = 'admin' | 'user' | 'guest' | 'moderator';
-
-/**
- * Notification settings structure
- */
-export interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  comment: boolean;
-  mention?: boolean;
-  like?: boolean;
-  reply?: boolean;
-  system?: boolean;
-  admin?: boolean;
-}
-
-/**
- * Profile metadata structure
- */
-export interface ProfileMetadata {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main profile type (extends auth.users)
- */
-export interface Profile {
-  id: UUID;
-  email: string;
-  display_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  website_url: string | null;
-  location: string | null;
-  role: UserRole;
-  email_verified: TIMESTAMPTZ;
-  last_login_at: TIMESTAMPTZ | null;
-  signature: string | null;
-  notification_settings: NotificationSettings;
-  metadata: ProfileMetadata;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-/**
- * Profile insert type (all optional fields for partial inserts)
- */
-export type ProfileInsert = Omit<Partial<Profile>, 'id' | 'created_at' | 'updated_at'> & {
-  id: UUID;
-};
-
-/**
- * Profile update type
- */
-export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
-
-// =====================================================
-// BOARD TYPES
-// =====================================================
-
-/**
- * Board list order enum
- */
-export type BoardListOrder = 'latest' | 'voted' | 'blamed' | 'readed' | 'commented' | 'title' | 'updated' | 'random';
-
-/**
- * Board sort order enum
- */
-export type BoardSortOrder = 'asc' | 'desc';
-
-/**
- * Board configuration structure
- */
-export interface BoardConfig {
-  post_permission: 'all' | 'member' | 'admin';
-  comment_permission: 'all' | 'member' | 'admin';
-  list_count: number;
-  search_list_count: number;
-  page_count: number;
-  anonymous: boolean;
-  use_category: boolean;
-  use_tags: boolean;
-  use_editor: boolean;
-  use_file: boolean;
-  max_file_size: number;
-  allowed_file_extensions: string[];
-  max_file_count: number;
-  thumbnail_type: 'crop' | 'ratio' | 'none';
-  thumbnail_width: number;
-  thumbnail_height: number;
-  allow_captcha: boolean;
-  allow_anonymous: boolean;
-  allow_signup: boolean;
-  hide_category: boolean;
-  list_categories: boolean;
-  protect_content: boolean;
-  protect_comment: boolean;
-  protect_view_count: boolean;
-  protect_voted_count: boolean;
-  protect_blamed_count: boolean;
-  protect_noticed: boolean;
-  protect_secret: boolean;
-  protect_document_category: boolean;
-  non_login_vote: boolean;
-  only_image: boolean;
-  only_image_extension: string[];
-  disable_copy: boolean;
-}
-
-/**
- * Main board type
- */
-export interface Board {
-  id: UUID;
-  slug: string;
-  title: string;
-  description: string | null;
-  content: string | null;
-  icon: string | null;
-  banner_url: string | null;
-  config: BoardConfig;
-  skin: string;
-  list_order: BoardListOrder;
-  sort_order: BoardSortOrder;
-  view_count: number;
-  post_count: number;
-  comment_count: number;
-  is_notice: boolean;
-  is_hidden: boolean;
-  is_locked: boolean;
-  is_secret: boolean;
-  admin_id: UUID | null;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-  deleted_at: TIMESTAMPTZ | null;
-}
-
-/**
- * Board with relations
- */
-export interface BoardWithRelations extends Board {
-  admin: Profile | null;
-}
-
-/**
- * Board insert type
- */
-export type BoardInsert = Omit<Partial<Board>, 'id' | 'created_at' | 'updated_at'> & {
-  slug: string;
-  title: string;
-};
-
-/**
- * Board update type
- */
-export type BoardUpdate = Partial<Omit<Board, 'id' | 'slug' | 'created_at' | 'updated_at'>>;
-
-// =====================================================
-// CATEGORY TYPES
-// =====================================================
-
-/**
- * Main category type
- */
-export interface Category {
-  id: UUID;
-  board_id: UUID;
-  parent_id: UUID | null;
-  name: string;
-  slug: string;
-  description: string | null;
-  icon: string | null;
-  color: string | null;
-  order_index: number;
-  depth: number;
-  path: string;
-  post_count: number;
-  is_hidden: boolean;
-  is_locked: boolean;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-/**
- * Category with relations
- */
-export interface CategoryWithRelations extends Category {
-  board: Board;
-  parent: Category | null;
-  children: Category[];
-}
-
-/**
- * Category insert type
- */
-export type CategoryInsert = Omit<Partial<Category>, 'id' | 'created_at' | 'updated_at'> & {
-  board_id: UUID;
-  name: string;
-  slug: string;
-};
-
-/**
- * Category update type
- */
-export type CategoryUpdate = Partial<Omit<Category, 'id' | 'board_id' | 'created_at' | 'updated_at'>>;
-
-// =====================================================
-// POST TYPES
-// =====================================================
-
-/**
- * Post status enum
- */
-export type PostStatus = 'draft' | 'published' | 'trash' | 'temp' | 'embossed' | 'secret';
-
-/**
- * Post visibility enum
- */
-export type PostVisibility = 'all' | 'member' | 'admin' | 'only_me';
-
-/**
- * Post metadata structure
- */
-export interface PostMetadata {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main post type
- */
-export interface Post {
-  id: UUID;
-  board_id: UUID;
-  category_id: UUID | null;
-  author_id: UUID | null;
-  author_name: string | null;
-  author_password: string | null;
-  title: string;
-  content: string;
-  content_html: string | null;
-  excerpt: string | null;
-  status: PostStatus;
-  visibility: PostVisibility;
-  is_notice: boolean;
-  is_secret: boolean;
-  is_locked: boolean;
-  is_blind: boolean;
-  is_hidden: boolean;
-  allow_comment: boolean;
-  allow_trackback: boolean;
-  notify_message: boolean;
-  ip_address: string | null;
-  tags: TextArray;
-  metadata: PostMetadata;
-  view_count: number;
-  vote_count: number;
-  blamed_count: number;
-  comment_count: number;
-  trackback_count: number;
-  attached_count: number;
-  readed_count: number;
-  voted_count: number;
-  comment_notified: boolean;
-  last_commenter_id: UUID | null;
-  last_commented_at: TIMESTAMPTZ | null;
-  published_at: TIMESTAMPTZ | null;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-  deleted_at: TIMESTAMPTZ | null;
-  search_vector?: string; // Full-text search vector (usually not selected)
-}
-
-/**
- * Post with relations
- */
-export interface PostWithRelations extends Post {
-  board: Board;
-  category: Category | null;
-  author: Profile | null;
-  last_commenter: Profile | null;
-  files: File[];
-}
-
-/**
- * Post insert type
- */
-export type PostInsert = Omit<Partial<Post>, 'id' | 'created_at' | 'updated_at' | 'search_vector'> & {
-  board_id: UUID;
-  title: string;
-  content: string;
-};
-
-/**
- * Post update type
- */
-export type PostUpdate = Partial<Omit<Post, 'id' | 'board_id' | 'author_id' | 'created_at' | 'updated_at' | 'search_vector'>>;
-
-/**
- * Post list item (lightweight for list views)
- */
-export interface PostListItem {
-  id: UUID;
-  board_id: UUID;
-  category_id: UUID | null;
-  author_id: UUID | null;
-  author_name: string | null;
-  title: string;
-  excerpt: string | null;
-  status: PostStatus;
-  is_notice: boolean;
-  is_secret: boolean;
-  view_count: number;
-  vote_count: number;
-  comment_count: number;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-// =====================================================
-// COMMENT TYPES
-// =====================================================
-
-/**
- * Comment status enum
- */
-export type CommentStatus = 'visible' | 'hidden' | 'trash' | 'secret';
-
-/**
- * Comment metadata structure
- */
-export interface CommentMetadata {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main comment type
- */
-export interface Comment {
-  id: UUID;
-  post_id: UUID;
-  parent_id: UUID | null;
-  author_id: UUID | null;
-  author_name: string | null;
-  author_password: string | null;
-  content: string;
-  content_html: string | null;
-  status: CommentStatus;
-  is_secret: boolean;
-  is_blind: boolean;
-  ip_address: string | null;
-  vote_count: number;
-  blamed_count: number;
-  depth: number;
-  path: string;
-  order_index: number;
-  like_count: number;
-  dislike_count: number;
-  report_count: number;
-  metadata: CommentMetadata;
-  notified_at: TIMESTAMPTZ | null;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-  deleted_at: TIMESTAMPTZ | null;
-}
-
-/**
- * Comment with relations
- */
-export interface CommentWithRelations extends Comment {
-  post: Post;
-  parent: Comment | null;
-  author: Profile | null;
-  children: Comment[];
-}
-
-/**
- * Comment insert type
- */
-export type CommentInsert = Omit<Partial<Comment>, 'id' | 'created_at' | 'updated_at'> & {
-  post_id: UUID;
-  content: string;
-};
-
-/**
- * Comment update type
- */
-export type CommentUpdate = Partial<Omit<Comment, 'id' | 'post_id' | 'author_id' | 'created_at' | 'updated_at'>>;
-
-// =====================================================
-// DOCUMENT TYPES
-// =====================================================
-
-/**
- * Document status enum
- */
-export type DocumentStatus = 'draft' | 'published' | 'trash' | 'archived';
-
-/**
- * Document visibility enum
- */
-export type DocumentVisibility = 'public' | 'private' | 'password' | 'member' | 'admin';
-
-/**
- * Document metadata structure
- */
-export interface DocumentMetadata {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main document type
- */
-export interface Document {
-  id: UUID;
-  module: string;
-  title: string;
-  content: string;
-  content_html: string | null;
-  excerpt: string | null;
-  slug: string | null;
-  author_id: UUID | null;
-  status: DocumentStatus;
-  visibility: DocumentVisibility;
-  password: string | null;
-  template: string;
-  layout: string;
-  language: string;
-  tags: TextArray;
-  categories: TextArray;
-  metadata: DocumentMetadata;
-  version: number;
-  view_count: number;
-  like_count: number;
-  comment_count: number;
-  is_featured: boolean;
-  is_sticky: boolean;
-  allow_comment: boolean;
-  allow_ping: boolean;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-  published_at: TIMESTAMPTZ | null;
-  deleted_at: TIMESTAMPTZ | null;
-  search_vector?: string; // Full-text search vector
-}
-
-/**
- * Document with relations
- */
-export interface DocumentWithRelations extends Document {
-  author: Profile | null;
-  versions: DocumentVersion[];
-}
-
-/**
- * Document insert type
- */
-export type DocumentInsert = Omit<Partial<Document>, 'id' | 'created_at' | 'updated_at' | 'search_vector'> & {
-  module: string;
-  title: string;
-  content: string;
-};
-
-/**
- * Document update type
- */
-export type DocumentUpdate = Partial<Omit<Document, 'id' | 'author_id' | 'created_at' | 'updated_at' | 'search_vector'>>;
-
-// =====================================================
-// DOCUMENT VERSION TYPES
-// =====================================================
-
-/**
- * Document version change type
- */
-export type DocumentVersionChangeType = 'create' | 'update' | 'restore' | 'publish';
-
-/**
- * Document version metadata
- */
-export interface DocumentVersionMetadata {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main document version type
- */
-export interface DocumentVersion {
-  id: UUID;
-  document_id: UUID;
-  version: number;
-  title: string;
-  content: string;
-  content_html: string | null;
-  excerpt: string | null;
-  author_id: UUID | null;
-  author_name: string | null;
-  change_summary: string | null;
-  change_type: DocumentVersionChangeType;
-  metadata: DocumentVersionMetadata;
-  created_at: TIMESTAMPTZ;
-}
-
-/**
- * Document version with relations
- */
-export interface DocumentVersionWithRelations extends DocumentVersion {
-  document: Document;
-  author: Profile | null;
-}
-
-// =====================================================
-// TRANSLATION TYPES
-// =====================================================
-
-/**
- * Language code format (e.g., 'en', 'en_US', 'ko')
- */
-export type LanguageCode = string;
-
-/**
- * Main translation type
- */
-export interface Translation {
-  id: UUID;
-  lang_code: LanguageCode;
-  namespace: string;
-  key: string;
-  value: string;
-  context: string | null;
-  plural: string | null;
-  is_system: boolean;
-  is_active: boolean;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-/**
- * Translation insert type
- */
-export type TranslationInsert = Omit<Partial<Translation>, 'id' | 'created_at' | 'updated_at'> & {
-  lang_code: LanguageCode;
-  namespace: string;
-  key: string;
-  value: string;
-};
-
-/**
- * Translation update type
- */
-export type TranslationUpdate = Partial<Omit<Translation, 'id' | 'created_at' | 'updated_at'>>;
-
-// =====================================================
-// FILE TYPES
-// =====================================================
-
-/**
- * File target type enum
- */
-export type FileTargetType = 'post' | 'comment' | 'document' | 'profile';
-
-/**
- * File status enum
- */
-export type FileStatus = 'active' | 'trash' | 'deleted';
-
-/**
- * File metadata structure
- */
-export interface FileMetadata {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main file type
- */
-export interface File {
-  id: UUID;
-  target_type: FileTargetType;
-  target_id: UUID;
-  author_id: UUID | null;
-  filename: string;
-  original_filename: string;
-  mime_type: string;
-  file_size: number;
-  width: number | null;
-  height: number | null;
-  duration: number | null; // For video/audio in seconds
-  storage_path: string;
-  cdn_url: string | null;
-  thumbnail_path: string | null;
-  is_image: boolean;
-  is_video: boolean;
-  is_audio: boolean;
-  is_document: boolean;
-  download_count: number;
-  status: FileStatus;
-  metadata: FileMetadata;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-  deleted_at: TIMESTAMPTZ | null;
-}
-
-/**
- * File with relations
- */
-export interface FileWithRelations extends File {
-  author: Profile | null;
-}
-
-/**
- * File insert type
- */
-export type FileInsert = Omit<Partial<File>, 'id' | 'created_at' | 'updated_at'> & {
-  target_type: FileTargetType;
-  target_id: UUID;
-  filename: string;
-  original_filename: string;
-  mime_type: string;
-  file_size: number;
-  storage_path: string;
-};
-
-/**
- * File update type
- */
-export type FileUpdate = Partial<Omit<File, 'id' | 'target_type' | 'target_id' | 'created_at' | 'updated_at'>>;
-
-// =====================================================
-// MENU TYPES
-// =====================================================
-
-/**
- * Menu location enum
- */
-export type MenuLocation = 'header' | 'footer' | 'sidebar' | 'top' | 'bottom';
-
-/**
- * Menu config structure
- */
-export interface MenuConfig {
-  type: 'normal' | 'dropdown' | 'mega';
-  max_depth: number;
-  expandable: boolean;
-  show_title: boolean;
-}
-
-/**
- * Main menu type
- */
-export interface Menu {
-  id: UUID;
-  name: string;
-  title: string;
-  location: MenuLocation;
-  description: string | null;
-  config: MenuConfig;
-  is_active: boolean;
-  order_index: number;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-/**
- * Menu with relations
- */
-export interface MenuWithRelations extends Menu {
-  items: MenuItem[];
-}
-
-// =====================================================
-// MENU ITEM TYPES
-// =====================================================
-
-/**
- * Menu item type enum
- */
-export type MenuItemType = 'link' | 'divider' | 'header' | 'action' | 'custom';
-
-/**
- * Menu item target enum
- */
-export type MenuItemTarget = '_self' | '_blank' | '_parent' | '_top';
-
-/**
- * Menu item required role enum
- */
-export type MenuItemRequiredRole = 'all' | 'member' | 'admin';
-
-/**
- * Menu item config structure
- */
-export interface MenuItemConfig {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main menu item type
- */
-export interface MenuItem {
-  id: UUID;
-  menu_id: UUID;
-  parent_id: UUID | null;
-  title: string;
-  url: string | null;
-  type: MenuItemType;
-  icon: string | null;
-  badge: string | null;
-  target: MenuItemTarget;
-  rel: string | null;
-  css_class: string | null;
-  style: string | null;
-  depth: number;
-  path: string;
-  order_index: number;
-  is_active: boolean;
-  is_visible: boolean;
-  is_new_window: boolean;
-  is_nofollow: boolean;
-  required_role: MenuItemRequiredRole;
-  config: MenuItemConfig;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-/**
- * Menu item with relations
- */
-export interface MenuItemWithRelations extends MenuItem {
-  menu: Menu;
-  parent: MenuItem | null;
-  children: MenuItem[];
-}
-
-// =====================================================
-// VOTE TYPES
-// =====================================================
-
-/**
- * Vote target type enum
- */
-export type VoteTargetType = 'post' | 'comment' | 'document';
-
-/**
- * Vote type enum
- */
-export type VoteType = 'up' | 'down';
-
-/**
- * Main vote type
- */
-export interface Vote {
-  id: UUID;
-  target_type: VoteTargetType;
-  target_id: UUID;
-  user_id: UUID;
-  vote_type: VoteType;
-  ip_address: string | null;
-  created_at: TIMESTAMPTZ;
-}
-
-/**
- * Vote with relations
- */
-export interface VoteWithRelations extends Vote {
-  user: Profile;
-}
-
-// =====================================================
-// SCRAP TYPES
-// =====================================================
-
-/**
- * Scrap target type enum
- */
-export type ScrapTargetType = 'post' | 'comment' | 'document';
-
-/**
- * Main scrap type
- */
-export interface Scrap {
-  id: UUID;
-  user_id: UUID;
-  target_type: ScrapTargetType;
-  target_id: UUID;
-  title: string;
-  excerpt: string | null;
-  thumbnail_url: string | null;
-  url: string;
-  folder_id: UUID | null;
-  tags: TextArray;
-  notes: string | null;
-  is_favorite: boolean;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-/**
- * Scrap with relations
- */
-export interface ScrapWithRelations extends Scrap {
-  user: Profile;
-  folder: ScrapFolder | null;
-}
-
-// =====================================================
-// SCRAP FOLDER TYPES
-// =====================================================
-
-/**
- * Main scrap folder type
- */
-export interface ScrapFolder {
-  id: UUID;
-  user_id: UUID;
-  name: string;
-  description: string | null;
-  icon: string | null;
-  color: string | null;
-  parent_id: UUID | null;
-  order_index: number;
-  is_default: boolean;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-/**
- * Scrap folder with relations
- */
-export interface ScrapFolderWithRelations extends ScrapFolder {
-  user: Profile;
-  parent: ScrapFolder | null;
-  children: ScrapFolder[];
-  scraps: Scrap[];
-}
-
-// =====================================================
-// NOTIFICATION TYPES
-// =====================================================
-
-/**
- * Notification type enum
- */
-export type NotificationType = 'comment' | 'mention' | 'like' | 'reply' | 'system' | 'admin';
-
-/**
- * Notification metadata structure
- */
-export interface NotificationMetadata {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main notification type
- */
-export interface Notification {
-  id: UUID;
-  user_id: UUID;
-  type: NotificationType;
-  title: string;
-  content: string | null;
-  action_url: string | null;
-  action_label: string | null;
-  icon: string | null;
-  metadata: NotificationMetadata;
-  is_read: boolean;
-  read_at: TIMESTAMPTZ | null;
-  created_at: TIMESTAMPTZ;
-}
-
-/**
- * Notification with relations
- */
-export interface NotificationWithRelations extends Notification {
-  user: Profile;
-}
-
-/**
- * Notification insert type (all optional fields for partial inserts)
- */
-export type NotificationInsert = Omit<Partial<Notification>, 'id' | 'created_at'> & {
-  user_id: UUID;
-  type: NotificationType;
-  title: string;
-};
-
-/**
- * Notification update type
- */
-export type NotificationUpdate = Partial<Omit<Notification, 'id' | 'user_id' | 'created_at'>>;
-
-/**
- * Notification with computed fields (from useNotifications hook)
- */
-export interface NotificationWithMeta extends Notification {
-  /** Time ago string (e.g., "5 minutes ago") */
-  timeAgo?: string;
-  /** Whether this notification is new (just received) */
-  isNew?: boolean;
-}
-
-// =====================================================
-// MESSAGE TYPES
-// =====================================================
-
-/**
- * Message status enum
- */
-export type MessageStatus = 'draft' | 'sent' | 'read' | 'deleted';
-
-/**
- * Message metadata structure
- */
-export interface MessageMetadata {
-  [key: string]: JsonValue;
-}
-
-/**
- * Main message type
- */
-export interface Message {
-  id: UUID;
-  sender_id: UUID;
-  receiver_id: UUID;
-  title: string;
-  content: string;
-  is_read: boolean;
-  read_at: TIMESTAMPTZ | null;
-  is_sender_deleted: boolean;
-  is_receiver_deleted: boolean;
-  sender_deleted_at: TIMESTAMPTZ | null;
-  receiver_deleted_at: TIMESTAMPTZ | null;
-  parent_id: UUID | null;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-/**
- * Message with relations
- */
-export interface MessageWithRelations extends Message {
-  sender: Profile;
-  receiver: Profile;
-  parent: Message | null;
-}
-
-/**
- * Message insert type
- */
-export type MessageInsert = Omit<
-  Partial<Message>,
-  'id' | 'created_at' | 'updated_at' | 'is_read' | 'read_at' | 'is_sender_deleted' | 'is_receiver_deleted' | 'sender_deleted_at' | 'receiver_deleted_at'
-> & {
-  sender_id: UUID;
-  receiver_id: UUID;
-  title: string;
-  content: string;
-  parent_id?: UUID | null;
-};
-
-/**
- * Message update type
- */
-export type MessageUpdate = Partial<
-  Pick<Message, 'title' | 'content' | 'is_read' | 'read_at' | 'is_sender_deleted' | 'is_receiver_deleted' | 'sender_deleted_at' | 'receiver_deleted_at'>
->;
-
-/**
- * Message block type
- */
-export interface MessageBlock {
-  id: UUID;
-  blocker_id: UUID;
-  blocked_id: UUID;
-  created_at: TIMESTAMPTZ;
-}
-
-/**
- * Message block with relations
- */
-export interface MessageBlockWithRelations extends MessageBlock {
-  blocker: Profile;
-  blocked: Profile;
-}
-
-/**
- * Message block insert type
- */
-export type MessageBlockInsert = Omit<MessageBlock, 'id' | 'created_at'>;
-
-/**
- * Message list filters
- */
-export interface MessageListFilters {
-  folder: 'inbox' | 'sent';
-  is_read?: boolean;
-  search?: string;
-  limit?: number;
-  offset?: number;
-}
-
-// =====================================================
-// TAG TYPES
-// =====================================================
-
-/**
- * Main tag type
- */
-export interface Tag {
-  id: UUID;
-  name: string;
-  slug: string;
-  description: string | null;
-  count: number;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-// =====================================================
-// POINT TYPES
-// =====================================================
-
-/**
- * Main point type
- */
-export interface Point {
-  id: UUID;
-  user_id: UUID;
-  point: number;
-  reason: string;
-  target_type: string | null;
-  target_id: UUID | null;
-  created_at: TIMESTAMPTZ;
-}
-
-/**
- * Point with relations
- */
-export interface PointWithRelations extends Point {
-  user: Profile;
-}
-
-// =====================================================
-// SETTING TYPES
-// =====================================================
-
-/**
- * Setting value type (any JSON)
- */
-export type SettingValue = Json;
-
-/**
- * Main setting type
- */
-export interface Setting {
-  id: UUID;
-  module: string;
-  key: string;
-  value: SettingValue;
-  description: string | null;
-  is_public: boolean;
-  is_system: boolean;
-  created_at: TIMESTAMPTZ;
-  updated_at: TIMESTAMPTZ;
-}
-
-// =====================================================
-// AGGREGATE TYPES
-// =====================================================
-
-/**
- * Dashboard statistics
- */
-export interface DashboardStats {
-  total_users: number;
-  total_posts: number;
-  total_comments: number;
-  total_views: number;
-  today_posts: number;
-  today_comments: number;
-  today_views: number;
-  active_boards: number;
-}
-
-/**
- * Search result type
- */
-export interface SearchResult<T = Post | Document> {
-  type: 'post' | 'document';
-  item: T;
-  rank: number;
-  highlight: {
-    title: string;
-    content: string;
-  };
-}
-
-/**
- * Pagination metadata
- */
-export interface PaginationMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-/**
- * Paginated response
- */
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: PaginationMeta;
-}
-
-// =====================================================
-// FILTER AND QUERY TYPES
-// =====================================================
-
-/**
- * Post filter options
- */
-export interface PostFilterOptions {
-  board_id?: UUID;
-  category_id?: UUID;
-  author_id?: UUID;
-  status?: PostStatus;
-  visibility?: PostVisibility;
-  tags?: string[];
-  search?: string;
-  is_notice?: boolean;
-  is_secret?: boolean;
-  date_from?: TIMESTAMPTZ;
-  date_to?: TIMESTAMPTZ;
-}
-
-/**
- * Post sort options
- */
-export type PostSortOption =
-  | 'created_at'
-  | 'updated_at'
-  | 'published_at'
-  | 'view_count'
-  | 'vote_count'
-  | 'comment_count'
-  | 'title';
-
-/**
- * Post query options
- */
-export interface PostQueryOptions {
-  filter?: PostFilterOptions;
-  sort?: PostSortOption;
-  order?: 'asc' | 'desc';
-  page?: number;
-  limit?: number;
-}
-
-/**
- * Comment filter options
- */
-export interface CommentFilterOptions {
-  post_id?: UUID;
-  author_id?: UUID;
-  status?: CommentStatus;
-  is_secret?: boolean;
-}
-
-/**
- * Document filter options
- */
-export interface DocumentFilterOptions {
-  module?: string;
-  author_id?: UUID;
-  status?: DocumentStatus;
-  visibility?: DocumentVisibility;
-  language?: string;
-  tags?: string[];
-  search?: string;
-}
-
-// =====================================================
-// FORM INPUT TYPES
-// =====================================================
-
-/**
- * Post creation input
- */
-export interface CreatePostInput {
-  board_id: UUID;
-  category_id?: UUID;
-  title: string;
-  content: string;
-  tags?: string[];
-  is_secret?: boolean;
-  is_notice?: boolean;
-  status?: PostStatus;
-}
-
-/**
- * Post update input
- */
-export interface UpdatePostInput {
-  title?: string;
-  content?: string;
-  category_id?: UUID;
-  tags?: string[];
-  is_secret?: boolean;
-  is_notice?: boolean;
-  status?: PostStatus;
-}
-
-/**
- * Comment creation input
- */
-export interface CreateCommentInput {
-  post_id: UUID;
-  parent_id?: UUID;
-  content: string;
-  is_secret?: boolean;
-}
-
-/**
- * Profile update input
- */
-export interface UpdateProfileInput {
-  display_name?: string;
-  avatar_url?: string;
-  bio?: string;
-  website_url?: string;
-  location?: string;
-  signature?: string;
-}
-
-/**
- * Document creation input
- */
-export interface CreateDocumentInput {
-  module: string;
-  title: string;
-  content: string;
-  slug?: string;
-  template?: string;
-  layout?: string;
-  language?: string;
-  tags?: string[];
-  categories?: string[];
-  status?: DocumentStatus;
-  visibility?: DocumentVisibility;
-}
-
-// =====================================================
-// API RESPONSE TYPES
-// =====================================================
-
-/**
- * Standard API response wrapper
- */
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-  meta?: {
-    timestamp: TIMESTAMPTZ;
-    request_id: string;
-  };
-}
-
-/**
- * API error response
- */
-export interface ApiErrorResponse {
-  success: false;
-  error: string;
-  message?: string;
-  details?: Record<string, string[]>;
-  meta?: {
-    timestamp: TIMESTAMPTZ;
-    request_id: string;
-  };
-}
-
-/**
- * Auth response
- */
-export interface AuthResponse {
-  user: Profile;
-  session: {
-    access_token: string;
-    refresh_token: string;
-    expires_at: number;
-  };
-}
-
-// =====================================================
-// SUPABASE TYPE GENERATION COMPATIBILITY
-// =====================================================
-
-/**
- * This type maps to the Supabase generated database types.
- * When running `npx supabase gen types typescript --local`, the output
- * will be compatible with these manually defined types.
- *
- * To generate types from your actual Supabase project:
- * npx supabase gen types typescript --project-id YOUR_PROJECT_ID > lib/supabase/generated.types.ts
- */
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      profiles: {
-        Row: Profile;
-        Insert: ProfileInsert;
-        Update: ProfileUpdate;
-      };
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          description: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          module: string | null
+          severity: string | null
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          module?: string | null
+          severity?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          module?: string | null
+          severity?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       boards: {
-        Row: Board;
-        Insert: BoardInsert;
-        Update: BoardUpdate;
-      };
+        Row: {
+          admin_id: string | null
+          comment_count: number | null
+          config: Json | null
+          content: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          is_hidden: boolean | null
+          is_locked: boolean | null
+          is_notice: boolean | null
+          is_secret: boolean | null
+          list_order: number | null
+          post_count: number | null
+          skin: string | null
+          slug: string
+          sort_order: string | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          admin_id?: string | null
+          comment_count?: number | null
+          config?: Json | null
+          content?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_hidden?: boolean | null
+          is_locked?: boolean | null
+          is_notice?: boolean | null
+          is_secret?: boolean | null
+          list_order?: number | null
+          post_count?: number | null
+          skin?: string | null
+          slug: string
+          sort_order?: string | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          admin_id?: string | null
+          comment_count?: number | null
+          config?: Json | null
+          content?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_hidden?: boolean | null
+          is_locked?: boolean | null
+          is_notice?: boolean | null
+          is_secret?: boolean | null
+          list_order?: number | null
+          post_count?: number | null
+          skin?: string | null
+          slug?: string
+          sort_order?: string | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boards_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
-        Row: Category;
-        Insert: CategoryInsert;
-        Update: CategoryUpdate;
-      };
-      posts: {
-        Row: Post;
-        Insert: PostInsert;
-        Update: PostUpdate;
-      };
+        Row: {
+          board_id: string | null
+          color: string | null
+          created_at: string | null
+          depth: number | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_hidden: boolean | null
+          is_locked: boolean | null
+          name: string
+          order_index: number | null
+          parent_id: string | null
+          path: string | null
+          post_count: number | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          board_id?: string | null
+          color?: string | null
+          created_at?: string | null
+          depth?: number | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_hidden?: boolean | null
+          is_locked?: boolean | null
+          name: string
+          order_index?: number | null
+          parent_id?: string | null
+          path?: string | null
+          post_count?: number | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          board_id?: string | null
+          color?: string | null
+          created_at?: string | null
+          depth?: number | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_hidden?: boolean | null
+          is_locked?: boolean | null
+          name?: string
+          order_index?: number | null
+          parent_id?: string | null
+          path?: string | null
+          post_count?: number | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
-        Row: Comment;
-        Insert: CommentInsert;
-        Update: CommentUpdate;
-      };
-      documents: {
-        Row: Document;
-        Insert: DocumentInsert;
-        Update: DocumentUpdate;
-      };
+        Row: {
+          author_id: string | null
+          content: string
+          created_at: string | null
+          document_id: string | null
+          id: string
+          is_secret: boolean | null
+          like_count: number | null
+          parent_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          is_secret?: boolean | null
+          like_count?: number | null
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          is_secret?: boolean | null
+          like_count?: number | null
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_versions: {
-        Row: DocumentVersion;
-        Insert: Omit<DocumentVersion, 'id' | 'created_at'>;
-        Update: Partial<Omit<DocumentVersion, 'id' | 'document_id' | 'created_at'>>;
-      };
-      translations: {
-        Row: Translation;
-        Insert: TranslationInsert;
-        Update: TranslationUpdate;
-      };
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          change_summary: string | null
+          change_type: string | null
+          content: string
+          content_html: string | null
+          created_at: string | null
+          document_id: string | null
+          excerpt: string | null
+          id: string
+          metadata: Json | null
+          title: string
+          version: number
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          change_summary?: string | null
+          change_type?: string | null
+          content: string
+          content_html?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          excerpt?: string | null
+          id?: string
+          metadata?: Json | null
+          title: string
+          version: number
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          change_summary?: string | null
+          change_type?: string | null
+          content?: string
+          content_html?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          excerpt?: string | null
+          id?: string
+          metadata?: Json | null
+          title?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          author_id: string | null
+          board_id: string | null
+          comment_count: number | null
+          content: string
+          created_at: string | null
+          id: string
+          is_notice: boolean | null
+          is_secret: boolean | null
+          like_count: number | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          board_id?: string | null
+          comment_count?: number | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_notice?: boolean | null
+          is_secret?: boolean | null
+          like_count?: number | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          board_id?: string | null
+          comment_count?: number | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_notice?: boolean | null
+          is_secret?: boolean | null
+          like_count?: number | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editor_autosave: {
+        Row: {
+          content: string
+          content_html: string | null
+          excerpt: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          saved_at: string | null
+          target_id: string | null
+          target_type: string
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          content_html?: string | null
+          excerpt?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          saved_at?: string | null
+          target_id?: string | null
+          target_type: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          content_html?: string | null
+          excerpt?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          saved_at?: string | null
+          target_id?: string | null
+          target_type?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      editor_settings: {
+        Row: {
+          color_scheme: string | null
+          created_at: string | null
+          editor_height: number | null
+          editor_skin: string | null
+          enabled_tools: string[] | null
+          font_family: string | null
+          font_size: number | null
+          hide_toolbar: boolean | null
+          id: string
+          line_height: number | null
+          toolbar_set: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          color_scheme?: string | null
+          created_at?: string | null
+          editor_height?: number | null
+          editor_skin?: string | null
+          enabled_tools?: string[] | null
+          font_family?: string | null
+          font_size?: number | null
+          hide_toolbar?: boolean | null
+          id?: string
+          line_height?: number | null
+          toolbar_set?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          color_scheme?: string | null
+          created_at?: string | null
+          editor_height?: number | null
+          editor_skin?: string | null
+          enabled_tools?: string[] | null
+          font_family?: string | null
+          font_size?: number | null
+          hide_toolbar?: boolean | null
+          id?: string
+          line_height?: number | null
+          toolbar_set?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       files: {
-        Row: File;
-        Insert: FileInsert;
-        Update: FileUpdate;
-      };
-      menus: {
-        Row: Menu;
-        Insert: Omit<Menu, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Menu, 'id' | 'created_at' | 'updated_at'>>;
-      };
+        Row: {
+          created_at: string | null
+          id: string
+          mime_type: string
+          name: string
+          original_name: string
+          path: string
+          size: number
+          uploader_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mime_type: string
+          name: string
+          original_name: string
+          path: string
+          size: number
+          uploader_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mime_type?: string
+          name?: string
+          original_name?: string
+          path?: string
+          size?: number
+          uploader_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_uploader_id_fkey"
+            columns: ["uploader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_permissions: {
+        Row: {
+          group_id: string
+          permission_id: string
+        }
+        Insert: {
+          group_id: string
+          permission_id: string
+        }
+        Update: {
+          group_id?: string
+          permission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_permissions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          permissions: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: Json | null
+        }
+        Relationships: []
+      }
+      installation_status: {
+        Row: {
+          admin_email: string | null
+          admin_user_id: string | null
+          completed_at: string | null
+          config: Json | null
+          created_at: string | null
+          current_step: number | null
+          error_details: Json | null
+          error_message: string | null
+          id: string
+          installed_at: string | null
+          is_installed: boolean | null
+          language: string | null
+          site_name: string | null
+          started_at: string | null
+          status: string | null
+          step_data: Json | null
+          supabase_anon_key: string | null
+          supabase_url: string | null
+          timezone: string | null
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          admin_email?: string | null
+          admin_user_id?: string | null
+          completed_at?: string | null
+          config?: Json | null
+          created_at?: string | null
+          current_step?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          installed_at?: string | null
+          is_installed?: boolean | null
+          language?: string | null
+          site_name?: string | null
+          started_at?: string | null
+          status?: string | null
+          step_data?: Json | null
+          supabase_anon_key?: string | null
+          supabase_url?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          admin_email?: string | null
+          admin_user_id?: string | null
+          completed_at?: string | null
+          config?: Json | null
+          created_at?: string | null
+          current_step?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          installed_at?: string | null
+          is_installed?: boolean | null
+          language?: string | null
+          site_name?: string | null
+          started_at?: string | null
+          status?: string | null
+          step_data?: Json | null
+          supabase_anon_key?: string | null
+          supabase_url?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_status_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      layouts: {
+        Row: {
+          code: string | null
+          config: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          title: string
+        }
+        Insert: {
+          code?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          title: string
+        }
+        Update: {
+          code?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      level_group_mapping: {
+        Row: {
+          created_at: string | null
+          group_sync_mode: string | null
+          id: string
+          point_decrease_mode: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          group_sync_mode?: string | null
+          id?: string
+          point_decrease_mode?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          group_sync_mode?: string | null
+          id?: string
+          point_decrease_mode?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      level_groups: {
+        Row: {
+          created_at: string | null
+          group_id: string | null
+          id: string
+          level: number
+        }
+        Insert: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          level: number
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          level?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "level_groups_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
-        Row: MenuItem;
-        Insert: Omit<MenuItem, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<MenuItem, 'id' | 'menu_id' | 'created_at' | 'updated_at'>>;
-      };
-      votes: {
-        Row: Vote;
-        Insert: Omit<Vote, 'id' | 'created_at'>;
-        Update: never;
-      };
-      scraps: {
-        Row: Scrap;
-        Insert: Omit<Scrap, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Scrap, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
-      };
-      scrap_folders: {
-        Row: ScrapFolder;
-        Insert: Omit<ScrapFolder, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<ScrapFolder, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
-      };
+        Row: {
+          id: string
+          is_active: boolean | null
+          is_new_window: boolean | null
+          is_visible: boolean | null
+          menu_id: string | null
+          order_index: number | null
+          parent_id: string | null
+          required_role: string | null
+          title: string
+          type: string | null
+          url: string | null
+        }
+        Insert: {
+          id?: string
+          is_active?: boolean | null
+          is_new_window?: boolean | null
+          is_visible?: boolean | null
+          menu_id?: string | null
+          order_index?: number | null
+          parent_id?: string | null
+          required_role?: string | null
+          title: string
+          type?: string | null
+          url?: string | null
+        }
+        Update: {
+          id?: string
+          is_active?: boolean | null
+          is_new_window?: boolean | null
+          is_visible?: boolean | null
+          menu_id?: string | null
+          order_index?: number | null
+          parent_id?: string | null
+          required_role?: string | null
+          title?: string
+          type?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menus: {
+        Row: {
+          config: Json | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          location: string
+          name: string
+          order_index: number | null
+          title: string
+        }
+        Insert: {
+          config?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          location: string
+          name: string
+          order_index?: number | null
+          title: string
+        }
+        Update: {
+          config?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: string
+          name?: string
+          order_index?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_deleted_by_receiver: boolean | null
+          is_deleted_by_sender: boolean | null
+          is_read: boolean | null
+          receiver_id: string | null
+          sender_id: string | null
+          subject: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_deleted_by_receiver?: boolean | null
+          is_deleted_by_sender?: boolean | null
+          is_read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          subject?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_deleted_by_receiver?: boolean | null
+          is_deleted_by_sender?: boolean | null
+          is_read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
-        Row: Notification;
-        Insert: Omit<Notification, 'id' | 'created_at'>;
-        Update: Partial<Omit<Notification, 'id' | 'user_id' | 'created_at'>>;
-      };
-      tags: {
-        Row: Tag;
-        Insert: Omit<Tag, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Tag, 'id' | 'created_at' | 'updated_at'>>;
-      };
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          link: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          link?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          link?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pages: {
+        Row: {
+          author_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          slug: string
+          status: string | null
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          slug: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          slug?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permissions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          module: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          module: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          module?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      point_logs: {
+        Row: {
+          action: string
+          balance_after: number
+          created_at: string | null
+          description: string | null
+          id: string
+          ip_address: string | null
+          point: number
+          reference_id: string | null
+          reference_type: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          balance_after: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          point: number
+          reference_id?: string | null
+          reference_type?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          balance_after?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          ip_address?: string | null
+          point?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_rules: {
+        Row: {
+          action: string
+          created_at: string | null
+          daily_limit: number | null
+          description: string | null
+          except_admin: boolean | null
+          except_notice: boolean | null
+          id: string
+          is_active: boolean | null
+          name: string
+          per_content_limit: number | null
+          point: number | null
+          revert_on_delete: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          daily_limit?: number | null
+          description?: string | null
+          except_admin?: boolean | null
+          except_notice?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          per_content_limit?: number | null
+          point?: number | null
+          revert_on_delete?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          daily_limit?: number | null
+          description?: string | null
+          except_admin?: boolean | null
+          except_notice?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          per_content_limit?: number | null
+          point?: number | null
+          revert_on_delete?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      point_settings: {
+        Row: {
+          created_at: string | null
+          disable_download_on_low_point: boolean | null
+          disable_read_on_low_point: boolean | null
+          id: string
+          is_enabled: boolean | null
+          level_icon_path: string | null
+          level_icon_type: string | null
+          max_level: number | null
+          min_point_for_download: number | null
+          min_point_for_read: number | null
+          point_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          disable_download_on_low_point?: boolean | null
+          disable_read_on_low_point?: boolean | null
+          id?: string
+          is_enabled?: boolean | null
+          level_icon_path?: string | null
+          level_icon_type?: string | null
+          max_level?: number | null
+          min_point_for_download?: number | null
+          min_point_for_read?: number | null
+          point_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          disable_download_on_low_point?: boolean | null
+          disable_read_on_low_point?: boolean | null
+          id?: string
+          is_enabled?: boolean | null
+          level_icon_path?: string | null
+          level_icon_type?: string | null
+          max_level?: number | null
+          min_point_for_download?: number | null
+          min_point_for_read?: number | null
+          point_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       points: {
-        Row: Point;
-        Insert: Omit<Point, 'id' | 'created_at'>;
-        Update: never;
-      };
+        Row: {
+          created_at: string | null
+          id: string
+          point: number
+          reason: string
+          target_id: string | null
+          target_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          point: number
+          reason: string
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          point?: number
+          reason?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      poll_items: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          order_index: number | null
+          poll_id: string | null
+          title: string
+          vote_count: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          order_index?: number | null
+          poll_id?: string | null
+          title: string
+          vote_count?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          order_index?: number | null
+          poll_id?: string | null
+          title?: string
+          vote_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_items_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_logs: {
+        Row: {
+          id: string
+          ip_address: string | null
+          poll_id: string | null
+          poll_item_id: string | null
+          user_id: string | null
+          voted_at: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          poll_id?: string | null
+          poll_item_id?: string | null
+          user_id?: string | null
+          voted_at?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          poll_id?: string | null
+          poll_item_id?: string | null
+          user_id?: string | null
+          voted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_logs_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_logs_poll_item_id_fkey"
+            columns: ["poll_item_id"]
+            isOneToOne: false
+            referencedRelation: "poll_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          max_choices: number | null
+          poll_type: string | null
+          show_results: string | null
+          stop_date: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_choices?: number | null
+          poll_type?: string | null
+          show_results?: string | null
+          stop_date?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_choices?: number | null
+          poll_type?: string | null
+          show_results?: string | null
+          stop_date?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          allow_comment: boolean | null
+          allow_trackback: boolean | null
+          attached_count: number | null
+          author_id: string | null
+          author_name: string | null
+          author_password: string | null
+          blamed_count: number | null
+          board_id: string | null
+          category_id: string | null
+          comment_count: number | null
+          comment_notified: boolean | null
+          content: string
+          content_html: string | null
+          created_at: string | null
+          deleted_at: string | null
+          excerpt: string | null
+          id: string
+          ip_address: string | null
+          is_blind: boolean | null
+          is_hidden: boolean | null
+          is_locked: boolean | null
+          is_notice: boolean | null
+          is_secret: boolean | null
+          last_commented_at: string | null
+          last_commenter_id: string | null
+          metadata: Json | null
+          notify_message: boolean | null
+          published_at: string | null
+          readed_count: number | null
+          search_vector: unknown
+          status: string | null
+          tags: string[] | null
+          title: string
+          trackback_count: number | null
+          updated_at: string | null
+          view_count: number | null
+          visibility: string | null
+          vote_count: number | null
+          voted_count: number | null
+        }
+        Insert: {
+          allow_comment?: boolean | null
+          allow_trackback?: boolean | null
+          attached_count?: number | null
+          author_id?: string | null
+          author_name?: string | null
+          author_password?: string | null
+          blamed_count?: number | null
+          board_id?: string | null
+          category_id?: string | null
+          comment_count?: number | null
+          comment_notified?: boolean | null
+          content: string
+          content_html?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          excerpt?: string | null
+          id?: string
+          ip_address?: string | null
+          is_blind?: boolean | null
+          is_hidden?: boolean | null
+          is_locked?: boolean | null
+          is_notice?: boolean | null
+          is_secret?: boolean | null
+          last_commented_at?: string | null
+          last_commenter_id?: string | null
+          metadata?: Json | null
+          notify_message?: boolean | null
+          published_at?: string | null
+          readed_count?: number | null
+          search_vector?: unknown
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          trackback_count?: number | null
+          updated_at?: string | null
+          view_count?: number | null
+          visibility?: string | null
+          vote_count?: number | null
+          voted_count?: number | null
+        }
+        Update: {
+          allow_comment?: boolean | null
+          allow_trackback?: boolean | null
+          attached_count?: number | null
+          author_id?: string | null
+          author_name?: string | null
+          author_password?: string | null
+          blamed_count?: number | null
+          board_id?: string | null
+          category_id?: string | null
+          comment_count?: number | null
+          comment_notified?: boolean | null
+          content?: string
+          content_html?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          excerpt?: string | null
+          id?: string
+          ip_address?: string | null
+          is_blind?: boolean | null
+          is_hidden?: boolean | null
+          is_locked?: boolean | null
+          is_notice?: boolean | null
+          is_secret?: boolean | null
+          last_commented_at?: string | null
+          last_commenter_id?: string | null
+          metadata?: Json | null
+          notify_message?: boolean | null
+          published_at?: string | null
+          readed_count?: number | null
+          search_vector?: unknown
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          trackback_count?: number | null
+          updated_at?: string | null
+          view_count?: number | null
+          visibility?: string | null
+          vote_count?: number | null
+          voted_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          email: string
+          email_verified: string | null
+          id: string
+          last_login_at: string | null
+          level: number | null
+          location: string | null
+          metadata: Json | null
+          notification_settings: Json | null
+          point: number | null
+          role: string | null
+          signature: string | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email: string
+          email_verified?: string | null
+          id: string
+          last_login_at?: string | null
+          level?: number | null
+          location?: string | null
+          metadata?: Json | null
+          notification_settings?: Json | null
+          point?: number | null
+          role?: string | null
+          signature?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string
+          email_verified?: string | null
+          id?: string
+          last_login_at?: string | null
+          level?: number | null
+          location?: string | null
+          metadata?: Json | null
+          notification_settings?: Json | null
+          point?: number | null
+          role?: string | null
+          signature?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      scrap_folders: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          order_index: number | null
+          parent_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          order_index?: number | null
+          parent_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          order_index?: number | null
+          parent_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrap_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "scrap_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scraps: {
+        Row: {
+          created_at: string | null
+          excerpt: string | null
+          folder_id: string | null
+          id: string
+          is_favorite: boolean | null
+          notes: string | null
+          tags: string[] | null
+          target_id: string
+          target_type: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          url: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          excerpt?: string | null
+          folder_id?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          notes?: string | null
+          tags?: string[] | null
+          target_id: string
+          target_type: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          url: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          excerpt?: string | null
+          folder_id?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          notes?: string | null
+          tags?: string[] | null
+          target_id?: string
+          target_type?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          url?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scraps_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "scrap_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_settings: {
+        Row: {
+          admin_allowed_ip: string | null
+          admin_denied_ip: string | null
+          autologin_lifetime: number | null
+          autologin_refresh: boolean | null
+          check_csrf_token: boolean | null
+          created_at: string | null
+          id: string
+          mediafilter_classes: string | null
+          mediafilter_whitelist: string | null
+          robot_user_agents: string | null
+          updated_at: string | null
+          use_cookies_ssl: boolean | null
+          use_httponly: boolean | null
+          use_nofollow: boolean | null
+          use_samesite: string | null
+          use_session_ssl: boolean | null
+          x_content_type_options: string | null
+          x_frame_options: string | null
+        }
+        Insert: {
+          admin_allowed_ip?: string | null
+          admin_denied_ip?: string | null
+          autologin_lifetime?: number | null
+          autologin_refresh?: boolean | null
+          check_csrf_token?: boolean | null
+          created_at?: string | null
+          id?: string
+          mediafilter_classes?: string | null
+          mediafilter_whitelist?: string | null
+          robot_user_agents?: string | null
+          updated_at?: string | null
+          use_cookies_ssl?: boolean | null
+          use_httponly?: boolean | null
+          use_nofollow?: boolean | null
+          use_samesite?: string | null
+          use_session_ssl?: boolean | null
+          x_content_type_options?: string | null
+          x_frame_options?: string | null
+        }
+        Update: {
+          admin_allowed_ip?: string | null
+          admin_denied_ip?: string | null
+          autologin_lifetime?: number | null
+          autologin_refresh?: boolean | null
+          check_csrf_token?: boolean | null
+          created_at?: string | null
+          id?: string
+          mediafilter_classes?: string | null
+          mediafilter_whitelist?: string | null
+          robot_user_agents?: string | null
+          updated_at?: string | null
+          use_cookies_ssl?: boolean | null
+          use_httponly?: boolean | null
+          use_nofollow?: boolean | null
+          use_samesite?: string | null
+          use_session_ssl?: boolean | null
+          x_content_type_options?: string | null
+          x_frame_options?: string | null
+        }
+        Relationships: []
+      }
       settings: {
-        Row: Setting;
-        Insert: Omit<Setting, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<Setting, 'id' | 'created_at' | 'updated_at'>>;
-      };
-    };
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          is_system: boolean | null
+          key: string
+          module: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_system?: boolean | null
+          key: string
+          module: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_system?: boolean | null
+          key?: string
+          module?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      site_config: {
+        Row: {
+          category: string
+          description: string | null
+          is_editable: boolean | null
+          is_public: boolean | null
+          key: string
+          value: Json
+        }
+        Insert: {
+          category: string
+          description?: string | null
+          is_editable?: boolean | null
+          is_public?: boolean | null
+          key: string
+          value: Json
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          is_editable?: boolean | null
+          is_public?: boolean | null
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      site_modules: {
+        Row: {
+          config: Json | null
+          description: string | null
+          id: string
+          installed_at: string | null
+          is_active: boolean | null
+          is_core: boolean | null
+          name: string
+          title: string
+          version: string | null
+        }
+        Insert: {
+          config?: Json | null
+          description?: string | null
+          id?: string
+          installed_at?: string | null
+          is_active?: boolean | null
+          is_core?: boolean | null
+          name: string
+          title: string
+          version?: string | null
+        }
+        Update: {
+          config?: Json | null
+          description?: string | null
+          id?: string
+          installed_at?: string | null
+          is_active?: boolean | null
+          is_core?: boolean | null
+          name?: string
+          title?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
+      site_themes: {
+        Row: {
+          author: string | null
+          author_url: string | null
+          config: Json | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_responsive: boolean | null
+          name: string
+          preview_image: string | null
+          screenshot_url: string | null
+          supports_dark_mode: boolean | null
+          title: string
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          author?: string | null
+          author_url?: string | null
+          config?: Json | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_responsive?: boolean | null
+          name: string
+          preview_image?: string | null
+          screenshot_url?: string | null
+          supports_dark_mode?: boolean | null
+          title: string
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          author?: string | null
+          author_url?: string | null
+          config?: Json | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_responsive?: boolean | null
+          name?: string
+          preview_image?: string | null
+          screenshot_url?: string | null
+          supports_dark_mode?: boolean | null
+          title?: string
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      site_widgets: {
+        Row: {
+          config: Json | null
+          content: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_visible: boolean | null
+          name: string
+          order_index: number | null
+          position: string
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          content?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_visible?: boolean | null
+          name: string
+          order_index?: number | null
+          position: string
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          content?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_visible?: boolean | null
+          name?: string
+          order_index?: number | null
+          position?: string
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          count: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          count?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      translations: {
+        Row: {
+          context: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_system: boolean | null
+          key: string
+          lang_code: string
+          namespace: string | null
+          plural: string | null
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          key: string
+          lang_code: string
+          namespace?: string | null
+          plural?: string | null
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          key?: string
+          lang_code?: string
+          namespace?: string | null
+          plural?: string | null
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
+      user_groups: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          created_at: string | null
+          expires_at: string | null
+          group_id: string | null
+          id: string
+          is_leader: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          group_id?: string | null
+          id?: string
+          is_leader?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          group_id?: string | null
+          id?: string
+          is_leader?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          target_id: string
+          target_type: string
+          user_id: string | null
+          vote_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          target_id: string
+          target_type: string
+          user_id?: string | null
+          vote_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          target_id?: string
+          target_type?: string
+          user_id?: string | null
+          vote_type?: string | null
+        }
+        Relationships: []
+      }
+      widgets: {
+        Row: {
+          code: string | null
+          config: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          title: string
+        }
+        Insert: {
+          code?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          title: string
+        }
+        Update: {
+          code?: string | null
+          config?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          title?: string
+        }
+        Relationships: []
+      }
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
+      cleanup_expired_autosaves: { Args: never; Returns: undefined }
+      decrement_board_comment_count: {
+        Args: { board_uuid: string }
+        Returns: undefined
+      }
+      decrement_board_post_count: {
+        Args: { board_uuid: string }
+        Returns: undefined
+      }
+      decrement_category_post_count: {
+        Args: { category_uuid: string }
+        Returns: undefined
+      }
+      decrement_vote_count: {
+        Args: { count_field?: string; row_id: string; table_name: string }
+        Returns: undefined
+      }
+      get_current_installation_step: { Args: never; Returns: number }
+      get_user_groups: {
+        Args: { user_uuid: string }
+        Returns: {
+          group_id: string
+          group_name: string
+          group_slug: string
+          is_leader: boolean
+        }[]
+      }
+      get_user_points: { Args: { user_uuid: string }; Returns: number }
+      increment_board_comment_count: {
+        Args: { board_uuid: string }
+        Returns: undefined
+      }
+      increment_board_post_count: {
+        Args: { board_uuid: string }
+        Returns: undefined
+      }
+      increment_category_post_count: {
+        Args: { category_uuid: string }
+        Returns: undefined
+      }
+      increment_page_view_count: { Args: { page_id: string }; Returns: number }
       increment_view_count: {
+        Args: { row_id: string; table_name: string }
+        Returns: undefined
+      }
+      increment_vote_count: {
+        Args: { count_field?: string; row_id: string; table_name: string }
+        Returns: undefined
+      }
+      initialize_site_config: {
         Args: {
-          table_name: string;
-          row_id: UUID;
-        };
-        Returns: void;
-      };
-      get_user_points: {
+          p_admin_email?: string
+          p_site_description?: string
+          p_site_language?: string
+          p_site_name: string
+          p_site_timezone?: string
+        }
+        Returns: boolean
+      }
+      is_installation_complete: { Args: never; Returns: boolean }
+      is_seeding_complete: { Args: never; Returns: boolean }
+      log_activity: {
         Args: {
-          user_uuid: UUID;
-        };
-        Returns: number;
-      };
-    };
+          action_text: string
+          description_text: string
+          ip_addr: string
+          metadata_json: Json
+          module_text: string
+          severity_text: string
+          target_type_text: string
+          target_uuid: string
+          user_agent_text: string
+          user_uuid: string
+        }
+        Returns: string
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      user_has_permission: {
+        Args: { permission_slug: string; user_uuid: string }
+        Returns: boolean
+      }
+      verify_initial_seed: {
+        Args: never
+        Returns: {
+          actual_count: number
+          expected_count: number
+          status: string
+          table_name: string
+        }[]
+      }
+    }
     Enums: {
-      user_role: UserRole;
-      board_list_order: BoardListOrder;
-      post_status: PostStatus;
-      post_visibility: PostVisibility;
-      comment_status: CommentStatus;
-      document_status: DocumentStatus;
-      document_visibility: DocumentVisibility;
-      file_target_type: FileTargetType;
-      menu_location: MenuLocation;
-      menu_item_type: MenuItemType;
-      vote_target_type: VoteTargetType;
-      notification_type: NotificationType;
-    };
-  };
-};
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
 
-// =====================================================
-// EXPORTS
-// =====================================================
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-export default Database;
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+// Export individual table types for easier importing
+export type UUID = string
+
+// Core table types
+export type Menu = DefaultSchema["Tables"]["menus"]
+export type MenuItem = DefaultSchema["Tables"]["menu_items"]
+export type Category = DefaultSchema["Tables"]["categories"]
+export type Board = DefaultSchema["Tables"]["boards"]
+export type Post = DefaultSchema["Tables"]["posts"]
+export type Notification = DefaultSchema["Tables"]["notifications"]
+export type NotificationInsert = DefaultSchema["Tables"]["notifications"]["Insert"]
+export type NotificationSettings = Json
+
+// Additional useful types
+export type Profile = DefaultSchema["Tables"]["profiles"]
+export type Setting = DefaultSchema["Tables"]["settings"]
+export type Layout = DefaultSchema["Tables"]["layouts"]
+export type PointRule = DefaultSchema["Tables"]["point_rules"]
+export type PointLog = DefaultSchema["Tables"]["point_logs"]
+export type ActivityLog = DefaultSchema["Tables"]["activity_log"]
+export type Comment = DefaultSchema["Tables"]["comments"]
+export type CommentInsert = DefaultSchema["Tables"]["comments"]["Insert"]
+export type CommentUpdate = DefaultSchema["Tables"]["comments"]["Update"]
+export type CommentStatus = string // Add this if it's an enum
+
+// Message types (from messages table)
+export type Message = DefaultSchema["Tables"]["messages"]
+export type MessageInsert = DefaultSchema["Tables"]["messages"]["Insert"]
+export type MessageUpdate = DefaultSchema["Tables"]["messages"]["Update"]
+
+// Extended types with relations
+export type MessageWithRelations = Message & {
+  receiver?: Profile | null
+  sender?: Profile | null
+}
+
+export type CommentWithAuthor = Comment & {
+  post_id: string
+  author_name: string
+  status: string
+  vote_count: number
+  depth: number
+}
+
+export type PostWithRelations = Post & {
+  board_id: string
+  comments: CommentWithAuthor[]
+}
+
+export type NotificationWithMeta = Notification & {
+  is_read?: boolean
+}
+
+// List item types
+export type PostListItem = Post & {
+  board_title?: string
+  category_name?: string
+  author_name?: string
+}
+
+export type MessageListFilters = {
+  sender_id?: string
+  receiver_id?: string
+  is_read?: boolean
+  created_after?: string
+  created_before?: string
+  limit?: number
+  offset?: number
+}
+
+export type MessageBlock = {
+  id: string
+  message_id: string
+  content: string
+  order_index: number
+  created_at: string
+  updated_at: string
+}
+
+export type MessageBlockInsert = Omit<MessageBlock, 'id' | 'created_at' | 'updated_at'> & {
+  id?: string
+}
+
+export type MessageBlockWithRelations = MessageBlock & {
+  message: Message
+}
+
+// User types
+export type ProfileUpdate = DefaultSchema["Tables"]["profiles"]["Update"]
+export type UserRole = string // Add this if it's an enum
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const
+

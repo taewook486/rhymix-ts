@@ -211,7 +211,7 @@ describe('Security Settings API', () => {
         .mockResolvedValueOnce(adminAuthClient as any)
         .mockResolvedValueOnce(settingsClient as any)
 
-      const result = await updateSecuritySettings(updateData)
+      const result = await updateSecuritySettings(updateData as any)
 
       expect(result.success).toBe(true)
       expect(result.message).toContain('수정')
@@ -267,7 +267,7 @@ describe('Security Settings API', () => {
         .mockResolvedValueOnce(adminAuthClient as any)
         .mockResolvedValueOnce(settingsClient as any)
 
-      await updateSecuritySettings(updateData)
+      await updateSecuritySettings(updateData as any)
 
       // Security changes should be logged with 'warning' severity
       expect(mockRpc).toHaveBeenCalledWith('log_activity', expect.objectContaining({
@@ -287,7 +287,7 @@ describe('Security Settings API', () => {
       const mockClient = createNormalUserMock()
       createClient.mockResolvedValue(mockClient as any)
 
-      const result = await updateSecuritySettings(updateData)
+      const result = await updateSecuritySettings(updateData as any)
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('권한')
@@ -341,7 +341,7 @@ describe('Security Settings API', () => {
         .mockResolvedValueOnce(adminAuthClient as any)
         .mockResolvedValueOnce(settingsClient as any)
 
-      const result = await updateSecuritySettings(updateData)
+      const result = await updateSecuritySettings(updateData as any)
 
       expect(result.success).toBe(true)
     })

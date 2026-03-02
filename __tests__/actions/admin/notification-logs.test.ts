@@ -26,69 +26,81 @@ const mockNormalUser = {
 const mockLogs = [
   {
     id: 'log-1',
-    notification_id: 'notif-1',
     user_id: 'user-1',
-    channel: 'mail',
-    notification_type: 'comment',
-    status: 'sent',
     recipient_address: 'user@example.com',
-    recipient_name: 'Test User',
+    notification_type: 'comment' as const,
+    channel: 'email' as const,
     subject: 'New Comment',
-    content_preview: 'You have a new comment...',
+    content: 'You have a new comment...',
+    status: 'sent' as const,
     error_code: null,
     error_message: null,
+    external_id: 'msg-123',
+    template_id: null,
+    priority: 5,
     retry_count: 0,
-    provider: 'smtp',
-    provider_message_id: 'msg-123',
+    max_retries: 3,
+    next_retry_at: null,
+    reference_type: 'comment' as const,
+    reference_id: 'comment-123',
+    ip_address: '127.0.0.1',
+    user_agent: 'Mozilla/5.0',
+    created_at: new Date().toISOString(),
     sent_at: new Date().toISOString(),
     delivered_at: new Date().toISOString(),
-    failed_at: null,
-    created_at: new Date().toISOString(),
-    expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    read_at: null,
   },
   {
     id: 'log-2',
-    notification_id: 'notif-2',
     user_id: 'user-2',
-    channel: 'sms',
-    notification_type: 'mention',
-    status: 'failed',
     recipient_address: '+1234567890',
-    recipient_name: 'Test User 2',
+    notification_type: 'mention' as const,
+    channel: 'sms' as const,
     subject: null,
-    content_preview: 'You were mentioned...',
+    content: 'You were mentioned...',
+    status: 'failed' as const,
     error_code: 'INVALID_NUMBER',
     error_message: 'Invalid phone number',
+    external_id: null,
+    template_id: null,
+    priority: 5,
     retry_count: 1,
-    provider: 'twilio',
-    provider_message_id: null,
+    max_retries: 3,
+    next_retry_at: null,
+    reference_type: 'comment' as const,
+    reference_id: 'comment-456',
+    ip_address: '127.0.0.1',
+    user_agent: 'Mozilla/5.0',
+    created_at: new Date().toISOString(),
     sent_at: null,
     delivered_at: null,
-    failed_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    read_at: null,
   },
   {
     id: 'log-3',
-    notification_id: 'notif-3',
     user_id: 'user-3',
-    channel: 'push',
-    notification_type: 'message',
-    status: 'delivered',
     recipient_address: 'device-token-123',
-    recipient_name: 'Test User 3',
+    notification_type: 'message' as const,
+    channel: 'push' as const,
     subject: 'New Message',
-    content_preview: 'You have a new message...',
+    content: 'You have a new message...',
+    status: 'sent' as const,
     error_code: null,
     error_message: null,
+    external_id: 'push-456',
+    template_id: null,
+    priority: 5,
     retry_count: 0,
-    provider: 'fcm',
-    provider_message_id: 'push-456',
+    max_retries: 3,
+    next_retry_at: null,
+    reference_type: 'message' as const,
+    reference_id: 'message-789',
+    ip_address: '127.0.0.1',
+    user_agent: 'Mozilla/5.0',
+    created_at: new Date().toISOString(),
     sent_at: new Date().toISOString(),
     delivered_at: new Date().toISOString(),
-    failed_at: null,
-    created_at: new Date().toISOString(),
-    expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    read_at: null,
   },
 ]
 
@@ -129,7 +141,7 @@ describe('Notification Logs Actions', () => {
 
     it('should filter by type correctly', async () => {
       const filters: NotificationLogFilters = {
-        type: 'comment',
+        notification_type: 'comment' as const,
       }
 
       const filteredLogs = mockLogs.filter((log) => log.notification_type === 'comment')
@@ -202,8 +214,8 @@ describe('Notification Logs Actions', () => {
 
     it('should validate date range', async () => {
       const filters: NotificationLogFilters = {
-        date_from: '2026-01-01',
-        date_to: '2026-01-31',
+        start_date: '2026-01-01T00:00:00Z',
+        end_date: '2026-01-31T23:59:59Z',
       }
 
       createClient.mockResolvedValue({
@@ -235,10 +247,10 @@ describe('Notification Logs Actions', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should validate pagination (limit/offset)', async () => {
+    it('should validate pagination (page/limit)', async () => {
       const filters: NotificationLogFilters = {
+        page: 1,
         limit: 10,
-        offset: 0,
       }
 
       createClient.mockResolvedValue({
@@ -293,7 +305,7 @@ describe('Notification Logs Actions', () => {
 
     it('should handle invalid date range format', async () => {
       const filters: NotificationLogFilters = {
-        date_from: 'invalid-date',
+        start_date: 'invalid-date',
       }
 
       createClient.mockResolvedValue({
@@ -305,10 +317,12 @@ describe('Notification Logs Actions', () => {
         },
         from: jest.fn().mockReturnValue({
           select: jest.fn().mockReturnValue({
-            order: jest.fn().mockReturnValue({
-              range: jest.fn().mockResolvedValue({
-                data: null,
-                error: { message: 'Invalid date format' },
+            gte: jest.fn().mockReturnValue({
+              order: jest.fn().mockReturnValue({
+                range: jest.fn().mockResolvedValue({
+                  data: null,
+                  error: { message: 'Invalid date format' },
+                }),
               }),
             }),
           }),

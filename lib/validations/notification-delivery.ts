@@ -240,8 +240,61 @@ export const notificationDeliverySettingsSchema = z.object({
   }
 )
 
-export const notificationDeliverySettingsUpdateSchema =
-  notificationDeliverySettingsSchema.partial()
+export const notificationDeliverySettingsUpdateSchema = z.object({
+  // SMTP settings (WHW-070)
+  smtp_enabled: z.boolean().optional(),
+  smtp_host: z.string().nullable().optional(),
+  smtp_port: z.number().int().min(1).max(65535).nullable().optional(),
+  smtp_username: z.string().nullable().optional(),
+  smtp_password: z.string().nullable().optional(),
+  smtp_encryption: z.enum(['none', 'ssl', 'tls']).optional(),
+  smtp_from_email: z.string().email().nullable().optional(),
+  smtp_from_name: z.string().nullable().optional(),
+  smtp_reply_to: z.string().email().nullable().optional(),
+  smtp_max_recipients: z.number().int().min(1).max(1000).optional(),
+  smtp_timeout_seconds: z.number().int().min(1).max(300).optional(),
+
+  // SMS settings (WHW-071)
+  sms_enabled: z.boolean().optional(),
+  sms_provider: z.enum(['default', 'twilio', 'nexmo', 'alphasms', 'custom']).optional(),
+  sms_api_key: z.string().nullable().optional(),
+  sms_api_secret: z.string().nullable().optional(),
+  sms_from_number: z.string().nullable().optional(),
+  sms_max_length: z.number().int().min(1).max(1000).optional(),
+  sms_encoding: z.enum(['utf8', 'euckr']).optional(),
+  sms_timeout_seconds: z.number().int().min(1).max(60).optional(),
+
+  // Push settings
+  push_enabled: z.boolean().optional(),
+  push_provider: z.enum(['fcm', 'apns', 'onesignal', 'custom']).optional(),
+  push_api_key: z.string().nullable().optional(),
+  push_apns_key_id: z.string().nullable().optional(),
+  push_apns_team_id: z.string().nullable().optional(),
+  push_apns_bundle_id: z.string().nullable().optional(),
+  push_fcm_server_key: z.string().nullable().optional(),
+  push_fcm_sender_id: z.string().nullable().optional(),
+  push_ttl_seconds: z.number().int().min(1).optional(),
+  push_sound: z.string().optional(),
+
+  // Web settings
+  web_enabled: z.boolean().optional(),
+  web_require_permission: z.boolean().optional(),
+  web_vapid_public_key: z.string().nullable().optional(),
+  web_vapid_private_key: z.string().nullable().optional(),
+  web_subject: z.string().email().optional(),
+
+  // Rate limiting
+  rate_limit_enabled: z.boolean().optional(),
+  rate_limit_per_minute: z.number().int().min(1).optional(),
+  rate_limit_per_hour: z.number().int().min(1).optional(),
+  rate_limit_per_day: z.number().int().min(1).optional(),
+
+  // Retry settings
+  retry_enabled: z.boolean().optional(),
+  retry_max_attempts: z.number().int().min(1).max(10).optional(),
+  retry_delay_seconds: z.number().int().min(10).optional(),
+  retry_backoff_multiplier: z.number().min(1.0).max(5.0).optional(),
+})
 
 /**
  * WHW-072: 알림 발송 로그 스키마

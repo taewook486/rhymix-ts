@@ -2,7 +2,13 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { AdminHeader } from '@/components/admin/AdminHeader'
+import { AdminMenuProvider } from '@/providers/AdminMenuProvider'
 
+/**
+ * @MX:ANCHOR: Admin layout with menu provider
+ * @MX:REASON: Wraps all admin pages with authentication, menu context, and layout structure
+ * SPEC: SPEC-ADMIN-MENU-001
+ */
 export default async function AdminLayout({
   children,
 }: {
@@ -31,16 +37,19 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-muted/40">
       <div className="flex min-h-screen">
-        {/* Sidebar */}
-        <AdminSidebar />
+        {/* Admin Menu Provider wraps sidebar for menu state management */}
+        <AdminMenuProvider>
+          {/* Sidebar */}
+          <AdminSidebar />
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          <AdminHeader user={user} />
-          <main className="flex-1 p-8">
-            {children}
-          </main>
-        </div>
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col">
+            <AdminHeader user={user} />
+            <main className="flex-1 p-8">
+              {children}
+            </main>
+          </div>
+        </AdminMenuProvider>
       </div>
     </div>
   )

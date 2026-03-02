@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Layout, LayoutColumn, LayoutWidget, AvailableWidget } from '@/types/layout'
 
+// Re-export types for convenience
+export type { Layout, LayoutColumn, LayoutWidget, AvailableWidget } from '@/types/layout'
+
 // =====================================================
 // Layout CRUD Operations
 // =====================================================

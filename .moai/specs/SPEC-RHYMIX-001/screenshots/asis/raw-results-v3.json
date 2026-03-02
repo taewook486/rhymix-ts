@@ -1,0 +1,7544 @@
+{
+  "70-page-admin": {
+    "docTitle": "페이지",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispPageAdminContent",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "페이지 관리"
+      },
+      {
+        "tag": "H1",
+        "text": "선택된 것들을"
+      },
+      {
+        "tag": "H1",
+        "text": "권한 설정"
+      },
+      {
+        "tag": "H1",
+        "text": "다국어"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "vid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "search_target",
+            "id": "search_target",
+            "label": "",
+            "options": [
+              {
+                "value": "s_mid",
+                "text": "모듈 이름"
+              },
+              {
+                "value": "s_browser_title",
+                "text": "브라우저 제목"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "search",
+            "name": "search_keyword",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "fo_list",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "cart",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "cart",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "cart",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "manageSelectedModuleSetup",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_srls",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "module_category_srl",
+            "id": "module_category_srl",
+            "label": "모듈 분류",
+            "options": [
+              {
+                "value": "",
+                "text": "기존 값 유지"
+              },
+              {
+                "value": "0",
+                "text": "미사용"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "layout_srl",
+            "id": "layout_srl",
+            "label": "레이아웃",
+            "options": [
+              {
+                "value": "",
+                "text": "기존 값 유지"
+              },
+              {
+                "value": "0",
+                "text": "미사용"
+              },
+              {
+                "value": "-1",
+                "text": "사이트 기본 레이아웃 사용 (XEDITION)"
+              },
+              {
+                "value": "109",
+                "text": "테스트 레이아웃 (user_layout)"
+              },
+              {
+                "value": "108",
+                "text": "기본 레이아웃 (default)"
+              },
+              {
+                "value": "65",
+                "text": "XEDITION (xedition)"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "skin",
+            "id": "skin",
+            "label": "스킨",
+            "options": [
+              {
+                "value": "",
+                "text": "기존 값 유지"
+              },
+              {
+                "value": "/USE_DEFAULT/",
+                "text": "사이트 기본 스킨 사용 (Default Page Skin)"
+              },
+              {
+                "value": "default",
+                "text": "Default Page Skin"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "use_mobile",
+            "id": "use_mobile",
+            "label": "모바일 뷰 사용",
+            "options": [
+              {
+                "value": "",
+                "text": "기존 값 유지"
+              },
+              {
+                "value": "Y",
+                "text": "사용"
+              },
+              {
+                "value": "N",
+                "text": "미사용"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "mlayout_srl",
+            "id": "mlayout_srl",
+            "label": "모바일 레이아웃",
+            "options": [
+              {
+                "value": "",
+                "text": "기존 값 유지"
+              },
+              {
+                "value": "0",
+                "text": "미사용"
+              },
+              {
+                "value": "-2",
+                "text": "PC와 동일한 반응형 레이아웃 사용 ()"
+              },
+              {
+                "value": "-1",
+                "text": "사이트 기본 레이아웃 사용 (XE 공식 사이트 모바일 레이아웃)"
+              },
+              {
+                "value": "111",
+                "text": "XE 심플 그레이 레이아웃 (simpleGray)"
+              },
+              {
+                "value": "110",
+                "text": "XE Color Code 모바일 레이아웃 (colorCode)"
+              },
+              {
+                "value": "66",
+                "text": "welcome_mobile_layout (default)"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "mskin",
+            "id": "mskin",
+            "label": "모바일 스킨",
+            "options": [
+              {
+                "value": "",
+                "text": "기존 값 유지"
+              },
+              {
+                "value": "/USE_DEFAULT/",
+                "text": "사이트 기본 스킨 사용 (Default Mobile Page Skin)"
+              },
+              {
+                "value": "/USE_RESPONSIVE/",
+                "text": "PC와 동일한 반응형 스킨 사용"
+              },
+              {
+                "value": "default",
+                "text": "Default Mobile Page Skin"
+              }
+            ]
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "description",
+            "id": "description",
+            "placeholder": "",
+            "label": "설명",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "description_delete",
+            "id": "description_delete",
+            "placeholder": "",
+            "label": "삭제",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "header_text",
+            "id": "header_text",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "",
+            "id": "lang_header_text",
+            "placeholder": "",
+            "label": "상단 내용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "header_text_delete",
+            "id": "header_text_delete",
+            "placeholder": "",
+            "label": "삭제",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "footer_text",
+            "id": "footer_text",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "",
+            "id": "lang_footer_text",
+            "placeholder": "",
+            "label": "하단 내용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "footer_text_delete",
+            "id": "footer_text_delete",
+            "placeholder": "",
+            "label": "삭제",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "manageSelectedModuleGrant",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_srls",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "modify_default",
+            "id": "modify_default",
+            "label": "페이지 수정",
+            "options": [
+              {
+                "value": "0",
+                "text": "모든 방문자"
+              },
+              {
+                "value": "-1",
+                "text": "로그인 사용자"
+              },
+              {
+                "value": "-4",
+                "text": "비로그인 사용자"
+              },
+              {
+                "value": "-3",
+                "text": "관리자만"
+              },
+              {
+                "value": "",
+                "text": "선택 그룹 소속 회원"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "modify[]",
+            "id": "grant_modify_2",
+            "placeholder": "",
+            "label": "관리그룹",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "modify[]",
+            "id": "grant_modify_3",
+            "placeholder": "",
+            "label": "준회원",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "modify[]",
+            "id": "grant_modify_4",
+            "placeholder": "",
+            "label": "정회원",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "access_default",
+            "id": "access_default",
+            "label": "접근 권한",
+            "options": [
+              {
+                "value": "0",
+                "text": "모든 방문자"
+              },
+              {
+                "value": "-1",
+                "text": "로그인 사용자"
+              },
+              {
+                "value": "-4",
+                "text": "비로그인 사용자"
+              },
+              {
+                "value": "-3",
+                "text": "관리자만"
+              },
+              {
+                "value": "",
+                "text": "선택 그룹 소속 회원"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "access[]",
+            "id": "grant_access_2",
+            "placeholder": "",
+            "label": "관리그룹",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "access[]",
+            "id": "grant_access_3",
+            "placeholder": "",
+            "label": "준회원",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "access[]",
+            "id": "grant_access_4",
+            "placeholder": "",
+            "label": "정회원",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "manager_default",
+            "id": "manager_default",
+            "label": "관리 권한",
+            "options": [
+              {
+                "value": "0",
+                "text": "모든 방문자"
+              },
+              {
+                "value": "-1",
+                "text": "로그인 사용자"
+              },
+              {
+                "value": "-4",
+                "text": "비로그인 사용자"
+              },
+              {
+                "value": "-3",
+                "text": "관리자만"
+              },
+              {
+                "value": "",
+                "text": "선택 그룹 소속 회원"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "manager[]",
+            "id": "grant_manager_2",
+            "placeholder": "",
+            "label": "관리그룹",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "manager[]",
+            "id": "grant_manager_3",
+            "placeholder": "",
+            "label": "준회원",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "manager[]",
+            "id": "grant_manager_4",
+            "placeholder": "",
+            "label": "정회원",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "lang_create",
+        "name": "",
+        "action": "http://localhost/index.php?module=admin&act=dispPageAdminContent",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "index": 0,
+        "id": "",
+        "caption": "Total: 3, Page: 1/1",
+        "headers": [
+          "번호",
+          "모듈 분류",
+          "페이지 타입",
+          "도메인 /",
+          "URL",
+          "브라우저 제목",
+          "등록일",
+          "편집",
+          ""
+        ],
+        "rowCount": 3,
+        "sampleRows": [
+          [
+            "63",
+            "없음",
+            "문서 페이지",
+            "/",
+            "privacy",
+            "Privacy Policy",
+            "2026-02-28",
+            "설정  \n\t\t\t\t 복사  \n\t\t\t\t 삭제",
+            ""
+          ],
+          [
+            "61",
+            "없음",
+            "문서 페이지",
+            "/",
+            "terms",
+            "Terms of Service",
+            "2026-02-28",
+            "설정  \n\t\t\t\t 복사  \n\t\t\t\t 삭제",
+            ""
+          ],
+          [
+            "49",
+            "없음",
+            "위젯 페이지",
+            "/",
+            "index",
+            "Welcome",
+            "2026-02-28",
+            "설정  \n\t\t\t\t 복사  \n\t\t\t\t 삭제",
+            ""
+          ]
+        ]
+      },
+      {
+        "index": 1,
+        "id": "",
+        "caption": "",
+        "headers": [
+          "모듈 이름",
+          "브라우저 제목"
+        ],
+        "rowCount": 0,
+        "sampleRows": []
+      }
+    ],
+    "buttons": [
+      "×",
+      "검색",
+      "다국어 텍스트 해제",
+      "등록",
+      "닫기",
+      "취소",
+      "저장 후 사용",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [
+      {
+        "legend": "",
+        "inputCount": 1
+      }
+    ],
+    "name": "70-page-admin",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispPageAdminContent"
+  },
+  "71-poll-admin": {
+    "docTitle": "설문",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispPollAdminList",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "설문"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "pollList",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "page",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "search_target",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "title",
+                "text": "제목"
+              },
+              {
+                "value": "regdate",
+                "text": "등록일"
+              },
+              {
+                "value": "ipaddress",
+                "text": "IP 주소"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "search",
+            "name": "search_keyword",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "index": 0,
+        "id": "pollListTable",
+        "caption": "전체(0)",
+        "headers": [
+          "제목",
+          "필수 항목 수",
+          "참가자",
+          "작성자",
+          "등록일",
+          "설문조사 종료일",
+          ""
+        ],
+        "rowCount": 1,
+        "sampleRows": [
+          [
+            "등록된 데이터가 없습니다."
+          ]
+        ]
+      }
+    ],
+    "buttons": [
+      "×",
+      "삭제",
+      "검색",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "71-poll-admin",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispPollAdminList"
+  },
+  "72-editor-admin": {
+    "docTitle": "에디터",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispEditorAdminIndex",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "위지윅 에디터"
+      },
+      {
+        "tag": "H1",
+        "text": "현재 설정 상태Toggle this section"
+      },
+      {
+        "tag": "H1",
+        "text": "본문 에디터"
+      },
+      {
+        "tag": "H1",
+        "text": "댓글 에디터"
+      },
+      {
+        "tag": "H1",
+        "text": "공통 설정"
+      },
+      {
+        "tag": "H1",
+        "text": "에디터 컴포넌트Toggle this section"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "editor_skin",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "ckeditor",
+                "text": "CKEditor"
+              },
+              {
+                "value": "simpleeditor",
+                "text": "SimpleEditor"
+              },
+              {
+                "value": "textarea",
+                "text": "Textarea"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "editor_colorset",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "moono",
+                "text": "Moono"
+              },
+              {
+                "value": "moono-dark",
+                "text": "Moono Dark"
+              },
+              {
+                "value": "moono-lisa",
+                "text": "Moono Lisa"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "name": "editor_height",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "editor_toolbar",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "default",
+                "text": "기본"
+              },
+              {
+                "value": "simple",
+                "text": "간단"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "editor_toolbar_hide",
+            "id": "i1",
+            "placeholder": "",
+            "label": "숨김",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "mobile_editor_skin",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "ckeditor",
+                "text": "CKEditor"
+              },
+              {
+                "value": "simpleeditor",
+                "text": "SimpleEditor"
+              },
+              {
+                "value": "textarea",
+                "text": "Textarea"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "mobile_editor_colorset",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "light",
+                "text": "Light"
+              },
+              {
+                "value": "dark",
+                "text": "Dark"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "name": "mobile_editor_height",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "mobile_editor_toolbar",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "default",
+                "text": "기본"
+              },
+              {
+                "value": "simple",
+                "text": "간단"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "mobile_editor_toolbar_hide",
+            "id": "i2",
+            "placeholder": "",
+            "label": "숨김",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "comment_editor_skin",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "ckeditor",
+                "text": "CKEditor"
+              },
+              {
+                "value": "simpleeditor",
+                "text": "SimpleEditor"
+              },
+              {
+                "value": "textarea",
+                "text": "Textarea"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "comment_editor_colorset",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "moono",
+                "text": "Moono"
+              },
+              {
+                "value": "moono-dark",
+                "text": "Moono Dark"
+              },
+              {
+                "value": "moono-lisa",
+                "text": "Moono Lisa"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "name": "comment_editor_height",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "comment_editor_toolbar",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "default",
+                "text": "기본"
+              },
+              {
+                "value": "simple",
+                "text": "간단"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "comment_editor_toolbar_hide",
+            "id": "i3",
+            "placeholder": "",
+            "label": "숨김",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "mobile_comment_editor_skin",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "ckeditor",
+                "text": "CKEditor"
+              },
+              {
+                "value": "simpleeditor",
+                "text": "SimpleEditor"
+              },
+              {
+                "value": "textarea",
+                "text": "Textarea"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "mobile_comment_editor_colorset",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "light",
+                "text": "Light"
+              },
+              {
+                "value": "dark",
+                "text": "Dark"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "name": "mobile_comment_editor_height",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "mobile_comment_editor_toolbar",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "default",
+                "text": "기본"
+              },
+              {
+                "value": "simple",
+                "text": "간단"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "mobile_comment_editor_toolbar_hide",
+            "id": "i4",
+            "placeholder": "",
+            "label": "숨김",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_noFont",
+            "placeholder": "",
+            "label": "none (inherit)",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_arial",
+            "placeholder": "",
+            "label": "Arial",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_tahoma",
+            "placeholder": "",
+            "label": "Tahoma",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_verdana",
+            "placeholder": "",
+            "label": "Verdana",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_sans-serif",
+            "placeholder": "",
+            "label": "sans-serif",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_georgia",
+            "placeholder": "",
+            "label": "Georgia",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_palatinoLinotype",
+            "placeholder": "",
+            "label": "Palatino Linotype",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_timesNewRoman",
+            "placeholder": "",
+            "label": "Times New Roman",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_serif",
+            "placeholder": "",
+            "label": "serif",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_consolas",
+            "placeholder": "",
+            "label": "Consolas",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_courierNew",
+            "placeholder": "",
+            "label": "Courier New",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_lucidaConsole",
+            "placeholder": "",
+            "label": "Lucida Console",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_monospace",
+            "placeholder": "",
+            "label": "monospace",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_gulim",
+            "placeholder": "",
+            "label": "굴림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_gungsuh",
+            "placeholder": "",
+            "label": "궁서",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_dotum",
+            "placeholder": "",
+            "label": "돋움",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_batang",
+            "placeholder": "",
+            "label": "바탕",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_malgunGothic",
+            "placeholder": "",
+            "label": "맑은 고딕",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_font",
+            "id": "font_nanumGothic",
+            "placeholder": "",
+            "label": "나눔고딕",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "font_defined",
+            "id": "font_defined",
+            "placeholder": "",
+            "label": "사용자 설정 :",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "content_font_defined",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "additional_css",
+            "id": "additional_css",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "additional_mobile_css",
+            "id": "additional_css",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "additional_plugins",
+            "id": "additional_plugins",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "remove_plugins",
+            "id": "remove_plugins",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "content_font_size",
+            "id": "font_size",
+            "placeholder": "",
+            "label": "추가 플러그인 로드",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "content_line_height",
+            "id": "line_height",
+            "placeholder": "",
+            "label": "줄 간격",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "content_paragraph_spacing",
+            "id": "paragraph_spacing",
+            "placeholder": "",
+            "label": "문단 간격",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_word_break",
+            "id": "word_break_normal",
+            "placeholder": "",
+            "label": "한글은 글자 단위로 줄바꿈, 영문은 단어 단위로 줄바꿈 (기본값)",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_word_break",
+            "id": "word_break_keep_all",
+            "placeholder": "",
+            "label": "모든 언어를 단어 단위로 줄바꿈",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_word_break",
+            "id": "word_break_break_all",
+            "placeholder": "",
+            "label": "모든 언어를 글자 단위로 줄바꿈",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "content_word_break",
+            "id": "word_break_none",
+            "placeholder": "",
+            "label": "줄을 바꾸지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "enable_autosave",
+            "id": "i31",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "enable_autosave",
+            "id": "i32",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "auto_dark_mode",
+            "id": "i34",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "auto_dark_mode",
+            "id": "i35",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "allow_html",
+            "id": "i37",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "allow_html",
+            "id": "i38",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "autoinsert_types[]",
+            "id": "i40",
+            "placeholder": "",
+            "label": "이미지",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "autoinsert_types[]",
+            "id": "i41",
+            "placeholder": "",
+            "label": "오디오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "autoinsert_types[]",
+            "id": "i42",
+            "placeholder": "",
+            "label": "동영상",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "autoinsert_position",
+            "id": "autoinsert_paragraph",
+            "placeholder": "",
+            "label": "커서 위치에서 줄을 바꾸어 삽입",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "autoinsert_position",
+            "id": "autoinsert_inline",
+            "placeholder": "",
+            "label": "커서 위치에 직접 삽입",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "component_names[]",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "enables[]",
+            "id": "enable",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "component_names[]",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "enables[]",
+            "id": "enable",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "component_names[]",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "enables[]",
+            "id": "enable",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "component_names[]",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "enables[]",
+            "id": "enable",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "index": 0,
+        "id": "",
+        "caption": "전체개수(4)\n\t\t\t\t\n\t\t\t\t\t간단보기\n\t\t\t\t\t상세보기",
+        "headers": [
+          "이동",
+          "컴포넌트",
+          "버전",
+          "작성자",
+          "설치경로",
+          "사용",
+          "삭제"
+        ],
+        "rowCount": 4,
+        "sampleRows": [
+          [
+            "Move to",
+            "이모티콘 출력\n\t\t\t\t\t\t\n\t\t\t\t\t\t이모티콘을 에디터에 삽입할 수 있습니다.",
+            "1.9",
+            "Rhymix contributorsNAVER",
+            "./modules/editor/components/emoticon",
+            "",
+            ""
+          ],
+          [
+            "Move to",
+            "이미지 추가\n\t\t\t\t\t\t\n\t\t\t\t\t\t에디터에 이미지를 추가하거나 속성을 변경할 수 있습니다.",
+            "1.7",
+            "NAVER",
+            "./modules/editor/components/image_link",
+            "",
+            ""
+          ],
+          [
+            "Move to",
+            "이미지 갤러리\n\t\t\t\t\t\t\n\t\t\t\t\t\t첨부된 이미지파일을 이용하여 슬라이드/목록형 이미지 갤러리를 만들 수 있습니다.",
+            "1.7",
+            "NAVER",
+            "./modules/editor/components/image_gallery",
+            "",
+            ""
+          ],
+          [
+            "Move to",
+            "설문조사\n\t\t\t\t\t\t\n\t\t\t\t\t\t글 작성시에 설문조사를 첨부할 수 있습니다. 설문조사 컴포넌트는 설문조사 모듈의 설정에 영향을 받습니다.",
+            "2.0",
+            "NAVER",
+            "./modules/editor/components/poll_maker",
+            "",
+            ""
+          ]
+        ]
+      }
+    ],
+    "buttons": [
+      "×",
+      "Toggle this section",
+      "저장",
+      "Move to",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "72-editor-admin",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispEditorAdminIndex"
+  },
+  "73-trash-admin": {
+    "docTitle": "휴지통",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispTrashAdminList",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "휴지통으로 이동"
+      },
+      {
+        "tag": "H2",
+        "text": "휴지통비우기 타입"
+      },
+      {
+        "tag": "H1",
+        "text": "선택한 글 관리:"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "page",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "is_all",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "is_type",
+            "id": "i1",
+            "placeholder": "",
+            "label": "문서",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "is_type",
+            "id": "i2",
+            "placeholder": "",
+            "label": "댓글",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_srl",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "search_target",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "title",
+                "text": "제목"
+              },
+              {
+                "value": "user_id",
+                "text": "삭제자 아이디"
+              },
+              {
+                "value": "nick_name",
+                "text": "삭제자 닉네임"
+              },
+              {
+                "value": "trash_ipaddress",
+                "text": "삭제자 IP 주소"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "search",
+            "name": "search_keyword",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "fo_list",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "page",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "is_all",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "origin_module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "index": 0,
+        "id": "trashListTable",
+        "caption": "전체(0)\n\t\t\t|\n\t\t\t문서\n\t\t\t|\n\t\t\t댓글\n\t\t\t\n\t\t\t\t삭제\n\t\t\t\t복원",
+        "headers": [
+          "타입",
+          "문서",
+          "작성자",
+          "IP 주소",
+          "옮긴 사람",
+          "삭제 날짜",
+          "설명",
+          ""
+        ],
+        "rowCount": 1,
+        "sampleRows": [
+          [
+            "등록된 글이 없습니다."
+          ]
+        ]
+      },
+      {
+        "index": 1,
+        "id": "trashManageListTable",
+        "caption": "선택한 글",
+        "headers": [
+          "문서",
+          "옮긴 사람",
+          "IP 주소"
+        ],
+        "rowCount": 0,
+        "sampleRows": []
+      }
+    ],
+    "buttons": [
+      "×",
+      "휴지통 비우기",
+      "검색",
+      "confirm",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "73-trash-admin",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispTrashAdminList"
+  },
+  "74-filebox-admin": {
+    "docTitle": "파일박스",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispModuleAdminFileBox",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "파일박스"
+      },
+      {
+        "tag": "H1",
+        "text": "파일 올리기Toggle this section"
+      },
+      {
+        "tag": "H1",
+        "text": "파일 목록Toggle this section"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "vid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "filter",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "input",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "attribute_name[]",
+            "id": "attribute_name1",
+            "placeholder": "",
+            "label": "변수명",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "attribute_value[]",
+            "id": "attribute_value1",
+            "placeholder": "",
+            "label": "값",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "file",
+            "name": "addfile",
+            "id": "file",
+            "placeholder": "",
+            "label": "파일",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "index": 0,
+        "id": "",
+        "caption": "",
+        "headers": [
+          "파일",
+          "변수명:값",
+          "삭제"
+        ],
+        "rowCount": 0,
+        "sampleRows": []
+      }
+    ],
+    "buttons": [
+      "×",
+      "Toggle this section",
+      "추가",
+      "삭제",
+      "저장",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "74-filebox-admin",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispModuleAdminFileBox"
+  },
+  "75-module-admin": {
+    "docTitle": "설치된 모듈",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispModuleAdminContent",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "설치된 모듈"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "index": 0,
+        "id": "",
+        "caption": "전체 (32)\n\t\t\n\t\t\t간단보기\n\t\t\t상세보기",
+        "headers": [
+          "즐겨찾기",
+          "모듈 이름",
+          "버전",
+          "작성자",
+          "설치경로"
+        ],
+        "rowCount": 32,
+        "sampleRows": [
+          [
+            "즐겨찾기 (꺼짐)",
+            "애드온\t\t\t\t\t\n\t애드온을 등록하거나 사용/미사용을 설정합니다.",
+            "",
+            "NAVER",
+            "./modules/addon/"
+          ],
+          [
+            "즐겨찾기 (꺼짐)",
+            "관리자 기능",
+            "",
+            "NAVER",
+            "./modules/admin/"
+          ],
+          [
+            "즐겨찾기 (꺼짐)",
+            "관리자 로깅",
+            "",
+            "NAVER",
+            "./modules/adminlogging/"
+          ],
+          [
+            "즐겨찾기 (켜짐)",
+            "메일, SMS 및 푸시 알림 관리\t\t\t\t\t\n\t라이믹스에서 발송하는 메일, SMS, 푸시 알림 등을 기록하고 테스트하는 기능을 제공합니다.",
+            "",
+            "Rhymix",
+            "./modules/advanced_mailer/"
+          ],
+          [
+            "즐겨찾기 (꺼짐)",
+            "쉬운 설치\t\t\t\t\t\n\t관리자 모드에서 클릭으로 모듈/스킨/레이아웃/위젯/위젯스타일 등을 설치하는 모듈입니다.",
+            "",
+            "NAVER",
+            "./modules/autoinstall/"
+          ]
+        ]
+      }
+    ],
+    "buttons": [
+      "×",
+      "간단보기",
+      "상세보기",
+      "즐겨찾기 (꺼짐)",
+      "즐겨찾기 (켜짐)",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "75-module-admin",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispModuleAdminContent"
+  },
+  "76-lang-admin": {
+    "docTitle": "다국어",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispModuleAdminLangcode",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "다국어"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "lang_create",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/index.php?module=admin&act=dispModuleAdminLangcode",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "lang_code",
+            "id": "",
+            "label": "",
+            "options": [
+              {
+                "value": "ko",
+                "text": "한국어"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "search",
+            "name": "search_keyword",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "buttons": [
+      "×",
+      "취소",
+      "저장",
+      "검색",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [
+      {
+        "legend": "",
+        "inputCount": 1
+      },
+      {
+        "legend": "",
+        "inputCount": 0
+      }
+    ],
+    "name": "76-lang-admin",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispModuleAdminLangcode"
+  },
+  "77-importer": {
+    "docTitle": "데이터 들여오기",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispImporterAdminImportForm",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "데이터 들여오기"
+      },
+      {
+        "tag": "H2",
+        "text": "게시물 정보"
+      },
+      {
+        "tag": "H2",
+        "text": "회원 정보"
+      },
+      {
+        "tag": "H2",
+        "text": "쪽지 정보"
+      },
+      {
+        "tag": "H1",
+        "text": "데이터 이전을 위한 사전 준비 중입니다."
+      },
+      {
+        "tag": "H1",
+        "text": "데이터 이전중입니다."
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "documentForm",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "type",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "unit_count",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "xml_file",
+            "id": "i1",
+            "placeholder": "",
+            "label": "XML 파일의 경로를 입력하세요.",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "target_module",
+            "id": "i2",
+            "placeholder": "",
+            "label": "데이터의 목적지를 선택하세요.",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "guestbook_target_module",
+            "id": "i3",
+            "placeholder": "",
+            "label": "방명록 데이터의 목적지를 선택하세요.",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "user_id",
+            "id": "i4",
+            "placeholder": "",
+            "label": "글쓴이로 설정할 사용자 아이디를 입력해주세요. (가입된 아이디만 가능)",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "isSync",
+            "id": "i5",
+            "placeholder": "",
+            "label": "회원정보 동기화",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "memberForm",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "type",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "unit_count",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "xml_file",
+            "id": "i6",
+            "placeholder": "",
+            "label": "XML 파일의 경로를 입력하세요.",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "isSync",
+            "id": "i7",
+            "placeholder": "",
+            "label": "회원정보 동기화",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "fo_import",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "type",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "unit_count",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "xml_file",
+            "id": "i8",
+            "placeholder": "",
+            "label": "XML 파일의 경로를 입력하세요.",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "fo_process",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "get",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "type",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "total",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "cur",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "key",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "target_module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "guestbook_target_module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "unit_count",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "user_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "buttons": [
+      "×",
+      "경로 확인",
+      "데이터 들여오기",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "77-importer",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispImporterAdminImportForm"
+  },
+  "78-rss-admin": {
+    "docTitle": "RSS",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispRssAdminIndex",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "RSS"
+      },
+      {
+        "tag": "H1",
+        "text": "통합 피드 관리Toggle this section"
+      },
+      {
+        "tag": "H1",
+        "text": "모듈별 피드 관리Toggle this section"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_total_feed",
+            "id": "use_total_feed_yes",
+            "placeholder": "",
+            "label": "사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_total_feed",
+            "id": "use_total_feed_no",
+            "placeholder": "",
+            "label": "미사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "feed_title",
+            "id": "feed_title",
+            "placeholder": "",
+            "label": "제목",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "feed_description",
+            "id": "feed_description",
+            "placeholder": "",
+            "label": "설명",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "file",
+            "name": "image",
+            "id": "image",
+            "placeholder": "",
+            "label": "피드 이미지",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "feed_copyright",
+            "id": "feed_copyright",
+            "placeholder": "",
+            "label": "저작권",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "name": "feed_document_count",
+            "id": "feed_document_count",
+            "placeholder": "",
+            "label": "한 페이지당 글 수",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "feed_description[51]",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[51]",
+            "id": "i4",
+            "placeholder": "",
+            "label": "전문 공개",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[51]",
+            "id": "i5",
+            "placeholder": "",
+            "label": "요약 공개",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[51]",
+            "id": "i6",
+            "placeholder": "",
+            "label": "공개하지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_total_feed[51]",
+            "id": "i7",
+            "placeholder": "",
+            "label": "사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_total_feed[51]",
+            "id": "i8",
+            "placeholder": "",
+            "label": "미사용",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "feed_description[55]",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[55]",
+            "id": "i9",
+            "placeholder": "",
+            "label": "전문 공개",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[55]",
+            "id": "i10",
+            "placeholder": "",
+            "label": "요약 공개",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[55]",
+            "id": "i11",
+            "placeholder": "",
+            "label": "공개하지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_total_feed[55]",
+            "id": "i12",
+            "placeholder": "",
+            "label": "사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_total_feed[55]",
+            "id": "i13",
+            "placeholder": "",
+            "label": "미사용",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "feed_description[53]",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[53]",
+            "id": "i14",
+            "placeholder": "",
+            "label": "전문 공개",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[53]",
+            "id": "i15",
+            "placeholder": "",
+            "label": "요약 공개",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_rss[53]",
+            "id": "i16",
+            "placeholder": "",
+            "label": "공개하지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_total_feed[53]",
+            "id": "i17",
+            "placeholder": "",
+            "label": "사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "open_total_feed[53]",
+            "id": "i18",
+            "placeholder": "",
+            "label": "미사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "index": 0,
+        "id": "",
+        "caption": "",
+        "headers": [
+          "모듈 이름",
+          "설명",
+          "피드(Feed) 공개",
+          "통합 피드에 포함"
+        ],
+        "rowCount": 3,
+        "sampleRows": [
+          [
+            "board",
+            "",
+            "전문 공개 \t\t\t\t\t\t\n\t\t\t\t\t\t\t 요약 공개\t\t\t\t\t\t\n\t\t\t\t\t\t\t 공개하지 않음",
+            "사용\t\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t\t 미사용"
+          ],
+          [
+            "notice",
+            "",
+            "전문 공개 \t\t\t\t\t\t\n\t\t\t\t\t\t\t 요약 공개\t\t\t\t\t\t\n\t\t\t\t\t\t\t 공개하지 않음",
+            "사용\t\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t\t 미사용"
+          ],
+          [
+            "qna",
+            "",
+            "전문 공개 \t\t\t\t\t\t\n\t\t\t\t\t\t\t 요약 공개\t\t\t\t\t\t\n\t\t\t\t\t\t\t 공개하지 않음",
+            "사용\t\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t\t 미사용"
+          ]
+        ]
+      }
+    ],
+    "buttons": [
+      "×",
+      "Toggle this section",
+      "저장",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "78-rss-admin",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispRssAdminIndex"
+  },
+  "79-cleanup": {
+    "docTitle": "시스템 설정",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispAdminCleanupList",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "불필요한 코어 파일 삭제"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "index": 0,
+        "id": "",
+        "caption": "",
+        "headers": [
+          "번호",
+          "삭제할 파일명",
+          "유형",
+          "삭제 이유",
+          "제외"
+        ],
+        "rowCount": 73,
+        "sampleRows": [
+          [
+            "1",
+            "common/framework/cache.php",
+            "파일",
+            "대소문자 구분 변경",
+            "제외"
+          ],
+          [
+            "2",
+            "common/framework/calendar.php",
+            "파일",
+            "대소문자 구분 변경",
+            "제외"
+          ],
+          [
+            "3",
+            "common/framework/config.php",
+            "파일",
+            "대소문자 구분 변경",
+            "제외"
+          ],
+          [
+            "4",
+            "common/framework/datetime.php",
+            "파일",
+            "대소문자 구분 변경",
+            "제외"
+          ],
+          [
+            "5",
+            "common/framework/db.php",
+            "파일",
+            "대소문자 구분 변경",
+            "제외"
+          ]
+        ]
+      }
+    ],
+    "buttons": [
+      "×",
+      "제외 목록 초기화 (0개)",
+      "삭제",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "79-cleanup",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispAdminCleanupList"
+  },
+  "80-server-env": {
+    "docTitle": "시스템 설정",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispAdminViewServerEnv",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "서버 환경"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "buttons": [
+      "×",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "80-server-env",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispAdminViewServerEnv"
+  },
+  "81-member-insert": {
+    "docTitle": "회원 추가",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispMemberAdminInsert",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "회원 추가"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "member_srl",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "signature",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "user_id",
+            "id": "user_id",
+            "placeholder": "",
+            "label": "* 아이디",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "email",
+            "name": "email_address",
+            "id": "email_address",
+            "placeholder": "",
+            "label": "* 이메일 주소",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "password",
+            "name": "password",
+            "id": "password",
+            "placeholder": "",
+            "label": "* 비밀번호",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "user_name",
+            "id": "user_name",
+            "placeholder": "",
+            "label": "* 이름",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "text",
+            "name": "nick_name",
+            "id": "nick_name",
+            "placeholder": "",
+            "label": "* 닉네임",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "url",
+            "name": "homepage",
+            "id": "homepage",
+            "placeholder": "",
+            "label": "홈페이지",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "url",
+            "name": "blog",
+            "id": "blog",
+            "placeholder": "",
+            "label": "블로그",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "birthday",
+            "id": "date_birthday",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "date",
+            "name": "birthday_ui",
+            "id": "birthday",
+            "placeholder": "YYYY-MM-DD",
+            "label": "생일",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "allow_mailing",
+            "id": "mailingYes",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "allow_mailing",
+            "id": "mailingNo",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "allow_message",
+            "id": "allow_Y",
+            "placeholder": "",
+            "label": "전체 수신",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "allow_message",
+            "id": "allow_N",
+            "placeholder": "",
+            "label": "수신 거부",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "allow_message",
+            "id": "allow_F",
+            "placeholder": "",
+            "label": "친구만 허용",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "refused_reason",
+            "id": "refused_reason",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "limited_reason",
+            "id": "limited_reason",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "is_admin",
+            "id": "is_admin",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "is_admin",
+            "id": "not_admin",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "description",
+            "id": "description",
+            "placeholder": "",
+            "label": "설명",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "group_srl_list[]",
+            "id": "group_2",
+            "placeholder": "",
+            "label": "관리그룹",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "group_srl_list[]",
+            "id": "group_3",
+            "placeholder": "",
+            "label": "준회원",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "group_srl_list[]",
+            "id": "group_4",
+            "placeholder": "",
+            "label": "정회원",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "buttons": [
+      "×",
+      "삭제",
+      "저장",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "81-member-insert",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispMemberAdminInsert"
+  },
+  "82-member-group-add": {
+    "docTitle": "",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispMemberAdminGroupAdd",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "잘못된 요청입니다."
+      }
+    ],
+    "forms": [],
+    "tables": [],
+    "buttons": [
+      "돌아가기"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "82-member-group-add",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispMemberAdminGroupAdd"
+  },
+  "83-board-create": {
+    "docTitle": "",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispBoardAdminInsert",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "잘못된 요청입니다."
+      }
+    ],
+    "forms": [],
+    "tables": [],
+    "buttons": [
+      "돌아가기"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "83-board-create",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispBoardAdminInsert"
+  },
+  "84-layout-edit": {
+    "docTitle": "",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispLayoutAdminEditor",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "잘못된 요청입니다."
+      }
+    ],
+    "forms": [],
+    "tables": [],
+    "buttons": [
+      "돌아가기"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "84-layout-edit",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispLayoutAdminEditor"
+  },
+  "85-ncenter-config": {
+    "docTitle": "알림 센터",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispNcenterliteAdminConfig",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "알림 센터"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "fo_ncenterlite",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "ruleset",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "disp_act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[comment][web]",
+            "id": "i2",
+            "placeholder": "",
+            "label": "웹 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[comment][mail]",
+            "id": "i3",
+            "placeholder": "",
+            "label": "메일 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[comment][sms]",
+            "id": "i4",
+            "placeholder": "",
+            "label": "문자 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[comment][push]",
+            "id": "i5",
+            "placeholder": "",
+            "label": "푸시 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[comment_comment][web]",
+            "id": "i7",
+            "placeholder": "",
+            "label": "웹 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[comment_comment][mail]",
+            "id": "i8",
+            "placeholder": "",
+            "label": "메일 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[comment_comment][sms]",
+            "id": "i9",
+            "placeholder": "",
+            "label": "문자 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[comment_comment][push]",
+            "id": "i10",
+            "placeholder": "",
+            "label": "푸시 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[mention][web]",
+            "id": "i12",
+            "placeholder": "",
+            "label": "웹 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[mention][mail]",
+            "id": "i13",
+            "placeholder": "",
+            "label": "메일 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[mention][sms]",
+            "id": "i14",
+            "placeholder": "",
+            "label": "문자 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[mention][push]",
+            "id": "i15",
+            "placeholder": "",
+            "label": "푸시 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[vote][web]",
+            "id": "i17",
+            "placeholder": "",
+            "label": "웹 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[vote][mail]",
+            "id": "i18",
+            "placeholder": "",
+            "label": "메일 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[vote][sms]",
+            "id": "i19",
+            "placeholder": "",
+            "label": "문자 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[vote][push]",
+            "id": "i20",
+            "placeholder": "",
+            "label": "푸시 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[scrap][web]",
+            "id": "i22",
+            "placeholder": "",
+            "label": "웹 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[scrap][mail]",
+            "id": "i23",
+            "placeholder": "",
+            "label": "메일 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[scrap][sms]",
+            "id": "i24",
+            "placeholder": "",
+            "label": "문자 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[scrap][push]",
+            "id": "i25",
+            "placeholder": "",
+            "label": "푸시 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[message][web]",
+            "id": "i27",
+            "placeholder": "",
+            "label": "웹 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[message][mail]",
+            "id": "i28",
+            "placeholder": "",
+            "label": "메일 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[message][sms]",
+            "id": "i29",
+            "placeholder": "",
+            "label": "문자 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[message][push]",
+            "id": "i30",
+            "placeholder": "",
+            "label": "푸시 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[admin_content][web]",
+            "id": "i32",
+            "placeholder": "",
+            "label": "웹 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[admin_content][mail]",
+            "id": "i33",
+            "placeholder": "",
+            "label": "메일 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[admin_content][sms]",
+            "id": "i34",
+            "placeholder": "",
+            "label": "문자 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[admin_content][push]",
+            "id": "i35",
+            "placeholder": "",
+            "label": "푸시 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[custom][web]",
+            "id": "i37",
+            "placeholder": "",
+            "label": "웹 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[custom][mail]",
+            "id": "i38",
+            "placeholder": "",
+            "label": "메일 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[custom][sms]",
+            "id": "i39",
+            "placeholder": "",
+            "label": "문자 알림",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "use[custom][push]",
+            "id": "i40",
+            "placeholder": "",
+            "label": "푸시 알림",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "display_use",
+            "id": "display_use",
+            "label": "알림 표시 여부",
+            "options": [
+              {
+                "value": "all",
+                "text": "모두 사용"
+              },
+              {
+                "value": "none",
+                "text": "표시하지 않음"
+              },
+              {
+                "value": "pc",
+                "text": "PC만 표시"
+              },
+              {
+                "value": "mobile",
+                "text": "모바일만 표시"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "always_display",
+            "id": "always_display_y",
+            "placeholder": "",
+            "label": "사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "always_display",
+            "id": "always_display_n",
+            "placeholder": "",
+            "label": "미사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "user_config_list",
+            "id": "user_config_list_id",
+            "placeholder": "",
+            "label": "표시",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "user_config_list",
+            "id": "user_config_list_nick_name",
+            "placeholder": "",
+            "label": "표시하지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "user_notify_setting",
+            "id": "user_notify_setting_y",
+            "placeholder": "",
+            "label": "사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "user_notify_setting",
+            "id": "user_notify_setting_n",
+            "placeholder": "",
+            "label": "미사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "push_before_sms",
+            "id": "i52",
+            "placeholder": "",
+            "label": "사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "push_before_sms",
+            "id": "i53",
+            "placeholder": "",
+            "label": "미사용",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "document_read",
+            "id": "i55",
+            "placeholder": "",
+            "label": "삭제",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "document_read",
+            "id": "i56",
+            "placeholder": "",
+            "label": "삭제하지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "buttons": [
+      "×",
+      "등록",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "85-ncenter-config",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispNcenterliteAdminConfig"
+  },
+  "86-mailer-config": {
+    "docTitle": "메일, SMS 및 푸시 알림 관리",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispAdvanced_mailerAdminConfig",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "메일, SMS 및 푸시 알림 관리 모듈"
+      },
+      {
+        "tag": "H2",
+        "text": "기본 발송 방법 설정"
+      },
+      {
+        "tag": "H2",
+        "text": "보낸이 설정"
+      },
+      {
+        "tag": "H2",
+        "text": "발송 내역 기록"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "advanced_mailer",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "log_sent_mail",
+            "id": "advanced_mailer_log_sent_mail",
+            "label": "메일 발송 내역",
+            "options": [
+              {
+                "value": "Y",
+                "text": "기록"
+              },
+              {
+                "value": "N",
+                "text": "기록하지 않음"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "log_errors",
+            "id": "advanced_mailer_log_errors",
+            "label": "",
+            "options": [
+              {
+                "value": "Y",
+                "text": "기록"
+              },
+              {
+                "value": "N",
+                "text": "기록하지 않음"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "log_sent_sms",
+            "id": "advanced_mailer_log_sent_sms",
+            "label": "SMS 발송 내역",
+            "options": [
+              {
+                "value": "Y",
+                "text": "기록"
+              },
+              {
+                "value": "N",
+                "text": "기록하지 않음"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "log_sms_errors",
+            "id": "advanced_mailer_log_sms_errors",
+            "label": "",
+            "options": [
+              {
+                "value": "Y",
+                "text": "기록"
+              },
+              {
+                "value": "N",
+                "text": "기록하지 않음"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "log_sent_push",
+            "id": "advanced_mailer_log_sent_push",
+            "label": "푸시 알림 발송 내역",
+            "options": [
+              {
+                "value": "Y",
+                "text": "기록"
+              },
+              {
+                "value": "N",
+                "text": "기록하지 않음"
+              }
+            ]
+          },
+          {
+            "tag": "select",
+            "type": "select-one",
+            "name": "log_push_errors",
+            "id": "advanced_mailer_log_push_errors",
+            "label": "",
+            "options": [
+              {
+                "value": "Y",
+                "text": "기록"
+              },
+              {
+                "value": "N",
+                "text": "기록하지 않음"
+              }
+            ]
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "buttons": [
+      "×",
+      "등록",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "86-mailer-config",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispAdvanced_mailerAdminConfig"
+  },
+  "87-system-db": {
+    "docTitle": "",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispAdminConfigDB",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "잘못된 요청입니다."
+      }
+    ],
+    "forms": [],
+    "tables": [],
+    "buttons": [
+      "돌아가기"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "87-system-db",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispAdminConfigDB"
+  },
+  "88-system-cache": {
+    "docTitle": "",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispAdminConfigCache",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "잘못된 요청입니다."
+      }
+    ],
+    "forms": [],
+    "tables": [],
+    "buttons": [
+      "돌아가기"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "88-system-cache",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispAdminConfigCache"
+  },
+  "89-system-security": {
+    "docTitle": "시스템 설정",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispAdminConfigSecurity",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "시스템 설정"
+      }
+    ],
+    "forms": [
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module_name",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "success_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "",
+        "name": "",
+        "action": "http://localhost/",
+        "method": "post",
+        "inputs": [
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "error_return_url",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "mid",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "module",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "act",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "xe_validator_id",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "mediafilter_whitelist",
+            "id": "mediafilter_whitelist",
+            "placeholder": "",
+            "label": "외부 멀티미디어 허용",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "mediafilter_classes",
+            "id": "mediafilter_classes",
+            "placeholder": "",
+            "label": "HTML class 허용",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "robot_user_agents",
+            "id": "robot_user_agents",
+            "placeholder": "",
+            "label": "로봇 user-agent",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "admin_allowed_ip",
+            "id": "admin_allowed_ip",
+            "placeholder": "172.19.0.1 (로컬 IP 주소)",
+            "label": "관리자 로그인 허용 IP",
+            "options": []
+          },
+          {
+            "tag": "textarea",
+            "type": "textarea",
+            "name": "admin_denied_ip",
+            "id": "admin_denied_ip",
+            "placeholder": "",
+            "label": "관리자 로그인 금지 IP",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "number",
+            "name": "autologin_lifetime",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "checkbox",
+            "name": "autologin_refresh",
+            "id": "autologin_refresh",
+            "placeholder": "",
+            "label": "보안키 갱신",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_session_ssl",
+            "id": "use_session_ssl_y",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_session_ssl",
+            "id": "use_session_ssl_n",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_cookies_ssl",
+            "id": "use_cookies_ssl_y",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_cookies_ssl",
+            "id": "use_cookies_ssl_n",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "check_csrf_token",
+            "id": "check_csrf_token_y",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "check_csrf_token",
+            "id": "check_csrf_token_n",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_nofollow",
+            "id": "use_nofollow_y",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_nofollow",
+            "id": "use_nofollow_n",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_httponly",
+            "id": "use_httponly_y",
+            "placeholder": "",
+            "label": "예",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_httponly",
+            "id": "use_httponly_n",
+            "placeholder": "",
+            "label": "아니오",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_samesite",
+            "id": "use_samesite_strict",
+            "placeholder": "",
+            "label": "Strict",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_samesite",
+            "id": "use_samesite_lax",
+            "placeholder": "",
+            "label": "Lax",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_samesite",
+            "id": "use_samesite_none",
+            "placeholder": "",
+            "label": "None",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "use_samesite",
+            "id": "use_samesite_empty",
+            "placeholder": "",
+            "label": "표기하지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "x_frame_options",
+            "id": "x_frame_options_deny",
+            "placeholder": "",
+            "label": "Deny",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "x_frame_options",
+            "id": "x_frame_options_sameorigin",
+            "placeholder": "",
+            "label": "SameOrigin",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "x_frame_options",
+            "id": "x_frame_options_empty",
+            "placeholder": "",
+            "label": "표기하지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "x_content_type_options",
+            "id": "x_content_type_options_nosniff",
+            "placeholder": "",
+            "label": "nosniff",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "radio",
+            "name": "x_content_type_options",
+            "id": "x_content_type_options_empty",
+            "placeholder": "",
+            "label": "표기하지 않음",
+            "options": []
+          },
+          {
+            "tag": "input",
+            "type": "hidden",
+            "name": "_rx_csrf_token",
+            "id": "",
+            "placeholder": "",
+            "label": "",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "buttons": [
+      "×",
+      "저장",
+      "관리자 메뉴 초기화",
+      "캐시파일 재생성",
+      "세션 정리",
+      "취소",
+      "확인"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "89-system-security",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispAdminConfigSecurity"
+  },
+  "90-system-sns": {
+    "docTitle": "",
+    "currentUrl": "http://localhost/index.php?module=admin&act=dispAdminConfigSns",
+    "headings": [
+      {
+        "tag": "H1",
+        "text": "잘못된 요청입니다."
+      }
+    ],
+    "forms": [],
+    "tables": [],
+    "buttons": [
+      "돌아가기"
+    ],
+    "tabs": [],
+    "sections": [],
+    "name": "90-system-sns",
+    "requestedUrl": "http://localhost/index.php?module=admin&act=dispAdminConfigSns"
+  }
+}

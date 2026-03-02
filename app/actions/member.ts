@@ -32,6 +32,35 @@ export interface MemberFilters {
   limit?: number
   sort?: 'created_at' | 'last_login_at' | 'display_name'
   order?: 'asc' | 'desc'
+  // Sprint 1: Additional filters
+  status?: 'approved' | 'denied' | 'unverified'
+  group_id?: string
+  date_from?: string
+  date_to?: string
+}
+
+// =====================================================
+// Extended Profile Types (Sprint 1)
+// =====================================================
+
+export interface ExtendedProfileUpdate {
+  // Existing fields
+  display_name?: string
+  avatar_url?: string
+  bio?: string
+  website_url?: string
+  location?: string
+  role?: UserRole
+  signature?: string
+  notification_settings?: Record<string, any>
+  metadata?: Record<string, any>
+
+  // Sprint 1: New fields
+  homepage?: string
+  blog?: string
+  birthday?: string
+  allow_mailing?: boolean
+  allow_message?: 'everyone' | 'member' | 'friend' | 'nobody'
 }
 
 // =====================================================
@@ -40,8 +69,9 @@ export interface MemberFilters {
 
 /**
  * Update user profile
+ * Supports extended fields: homepage, blog, birthday, allow_mailing, allow_message
  */
-export async function updateProfile(userId: UUID, data: ProfileUpdate): Promise<ActionResult<Profile>> {
+export async function updateProfile(userId: UUID, data: ExtendedProfileUpdate): Promise<ActionResult<Profile>> {
   try {
     const supabase = await createClient()
 
@@ -205,6 +235,7 @@ export async function uploadAvatar(userId: string, file: File): Promise<ActionRe
 
 /**
  * Get members with filters
+ * Sprint 1: Added status, group_id, date range filters
  */
 export async function getMembers(filters: MemberFilters = {}): Promise<ActionResult<Profile[]>> {
   try {
@@ -223,7 +254,19 @@ export async function getMembers(filters: MemberFilters = {}): Promise<ActionRes
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     const isAdmin = profile?.role === 'admin' || profile?.role === 'moderator'
 
-    const { role, search, page = 1, limit = 20, sort = 'created_at', order = 'desc' } = filters
+    const {
+      role,
+      search,
+      page = 1,
+      limit = 20,
+      sort = 'created_at',
+      order = 'desc',
+      // Sprint 1: New filters
+      status,
+      group_id,
+      date_from,
+      date_to,
+    } = filters
     const offset = (page - 1) * limit
 
     let query = supabase.from('profiles').select('*')
@@ -235,6 +278,26 @@ export async function getMembers(filters: MemberFilters = {}): Promise<ActionRes
 
     if (search) {
       query = query.or(`display_name.ilike.%${search}%,email.ilike.%${search}%`)
+    }
+
+    // Sprint 1: Status filter (requires status column in profiles table)
+    // Note: status column needs to be added via migration
+    // if (status) {
+    //   query = query.eq('status', status)
+    // }
+
+    // Sprint 1: Group filter (via user_groups table)
+    // Note: Requires join with user_groups table
+    // if (group_id) {
+    //   query = query.contains('group_ids', [group_id]) // If using array
+    // }
+
+    // Sprint 1: Date range filter
+    if (date_from) {
+      query = query.gte('created_at', date_from)
+    }
+    if (date_to) {
+      query = query.lte('created_at', date_to)
     }
 
     // Non-admins can only see public info

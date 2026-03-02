@@ -4,6 +4,13 @@ import { createClient } from '@/lib/supabase/server'
 import type { UUID, Notification, NotificationInsert, NotificationSettings } from '@/lib/supabase/database.types'
 import type { ActionResult } from '@/types/board'
 
+// Re-export types for convenience
+export type {
+  Notification,
+  NotificationInsert,
+  NotificationSettings,
+} from '@/lib/supabase/database.types'
+
 // =====================================================
 // Error Messages (Korean)
 // =====================================================
@@ -445,5 +452,324 @@ export async function getUnreadNotificationCount(
   } catch (error) {
     console.error('Get unread count error:', error)
     return { success: false, error: ERROR_MESSAGES.UNKNOWN_ERROR }
+  }
+}
+
+// =====================================================
+// Admin Notification Channel Settings
+// =====================================================
+
+export interface NotificationChannel {
+  web: boolean
+  mail: boolean
+  sms: boolean
+  push: boolean
+}
+
+export interface NotificationChannelSettings {
+  display_use: boolean
+  always_display: boolean
+  user_config_list: string[]
+  force_receive: string[]
+  comment: NotificationChannel
+  comment_reply: NotificationChannel
+  mention: NotificationChannel
+  like: NotificationChannel
+  scrap: NotificationChannel
+  message: NotificationChannel
+  admin: NotificationChannel
+  custom: NotificationChannel
+}
+
+/**
+ * Update site-wide notification channel settings (Admin only)
+ *
+ * @param settings - Notification channel settings to update
+ * @returns ActionResult indicating success or failure
+ */
+export async function updateNotificationChannelSettings(
+  settings: NotificationChannelSettings
+): Promise<ActionResult<NotificationChannelSettings>> {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication and admin permissions
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: '로그인이 필요합니다.' }
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: '관리자 권한이 필요합니다.' }
+    }
+
+    // Get current site config
+    const { data: currentConfig, error: fetchError } = await supabase
+      .from('site_config')
+      .select('*')
+      .single()
+
+    if (fetchError || !currentConfig) {
+      // Create if not exists
+      const { data: newConfig, error: createError } = await supabase
+        .from('site_config')
+        .insert({
+          notification_settings: settings,
+          updated_at: new Date().toISOString(),
+        })
+        .select('notification_settings')
+        .single()
+
+      if (createError || !newConfig) {
+        console.error('Create notification settings error:', createError)
+        return { success: false, error: '알림 설정 저장에 실패했습니다.' }
+      }
+
+      return { success: true, data: newConfig.notification_settings as NotificationChannelSettings }
+    }
+
+    // Update existing config
+    const { data: updatedConfig, error: updateError } = await supabase
+      .from('site_config')
+      .update({
+        notification_settings: settings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', currentConfig.id)
+      .select('notification_settings')
+      .single()
+
+    if (updateError || !updatedConfig) {
+      console.error('Update notification settings error:', updateError)
+      return { success: false, error: '알림 설정 저장에 실패했습니다.' }
+    }
+
+    return { success: true, data: updatedConfig.notification_settings as NotificationChannelSettings }
+  } catch (error) {
+    console.error('Update notification channel settings error:', error)
+    return { success: false, error: '알 수 없는 오류가 발생했습니다.' }
+  }
+}
+
+/**
+ * Get delivery settings for notification channels (Admin only)
+ *
+ * @returns Delivery settings or error
+ */
+export async function getDeliverySettings(): Promise<
+  ActionResult<{
+    smtp: {
+      host: string
+      port: number
+      user: string
+      password: string
+      security: 'none' | 'ssl' | 'tls'
+    }
+    sender: {
+      name: string
+      email: string
+    }
+    sms: {
+      api_key: string
+      api_secret: string
+      from_number: string
+    }
+    push: {
+      enabled: boolean
+      server_key: string
+    }
+  }>
+> {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication and admin permissions
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: '로그인이 필요합니다.' }
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: '관리자 권한이 필요합니다.' }
+    }
+
+    // Get delivery settings from site_config
+    const { data: siteConfig, error } = await supabase
+      .from('site_config')
+      .select('delivery_settings')
+      .single()
+
+    if (error || !siteConfig) {
+      return {
+        success: true,
+        data: {
+          smtp: {
+            host: '',
+            port: 587,
+            user: '',
+            password: '',
+            security: 'tls',
+          },
+          sender: {
+            name: '',
+            email: '',
+          },
+          sms: {
+            api_key: '',
+            api_secret: '',
+            from_number: '',
+          },
+          push: {
+            enabled: false,
+            server_key: '',
+          },
+        },
+      }
+    }
+
+    return { success: true, data: siteConfig.delivery_settings as any }
+  } catch (error) {
+    console.error('Get delivery settings error:', error)
+    return { success: false, error: '알 수 없는 오류가 발생했습니다.' }
+  }
+}
+
+/**
+ * Update delivery settings for notification channels (Admin only)
+ *
+ * @param settings - Delivery settings to update
+ * @returns ActionResult indicating success or failure
+ */
+export async function updateDeliverySettings(
+  settings: any
+): Promise<ActionResult<void>> {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication and admin permissions
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: '로그인이 필요합니다.' }
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: '관리자 권한이 필요합니다.' }
+    }
+
+    // Get current site config
+    const { data: currentConfig, error: fetchError } = await supabase
+      .from('site_config')
+      .select('*')
+      .single()
+
+    if (fetchError || !currentConfig) {
+      // Create if not exists
+      const { error: createError } = await supabase.from('site_config').insert({
+        delivery_settings: settings,
+        updated_at: new Date().toISOString(),
+      })
+
+      if (createError) {
+        console.error('Create delivery settings error:', createError)
+        return { success: false, error: '발송 설정 저장에 실패했습니다.' }
+      }
+
+      return { success: true }
+    }
+
+    // Update existing config
+    const { error: updateError } = await supabase
+      .from('site_config')
+      .update({
+        delivery_settings: settings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', currentConfig.id)
+
+    if (updateError) {
+      console.error('Update delivery settings error:', updateError)
+      return { success: false, error: '발송 설정 저장에 실패했습니다.' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Update delivery settings error:', error)
+    return { success: false, error: '알 수 없는 오류가 발생했습니다.' }
+  }
+}
+
+/**
+ * Get notification logs (Admin only)
+ *
+ * @param options - Query options
+ * @returns Notification logs or error
+ */
+export async function getNotificationLogs(options: {
+  type?: 'mail' | 'sms' | 'push'
+  status?: 'success' | 'error'
+  startDate?: string
+  endDate?: string
+  limit?: number
+  offset?: number
+}): Promise<ActionResult<any[]>> {
+  try {
+    const supabase = await createClient()
+
+    // Check authentication and admin permissions
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: '로그인이 필요합니다.' }
+    }
+
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      return { success: false, error: '관리자 권한이 필요합니다.' }
+    }
+
+    // TODO: Implement notification logs table query
+    // For now, return empty array
+    return { success: true, data: [] }
+  } catch (error) {
+    console.error('Get notification logs error:', error)
+    return { success: false, error: '알 수 없는 오류가 발생했습니다.' }
   }
 }

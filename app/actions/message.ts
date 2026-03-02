@@ -14,6 +14,18 @@ import type {
 } from '@/lib/supabase/database.types'
 import type { ActionResult } from '@/types/board'
 
+// Re-export types for convenience
+export type {
+  Message,
+  MessageInsert,
+  MessageUpdate,
+  MessageListFilters,
+  MessageWithRelations,
+  MessageBlock,
+  MessageBlockInsert,
+  MessageBlockWithRelations,
+} from '@/lib/supabase/database.types'
+
 // =====================================================
 // Error Messages (Korean)
 // =====================================================

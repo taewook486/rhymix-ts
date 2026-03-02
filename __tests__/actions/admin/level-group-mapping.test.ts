@@ -149,6 +149,7 @@ describe('Level-Group Mapping API', () => {
     it('should update sync mode with valid data', async () => {
       const updateData = {
         group_sync_mode: 'add' as const,
+        point_decrease_mode: 'keep' as const,
       }
 
       const mockRpc = jest.fn().mockResolvedValue({ data: null, error: null })

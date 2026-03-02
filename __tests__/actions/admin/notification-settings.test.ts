@@ -6,8 +6,8 @@
 
 import {
   getNotificationSettings,
-  updateNotificationChannelSettings,
-  type NotificationChannelSettings,
+  updateNotificationSettings,
+  type NotificationSettings,
 } from '@/app/actions/admin/notification-settings'
 
 const { createClient } = require('@/lib/supabase/server')
@@ -33,20 +33,29 @@ describe('Notification Settings Actions', () => {
     it('should return settings for admin user', async () => {
       const mockSettings = {
         id: 'settings-id',
-        comment: { web: true, mail: false, sms: false, push: false },
-        comment_comment: { web: true, mail: false, sms: false, push: false },
-        mention: { web: true, mail: true, sms: false, push: false },
-        vote: { web: true, mail: false, sms: false, push: false },
-        scrap: { web: true, mail: false, sms: false, push: false },
-        message: { web: true, mail: true, sms: false, push: true },
-        admin_content: { web: true, mail: true, sms: true, push: true },
-        custom: { web: true, mail: false, sms: false, push: false },
-        display_use: 'all',
-        always_display: true,
-        user_config_list: true,
-        user_notify_setting: true,
-        push_before_sms: true,
-        document_read_delete: true,
+        enable_notification_types: {
+          signup: true,
+          login: false,
+          document: true,
+          comment: true,
+          vote: true,
+          scrap: true,
+          mention: true,
+          message: true,
+        },
+        enable_notification_channels: {
+          email: true,
+          sms: false,
+          push: true,
+          web: true,
+        },
+        notification_center_enabled: true,
+        notification_center_limit: 20,
+        notification_center_order: 'latest' as const,
+        realtime_notification_enabled: true,
+        realtime_notification_sound: true,
+        realtime_notification_desktop: false,
+        notification_retention_days: 90,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
@@ -72,8 +81,9 @@ describe('Notification Settings Actions', () => {
 
       expect(result.success).toBe(true)
       expect(result.data).toBeDefined()
-      expect(result.data?.comment).toEqual({ web: true, mail: false, sms: false, push: false })
-      expect(result.data?.display_use).toBe('all')
+      expect(result.data?.enable_notification_types).toBeDefined()
+      expect(result.data?.enable_notification_channels).toBeDefined()
+      expect(result.data?.notification_center_enabled).toBe(true)
     })
 
     it('should require admin role', async () => {
@@ -125,16 +135,31 @@ describe('Notification Settings Actions', () => {
     })
   })
 
-  describe('updateNotificationChannelSettings', () => {
-    const validSettings: NotificationChannelSettings = {
-      comment: { web: true, mail: false, sms: false, push: false },
-      mention: { web: true, mail: true, sms: false, push: false },
-      display_use: 'all',
-      always_display: true,
-      user_config_list: true,
-      user_notify_setting: true,
-      push_before_sms: true,
-      document_read_delete: true,
+  describe('updateNotificationSettings', () => {
+    const validSettings = {
+      enable_notification_types: {
+        signup: true,
+        login: false,
+        document: true,
+        comment: true,
+        vote: true,
+        scrap: true,
+        mention: true,
+        message: true,
+      },
+      enable_notification_channels: {
+        email: true,
+        sms: false,
+        push: true,
+        web: true,
+      },
+      notification_center_enabled: true,
+      notification_center_limit: 20,
+      notification_center_order: 'latest' as const,
+      realtime_notification_enabled: true,
+      realtime_notification_sound: true,
+      realtime_notification_desktop: false,
+      notification_retention_days: 90,
     }
 
     it('should update settings with valid data', async () => {
@@ -183,7 +208,7 @@ describe('Notification Settings Actions', () => {
         }),
       })
 
-      const result = await updateNotificationChannelSettings(validSettings)
+      const result = await updateNotificationSettings(validSettings)
 
       expect(result.success).toBe(true)
       expect(result.message).toContain('수정')
@@ -192,8 +217,17 @@ describe('Notification Settings Actions', () => {
     it('should validate notification_types enum values', async () => {
       const invalidSettings = {
         ...validSettings,
-        // Invalid channel config - non-boolean values
-        comment: { web: 'invalid', mail: false, sms: false, push: false } as any,
+        // Invalid type config - non-boolean value
+        enable_notification_types: {
+          signup: 'invalid' as any,
+          login: false,
+          document: true,
+          comment: true,
+          vote: true,
+          scrap: true,
+          mention: true,
+          message: true,
+        },
       }
 
       createClient.mockResolvedValue({
@@ -215,7 +249,7 @@ describe('Notification Settings Actions', () => {
         }),
       })
 
-      const result = await updateNotificationChannelSettings(invalidSettings)
+      const result = await updateNotificationSettings(invalidSettings)
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('유효하지')
@@ -224,8 +258,13 @@ describe('Notification Settings Actions', () => {
     it('should validate notification_channels enum structure', async () => {
       const invalidChannelSettings = {
         ...validSettings,
-        // Missing required channel keys
-        comment: { web: true } as any, // Missing mail, sms, push
+        // Invalid channel config - non-boolean value
+        enable_notification_channels: {
+          email: 'invalid' as any,
+          sms: false,
+          push: true,
+          web: true,
+        },
       }
 
       createClient.mockResolvedValue({
@@ -247,15 +286,15 @@ describe('Notification Settings Actions', () => {
         }),
       })
 
-      const result = await updateNotificationChannelSettings(invalidChannelSettings)
+      const result = await updateNotificationSettings(invalidChannelSettings)
 
       expect(result.success).toBe(false)
     })
 
-    it('should validate display_use enum', async () => {
-      const invalidDisplaySettings = {
+    it('should validate notification_center_order enum', async () => {
+      const invalidOrderSettings = {
         ...validSettings,
-        display_use: 'invalid' as any,
+        notification_center_order: 'invalid' as any,
       }
 
       createClient.mockResolvedValue({
@@ -277,10 +316,10 @@ describe('Notification Settings Actions', () => {
         }),
       })
 
-      const result = await updateNotificationChannelSettings(invalidDisplaySettings)
+      const result = await updateNotificationSettings(invalidOrderSettings)
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('유효하지 않은 표시 설정')
+      expect(result.error).toContain('유효하지 않은 정렬 순서')
     })
 
     it('should add audit log entry', async () => {
@@ -332,7 +371,7 @@ describe('Notification Settings Actions', () => {
         }),
       })
 
-      await updateNotificationChannelSettings(validSettings)
+      await updateNotificationSettings(validSettings as any)
 
       expect(auditLogInserted).toBe(true)
     })
@@ -357,7 +396,7 @@ describe('Notification Settings Actions', () => {
         }),
       })
 
-      const result = await updateNotificationChannelSettings(validSettings)
+      const result = await updateNotificationSettings(validSettings)
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('권한')

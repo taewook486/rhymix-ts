@@ -269,7 +269,7 @@ describe('Point Rules API', () => {
         .mockResolvedValueOnce(adminAuthClient as any)
         .mockResolvedValueOnce(ruleClient as any)
 
-      const result = await updatePointRule('rule-1', updateData)
+      const result = await updatePointRule('rule-1', updateData as any)
 
       expect(result.success).toBe(true)
       expect(result.message).toContain('수정')
@@ -283,7 +283,7 @@ describe('Point Rules API', () => {
       const mockClient = createAdminAuthMock()
       createClient.mockResolvedValue(mockClient as any)
 
-      const result = await updatePointRule('rule-1', invalidData)
+      const result = await updatePointRule('rule-1', invalidData as any)
 
       expect(result.success).toBe(false)
     })
@@ -296,7 +296,7 @@ describe('Point Rules API', () => {
       const mockClient = createAdminAuthMock()
       createClient.mockResolvedValue(mockClient as any)
 
-      const result = await updatePointRule('rule-1', invalidData)
+      const result = await updatePointRule('rule-1', invalidData as any)
 
       expect(result.success).toBe(false)
     })
@@ -349,7 +349,7 @@ describe('Point Rules API', () => {
         .mockResolvedValueOnce(adminAuthClient as any)
         .mockResolvedValueOnce(ruleClient as any)
 
-      const result = await updatePointRule('rule-1', updateData)
+      const result = await updatePointRule('rule-1', updateData as any)
 
       expect(result.success).toBe(true)
     })
@@ -358,8 +358,8 @@ describe('Point Rules API', () => {
   describe('updatePointRulesBatch', () => {
     it('should update multiple rules in batch', async () => {
       const batchUpdates: PointRuleBatchUpdate[] = [
-        { id: 'rule-1', data: { point: 15 } },
-        { id: 'rule-2', data: { point: 8 } },
+        { id: 'rule-1', data: { point: 15 } as any },
+        { id: 'rule-2', data: { point: 8 } as any },
       ]
 
       const mockRpc = jest.fn().mockResolvedValue({ data: null, error: null })
@@ -426,8 +426,8 @@ describe('Point Rules API', () => {
 
     it('should validate all inputs before batch update', async () => {
       const batchUpdates: PointRuleBatchUpdate[] = [
-        { id: 'rule-1', data: { point: 10 } },
-        { id: 'rule-2', data: { daily_limit: -5 } }, // Invalid: must be positive
+        { id: 'rule-1', data: { point: 10 } as any },
+        { id: 'rule-2', data: { daily_limit: -5 } as any }, // Invalid: must be positive
       ]
 
       const mockClient = createAdminAuthMock()
@@ -440,7 +440,7 @@ describe('Point Rules API', () => {
 
     it('should add audit log for batch update', async () => {
       const batchUpdates: PointRuleBatchUpdate[] = [
-        { id: 'rule-1', data: { point: 15 } },
+        { id: 'rule-1', data: { point: 15 } as any },
       ]
 
       const mockRpc = jest.fn().mockResolvedValue({ data: null, error: null })

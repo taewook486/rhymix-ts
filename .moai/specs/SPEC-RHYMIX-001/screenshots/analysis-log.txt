@@ -1,0 +1,99 @@
+=== ASIS Login ===
+Logging in to ASIS...
+ASIS Login successful
+
+=== Analyzing: asis-site-design ===
+URL: http://localhost/index.php?module=admin&act=dispMenuAdminSiteDesign
+Screenshot saved: .moai\specs\SPEC-RHYMIX-001\screenshots\asis-site-design.png
+Page Title: localhost
+			
+			
+					admin
+				로그아웃
+					한국어
+					
+	한국어
+Forms: 5
+Tabs: [["PC","PC","모바일","모바일"],["레이아웃 [XEDITION]","레이아웃 [XEDITION]","문서 페이지 [Default Page Skin]","문서 페이지 [Default Page Skin]","게시판 [XEDITION]","게시판 [XEDITION]","회원 [회원 기본 스킨]","회원 [회원 기본 스킨]"]]
+Tables: 0
+Buttons: 27
+
+=== Analyzing: asis-member-config ===
+URL: http://localhost/index.php?module=admin&act=dispMemberAdminConfig
+Screenshot saved: .moai\specs\SPEC-RHYMIX-001\screenshots\asis-member-config.png
+Page Title: localhost
+			
+			
+					admin
+				로그아웃
+					한국어
+					
+	한국어
+Forms: 3
+Tabs: [["기본 설정","기본 설정","기능 설정","기능 설정","약관 설정","약관 설정","회원가입","회원가입","로그인","로그인","디자인","디자인","닉네임 변경 기록","닉네임 변경 기록"]]
+Tables: 0
+Buttons: 10
+
+=== Analyzing: asis-member-groups ===
+URL: http://localhost/index.php?module=admin&act=dispMemberAdminGroupList
+Screenshot saved: .moai\specs\SPEC-RHYMIX-001\screenshots\asis-member-groups.png
+Page Title: localhost
+			
+			
+					admin
+				로그아웃
+					한국어
+					
+	한국어
+Forms: 4
+Tabs: [["추가","추가","검색","검색"]]
+Tables: 1
+Buttons: 21
+
+=== Analyzing: asis-point-config ===
+URL: http://localhost/index.php?module=admin&act=dispPointAdminConfig
+Screenshot saved: .moai\specs\SPEC-RHYMIX-001\screenshots\asis-point-config.png
+Page Title: localhost
+			
+			
+					admin
+				로그아웃
+					한국어
+					
+	한국어
+Forms: 3
+Tabs: [["기본 설정","기본 설정","모듈별 설정","모듈별 설정","회원 포인트 목록","회원 포인트 목록"]]
+Tables: 2
+Buttons: 20
+
+=== TOBE Login ===
+
+=== Analyzing: tobe-widgets ===
+URL: http://localhost:3000/admin/widgets
+Screenshot saved: .moai\specs\SPEC-RHYMIX-001\screenshots\tobe-widgets.png
+Page Title: Rhymix TS - Modern CMS
+Forms: 1
+Tabs: []
+Tables: 0
+Buttons: 6
+
+=== Analyzing: tobe-themes ===
+URL: http://localhost:3000/admin/themes
+Screenshot saved: .moai\specs\SPEC-RHYMIX-001\screenshots\tobe-themes.png
+Page Title: Rhymix TS - Modern CMS
+Forms: 1
+Tabs: []
+Tables: 0
+Buttons: 6
+
+=== Analyzing: tobe-permissions ===
+URL: http://localhost:3000/admin/permissions
+Screenshot saved: .moai\specs\SPEC-RHYMIX-001\screenshots\tobe-permissions.png
+Page Title: Rhymix TS - Modern CMS
+Forms: 1
+Tabs: []
+Tables: 0
+Buttons: 6
+
+=== Analysis Complete ===
+Results saved to .moai/specs/SPEC-RHYMIX-001/screenshots/analysis-results.json

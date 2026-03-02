@@ -6,6 +6,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useMessages } from '@/hooks/useMessages'
 import * as messageActions from '@/app/actions/message'
+import type { Message, MessageWithRelations } from '@/lib/supabase/database.types'
 
 // Mock message actions
 jest.mock('@/app/actions/message')
@@ -19,7 +20,7 @@ const mockGetUnreadCount = messageActions.getUnreadCount as jest.MockedFunction<
 
 describe('useMessages Hook', () => {
   const mockUserId = 'user-1'
-  const mockMessages = [
+  const mockMessages: Message[] = [
     {
       id: 'msg-1',
       sender_id: 'user-2',
@@ -31,6 +32,10 @@ describe('useMessages Hook', () => {
       is_receiver_deleted: false,
       created_at: '2024-02-24T10:00:00Z',
       updated_at: '2024-02-24T10:00:00Z',
+      read_at: null,
+      sender_deleted_at: null,
+      receiver_deleted_at: null,
+      parent_id: null,
     },
     {
       id: 'msg-2',
@@ -43,6 +48,10 @@ describe('useMessages Hook', () => {
       is_receiver_deleted: false,
       created_at: '2024-02-24T09:00:00Z',
       updated_at: '2024-02-24T10:00:00Z',
+      read_at: '2024-02-24T10:30:00Z',
+      sender_deleted_at: null,
+      receiver_deleted_at: null,
+      parent_id: null,
     },
   ]
 
@@ -204,18 +213,18 @@ describe('useMessages Hook', () => {
     })
 
     it('should get specific message', async () => {
-      const mockMessage = {
+      const mockMessage: MessageWithRelations = {
         ...mockMessages[0],
         sender: {
           id: 'user-2',
           display_name: 'User 2',
           avatar_url: null,
-        },
+        } as any,
         receiver: {
           id: 'user-1',
           display_name: 'User 1',
           avatar_url: null,
-        },
+        } as any,
         parent: null,
       }
 
@@ -333,14 +342,14 @@ describe('useMessages Hook', () => {
             userId: mockUserId,
             folder,
           }),
-        { initialProps: { folder: 'inbox' as const } }
+        { initialProps: { folder: 'inbox' } }
       )
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
       })
 
-      rerender({ folder: 'sent' })
+      rerender({ folder: 'sent' as const })
 
       await waitFor(() => {
         expect(mockGetMessages).toHaveBeenCalledWith(

@@ -1,0 +1,94 @@
+[
+  {
+    "page": "homepage",
+    "asis": {
+      "title": "",
+      "url": "http://localhost//",
+      "hasNav": false,
+      "hasForm": false,
+      "hasTable": false,
+      "buttons": 0,
+      "inputs": 0,
+      "links": 0
+    },
+    "tobe": {
+      "title": "Rhymix TS - Modern CMS",
+      "url": "http://localhost:3000/",
+      "hasNav": true,
+      "hasForm": false,
+      "hasTable": false,
+      "buttons": 2,
+      "inputs": 0,
+      "links": 11
+    }
+  },
+  {
+    "page": "board_list",
+    "asis": {
+      "title": "",
+      "url": "http://localhost//?mid=board",
+      "hasNav": false,
+      "hasForm": false,
+      "hasTable": false,
+      "buttons": 0,
+      "inputs": 0,
+      "links": 0
+    },
+    "tobe": {
+      "title": "Rhymix TS - Modern CMS",
+      "url": "http://localhost:3000/ko/boards",
+      "hasNav": true,
+      "hasForm": false,
+      "hasTable": false,
+      "buttons": 2,
+      "inputs": 0,
+      "links": 8
+    }
+  },
+  {
+    "page": "login",
+    "asis": {
+      "title": "",
+      "url": "http://localhost//board/login",
+      "hasNav": false,
+      "hasForm": false,
+      "hasTable": false,
+      "buttons": 0,
+      "inputs": 0,
+      "links": 0
+    },
+    "tobe": {
+      "title": "Rhymix TS - Modern CMS",
+      "url": "http://localhost:3000/ko/signin",
+      "hasNav": true,
+      "hasForm": true,
+      "hasTable": false,
+      "buttons": 6,
+      "inputs": 2,
+      "links": 9
+    }
+  },
+  {
+    "page": "admin",
+    "asis": {
+      "title": "",
+      "url": "http://localhost//?module=admin",
+      "hasNav": false,
+      "hasForm": false,
+      "hasTable": false,
+      "buttons": 0,
+      "inputs": 0,
+      "links": 0
+    },
+    "tobe": {
+      "title": "Rhymix TS - Modern CMS",
+      "url": "http://localhost:3000/ko/signin?redirect=%2Fko%2Fadmin",
+      "hasNav": true,
+      "hasForm": true,
+      "hasTable": false,
+      "buttons": 6,
+      "inputs": 2,
+      "links": 9
+    }
+  }
+]

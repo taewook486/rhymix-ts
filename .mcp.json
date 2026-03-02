@@ -14,6 +14,11 @@
     "playwright": {
       "$comment": "Browser automation for web scraping and testing",
       "url": "http://localhost:8931/mcp"
+    },
+    "chrome-devtools": {
+      "$comment": "Chrome DevTools integration for browser automation",
+      "command": "cmd.exe",
+      "args": ["/c", "npx -y chrome-devtools-mcp@latest"]
     }
   },
   "staggeredStartup": {

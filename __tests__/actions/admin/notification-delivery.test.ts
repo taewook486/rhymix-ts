@@ -5,9 +5,9 @@
  */
 
 import {
-  getDeliverySettings,
-  updateDeliverySettings,
-  type DeliverySettings,
+  getNotificationDeliverySettings,
+  updateNotificationDeliverySettings,
+  type NotificationDeliverySettings,
 } from '@/app/actions/admin/notification-delivery'
 
 const { createClient } = require('@/lib/supabase/server')
@@ -29,26 +29,52 @@ describe('Notification Delivery Actions', () => {
     jest.clearAllMocks()
   })
 
-  describe('getDeliverySettings', () => {
+  describe('getNotificationDeliverySettings', () => {
     it('should return settings for admin user', async () => {
       const mockSettings = {
         id: 'delivery-id',
-        default_send_method: 'smtp',
+        smtp_enabled: true,
         smtp_host: 'smtp.example.com',
         smtp_port: 587,
-        smtp_user: 'user@example.com',
+        smtp_username: 'user@example.com',
         smtp_password: 'encrypted_password',
-        smtp_security: 'tls',
-        sender_name: 'Example Admin',
-        sender_email: 'admin@example.com',
-        api_provider: '',
-        api_key: '',
-        sms_provider: '',
-        sms_account_sid: '',
-        sms_auth_token: '',
-        sms_sender_number: '',
-        push_provider: '',
-        push_api_key: '',
+        smtp_encryption: 'tls' as const,
+        smtp_from_email: 'admin@example.com',
+        smtp_from_name: 'Example Admin',
+        smtp_reply_to: 'admin@example.com',
+        smtp_max_recipients: 100,
+        smtp_timeout_seconds: 30,
+        sms_enabled: false,
+        sms_provider: 'default' as const,
+        sms_api_key: null,
+        sms_api_secret: null,
+        sms_from_number: null,
+        sms_max_length: 90,
+        sms_encoding: 'utf8' as const,
+        sms_timeout_seconds: 10,
+        push_enabled: false,
+        push_provider: 'fcm' as const,
+        push_api_key: null,
+        push_apns_key_id: null,
+        push_apns_team_id: null,
+        push_apns_bundle_id: null,
+        push_fcm_server_key: null,
+        push_fcm_sender_id: null,
+        push_ttl_seconds: 86400,
+        push_sound: 'default',
+        web_enabled: true,
+        web_require_permission: true,
+        web_vapid_public_key: null,
+        web_vapid_private_key: null,
+        web_subject: 'mailto:admin@example.com',
+        rate_limit_enabled: true,
+        rate_limit_per_minute: 60,
+        rate_limit_per_hour: 1000,
+        rate_limit_per_day: 10000,
+        retry_enabled: true,
+        retry_max_attempts: 3,
+        retry_delay_seconds: 60,
+        retry_backoff_multiplier: 2.0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
@@ -70,13 +96,13 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      const result = await getDeliverySettings()
+      const result = await getNotificationDeliverySettings()
 
       expect(result.success).toBe(true)
       expect(result.data).toBeDefined()
       expect(result.data?.smtp_host).toBe('smtp.example.com')
       expect(result.data?.smtp_port).toBe(587)
-      expect(result.data?.smtp_security).toBe('tls')
+      expect(result.data?.smtp_encryption).toBe('tls')
     })
 
     it('should require admin role', async () => {
@@ -97,7 +123,7 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      const result = await getDeliverySettings()
+      const result = await getNotificationDeliverySettings()
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('권한')
@@ -121,23 +147,57 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      const result = await getDeliverySettings()
+      const result = await getNotificationDeliverySettings()
 
       expect(result.success).toBe(false)
       expect(result.error).toBeDefined()
     })
   })
 
-  describe('updateDeliverySettings', () => {
-    const validSettings: Partial<DeliverySettings> = {
-      default_send_method: 'smtp',
+  describe('updateNotificationDeliverySettings', () => {
+    const validSettings = {
+      smtp_enabled: true,
       smtp_host: 'smtp.example.com',
       smtp_port: 587,
-      smtp_user: 'user@example.com',
+      smtp_username: 'user@example.com',
       smtp_password: 'new_password',
-      smtp_security: 'tls',
-      sender_name: 'Example Admin',
-      sender_email: 'admin@example.com',
+      smtp_encryption: 'tls' as const,
+      smtp_from_name: 'Example Admin',
+      smtp_from_email: 'admin@example.com',
+      smtp_reply_to: 'admin@example.com',
+      smtp_max_recipients: 100,
+      smtp_timeout_seconds: 30,
+      sms_enabled: false,
+      sms_provider: 'default' as const,
+      sms_api_key: null,
+      sms_api_secret: null,
+      sms_from_number: null,
+      sms_max_length: 90,
+      sms_encoding: 'utf8' as const,
+      sms_timeout_seconds: 10,
+      push_enabled: false,
+      push_provider: 'fcm' as const,
+      push_api_key: null,
+      push_apns_key_id: null,
+      push_apns_team_id: null,
+      push_apns_bundle_id: null,
+      push_fcm_server_key: null,
+      push_fcm_sender_id: null,
+      push_ttl_seconds: 86400,
+      push_sound: 'default',
+      web_enabled: true,
+      web_require_permission: true,
+      web_vapid_public_key: null,
+      web_vapid_private_key: null,
+      web_subject: 'mailto:admin@example.com',
+      rate_limit_enabled: true,
+      rate_limit_per_minute: 60,
+      rate_limit_per_hour: 1000,
+      rate_limit_per_day: 10000,
+      retry_enabled: true,
+      retry_max_attempts: 3,
+      retry_delay_seconds: 60,
+      retry_backoff_multiplier: 2.0,
     }
 
     it('should update SMTP settings with valid data', async () => {
@@ -186,7 +246,7 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      const result = await updateDeliverySettings(validSettings)
+      const result = await updateNotificationDeliverySettings(validSettings as any)
 
       expect(result.success).toBe(true)
       expect(result.message).toContain('수정')
@@ -217,16 +277,16 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      const result = await updateDeliverySettings(invalidPortSettings)
+      const result = await updateNotificationDeliverySettings(invalidPortSettings)
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('포트')
     })
 
-    it('should validate smtp_security enum', async () => {
-      const invalidSecuritySettings = {
+    it('should validate smtp_encryption enum', async () => {
+      const invalidEncryptionSettings = {
         ...validSettings,
-        smtp_security: 'invalid' as any,
+        smtp_encryption: 'invalid' as any,
       }
 
       createClient.mockResolvedValue({
@@ -248,16 +308,16 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      const result = await updateDeliverySettings(invalidSecuritySettings)
+      const result = await updateNotificationDeliverySettings(invalidEncryptionSettings)
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('유효하지 않은 보안 설정')
+      expect(result.error).toContain('유효하지 않은 암호화')
     })
 
-    it('should validate rate_limit_tier enum', async () => {
-      const invalidTierSettings = {
+    it('should validate sms_provider enum', async () => {
+      const invalidProviderSettings = {
         ...validSettings,
-        rate_limit_tier: 'invalid_tier' as any,
+        sms_provider: 'invalid_provider' as any,
       }
 
       createClient.mockResolvedValue({
@@ -279,10 +339,10 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      const result = await updateDeliverySettings(invalidTierSettings)
+      const result = await updateNotificationDeliverySettings(invalidProviderSettings)
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('유효하지 않은 제한 등급')
+      expect(result.error).toContain('유효하지 않은')
     })
 
     it('should add audit log entry for security-sensitive changes', async () => {
@@ -334,7 +394,7 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      await updateDeliverySettings(validSettings)
+      await updateNotificationDeliverySettings(validSettings as any)
 
       expect(auditLogInserted).toBe(true)
     })
@@ -359,7 +419,7 @@ describe('Notification Delivery Actions', () => {
         }),
       })
 
-      const result = await updateDeliverySettings(validSettings)
+      const result = await updateNotificationDeliverySettings(validSettings as any)
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('권한')

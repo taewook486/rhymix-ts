@@ -1,6 +1,6 @@
 # ASIS vs TOBE Gap Analysis Report
 
-**Analysis Date:** 2026-02-28 (Updated)
+**Analysis Date:** 2026-03-02 (Updated with Admin Menu Analysis)
 **Analyst:** manager-spec agent
 **Status:** Complete - Deep Analysis
 
@@ -10,7 +10,7 @@
 
 This analysis compares **ASIS** (Rhymix PHP - 528 PHP files, 32 modules) with **TOBE** (Rhymix-TS Next.js - 177 actions, 116 components) to identify feature gaps and create an updated implementation roadmap.
 
-**Overall Implementation Status: 70% Complete**
+**Overall Implementation Status: 55% Complete** (Updated from 70%)
 
 ### Key Statistics
 - **ASIS Codebase:** 528 PHP module files, 37 class files, 8 addon files
@@ -18,6 +18,192 @@ This analysis compares **ASIS** (Rhymix PHP - 528 PHP files, 32 modules) with **
 - **Modules Migrated:** 15/32 (100% complete)
 - **Modules Partial:** 9/32 (20-90% complete)
 - **Modules Missing:** 8/32 (0% complete)
+- **Admin Menus:** 0/7 fully implemented (85% gap for admin features)
+
+---
+
+## Phase 2: Admin Menu Implementation Gap (NEW - 2026-03-02)
+
+### Admin Menu Summary
+
+| Metric | Value |
+|--------|-------|
+| Total Admin Menus | 7 |
+| Fully Implemented | 0 |
+| Partially Implemented | 3 (UI routes exist, no functionality) |
+| Not Implemented | 4 (no routes) |
+| Overall Admin Gap | ~85% |
+
+### Detailed Admin Menu Gap Analysis
+
+#### 1. Site Design Settings (dispMenuAdminSiteDesign)
+
+| Feature | ASIS | TOBE | Gap |
+|---------|------|------|-----|
+| Layout Management | Full (visual preview) | None | 100% |
+| Skin Selection | Full (per module) | None | 100% |
+| PC/Mobile Toggle | Yes | No | 100% |
+| Preview System | Yes | No | 100% |
+| Permission Configuration | Yes | No | 100% |
+
+**Form Elements:** 5 forms, 15+ inputs, 22 buttons
+**Status:** NOT IMPLEMENTED - No `/admin/site-design` route
+
+#### 2. Member Config (dispMemberAdminConfig) - 7 Tabs
+
+| Feature | ASIS | TOBE | Gap |
+|---------|------|------|-----|
+| Member URL Settings | Yes | No | 100% |
+| Registration Settings | Yes (3 modes) | No | 100% |
+| Email Verification | Yes | No | 100% |
+| Nickname Policies | Yes (5 fields) | No | 100% |
+| Password Security | Yes (4 fields, 7 algorithms) | No | 100% |
+| 6 Additional Tabs | Yes | No | 100% |
+
+**Form Elements:** 3 forms, 30+ inputs, 3 selects, 9 buttons
+**Tabs:** Basic Settings, Feature Settings, Terms Settings, Member Registration, Login, Design, Nickname Change History
+**Status:** NOT IMPLEMENTED - No `/admin/member-config` route
+
+#### 3. Member Groups (dispMemberAdminGroupList)
+
+| Feature | ASIS | TOBE | Gap |
+|---------|------|------|-----|
+| Group CRUD | Full | None | 100% |
+| Default Group Selection | Yes | No | 100% |
+| Image Marks | Yes | No | 100% |
+| Multilingual Support | Yes | No | 100% |
+| Drag-and-drop Ordering | Yes | No | 100% |
+
+**Form Elements:** 4 forms, 25+ inputs, 1 table, 22 buttons
+**Status:** NOT IMPLEMENTED - No `/admin/member-groups` route
+**Note:** Database tables `groups`, `user_groups`, `group_permissions` exist
+
+#### 4. Point Config (dispPointAdminConfig) - 3 Tabs
+
+| Feature | ASIS | TOBE | Gap |
+|---------|------|------|-----|
+| Point Module Toggle | Yes | No | 100% |
+| Level System (30 levels) | Yes | No | 100% |
+| Point Actions (17 types) | Yes | No | 100% |
+| Group Integration | Yes | No | 100% |
+| Daily Limits | Yes | No | 100% |
+| Author Bonuses | Yes | No | 100% |
+
+**Form Elements:** 3 forms, 80+ inputs, 3 selects, 2 tables, 21 buttons
+**Tabs:** Basic Settings, Module Settings, Member Point List
+**Status:** NOT IMPLEMENTED - No `/admin/point-config` route
+**Note:** Database table `points` exists, but `point_config` and `point_levels` missing
+
+#### 5-7. Partially Implemented (UI Routes Only)
+
+| Route | Expected | Actual | Gap |
+|-------|----------|--------|-----|
+| `/admin/widgets` | Widget management UI | Login redirect | 100% (UI only) |
+| `/admin/themes` | Theme management UI | Login redirect | 100% (UI only) |
+| `/admin/permissions` | Permission management UI | Login redirect | 100% (UI only) |
+
+**Note:** These routes exist but redirect to login, indicating placeholder routes without admin functionality.
+
+### Admin Menu Complexity Metrics
+
+| Page | Forms | Inputs | Selects | Tables | Buttons | Total Elements |
+|------|-------|--------|--------|--------|---------|----------------|
+| Site Design | 5 | 15+ | 0 | 0 | 22 | 42+ |
+| Member Config | 3 | 30+ | 3 | 0 | 9 | 45+ |
+| Member Groups | 4 | 25+ | 0 | 1 | 22 | 52+ |
+| Point Config | 3 | 80+ | 3 | 2 | 21 | 109+ |
+| **Total** | **15** | **150+** | **6** | **3** | **74** | **248+** |
+
+### Admin Menu Implementation Recommendations
+
+#### Phase 1: Core Admin Infrastructure (Priority: Critical)
+
+1. **Admin Layout Component**
+   - Sidebar navigation
+   - Header with user info
+   - Breadcrumb navigation
+   - Responsive design
+
+2. **Admin Route Protection**
+   - Middleware for admin-only access
+   - Role-based permissions
+   - Session management
+
+#### Phase 2: Member System (Priority: High)
+
+1. **Member Config Page** (7 tabs)
+   - Start with Basic Settings tab
+   - Add other tabs incrementally
+   - ~20 form fields per tab
+
+2. **Member Groups Page**
+   - CRUD operations
+   - Drag-and-drop ordering
+   - Multilingual support
+
+3. **Point System Page**
+   - Basic configuration
+   - Point action settings
+   - Level management
+
+#### Phase 3: Design System (Priority: Medium)
+
+1. **Site Design Page**
+   - Layout selection
+   - Skin management
+   - Preview functionality
+
+2. **Theme Management**
+   - Theme upload/install
+   - Theme activation
+   - Theme settings
+
+3. **Widget Management**
+   - Widget configuration
+   - Widget placement
+   - Widget settings
+
+#### Phase 4: Permissions (Priority: Medium)
+
+1. **Permission Matrix**
+   - Role-based permissions
+   - Module-level access
+   - Action-level permissions
+
+---
+
+## Database Schema Status (Admin Features)
+
+### Existing Tables (35+)
+
+| Category | Tables | Status |
+|----------|--------|--------|
+| Member Settings | profiles, site_config | Partial (need member_config) |
+| Member Groups | groups, user_groups, group_permissions | Complete |
+| Point System | points | Partial (need point_config, point_levels) |
+| Widgets | site_widgets, layout_widgets | Complete |
+| Themes | site_themes | Partial (need theme_skins) |
+| Permissions | permissions, group_permissions | Complete |
+| Layouts | layouts, layout_columns, layout_widgets | Complete |
+| Menus | menus, menu_items | Complete |
+| Activity | activity_log | Complete |
+
+### Missing Tables (6)
+
+| Table Name | Purpose | Priority |
+|------------|---------|----------|
+| `member_config` | Member module configuration | High |
+| `point_config` | Point reward configuration | High |
+| `point_levels` | Point-based user levels (30 levels) | Medium |
+| `group_images` | Group badges/icons | Medium |
+| `theme_skins` | Theme skin variants | Low |
+| `editor_config` | Editor settings (optional) | Low |
+
+### Migration Scripts Required
+
+1. **015_member_config.sql** - Member configuration table with default values
+2. **016_point_config.sql** - Point reward configuration with action types
+3. **017_point_levels.sql** - 30-level system with icons and thresholds
 
 ---
 
@@ -169,7 +355,86 @@ This analysis compares **ASIS** (Rhymix PHP - 528 PHP files, 32 modules) with **
 
 ---
 
-## 6. Database Schema Additions
+## 6. Browser-Based Visual Comparison Findings (NEW - 2026-03-01)
+
+### Critical Missing Features (P0) - Immediate Action Required
+
+| ID | Feature | ASIS Status | TOBE Status | Impact |
+|----|---------|-------------|-------------|--------|
+| P0-01 | Board List Page | Working | 404 Error | Core feature blocked |
+| P0-02 | Login Page Routing | /board/login | /ko/members/login 404 | User auth blocked |
+| P0-03 | Navigation Menu | 4 menus active | Empty | Page navigation blocked |
+| P0-04 | Homepage Visual Slider | 4 slides with Swiper | Missing | Major visual element missing |
+
+### High Priority Missing Features (P1)
+
+| ID | Feature | ASIS Status | TOBE Status | Impact |
+|----|---------|-------------|-------------|--------|
+| P1-01 | Welcome Guide Section | 10 guide items | Missing | Site introduction absent |
+| P1-02 | Recent Posts Display | Homepage widget | Not displayed | Content exposure limited |
+| P1-03 | Notice Display | Homepage widget | Not displayed | Information delivery limited |
+| P1-04 | Board Write Button | Present | Missing | Content creation blocked |
+| P1-05 | Board Search | Present | Missing | Content search blocked |
+| P1-06 | Board Sorting | Date/View count sort | Missing | List management limited |
+
+### Medium Priority Missing Features (P2)
+
+| ID | Feature | ASIS Status | TOBE Status | Impact |
+|----|---------|-------------|-------------|--------|
+| P2-01 | Tag System | Tag button present | Missing | Classification lacking |
+| P2-02 | ID/PW Recovery | Separate page | Unconfirmed | Account recovery blocked |
+| P2-03 | XEICON Integration | Icon system | Not used | Visual consistency lacking |
+| P2-04 | Sub-header Background | Background image | Missing | Page title visual lacking |
+| P2-05 | Remember Login | Checkbox option | Unconfirmed | Convenience feature missing |
+
+### URL Structure Differences
+
+| Feature | ASIS URL | TOBE URL | Status |
+|---------|----------|----------|--------|
+| Homepage | / | / | Partial |
+| Free Board | /?mid=board | /ko/boards (404) | Missing |
+| Q&A | /?mid=qna | - | Missing |
+| Notice | /?mid=notice | - | Missing |
+| Login | /board/login | /ko/signin | Different |
+| Signup | /board/signup | - | Unconfirmed |
+| Documents | /?mid=document (404) | /ko/documents | TOBE better |
+| Admin | /?module=admin | /ko/admin | Redirect |
+
+### UI/UX Visual Differences
+
+| Element | ASIS (XEDITION) | TOBE (Tailwind + shadcn) |
+|---------|-----------------|--------------------------|
+| Design Language | Custom theme | Modern utility-first |
+| Color System | CSS variables | HSL-based CSS variables |
+| Typography | Open Sans webfont | Inter font |
+| Icons | XEICON | None used |
+| Shadow Effects | Custom | Tailwind shadow-sm |
+
+### Homepage Structure Comparison
+
+**ASIS Homepage:**
+- Header: Logo | Navigation (4 items) | Search | Login/Signup
+- Visual Slider: 4 Swiper slides
+- Welcome Guide: 10 items (6 build guides + 4 community links)
+- Login Widget: Sidebar with ID/PW fields
+- Footer: Terms | Privacy Policy
+
+**TOBE Homepage:**
+- Header: Logo "Rhymix" | Navigation (empty) | Loading state
+- Hero Section: Text only ("Welcome to Rhymix TS")
+- Sidebar Cards: Quick Links, Member Area
+- Missing: Slider, Welcome Guide, Login Widget
+
+### Recommended Immediate Actions
+
+1. **Fix Board Route**: Resolve /ko/boards 404 error
+2. **Fix Login Route**: Add redirect /ko/members/login to /ko/signin
+3. **Activate Navigation**: Add menu items to header component
+4. **Add Visual Elements**: Implement hero slider or image section
+
+---
+
+## 8. Database Schema Additions
 
 ### New Tables Required
 
@@ -221,7 +486,7 @@ CREATE TABLE public.view_counts (
 
 ---
 
-## 7. Success Criteria
+## 9. Success Criteria
 
 ### Phase 1 Completion Criteria
 - [ ] WYSIWYG editor functional with media upload
@@ -246,4 +511,52 @@ CREATE TABLE public.view_counts (
 
 ---
 
-**Next Steps:** Review this gap analysis and proceed to Phase 1 implementation.
+## 10. Updated Overall Completion Assessment
+
+### Revised Completion Metrics
+
+| Category | Previous Estimate | Updated Estimate | Reason |
+|----------|-------------------|------------------|--------|
+| Core Modules | 70% | 70% | Unchanged |
+| Admin Menus | Assumed Complete | 15% | New analysis revealed gaps |
+| Database Schema | 90% | 85% | 6 missing tables identified |
+| **Overall Project** | **70%** | **55%** | Admin features significantly incomplete |
+
+### Critical Path Items
+
+1. **Admin Layout Infrastructure** - Required before any admin pages can function
+2. **Member Config System** - 7 tabs, 30+ configuration fields
+3. **Point System** - 30 levels, 17 action types, group integration
+4. **Board List Route Fix** - Currently returning 404
+
+### Implementation Priority Matrix
+
+| Priority | Feature | Effort | Impact | Dependencies |
+|----------|---------|--------|--------|--------------|
+| P0 | Admin Layout | Medium | Critical | None |
+| P0 | Board Route Fix | Low | Critical | None |
+| P1 | Member Config | High | High | Admin Layout |
+| P1 | Member Groups | Medium | High | Admin Layout |
+| P1 | Point Config | High | High | Admin Layout |
+| P1 | WYSIWYG Editor | Medium | High | None |
+| P2 | Site Design | High | Medium | Admin Layout |
+| P2 | Theme Management | Medium | Medium | Admin Layout |
+| P2 | Widget Management | Medium | Medium | Admin Layout |
+
+### Estimated Implementation Effort
+
+| Component | Form Fields | API Endpoints | Database Tables | Effort Days |
+|-----------|-------------|---------------|-----------------|-------------|
+| Admin Layout | 0 | 5 | 0 | 3-5 |
+| Member Config | 30+ | 15 | 1 | 7-10 |
+| Member Groups | 25+ | 10 | 0 (exists) | 5-7 |
+| Point Config | 80+ | 20 | 2 | 10-14 |
+| Site Design | 15+ | 10 | 0 (exists) | 5-7 |
+| Themes | 10+ | 8 | 1 | 3-5 |
+| Widgets | 10+ | 8 | 0 (exists) | 3-5 |
+| Permissions | 5+ | 5 | 0 (exists) | 2-3 |
+| **Total** | **175+** | **81+** | **4** | **38-56** |
+
+---
+
+**Next Steps:** Review this gap analysis and proceed to Phase 1 implementation focusing on Admin Layout infrastructure first.
