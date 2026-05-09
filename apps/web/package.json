@@ -1,0 +1,44 @@
+{
+  "name": "@rhymix-ts/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf .next .turbo node_modules/.cache"
+  },
+  "dependencies": {
+    "@rhymix-ts/auth": "workspace:*",
+    "@rhymix-ts/core": "workspace:*",
+    "@rhymix-ts/db": "workspace:*",
+    "@rhymix-ts/ui": "workspace:*",
+    "@trpc/client": "^11.0.0",
+    "@trpc/next": "^11.0.0",
+    "@trpc/react-query": "^11.0.0",
+    "@trpc/server": "^11.0.0",
+    "@tanstack/react-query": "^5.62.0",
+    "iron-session": "^8.0.4",
+    "next": "16.0.0",
+    "next-auth": "^5.0.0-beta.25",
+    "next-intl": "^3.26.0",
+    "next-themes": "^0.4.4",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "superjson": "^2.2.2",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/node": "^22.10.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.0",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.9.0"
+  }
+}

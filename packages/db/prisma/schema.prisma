@@ -1,0 +1,164 @@
+// Rhymix-TS Prisma Schema (initial sketch from SPECs)
+//
+// This schema is a STARTING POINT derived from:
+//   - SPEC-INSTALL-001 (Site, SiteSetting)
+//   - SPEC-AUTH-001    (User, MemberGroup, AutoLogin, etc.)
+//   - SPEC-CONTENT-001 (Document, Comment, FileAttachment, etc.)
+//   - SPEC-ADMIN-001   (Domain, ModuleInstance, Menu, Widget)
+//   - SPEC-THEME-001   (Theme, Layout, Skin, ThemeAssignment)
+//
+// Each SPEC's domain model section contains the detailed schema; this file
+// captures only the FOUNDATION needed for /moai run SPEC-INSTALL-001.
+// The complete schema will grow during implementation cycles.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [citext, pg_trgm]
+}
+
+// =====================================================================
+// SPEC-INSTALL-001: Site bootstrap (created during procInstall)
+// =====================================================================
+
+model Site {
+  id                    Int       @id @default(autoincrement())
+  defaultLanguage       String    @default("en")
+  timeZone              String    @default("UTC")
+  scheme                String    @default("https") // 'http' | 'https'
+  installedAt           DateTime?
+  installedBy           Int?
+  installerIp           String?
+  installerUserAgent    String?
+  rhymixTsVersion       String    @default("0.0.0")
+  databaseSchemaVersion String    @default("init")
+
+  settings SiteSetting[]
+  domains  Domain[]
+
+  @@map("sites")
+}
+
+model SiteSetting {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  key       String
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, key])
+  @@index([key])
+  @@map("site_settings")
+}
+
+// =====================================================================
+// SPEC-ADMIN-001: Multi-domain + module instance system (sketch)
+// =====================================================================
+
+model Domain {
+  id              Int     @id @default(autoincrement())
+  siteId          Int
+  hostname        String  @unique
+  isDefault       Boolean @default(false)
+  defaultLayoutId Int?
+  defaultMenuId   Int?
+  scheme          String  @default("https")
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+  @@map("domains")
+}
+
+// Stub for ModuleInstance — full schema lands during /moai run SPEC-ADMIN-001
+model ModuleInstance {
+  id        Int      @id @default(autoincrement())
+  mid       String   @unique
+  module    String
+  siteId    Int?
+  isDefault Boolean  @default(false)
+  config    Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([module])
+  @@map("module_instances")
+}
+
+// =====================================================================
+// SPEC-AUTH-001: Member system (foundational stub)
+// =====================================================================
+
+enum UserStatus {
+  APPROVED
+  UNAUTHED
+  DENIED
+  SUSPENDED
+  DELETED
+}
+
+model User {
+  id              Int        @id @default(autoincrement())
+  userId          String     @unique
+  emailAddress    String     @unique
+  passwordHash    String
+  passwordVersion String     @default("argon2id-v1")
+  userName        String?
+  nickName        String     @unique
+  phoneNumber     String?
+  phoneCountry    String?
+  status          UserStatus @default(UNAUTHED)
+  isAdmin         Boolean    @default(false)
+  denied          Boolean    @default(false)
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+  extraVars       Json       @default("{}")
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  groups MemberGroupMember[]
+
+  @@index([status])
+  @@index([emailAddress])
+  @@map("users")
+}
+
+model MemberGroup {
+  id        Int      @id @default(autoincrement())
+  siteId    Int?
+  title     String
+  isDefault Boolean  @default(false)
+  isAdmin   Boolean  @default(false)
+  imageMark String?
+  listOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  members MemberGroupMember[]
+
+  @@map("member_groups")
+}
+
+model MemberGroupMember {
+  groupId  Int
+  userId   Int
+  joinedAt DateTime @default(now())
+
+  group MemberGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@map("member_group_members")
+}
+
+// =====================================================================
+// Additional models (Document, Comment, Layout, Theme, etc.) are
+// DEFERRED to their respective /moai run SPEC-XXX-001 cycles.
+// =====================================================================

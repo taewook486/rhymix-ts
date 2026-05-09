@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+
+/* SPEC-THEME-001: design tokens via CSS custom properties (Level 1: site default) */
+:root {
+  --color-bg: 255 255 255;
+  --color-fg: 17 17 17;
+  --color-primary: 59 130 246;
+  --color-muted: 107 114 128;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+[data-theme='dark'] {
+  --color-bg: 17 17 17;
+  --color-fg: 245 245 245;
+  --color-primary: 96 165 250;
+  --color-muted: 156 163 175;
+}
+
+html,
+body {
+  background: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    'Apple SD Gothic Neo',
+    'Malgun Gothic',
+    sans-serif;
+}
