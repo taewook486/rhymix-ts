@@ -232,3 +232,5 @@ playwright/.cache/
 
 # Local helper file accidentally created on Windows
 nul
+# Test coverage output
+coverage/
