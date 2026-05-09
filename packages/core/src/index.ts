@@ -16,23 +16,10 @@ export const UserStatus = {
 } as const;
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
 
-// Supported wizard languages (SPEC-INSTALL-001 i18n)
-export const SUPPORTED_LANGUAGES = [
-  'ko',
-  'en',
-  'ja',
-  'zh-CN',
-  'zh-TW',
-  'de',
-  'es',
-  'fr',
-  'mn',
-  'ru',
-  'tr',
-  'vi',
-  'id',
-] as const;
-export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+// SPEC-INSTALL-001 i18n: supported wizard languages live in ./i18n/languages
+// to keep schemas.ts free of circular imports through this barrel.
+export { SUPPORTED_LANGUAGES } from './i18n/languages';
+export type { SupportedLanguage } from './i18n/languages';
 
 // SPEC-INSTALL-001: Re-export install wizard schemas from canonical location.
 export {

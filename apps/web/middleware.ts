@@ -18,7 +18,7 @@ import { getInstallStatus } from '@/lib/install/site-status';
  */
 export const runtime = 'nodejs';
 
-const REWRITE_TEST_PREFIX = '/api/install/_rewrite_test/';
+const REWRITE_TEST_PREFIX = '/api/install/rewrite-test/';
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;

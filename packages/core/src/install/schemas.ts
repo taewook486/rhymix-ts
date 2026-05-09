@@ -9,7 +9,7 @@
  */
 import { z } from 'zod';
 
-import { SUPPORTED_LANGUAGES } from '../index';
+import { SUPPORTED_LANGUAGES } from '../i18n/languages';
 
 /** Minimum acceptable length for NEXTAUTH_SECRET (REQ-INSTALL-052). */
 export const NEXTAUTH_SECRET_MIN_LENGTH = 32;

@@ -8,7 +8,7 @@ import { GET, HEAD } from './route';
 describe('rewrite-test route', () => {
   it('the system shall echo the nonce in the x-install-rewrite-nonce header on GET', async () => {
     const params = Promise.resolve({ nonce: 'abc123' });
-    const res = await GET(new Request('http://localhost/api/install/_rewrite_test/abc123'), {
+    const res = await GET(new Request('http://localhost/api/install/rewrite-test/abc123'), {
       params,
     });
     expect(res.status).toBe(200);
@@ -17,7 +17,7 @@ describe('rewrite-test route', () => {
 
   it('the system shall echo the nonce on HEAD as well', async () => {
     const params = Promise.resolve({ nonce: 'xyz789' });
-    const res = await HEAD(new Request('http://localhost/api/install/_rewrite_test/xyz789'), {
+    const res = await HEAD(new Request('http://localhost/api/install/rewrite-test/xyz789'), {
       params,
     });
     expect(res.status).toBe(200);

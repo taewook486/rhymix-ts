@@ -37,11 +37,11 @@ describe('middleware', () => {
     expect(res.status).toBe(410);
   });
 
-  it('the system shall allow /api/install/_rewrite_test/* even when INSTALL_LOCK=1', async () => {
+  it('the system shall allow /api/install/rewrite-test/* even when INSTALL_LOCK=1', async () => {
     process.env.INSTALL_LOCK = '1';
     getInstallStatus.mockResolvedValue({ installed: true, site: null });
     const { middleware } = await loadMiddleware();
-    const res = await middleware(makeReq('/api/install/_rewrite_test/abc'));
+    const res = await middleware(makeReq('/api/install/rewrite-test/abc'));
     // NextResponse.next() returns 200 by default with x-middleware-next header.
     expect(res.status).toBe(200);
   });

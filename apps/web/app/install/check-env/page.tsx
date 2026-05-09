@@ -28,12 +28,12 @@ async function canWritePath(rel: string): Promise<boolean> {
 }
 
 async function canResolvePrismaClient(): Promise<boolean> {
+  // Turbopack의 monorepo isolated linker에서 `@prisma/client` 직접 import는
+  // 정적 분석 단계에서 실패합니다. 워크스페이스 패키지 `@rhymix-ts/db`가
+  // 이미 PrismaClient 싱글턴을 노출하므로 이를 통해 가용성을 검증합니다.
   try {
-    // Dynamic specifier prevents TS from resolving types here; we only care
-    // that the package is loadable at runtime in the deployed environment.
-    const specifier = '@prisma/client';
-    await import(/* @vite-ignore */ specifier);
-    return true;
+    const { prisma } = await import('@rhymix-ts/db');
+    return Boolean(prisma);
   } catch {
     return false;
   }
@@ -55,7 +55,7 @@ function tcpProbe(host: string, port: number): Promise<boolean> {
 async function rewriteHeadProbe(nonce: string): Promise<string> {
   const base = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
   try {
-    const res = await fetch(`${base}/api/install/_rewrite_test/${nonce}`, {
+    const res = await fetch(`${base}/api/install/rewrite-test/${nonce}`, {
       method: 'HEAD',
       cache: 'no-store',
     });

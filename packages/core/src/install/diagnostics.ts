@@ -63,7 +63,7 @@ export interface DiagnosticsIO {
   /** Optional: TCP probe to host:port; resolves true on connect within 1s. */
   tcpProbe: (host: string, port: number) => Promise<boolean>;
   /**
-   * HEAD request to /api/install/_rewrite_test/{nonce}; returns the value of
+   * HEAD request to /api/install/rewrite-test/{nonce}; returns the value of
    * the response header `x-install-rewrite-nonce` (empty string on miss).
    */
   rewriteHeadProbe: (nonce: string) => Promise<string>;
