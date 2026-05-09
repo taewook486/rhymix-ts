@@ -30,9 +30,11 @@ export default defineConfig({
       include: [
         'packages/auth/src/password.ts',
         'packages/core/src/install/**/*.ts',
+        'packages/db/src/install-validate.ts',
         'apps/web/lib/install/**/*.ts',
         'apps/web/middleware.ts',
         'apps/web/app/api/install/**/*.ts',
+        'apps/web/app/install/actions.ts',
       ],
       exclude: [
         '**/*.test.ts',

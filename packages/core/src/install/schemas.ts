@@ -83,6 +83,10 @@ export const installSessionSchema = z.object({
   language: z.enum(SUPPORTED_LANGUAGES),
   step: z.enum(INSTALL_STEPS),
   licenseAccepted: z.boolean().default(false),
+  // 환경 자가진단 통과 여부 (REQ-INSTALL-021).
+  envChecksPass: z.boolean().default(false),
+  // DB 접속/권한/충돌 검증 통과 여부 (REQ-INSTALL-022).
+  dbConfigValidated: z.boolean().default(false),
   db: dbConfigSchema.optional(),
   admin: adminConfigSchema.optional(),
 });

@@ -20,3 +20,11 @@ if (process.env.NODE_ENV !== 'production') {
 
 export type { Prisma } from '@prisma/client';
 export { PrismaClient } from '@prisma/client';
+
+export {
+  validateDbConnection,
+  type DbValidationCode,
+  type DbValidationIssue,
+  type DbValidationResult,
+  type ValidateOptions,
+} from './install-validate';

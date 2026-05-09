@@ -12,6 +12,7 @@ import Link from 'next/link';
 
 import { type DiagnosticsIO, runEnvDiagnostics } from '@rhymix-ts/core';
 
+import { setEnvChecksPass } from '../actions';
 import { DiagnosticsTable } from './diagnostics-table';
 
 export const dynamic = 'force-dynamic';
@@ -84,6 +85,11 @@ function buildIO(): DiagnosticsIO {
 export default async function CheckEnvPage() {
   const report = await runEnvDiagnostics(buildIO());
   const hasError = report.overall === 'error';
+
+  // 진단이 error가 아니면 다음 단계 진입을 허용 (REQ-INSTALL-022 게이트 충족).
+  if (!hasError) {
+    await setEnvChecksPass();
+  }
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
