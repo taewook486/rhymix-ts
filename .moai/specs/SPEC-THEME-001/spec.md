@@ -594,6 +594,74 @@ export function ThemeProvider({
 }
 ```
 
+## Reference: Rhymix v2.1.32 Theme System (Verified Live 2026-05-10)
+
+A clean install of Rhymix at `localhost:8080` shipped with the **XEDITION**
+layout/skin family and the following surface-level conventions that
+Rhymix-TS preserves.
+
+### Default Theme Family
+
+`XEDITION` is the default theme provisioned at install time. It supplies:
+
+- a top layout (logo left, primary nav center, search/settings/profile
+  icons right)
+- a hero slider section with arrow navigation
+- a content-block pattern (image + text two-column)
+- a board skin matched to the layout
+- per-extra-var settings: main page demo, login widget toggle, layout type
+  (auto/wide/fixed), main menu type (FIXED+SHRINKING by default), submenu
+  type, fixed-width toggle, slide tab variants
+
+Rhymix-TS ships with at least:
+
+- `default` — neutral, accessibility-first equivalent of XEDITION (preset
+  tokens for light/dark mode)
+- `default-mobile` — companion mobile layout assigned to `mlayout_srl`
+
+### Theme Settings Form Surface (Three-Pane Editor)
+
+The theme settings pane (Pane 3 in `/admin/site/design`, see
+SPEC-ADMIN-001) renders the following form fields auto-derived from the
+theme manifest:
+
+| Field | Source | Required |
+|---|---|---|
+| 경로 (path) | manifest.path | read-only |
+| 설명 (description) | manifest.description | read-only |
+| 작성자 (author) | manifest.author | read-only |
+| 제목 (title) | assignment.title override | yes |
+| 헤더 스크립트 | assignment.headerScript | no |
+| 확장 변수 (extra_vars) | manifest.tokens (Zod schema) | per-field |
+
+Rule: the manifest's `tokens` Zod schema MUST be sufficient to render Pane
+3 with full validation, default values, descriptions, and grouped sections
+(rendered as inner tabs: Basic | Slide | etc.).
+
+### Skin Assignment Targets
+
+Rhymix's design pane lets admins assign skins per-target:
+
+- 레이아웃 → `Layout` (assigned per-domain, mobile separately)
+- 문서 페이지 → `PageSkin` (per page module instance)
+- 게시판 → `BoardSkin` (per board module instance)
+- 회원 → `MemberSkin` (site-wide)
+
+Rhymix-TS exposes the same four assignment targets via the
+`ThemeAssignment.scope` enum (SITE | DOMAIN | MODULE_INSTANCE) plus the
+implicit module type (page/board/member) recovered from the assignment's
+target instance.
+
+### PC vs Mobile Tabs
+
+Pane 1's PC/Mobile tab toggle maps directly to `Layout.layoutType` (`P` |
+`M`) per Rhymix. Rhymix-TS preserves the toggle but uses responsive design
+by default:
+
+- `mlayout_srl = -2` (responsive, reuse PC layout) is the recommended
+  default — only show the Mobile tab if the operator explicitly opts into
+  a separate mobile layout.
+
 ## Out of Scope
 
 - **Visual Theme Editor (drag-drop WYSIWYG)**: Future SPEC; this SPEC delivers token-form editing only.

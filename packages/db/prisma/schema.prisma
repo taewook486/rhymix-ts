@@ -12,14 +12,12 @@
 // The complete schema will grow during implementation cycles.
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [citext, pg_trgm]
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // =====================================================================

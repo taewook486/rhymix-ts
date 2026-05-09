@@ -892,6 +892,128 @@ export default async function MidIndex({ params }: { params: Promise<{ mid: stri
 
 ---
 
+## Reference: Rhymix v2.1.32 Admin UX (Verified Live 2026-05-10)
+
+A clean install of Rhymix v2.1.32 at `localhost:8080` was inspected to
+validate the IA below. Rhymix-TS preserves the high-level structure and
+modernizes the implementation.
+
+### Sidebar IA (Authoritative)
+
+```
+대시보드            Dashboard            /admin
+사이트 제작/편집   Site / Design         /admin/site
+  ├─ 사이트 메뉴 편집   Menu Editor       /admin/site/menu
+  └─ 사이트 디자인 설정 Theme & Layout   /admin/site/design
+회원                Members              /admin/members
+  ├─ 회원 목록      User list            /admin/members
+  ├─ 회원 설정      Member settings      /admin/members/settings
+  ├─ 회원 그룹      Groups               /admin/members/groups
+  └─ 포인트         Points (deferred)
+콘텐츠              Content              /admin/content
+  ├─ 게시판         Board instances      /admin/content/boards
+  ├─ 페이지         Pages                /admin/content/pages
+  ├─ 문서           Documents            /admin/content/documents
+  ├─ 댓글           Comments             /admin/content/comments
+  ├─ 파일           Files                /admin/content/files
+  ├─ 설문           Polls (deferred)
+  ├─ 에디터         Editor settings      /admin/content/editor
+  ├─ 스팸필터       Spam filter          /admin/content/spam
+  └─ 휴지통         Trash                /admin/content/trash
+즐겨찾기            Favorites            /admin/favorites
+설정                System settings      /admin/settings
+고급                Advanced             /admin/advanced
+```
+
+Items marked "(deferred)" are out-of-scope for v0.1 and tracked as future
+SPECs.
+
+### Dashboard Widgets
+
+Three core widgets render as React Server Components on `/admin`:
+
+1. **MembersWidget** — total count + recent signups list, links to profile
+2. **RecentDocumentsWidget** — recent posts across all boards with author
+3. **RecentCommentsWidget** — recent comments with empty-state copy
+
+Each widget MUST render a skeleton during data fetch and degrade to an
+empty-state on data source error (mirrors Rhymix's "등록된 데이터가
+없습니다." pattern).
+
+### Footer Maintenance Actions
+
+Rhymix exposes quick maintenance actions in the admin footer; Rhymix-TS
+mirrors them as tRPC `admin.system.*` procedures:
+
+- Reset admin menu cache (`admin.system.resetMenuCache`)
+- Regenerate cache files (`admin.system.regenerateCache`)
+- Cleanup sessions (`admin.system.cleanupSessions`)
+- Cleanup core files (`admin.system.cleanupCoreFiles`)
+- Show server environment (`admin.system.serverEnv`)
+- Bug report (external link to GitHub issues)
+
+The footer also renders `Powered by Rhymix-TS {version}`.
+
+### Board Admin Table Columns (Reference)
+
+The board management table at `/admin/content/boards` mirrors Rhymix
+columns:
+
+| 번호 | 모듈 분류 | 도메인/URL | 브라우저 제목 | 특이사항 | 등록일 | 편집 |
+|---|---|---|---|---|---|---|
+| ID | Module type tag | `/{mid}` | browser_title | flags | created | ⚙ Settings + Copy + Delete |
+
+Bulk-select checkboxes plus a "선택한 게시판 관리" action bar are present in
+the upper-right.
+
+### Three-Pane Design Editor (`/admin/site/design`)
+
+Rhymix's most distinctive pattern is the three-pane editor:
+
+```
+┌────────────────────────┬────────────────────────┬────────────────────────┐
+│ Pane 1                 │ Pane 2                 │ Pane 3                 │
+│ Site Design Settings   │ Layouts / Skins        │ Settings (Theme Vars)  │
+├────────────────────────┼────────────────────────┼────────────────────────┤
+│ Tabs: PC | Mobile      │ List of available      │ Selected theme's       │
+│ Tree of currently      │ layouts/skins.         │ - meta (path, author)  │
+│ assigned components:   │ Each item has actions: │ - title (required)     │
+│   • 레이아웃           │   - Detailed settings  │ - header script        │
+│   • 문서 페이지         │   - Make a copy        │ - dynamic extra_vars   │
+│   • 게시판             │   - Delete             │   form (Zod schema)    │
+│   • 회원                │ Selected highlight.    │                        │
+│ [PC Settings Save]     │                        │ Inner tabs by section: │
+│                        │                        │ Basic | Slide | etc.   │
+└────────────────────────┴────────────────────────┴────────────────────────┘
+```
+
+Acceptance:
+
+- Pane 1 selection updates Pane 2 (master/detail).
+- Pane 2 selection updates Pane 3.
+- Pane 3 form auto-renders from the theme manifest's `tokens` Zod schema
+  (see SPEC-THEME-001).
+- All changes are previewed first; "Save" persists via tRPC mutation with
+  optimistic update.
+
+### Module Instance Auto-Provisioning at Install
+
+When `procInstall` (SPEC-INSTALL-001) completes, the system MUST seed:
+
+- 1 `Site` row
+- 1 `Domain` row pointing to the request hostname
+- 3 `ModuleInstance` rows: `notice`, `qna`, `board` (all of module type
+  `board`) with `browser_title` "Notice", "Q&A", "Free Board"
+- 4 default theme assignments (layout/page-skin/board-skin/member-skin)
+- 4 default menu items (Welcome page + 3 board links)
+- 2 default `MemberGroup` rows: `admin` (is_admin=true), `member`
+  (is_default=true)
+
+This produces the same first-run experience as Rhymix: an admin can log in
+and immediately see populated dashboard widgets and a working public site.
+
+---
+
 ## Out of Scope
 
 본 SPEC은 **기반 골격**만을 정의한다. 다음 항목은 별도 SPEC 또는 차기 버전에서 다룬다.
