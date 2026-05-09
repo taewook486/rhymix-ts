@@ -6,7 +6,7 @@
  */
 import type { NextAuthConfig } from 'next-auth';
 
-export const authConfig = {
+export const authConfig: NextAuthConfig = {
   trustHost: true,
   session: { strategy: 'jwt' },
   pages: {
@@ -25,6 +25,6 @@ export const authConfig = {
       return true;
     },
   },
-} satisfies NextAuthConfig;
+};
 
 export type AuthConfig = typeof authConfig;

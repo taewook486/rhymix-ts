@@ -52,3 +52,16 @@ export type {
   EnvCheckResult,
   InstallStep,
 } from './install/schemas';
+
+// SPEC-INSTALL-001 REQ-INSTALL-012: environment diagnostics.
+export {
+  runEnvDiagnostics,
+  MIN_NODE_MAJOR,
+  PER_CHECK_TIMEOUT_MS,
+} from './install/diagnostics';
+export type {
+  DiagnosticsIO,
+  EnvCheckReport,
+  EnvCheckStatus,
+  EnvCheckCategory,
+} from './install/diagnostics';
