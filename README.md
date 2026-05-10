@@ -2,7 +2,7 @@
 
 TypeScript + Next.js 16 redesign of the [Rhymix](https://github.com/rhymix/rhymix) CMS.
 
-> Status: **plan complete · scaffold ready · install pending**.
+> Status: **SPEC-INSTALL-001 완료 (148 unit + 7 E2E) · SPEC-AUTH-001 Slice A/B/C 완료 (222 unit) · Slice D 진행 예정**.
 > Reference instance running at `http://localhost:8080` (PHP, Docker).
 
 ## Architecture (locked)
@@ -109,21 +109,43 @@ pnpm test:e2e
 
 매 테스트는 `apps/web/e2e/support/db-reset.ts`로 install 관련 테이블을 TRUNCATE 후 시작합니다 — 운영 DB로 절대 가리키지 마세요.
 
+## Implementation Progress
+
+| SPEC | 상태 | 테스트 | 비고 |
+|---|---|---|---|
+| SPEC-INSTALL-001 | 완료 | 148 unit + 7 E2E | 4단계 설치 위저드, SiteLock |
+| SPEC-AUTH-001 | 진행 중 (Slice C/5) | 222 unit | 비밀번호·회원가입·로그인·이메일 인증 |
+| SPEC-ADMIN-001 | 미착수 | — | foundation |
+| SPEC-CONTENT-001 | 미착수 | — | 게시판/문서/댓글 |
+| SPEC-THEME-001 | 미착수 | — | 테마/레이아웃/스킨 |
+
+### SPEC-AUTH-001 Slice 현황
+
+| Slice | 내용 | 상태 |
+|---|---|---|
+| A | Argon2id 비밀번호 모듈 + Prisma 스키마 확장 | 완료 |
+| B | 회원가입 파이프라인 + 메일 디스패처 + 토큰 유틸 | 완료 |
+| C | 로그인 + 이메일 인증 + Auth.js v5 Credentials Provider + Server Actions | 완료 |
+| D | PrismaAdapter 마이그레이션 + 관리자 상태 변경 + 자동 로그인 | 예정 |
+| E | 레이트 리미팅 + HTTP/E2E 통합 + `/login`, `/signup`, `/verify-email` 페이지 | 예정 |
+
 ## Next Step
 
-Run the install-wizard implementation cycle:
+Slice D 구현 — Auth.js PrismaAdapter 마이그레이션 및 관리자 세션 제어:
 
 ```bash
-/moai run SPEC-INSTALL-001
+/moai run SPEC-AUTH-001
 ```
 
-This delegates to `manager-ddd` (configured in `quality.yaml`) to drive the
-RED → GREEN → REFACTOR / ANALYZE → PRESERVE → IMPROVE cycle for the wizard.
+Slice D 주요 작업:
+- `schema.prisma`에 `Account` / `Session` / `VerificationToken` 모델 추가
+- `@auth/prisma-adapter` 설치 및 `session.strategy: 'database'` 전환
+- REQ-AUTH-020: 관리자 상태 변경 → 즉시 세션 무효화
 
-After install ships, follow the implementation order:
+이후 구현 순서:
 
-1. SPEC-ADMIN-001 (foundation: site, domain, module instance system)
-2. SPEC-AUTH-001  (members, groups, sessions)
+1. SPEC-AUTH-001 Slice D/E (auth 완결)
+2. SPEC-ADMIN-001 (foundation: site, domain, module instance system)
 3. SPEC-CONTENT-001 (boards, documents, comments)
 4. SPEC-THEME-001 (theme/layout/skin)
 
