@@ -1,4 +1,40 @@
+import { readFileSync, existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { defineConfig, devices } from '@playwright/test';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * .env.local 인라인 로더 — Next.js dev 서버는 자동 로드하지만
+ * Playwright 자체 프로세스는 별개이므로 명시적으로 주입합니다.
+ * dotenv 의존성 없이 최소 파서로 처리.
+ */
+function loadEnvLocal(): void {
+  const envPath = path.resolve(__dirname, '.env.local');
+  if (!existsSync(envPath)) return;
+  const lines = readFileSync(envPath, 'utf-8').split(/\r?\n/);
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (!match) continue;
+    const [, key, rawValue] = match;
+    if (process.env[key] !== undefined && process.env[key] !== '') continue;
+    let value = rawValue;
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] = value;
+  }
+}
+
+loadEnvLocal();
 
 /**
  * SPEC-INSTALL-001 Slice E-followup — Playwright 설정.

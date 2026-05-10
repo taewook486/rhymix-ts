@@ -28,8 +28,10 @@ import { getSiteLockStatus } from './lib/install/sitelock';
  * @MX:WARN: proxy는 모든 요청 경로에서 실행되므로 추가 로직 도입 시 지연 영향 검토 필요.
  * @MX:REASON: 단일 진입점이므로 잘못 변경하면 전체 사이트가 잠길 수 있음.
  * @MX:SPEC: SPEC-INSTALL-001 REQ-INSTALL-001/020/023/024/040
+ *
+ * Note: Next.js 16의 proxy.ts는 항상 Node.js 런타임이라 `export const runtime`
+ * 명시는 금지됩니다 (middleware.ts에서 옮길 때 제거).
  */
-export const runtime = 'nodejs';
 
 const REWRITE_TEST_PREFIX = '/api/install/rewrite-test/';
 
