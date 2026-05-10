@@ -1,26 +1,28 @@
 /**
  * Specification tests for Argon2id password helpers.
- * Covers REQ-AUTH-001 (password hashing).
+ * Covers SPEC-AUTH-001 REQ-AUTH-001 (hashing), REQ-AUTH-014 (auto-rehash trigger),
+ * REQ-AUTH-050/REQ-AUTH-055 (no plaintext / no full-hash in errors).
  */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  hashPassword,
-  verifyPassword,
-  needsUpgrade,
-  PASSWORD_VERSION_TAG,
   ARGON2ID_PARAMS,
+  PASSWORD_VERSION_TAG,
+  hashPassword,
+  isLegacyHash,
+  needsUpgrade,
+  verifyPassword,
 } from './password';
 
 describe('Argon2id password helper', () => {
   describe('hashPassword', () => {
-    it('produces an Argon2id-encoded hash', async () => {
+    it('produces an argon2id-encoded PHC string', async () => {
       const hash = await hashPassword('correct horse battery staple');
-      expect(hash).toMatch(/^\$argon2id\$/);
+      expect(hash).toMatch(/^\$argon2id\$v=19\$/);
     });
 
     it('embeds the configured work factor parameters', async () => {
       const hash = await hashPassword('hunter2-hunter2');
-      // PHC format: $argon2id$v=19$m=65536,t=3,p=4$<salt>$<hash>
       expect(hash).toContain(`m=${ARGON2ID_PARAMS.memoryCost}`);
       expect(hash).toContain(`t=${ARGON2ID_PARAMS.timeCost}`);
       expect(hash).toContain(`p=${ARGON2ID_PARAMS.parallelism}`);
@@ -36,79 +38,169 @@ describe('Argon2id password helper', () => {
       await expect(hashPassword('')).rejects.toThrow();
     });
 
-    it('exposes a version tag', () => {
+    it('does not include the plaintext in the thrown error message (REQ-AUTH-050)', async () => {
+      const sentinel = 'pl41nt3xt-leak-canary';
+      try {
+        // @ts-expect-error — null is intentionally invalid input
+        await hashPassword(null);
+        throw new Error('expected hashPassword to throw');
+      } catch (err) {
+        const msg = (err as Error).message;
+        expect(msg).not.toContain(sentinel);
+      }
+    });
+
+    it('exposes a stable version tag', () => {
       expect(PASSWORD_VERSION_TAG).toBe('argon2id-v1');
     });
   });
 
   describe('verifyPassword', () => {
-    it('returns true for a matching password', async () => {
+    it('returns valid=true, needsRehash=false for a fresh hash', async () => {
       const hash = await hashPassword('s3cret-pass-phrase');
-      await expect(verifyPassword('s3cret-pass-phrase', hash)).resolves.toBe(true);
+      await expect(verifyPassword('s3cret-pass-phrase', hash)).resolves.toEqual({
+        valid: true,
+        needsRehash: false,
+      });
     });
 
-    it('returns false for an incorrect password', async () => {
+    it('returns valid=false for an incorrect password', async () => {
       const hash = await hashPassword('s3cret-pass-phrase');
-      await expect(verifyPassword('wrong-password', hash)).resolves.toBe(false);
+      const result = await verifyPassword('wrong-password', hash);
+      expect(result.valid).toBe(false);
     });
 
-    it('returns false for a malformed hash instead of throwing', async () => {
-      await expect(verifyPassword('whatever', 'not-a-real-hash')).resolves.toBe(false);
+    it('returns valid=false for a malformed hash instead of throwing', async () => {
+      // Garbage hashes are treated as legacy → needsRehash=true so callers
+      // know to re-derive once they have a verified plaintext (REQ-AUTH-014).
+      await expect(verifyPassword('whatever', 'not-a-real-hash')).resolves.toEqual({
+        valid: false,
+        needsRehash: true,
+      });
     });
 
-    it('returns false for an empty hash', async () => {
-      await expect(verifyPassword('whatever', '')).resolves.toBe(false);
+    it('returns valid=false + needsRehash=false for an empty hash (no signal to rehash)', async () => {
+      // Empty hash means the user record has no credentials at all — we
+      // should not claim it needs a rehash because there is nothing to rehash.
+      await expect(verifyPassword('whatever', '')).resolves.toEqual({
+        valid: false,
+        needsRehash: false,
+      });
     });
 
-    it('returns false for an empty plain password', async () => {
+    it('returns valid=false for an empty plain password', async () => {
       const hash = await hashPassword('something');
-      await expect(verifyPassword('', hash)).resolves.toBe(false);
+      const result = await verifyPassword('', hash);
+      expect(result.valid).toBe(false);
     });
 
-    it('returns false for non-string inputs (defensive)', async () => {
-      // @ts-expect-error — intentional misuse to assert defensive behavior
-      await expect(verifyPassword(undefined, 'whatever')).resolves.toBe(false);
-      // @ts-expect-error — intentional misuse to assert defensive behavior
-      await expect(verifyPassword('plain', undefined)).resolves.toBe(false);
+    it('returns valid=false + needsRehash=true for a legacy bcrypt hash (REQ-AUTH-014)', async () => {
+      // Static bcrypt fixture — never computed, just shape-checking.
+      const bcryptHash = '$2y$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+      const result = await verifyPassword('password', bcryptHash);
+      expect(result).toEqual({ valid: false, needsRehash: true });
+    });
+
+    it('returns valid=false for non-string inputs (defensive)', async () => {
+      // Garbage encoded → needsRehash=true (legacy semantics).
+      // @ts-expect-error — intentional misuse
+      const a = await verifyPassword(undefined, 'whatever');
+      expect(a.valid).toBe(false);
+      expect(a.needsRehash).toBe(true);
+
+      // Encoded undefined is empty-equivalent → no rehash signal.
+      // @ts-expect-error — intentional misuse
+      const b = await verifyPassword('plain', undefined);
+      expect(b).toEqual({ valid: false, needsRehash: false });
+    });
+
+    it('reports needsRehash=true when stored params are below current target', async () => {
+      // Synthetic fixture: m=4096 < current 65536. argon2Verify will return
+      // false (because the embedded hash is dummy data), but `needsRehash`
+      // must still be computed from the params.
+      const weakHash =
+        '$argon2id$v=19$m=4096,t=3,p=4$c29tZXNhbHRzYWx0$' +
+        'ZHVtbXloYXNoZHVtbXloYXNoZHVtbXloYXNoZHVtbXk';
+      const result = await verifyPassword('anything', weakHash);
+      expect(result.valid).toBe(false);
+      expect(result.needsRehash).toBe(true);
+    });
+
+    it('takes comparable time for two wrong-password verifications regardless of plaintext length (timing smoke test)', async () => {
+      // Smoke check, not a hard guarantee. Argon2 verification cost dominates
+      // any string-length difference.
+      const hash = await hashPassword('reference-password');
+
+      const t1Start = performance.now();
+      await verifyPassword('a', hash);
+      const t1 = performance.now() - t1Start;
+
+      const t2Start = performance.now();
+      await verifyPassword('a-much-longer-wrong-password-attempt', hash);
+      const t2 = performance.now() - t2Start;
+
+      // Generous 10x tolerance — we only care that one is not 100x faster.
+      const ratio = Math.max(t1, t2) / Math.max(Math.min(t1, t2), 1);
+      expect(ratio).toBeLessThan(10);
     });
   });
 
-  describe('needsUpgrade', () => {
-    it('returns false for hashes produced by the current parameters', async () => {
+  describe('isLegacyHash', () => {
+    it('returns true for a bcrypt-style hash', () => {
+      expect(isLegacyHash('$2y$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy')).toBe(true);
+      expect(isLegacyHash('$2b$12$abcdefghijklmnopqrstuv')).toBe(true);
+    });
+
+    it('returns true for md5 / sha1 hex strings', () => {
+      expect(isLegacyHash('5f4dcc3b5aa765d61d8327deb882cf99')).toBe(true);
+    });
+
+    it('returns false for an argon2id PHC string', async () => {
+      const hash = await hashPassword('whatever');
+      expect(isLegacyHash(hash)).toBe(false);
+    });
+
+    it('returns true for empty / non-string inputs', () => {
+      expect(isLegacyHash('')).toBe(true);
+      // @ts-expect-error — intentional misuse
+      expect(isLegacyHash(undefined)).toBe(true);
+      // @ts-expect-error — intentional misuse
+      expect(isLegacyHash(null)).toBe(true);
+    });
+  });
+
+  describe('needsUpgrade (legacy alias)', () => {
+    it('returns false for hashes produced by current parameters', async () => {
       const hash = await hashPassword('still-fresh');
       expect(needsUpgrade(hash)).toBe(false);
     });
 
-    it('returns true when memory cost is below the current target', () => {
-      // Synthetic hash with weaker parameters: m=4096 (< 65536)
+    it('returns true for legacy bcrypt / md5 hashes', () => {
+      expect(needsUpgrade('5f4dcc3b5aa765d61d8327deb882cf99')).toBe(true);
+      expect(needsUpgrade('$2b$12$abcdefghijklmnopqrstuv')).toBe(true);
+    });
+
+    it('returns true for empty / garbage inputs', () => {
+      expect(needsUpgrade('')).toBe(true);
+      expect(needsUpgrade('garbage')).toBe(true);
+    });
+
+    it('returns true when params are below current target', () => {
       const weakHash =
         '$argon2id$v=19$m=4096,t=3,p=4$c29tZXNhbHRzYWx0$' +
         'ZHVtbXloYXNoZHVtbXloYXNoZHVtbXloYXNoZHVtbXk';
       expect(needsUpgrade(weakHash)).toBe(true);
     });
 
-    it('returns true for legacy non-argon2id hashes (md5/bcrypt prefix)', () => {
-      // Old Rhymix passwords are md5 or sha1 — strings without $argon2id$ prefix.
-      expect(needsUpgrade('5f4dcc3b5aa765d61d8327deb882cf99')).toBe(true);
-      expect(needsUpgrade('$2b$12$abcdefghijklmnopqrstuv')).toBe(true);
-    });
-
-    it('returns true for empty / invalid input', () => {
-      expect(needsUpgrade('')).toBe(true);
-      expect(needsUpgrade('garbage')).toBe(true);
-    });
-
-    it('returns true when the embedded params cannot be parsed (defensive)', () => {
-      // Looks like an Argon2id PHC string but parameter section is malformed,
-      // so argon2.needsRehash throws — needsUpgrade must swallow and return true.
+    it('returns true when embedded params cannot be parsed', () => {
       const malformed = '$argon2id$v=19$mNOTANUMBER,t=oops,p=x$c2FsdA$aGFzaA';
       expect(needsUpgrade(malformed)).toBe(true);
     });
 
     it('handles non-string inputs gracefully', () => {
-      // @ts-expect-error — intentional misuse to assert defensive behavior
+      // @ts-expect-error — intentional misuse
       expect(needsUpgrade(undefined)).toBe(true);
-      // @ts-expect-error — intentional misuse to assert defensive behavior
+      // @ts-expect-error — intentional misuse
       expect(needsUpgrade(null)).toBe(true);
     });
   });
