@@ -23,7 +23,7 @@
  * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-020
  */
 
-import type { PrismaClient } from '@rhymix-ts/db';
+import type { Prisma, PrismaClient } from '@rhymix-ts/db';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,8 +43,18 @@ export type RevocationReason =
   | 'USER_LOGOUT_ALL';
 
 export interface RevokeSessionsContext {
-  /** PrismaClient 또는 트랜잭션 클라이언트. */
-  prisma: PrismaClient;
+  /**
+   * PrismaClient 또는 트랜잭션 클라이언트(`Prisma.TransactionClient`).
+   *
+   * - `PrismaClient` 가 전달되면 본 함수가 자체 `$transaction` 을 연다 (기본 동작).
+   * - `Prisma.TransactionClient` 가 전달되면 호출자가 외부 트랜잭션을 소유한 것으로 간주하고
+   *   본 함수는 nested 트랜잭션을 열지 않으며, 에러 시 자체 롤백도 하지 않는다.
+   *   외부 트랜잭션이 commit/rollback 책임을 진다.
+   *
+   * 분기 판단은 런타임에 `$transaction` 메서드 존재 여부로 수행한다 (`'$transaction' in ctx.prisma`).
+   * `Prisma.TransactionClient` 는 정의상 `$transaction` 을 노출하지 않는다.
+   */
+  prisma: PrismaClient | Prisma.TransactionClient;
   /** AuditLog actorId — 생략 시 null (USER_LOGOUT_ALL 등 self-action). */
   actorId?: number;
 }
@@ -58,8 +68,10 @@ export interface IsSessionRevokedContext {
 // ---------------------------------------------------------------------------
 
 /**
- * @MX:ANCHOR: 세션 무효화 단일 진입점.
- * @MX:REASON: 트랜잭션 단위로 history + denormalized + audit log 가 atomic 하게 적용되어야 enforcement 가 의미를 가진다.
+ * @MX:ANCHOR: 세션 무효화 단일 진입점 — 외부 트랜잭션 컨텍스트 수용 가능.
+ * @MX:REASON: history + denormalized + audit log 가 atomic 하게 적용되어야 enforcement 가 의미를 가진다.
+ *   호출자가 자기 메인 트랜잭션 안에서 본 함수를 호출하고 싶을 때(D2 admin 흐름) 외부 tx 클라이언트를
+ *   주입할 수 있도록 두 가지 호출 모드를 지원한다 — 둘 다 atomicity 불변식을 유지한다.
  */
 export async function revokeAllSessions(
   userId: number,
@@ -69,7 +81,10 @@ export async function revokeAllSessions(
   const revokedAt = new Date();
   const actorId = ctx.actorId ?? null;
 
-  await ctx.prisma.$transaction(async (tx) => {
+  // 3개 ops 를 단일 tx 클라이언트로 실행하는 헬퍼.
+  const executeRevocation = async (
+    tx: PrismaClient | Prisma.TransactionClient,
+  ): Promise<void> => {
     // 1) SessionRevocation row (audit history)
     await tx.sessionRevocation.create({
       data: {
@@ -94,7 +109,24 @@ export async function revokeAllSessions(
         metadata: { reason },
       } as never,
     });
-  });
+  };
+
+  // 분기: 외부 tx 클라이언트인지 full PrismaClient 인지 판단.
+  //   Prisma.TransactionClient 는 `$transaction` 을 노출하지 않으므로 `in` 연산자로 안전하게 판별 가능.
+  //   외부 tx 가 들어온 경우 nested 트랜잭션을 열지 않고 직접 실행 — 외부가 atomicity 책임.
+  const hasOwnTransaction =
+    '$transaction' in ctx.prisma &&
+    typeof (ctx.prisma as PrismaClient).$transaction === 'function';
+
+  if (hasOwnTransaction) {
+    await (ctx.prisma as PrismaClient).$transaction(async (tx) => {
+      await executeRevocation(tx as Prisma.TransactionClient);
+    });
+  } else {
+    // 외부 트랜잭션 모드: 자체 롤백 없이 그대로 실행. 에러는 외부로 전파되어
+    // 외부 트랜잭션이 롤백을 수행한다.
+    await executeRevocation(ctx.prisma);
+  }
 
   return { revokedAt };
 }

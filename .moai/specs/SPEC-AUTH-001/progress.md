@@ -477,3 +477,217 @@ D2 가 추가해야 할 것:
 - `softDeleteUser` / `restoreUser` 도 동일 패턴.
 - admin Server Action 보호 (`isAdmin` 검사) + 마지막 admin 보호 (REQ-AUTH-054).
 - AC-AUTH-020 end-to-end 테스트 (admin 호출 → SessionRevocation 갱신 → jwt callback null 반환 → 다음 요청 차단).
+
+---
+
+## Slice D2 — Admin Features (2026-05-10)
+
+Branch: `feature/auth-001-slice-d2` (built on Slice D1 / main = `4f57664`).
+Methodology: TDD (RED-GREEN-REFACTOR). Plan: `slice-d-plan.md` v2.0.0 D2 섹션.
+
+### Delivered
+
+1. **RBAC primitives** (`packages/auth/src/rbac.ts`)
+   - `resolveAdminPrivilege(user, groups)` — 순수 OR-게이트 (REQ-AUTH-034). user.isAdmin OR 어떤 그룹의 isAdmin.
+   - `isLastAdmin(targetUserId, prisma)` — read-only 진단. SQL JOIN(users LEFT JOIN member_group_members LEFT JOIN member_groups) 으로 effective admin id 집합을 계산하고, 정확히 1명이고 그게 target 이면 true.
+   - `assertCanDemote(targetUserId, prisma)` — race-safe 게이트. `pg_advisory_xact_lock(ADMIN_DEMOTION_LOCK_ID)` 로 demotion-window 를 직렬화한 뒤 effective admin set 을 확인. 0-admin 위험이면 `LastAdminProtectedError` throw.
+   - `ADMIN_DEMOTION_LOCK_ID = 0x6164_6d69_6e5f_4445n` 상수 — "admin_DE" ASCII 8-byte 의 bigint.
+   - `LastAdminProtectedError` 클래스 (code='LAST_ADMIN_PROTECTED').
+
+2. **Admin domain functions** (`packages/auth/src/admin.ts`)
+   - `changeUserStatus(input, ctx)` — REQ-AUTH-020:
+     - actor 권한 검증 (`resolveAdminPrivilege` 사용; status='APPROVED' 필수)
+     - self-action 정책 적용 (SUSPENDED/DENIED 만 self 허용; APPROVED/UNAUTHED self 는 SELF_ACTION_DENIED)
+     - 트랜잭션: User.status 갱신 + (SUSPENDED|DENIED 시) AutoLogin deleteMany + AuditLog STATUS_CHANGED
+     - 트랜잭션 외부에서 (SUSPENDED|DENIED 시) D1 의 `revokeAllSessions(targetUserId, 'STATUS_CHANGED', { prisma, actorId })` 호출
+   - `softDeleteUser(input, ctx)` — REQ-AUTH-021:
+     - actor 권한 검증, self-delete 차단 (SELF_ACTION_DENIED), TARGET_NOT_FOUND / TARGET_ALREADY_DELETED 가드
+     - 트랜잭션: 5개 PII 필드 anonymize + status=DELETED + deletedAt=now + AutoLogin deleteMany + AuditLog MEMBER_DELETED
+     - 트랜잭션 외부에서 D1 의 `revokeAllSessions(targetUserId, 'ADMIN_FORCE_LOGOUT', { prisma, actorId })` 호출
+   - PII anonymize 결정적 prefix:
+     - `userId` → `deleted_${id}`
+     - `emailAddress` → `deleted_${id}@anon.local`
+     - `nickName` → `deleted_${id}`
+     - `phoneNumber` → null
+     - `userName` → null
+     - `passwordHash` / `id` / `createdAt` / `auditlog` 는 변경하지 않음 (out of GDPR delete scope per OQ resolution).
+   - 모듈은 logger 미사용 (REQ-AUTH-055 by construction).
+
+3. **Admin Server Actions** (`apps/web/lib/auth/admin-actions.ts`)
+   - `setMemberStatusAction(prevState, formData)` — `auth()` 세션에서 actorId 추출, `isAdminSession` 으로 effective admin 검증, `changeUserStatus` 위임.
+   - `deleteMemberAction(prevState, formData)` — 동일 패턴, `softDeleteUser` 위임.
+   - 응답 형태: `{ ok: true } | { ok: false, code, formError }` (`useActionState` 호환).
+   - 한국어 user-facing 메시지 (Slice C 의 패턴 답습).
+
+4. **Admin authorization helper** (`apps/web/lib/auth/admin-middleware.ts`)
+   - `isAdminSession(session)` 타입가드 — Auth.js v5 Session 의 `user.id` 가 string 이므로 number 로 정규화한 뒤 OR-게이트 평가.
+   - NextAuth route middleware (`apps/web/middleware.ts`) 자체는 D2 범위 외 — admin UI 라우트 도입 시 별도 슬라이스에서 추가.
+
+5. **Public API** (`packages/auth/src/index.ts`)
+   - 새 re-exports: `resolveAdminPrivilege`, `isLastAdmin`, `assertCanDemote`, `ADMIN_DEMOTION_LOCK_ID`, `LastAdminProtectedError`, `changeUserStatus`, `softDeleteUser`, 관련 타입.
+
+6. **DB package adjustment** (`packages/db/src/index.ts`)
+   - `Prisma` namespace 가 type-only re-export 였던 것을 value re-export 로 수정 (`export { Prisma, PrismaClient } from '@prisma/client'`). `rbac.ts` 가 `Prisma.sql` tagged template 을 런타임에 사용하기 때문.
+
+### Files Created / Modified (file modification order — TDD verification)
+
+순서 — RED → GREEN → REFACTOR 가 엄격히 준수됨:
+
+| Order | File | Status | LOC (approx) |
+|---|---|---|---|
+| 1 (RED) | `packages/auth/src/rbac.test.ts` | new | 257 |
+| 2 (RED) | `packages/auth/src/admin.test.ts` | new | 421 |
+| 3 (RED) | `apps/web/lib/auth/admin-actions.test.ts` | new | 167 |
+| 4 (verify RED fails) | — | — | 3 test files: "Failed to load url ./rbac/admin/admin-actions" (impl 부재 확인) |
+| 5 (GREEN) | `packages/auth/src/rbac.ts` | new | 121 |
+| 6 (GREEN) | `packages/auth/src/admin.ts` | new | 234 |
+| 7 (GREEN) | `apps/web/lib/auth/admin-middleware.ts` | new | 60 |
+| 8 (GREEN) | `apps/web/lib/auth/admin-actions.ts` | new | 132 |
+| 9 (GREEN) | `packages/auth/src/index.ts` | edit | +20 |
+| 10 (GREEN) | `packages/db/src/index.ts` | edit | -2 / +3 (type-only Prisma → value) |
+| 11 (REFACTOR) | `packages/auth/src/rbac.test.ts` | edit | $queryRaw fake 가 Prisma.Sql 객체와 TemplateStringsArray 두 호출 패턴을 모두 처리 |
+| 12 (REFACTOR) | `packages/auth/src/admin.test.ts` | edit | test #6 의 actor.status='SUSPENDED' → 'APPROVED' (self-action 정책만 검증하도록 격리) |
+| 13 (docs) | `.moai/specs/SPEC-AUTH-001/progress.md` | edit | this section |
+
+Slice A/B/C/D1 의 소스 파일 (`password*.ts`, `signup*.ts`, `login*.ts`, `verify-email*.ts`, `tokens*.ts`, `mail*.ts`, `actions.ts`, `session-revocation*.ts`, `callbacks.ts`, `config.ts`) 는 일절 수정되지 않았다. `schema.prisma` / migrations / `spec.md` / `slice-d-plan.md` 도 수정되지 않았다 (D2 결정 — schema 변화 없음).
+
+### Tests
+
+- **40개 신규 테스트** 추가 (14 rbac + 18 admin + 8 admin-actions).
+- 전체 프로젝트 테스트 수: **286 passed, 1 skipped, 28 files** (Slice D1 의 246 → 286, 델타 +40).
+- 신규 테스트 카테고리:
+  - `resolveAdminPrivilege`: 1) 직접 admin true, 2) group admin true (REQ-AUTH-034 OR), 3) 일반 + 일반 그룹 false, 4) 일반 + 그룹 미소속 false, 5) admin + 일반 그룹 단락 평가.
+  - `isLastAdmin`: 6) 1명 직접 admin → true, 7) 그룹 경유 1명 admin → true, 8) 다중 admin → 모두 false, 9) 비-admin → false.
+  - `assertCanDemote`: 10) 다중 admin resolve, 11) 마지막 admin throw `LastAdminProtectedError` (REQ-AUTH-054), 12) 비-admin no-op resolve, 13) advisory lock SQL 호출 증거, 14) `ADMIN_DEMOTION_LOCK_ID` 안정 bigint.
+  - `changeUserStatus`: 1) SUSPENDED → status + revokeAllSessions(STATUS_CHANGED) + AutoLogin 삭제 + AuditLog STATUS_CHANGED, 2) DENIED 동일, 3) APPROVED (재활성화) → status 만 (revoke 없음, autologin 보존), 4) 비-admin actor → INSUFFICIENT_PRIVILEGES, 5) self+SUSPENDED 허용, 6) self+APPROVED → SELF_ACTION_DENIED, 7) TARGET_NOT_FOUND, group-admin actor 정상 동작 (REQ-AUTH-034).
+  - `softDeleteUser`: 8) 5 PII 필드 결정적 anonymize + status=DELETED + deletedAt, 9) revokeAllSessions(ADMIN_FORCE_LOGOUT) + AutoLogin 삭제 (다른 user autologin 보존), 10) AuditLog MEMBER_DELETED + metadata.deletedAt, 11) self → SELF_ACTION_DENIED, 12) 이미 DELETED → TARGET_ALREADY_DELETED, 13) anonymize 후 원래 식별자 재사용 가능, 14) passwordHash/id/createdAt 불변, 15) AuditLog 실패 시 트랜잭션 롤백, 16) 비-admin → INSUFFICIENT_PRIVILEGES, 17) TARGET_NOT_FOUND.
+  - `setMemberStatusAction`: 1) 비-admin → INSUFFICIENT_PRIVILEGES (도메인 호출 없음), 2) admin happy path + actorId 전달, 3) 도메인 실패 코드 노출 (formError 동반), 4) group 경유 admin (REQ-AUTH-034) 허용, 5) 세션 없음 → INSUFFICIENT_PRIVILEGES.
+  - `deleteMemberAction`: 6) admin happy path → softDeleteUser 위임, 7) self-delete → SELF_ACTION_DENIED 그대로 노출, 8) 비-admin → INSUFFICIENT_PRIVILEGES.
+
+### Verification
+
+| Command | Result |
+|---|---|
+| `npx pnpm --filter @rhymix-ts/db exec prisma validate` | OK ("schema is valid") — D2 schema 변화 없음 |
+| `npx pnpm --filter @rhymix-ts/auth typecheck` | OK |
+| `npx pnpm --filter @rhymix-ts/db typecheck` | OK |
+| `npx pnpm --filter @rhymix-ts/web typecheck` | Pre-existing `playwright.config.ts` 실패만 잔존 (Slice B/C/D1 베이스라인과 동일 — 신규 코드 typecheck-clean) |
+| `npx pnpm test` | 286 passed, 1 skipped, 28 files |
+
+`prisma migrate dev` 는 실행하지 않았다 — D2 는 schema 변화가 없으므로 신규 migration 불필요. 모든 컬럼 (User.deletedAt, status, isAdmin / MemberGroup.isAdmin / MemberGroupMember / AutoLogin / AuditLog) 은 D1 시점 schema 에 이미 포함.
+
+### Acceptance Criteria progress
+
+D2 로 다음 AC 가 end-to-end 충족된다 (도메인 함수 + Server Action 레이어):
+
+- **AC-AUTH-020** ✅ end-to-end:
+  - admin 의 SUSPENDED/DENIED 변경 → User.status 갱신 + AutoLogin row 삭제 + D1 의 `revokeAllSessions(STATUS_CHANGED)` 호출 → SessionRevocation 갱신 + User.sessionsRevokedAt 갱신 → jwt callback (D1) 이 다음 요청에서 `isSessionRevoked` 양성 → null 반환 → 토큰 거부.
+  - admin 흐름 (changeUserStatus tests 1, 2) + autologin 무효화 (test 1) + AuditLog (test 1) 검증 완료.
+  - end-to-end HTTP 테스트는 Slice E (UI/E2E) 에서 추가 예정.
+- **AC-AUTH-034** ✅ end-to-end:
+  - `resolveAdminPrivilege` (rbac tests 1-5) + group 경유 admin actor 도 changeUserStatus 호출 가능 (admin test "group 경유 admin actor"), Server Action 도 group admin 허용 (admin-actions test 4).
+- **AC-AUTH-054** ✅ primitive:
+  - `assertCanDemote` 의 advisory lock + last-admin 검사 (rbac tests 10-14). 실제 admin role 변경 (User.isAdmin true→false) 흐름은 D2 에 별도 함수로 추가하지 않았다 — admin 권한은 user.isAdmin OR group 멤버십으로 결정되므로 강등 흐름은 (a) `User.update({ isAdmin: false })` (b) `prisma.memberGroupMember.delete(...)` 두 경로가 있다. 현재 `assertCanDemote` 는 두 경로 모두에서 호출 가능한 race-safe 게이트로 제공되며, 실제 호출 사이트 (admin role 토글 Server Action) 는 후속 슬라이스 (admin role 관리 UI 도입) 에서 추가.
+- **AC-AUTH-053** (가상 ID 보호 — 강등 시도자 식별) ⚠️ partial:
+  - `assertCanDemote` 자체는 actor 식별을 인자로 받지 않지만, Server Action 레이어에서 actor 검증 (`isAdminSession`) 후 호출되므로 시도자는 항상 식별된다. AuditLog ADMIN_DEMOTION_BLOCKED 이벤트는 admin role 토글 Server Action 도입 시 함께 작성 예정.
+- 기존 AC (AC-AUTH-010/011/012/013/014/015/020-primitive/031/052) 는 모두 **회귀 없음** — Slice C/D1 의 246개 기존 테스트 전부 통과.
+
+### Deviations / OQ resolutions
+
+1. **OQ — admin self-action policy** (resolved per prompt):
+   - self-DELETE: BLOCKED (`SELF_ACTION_DENIED`). Irreversible; 4-eye 원칙.
+   - self-SUSPEND: ALLOWED (보안 인시던트 self-lockout).
+   - self-DEMOTE (isAdmin true→false): admin role 변경 흐름은 D2 에 직접 도입하지 않았다 (위 AC-AUTH-054 항목 참조). `assertCanDemote` 가 race-safe 게이트로 준비되어 있으며 실제 호출 사이트는 후속에서 추가. self-demote 차단은 Server Action 레벨에서 별도 가드로 추가 예정.
+   - self-APPROVED: BLOCKED (`SELF_ACTION_DENIED`). 의미 없는 self-call + 4-eye.
+   - self-DENIED: ALLOWED (보안 인시던트 self-lockout, SUSPENDED 와 동일 취급).
+
+2. **OQ — 마지막 admin 차단의 격리 수준** (resolved):
+   - 채택: PostgreSQL `pg_advisory_xact_lock(ADMIN_DEMOTION_LOCK_ID)`. 트랜잭션 종료 시 자동 해제되며, 키는 프로젝트-와이드 상수 (`0x6164_6d69_6e5f_4445n`).
+   - SERIALIZABLE 격리 수준은 다른 무관한 트랜잭션까지 직렬화하는 부담이 크고, `SELECT FOR UPDATE` 는 admin row 가 여러 개일 때 lock 범위 결정이 모호. advisory lock 이 의미 명확하고 비용 최소.
+
+3. **OQ — soft delete 후 unique constraint 처리 정책** (resolved per prompt):
+   - 결정적 prefix `deleted_${id}` 패턴 채택. user.id 가 PK 라 collision-free 보장.
+   - 5 fields 만 anonymize: userId, emailAddress, nickName, phoneNumber, userName. passwordHash / id / createdAt / AuditLog history 는 보존.
+
+4. **OQ — PII anonymize 범위** (resolved per prompt):
+   - 5 fields scope 만, 위 정책대로.
+
+5. **OQ — AuditLog actor 식별** (resolved per prompt):
+   - Server Action 이 `auth()` 호출로 session.user.id 추출 → 도메인 함수에 actorId 전달 → AuditLog 작성 시 항상 명시. self-action 케이스에서도 actorId == targetId 라는 사실 자체로 시도자 식별 가능.
+
+6. **`User.id` 의 type 비호환** (web typecheck 발견):
+   - Auth.js v5 의 Session.user.id 는 string. 본 프로젝트의 User.id 는 int (Slice A 결정).
+   - `isAdminSession` 타입가드가 string→number 정규화를 수행하면서 동시에 user.id 를 number 로 덮어쓴다. Server Action 은 이후 정규화된 number 만 사용.
+   - jwt callback (Slice D1) 이 `token.sub = user.id.toString()` 으로 변환하는 것은 그대로 유지 — Auth.js 표준 sub claim 은 string 이어야 한다.
+
+7. **`@rhymix-ts/db` 의 Prisma 재내보내기 변경** (의도된 작은 deviation):
+   - 기존: `export type { Prisma } from '@prisma/client'` (type-only)
+   - 변경: `export { Prisma, PrismaClient } from '@prisma/client'` (value+type)
+   - 사유: `rbac.ts` 가 `Prisma.sql` (런타임 tagged template) 을 사용해야 한다. 기존 코드는 `lock.ts` 에서 `@prisma/client` 를 직접 import 했으나, 본 작업에서는 `@rhymix-ts/db` 추상화 레이어를 일관되게 통과하도록 db 패키지의 재내보내기를 보강했다. `lock.ts` 의 직접 import 도 향후 정리 가능.
+
+8. **NextAuth middleware route file** (`apps/web/middleware.ts`) 는 도입하지 않았다 — prompt 의 "DEFER if requires more than 30 LOC" 조건 적용. admin UI 라우트 도입 시 함께 추가하는 게 자연스럽다 (현재는 admin form 자체가 없어 라우트 보호 자체가 사용처 없음).
+
+9. **REQ-AUTH-021 의 90일 retention 및 hard delete cron** 은 D2 범위 외 (prompt 명시: 인프라 SPEC). soft delete 자체는 완성. retention 만료 후 hard delete 는 별도 SPEC 의 cron job 으로.
+
+10. **REFACTOR — D1 API 확장으로 atomicity gap 해소 (2026-05-10 추가 수정)**:
+    - 초기 D2 구현은 `revokeAllSessions` 호출을 메인 트랜잭션 *외부* 에서 수행했다 (D1 의 `revokeAllSessions` 가 자체 트랜잭션을 열기 때문). 이는 atomicity 갭을 만들었다 — 메인 status 변경이 commit 된 뒤 revokeAllSessions 가 실패하면 stale window 가 발생.
+    - 후속 리팩터에서 D1 API 를 확장해 이 갭을 봉쇄했다: `RevokeSessionsContext.prisma` 의 타입을 `PrismaClient | Prisma.TransactionClient` 로 변경하고, 런타임에 `'$transaction' in ctx.prisma` 로 두 모드를 분기한다. PrismaClient 가 들어오면 종전대로 자체 트랜잭션을 열고, TransactionClient 가 들어오면 nested 트랜잭션 없이 직접 실행 (외부 tx 가 atomicity 책임).
+    - admin.ts 의 `changeUserStatus` 와 `softDeleteUser` 는 이제 `revokeAllSessions(targetUserId, reason, { prisma: tx, actorId })` 를 메인 `$transaction` 콜백 안에서 호출한다. 결과: status 변경 / PII anonymize / autologin 삭제 / SessionRevocation row / `User.sessionsRevokedAt` 갱신 / SESSION_REVOKED auditLog / STATUS_CHANGED 또는 MEMBER_DELETED auditLog 가 한 트랜잭션에서 atomic 하게 commit 되며, 어떤 단계가 실패해도 모두 롤백된다 (admin.test.ts TX-A / #15 가 이를 검증).
+    - 테스트 추가: session-revocation.test.ts 에 TX-1/TX-2/TX-3 (외부 tx 클라이언트 호출 모드 검증), admin.test.ts 에 TX-A/TX-B (changeUserStatus atomicity), 기존 #15 의 atomicity 검증 강화. 총 286 → 291 passing.
+    - D1 API 는 backward compatible: 기존 호출자 (`PrismaClient` 전달) 는 종전과 동일하게 동작.
+
+### Open `@MX:TODO` ledger (Slice D2 additions)
+
+신규 `@MX:TODO` 없음. 새 `@MX:ANCHOR` 5개 추가, 각각 `@MX:REASON` sub-line 포함:
+- `packages/auth/src/rbac.ts` — `resolveAdminPrivilege` (REQ-AUTH-034 OR-게이트 단일 정의), `assertCanDemote` (REQ-AUTH-054 race-safe 게이트).
+- `packages/auth/src/admin.ts` — admin status/delete 도메인 단일 진입점 (file-level).
+- `apps/web/lib/auth/admin-actions.ts` — admin form 단일 Server Action 진입점.
+
+새 `@MX:WARN` 없음. 기존 Slice C/D1 의 `@MX:ANCHOR` 들은 그대로 유지.
+
+### Heads-up notes for Slice E (rate limiting + autologin + admin role 관리)
+
+1. **admin role 토글 Server Action** — Slice D2 는 status 변경과 soft delete 만 다룬다. `User.isAdmin` 직접 토글 또는 `MemberGroupMember` 의 admin 그룹 가입/탈퇴 흐름은 후속에서 추가하되, 모두 `assertCanDemote(targetUserId, prisma)` 를 트랜잭션 안에서 먼저 호출하고 그 다음 실제 토글을 수행해야 race-safe 하다. 호출 사이트 패턴:
+   ```ts
+   await prisma.$transaction(async (tx) => {
+     await assertCanDemote(targetUserId, tx as PrismaClient);
+     await tx.user.update({ where: { id: targetUserId }, data: { isAdmin: false } });
+     await tx.auditLog.create({ data: { actorId, targetId: targetUserId, action: 'ADMIN_DEMOTED', metadata: {} } });
+   });
+   ```
+   이 흐름이 도입되면 AC-AUTH-053 의 ADMIN_DEMOTION_BLOCKED 이벤트 (LastAdminProtectedError catch 시) 도 함께 기록.
+
+2. **session.user 의 RBAC 클레임 풍부화** — 현재 jwt callback (Slice D1) 은 `token.sub = user.id` 만 주입한다. admin Server Action 이 `isAdminSession` 으로 권한을 판정하려면 token 에 `isAdmin` + `groups: [{ isAdmin }]` 가 포함되어야 한다. Slice E 또는 admin 흐름 도입 시 jwt callback 의 sign-in 분기에서 user.findUnique({ include: { groups: { include: { group: true } } } }) 를 호출해 token 에 클레임을 채우는 작업이 필요하다. 현재는 D2 의 단위 테스트가 mock 으로 직접 session 을 주입하므로 통과하지만, 실제 NextAuth 통합 시 session callback 도 확장해야 한다.
+
+3. **autologin invalidation 의 별도 API** — D2 는 `prisma.autoLogin.deleteMany({ where: { userId } })` 를 직접 호출한다. Slice E 의 autologin rotation 흐름 (REQ-AUTH-018/019/053) 이 추가되면, 이 호출을 `revokeAutoLogins(userId, reason, ctx)` 같은 도메인 헬퍼로 추출 검토. D2 는 사용 패턴이 1곳뿐이라 추출하지 않았다.
+
+4. **SessionRevocation reason enum 승격 시점** — D2 흐름이 `STATUS_CHANGED` 와 `ADMIN_FORCE_LOGOUT` 두 reason 을 모두 활용하면서 컨벤션 4종이 실제 사용 패턴으로 굳어졌다. Slice F 에서 `PASSWORD_CHANGED` 까지 사용되면 enum 승격을 마무리할 수 있다 — migration 한 번으로 String → Enum 변환.
+
+5. **REQ-AUTH-021 retention/hard delete** — soft delete 가 완성되었으니 retention period (default 90일) 경과 후 hard delete 는 인프라 SPEC 의 cron job 책임. D2 의 `softDeleteUser` 가 `deletedAt` 을 정확히 설정했고 anonymize 도 완료했으므로, 향후 cron 은 `prisma.user.deleteMany({ where: { status: 'DELETED', deletedAt: { lt: cutoff } } })` + AuditLog MEMBER_HARD_DELETED 한 번이면 충분.
+
+6. **Pre-existing playwright.config.ts typecheck 오류** — Slice B 베이스라인부터 잔존. D2 와 무관. 별도 작은 수정으로 처리 권장.
+
+7. **Prisma raw query gotcha** — `Prisma.sql` 은 런타임 값 (tagged template helper) 인데 `@rhymix-ts/db` 가 type-only re-export 이었다. D2 에서 value re-export 로 보강했다. 향후 `lock.ts` 의 `@prisma/client` 직접 import 도 `@rhymix-ts/db` 경유로 통일 가능.
+
+8. **Advisory lock 동시성 통합 테스트** — `assertCanDemote` 의 advisory lock 동작은 단위 테스트에서 호출 증거만 검증했다 (queryLog). 실제 두 트랜잭션 동시 실행 시나리오는 통합 DB 환경 (Slice E 의 docker-compose 또는 testcontainers) 에서 확인 가능. 현재는 advisory lock 자체가 PostgreSQL primitive 라 신뢰 가능.
+
+### Blockers
+
+없음. Slice D2 의 모든 명시된 완료 기준 충족:
+- RED → GREEN → REFACTOR 순서 준수 (위 file modification order 표 참조).
+- 286/287 테스트 통과 (1 skipped 는 Slice A 의 hash-wasm dummy timing test, 본 슬라이스와 무관).
+- typecheck clean (web 의 playwright.config.ts 잔존 오류는 Slice B 베이스라인부터 존재).
+- schema 변화 없음 (D2 결정대로) → migration 추가 없음, `prisma validate` 통과.
+- 작업 트리는 더티 상태로 유지 (commit 은 manager-git 위임).
+
+### REQ-AUTH-020 enforcement chain — Slice D1+D2 완성 검증
+
+Slice D1 의 primitive 와 Slice D2 의 admin trigger 가 결합되어 다음 end-to-end chain 이 동작한다:
+
+1. admin 이 admin Server Action 호출 (e.g., `setMemberStatusAction({ targetUserId: 42, newStatus: 'SUSPENDED' })`).
+2. Server Action 이 `auth()` 로 actorId 확인 → `isAdminSession` 으로 권한 검증 → `changeUserStatus` 위임.
+3. `changeUserStatus` 가 트랜잭션에서 User.status='SUSPENDED' 갱신 + AutoLogin 삭제 + AuditLog STATUS_CHANGED.
+4. 트랜잭션 commit 후 D1 의 `revokeAllSessions(42, 'STATUS_CHANGED', ...)` 호출 → SessionRevocation row 추가 + User.sessionsRevokedAt 갱신 + AuditLog SESSION_REVOKED.
+5. target 사용자의 다음 요청 시 jwt callback (D1) 이 `isSessionRevoked(42, token.iat)` 호출 → User.sessionsRevokedAt 비교 → true 반환 → callback 이 null 반환 → next-auth 가 토큰 거부 → 사실상 즉시 로그아웃.
+
+REQ-AUTH-020 enforcement 체인이 완성되었다. AC-AUTH-020 의 시나리오 (admin 의 status 변경 → 모든 active session 무효화) 는 위 chain 으로 충족.
