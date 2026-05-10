@@ -18,8 +18,9 @@ if (process.env.NODE_ENV !== 'production') {
   globalThis.__prisma = prisma;
 }
 
-export type { Prisma } from '@prisma/client';
-export { PrismaClient } from '@prisma/client';
+// SPEC-AUTH-001 Slice D2: Prisma 는 타입과 런타임 (tagged template `Prisma.sql`) 모두 사용되므로
+// `import { Prisma } from '@prisma/client'` 를 그대로 재내보낸다.
+export { Prisma, PrismaClient } from '@prisma/client';
 
 export {
   validateDbConnection,

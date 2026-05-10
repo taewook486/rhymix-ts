@@ -294,6 +294,111 @@ describe('revokeAllSessions', () => {
       expect(state.revocations[0]?.reason).toBe(reason);
     }
   });
+
+  // -------------------------------------------------------------------------
+  // External transaction client support — REQ-AUTH-020 atomicity refactor
+  // (Slice D2 추가: admin.ts 의 메인 트랜잭션 안에서 호출될 수 있도록 확장)
+  // -------------------------------------------------------------------------
+
+  it('TX-1) given a TransactionClient (no $transaction method), runs ops directly without opening nested transaction', async () => {
+    // 본 시나리오는 admin.ts 가 자기 트랜잭션 안에서 tx 클라이언트를 그대로 넘겼을 때를 모사한다.
+    // tx 클라이언트는 $transaction 이 없으며, revokeAllSessions 는 nested 트랜잭션을 열지 않아야 한다.
+    const { prisma: full, state } = buildFakePrisma({
+      preexistingUsers: [user],
+    });
+
+    // tx 클라이언트: full prisma 에서 $transaction 만 제거한 형태.
+    let txTransactionCalled = 0;
+    const txClient = {
+      user: (full as unknown as { user: unknown }).user,
+      sessionRevocation: (full as unknown as { sessionRevocation: unknown })
+        .sessionRevocation,
+      auditLog: (full as unknown as { auditLog: unknown }).auditLog,
+      // 의도적으로 $transaction 을 두지 않는다 — TransactionClient 모사.
+    };
+
+    // full prisma 의 $transaction 을 spy 로 감싼다 — 호출되면 실패.
+    const originalTx = (full as unknown as {
+      $transaction: (...args: unknown[]) => Promise<unknown>;
+    }).$transaction;
+    (full as unknown as {
+      $transaction: (...args: unknown[]) => Promise<unknown>;
+    }).$transaction = async (...args: unknown[]) => {
+      txTransactionCalled += 1;
+      return originalTx(...args);
+    };
+
+    const result = await revokeAllSessions(1, 'STATUS_CHANGED', {
+      prisma: txClient as unknown as PrismaClient,
+      actorId: 7,
+    });
+
+    expect(result.revokedAt).toBeInstanceOf(Date);
+    // 핵심: full prisma 의 $transaction 은 호출되지 않았다 (tx 클라이언트는 $transaction 이 없음).
+    expect(txTransactionCalled).toBe(0);
+    // 그러나 3개 ops 는 모두 직접 적용되었다.
+    expect(state.revocations).toHaveLength(1);
+    expect(state.users[0]?.sessionsRevokedAt).toEqual(result.revokedAt);
+    expect(state.auditLogs).toHaveLength(1);
+    expect(state.auditLogs[0]).toMatchObject({
+      action: 'SESSION_REVOKED',
+      actorId: 7,
+      targetId: 1,
+    });
+  });
+
+  it('TX-2) given a full PrismaClient, still opens its own transaction (backward compatible)', async () => {
+    const { prisma: full, state } = buildFakePrisma({
+      preexistingUsers: [user],
+    });
+
+    let fullTxCalled = 0;
+    const originalTx = (full as unknown as {
+      $transaction: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
+    }).$transaction;
+    (full as unknown as {
+      $transaction: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
+    }).$transaction = async (fn) => {
+      fullTxCalled += 1;
+      return originalTx(fn);
+    };
+
+    await revokeAllSessions(1, 'STATUS_CHANGED', { prisma: full });
+
+    // 기존 동작: $transaction 이 정확히 1회 호출되었다.
+    expect(fullTxCalled).toBe(1);
+    expect(state.revocations).toHaveLength(1);
+    expect(state.users[0]?.sessionsRevokedAt).not.toBeNull();
+    expect(state.auditLogs).toHaveLength(1);
+  });
+
+  it('TX-3) when given tx client, errors propagate to outer transaction (no rollback inside revokeAllSessions)', async () => {
+    // tx 클라이언트로 호출된 경우 revokeAllSessions 는 자체 롤백을 하지 않고 에러를 그대로 throw 해야
+    // 외부(=admin.ts) 의 트랜잭션이 롤백 책임을 진다.
+    const { prisma: full, state } = buildFakePrisma({
+      preexistingUsers: [user],
+      failOnAuditCreate: true,
+    });
+    const txClient = {
+      user: (full as unknown as { user: unknown }).user,
+      sessionRevocation: (full as unknown as { sessionRevocation: unknown })
+        .sessionRevocation,
+      auditLog: (full as unknown as { auditLog: unknown }).auditLog,
+    };
+
+    await expect(
+      revokeAllSessions(1, 'STATUS_CHANGED', {
+        prisma: txClient as unknown as PrismaClient,
+      }),
+    ).rejects.toThrow('audit-log write failed');
+
+    // tx 모드에서는 revokeAllSessions 가 자체 롤백을 하지 않으므로,
+    // 이미 적용된 1) SessionRevocation row 와 2) User.sessionsRevokedAt 갱신은 그대로 남아있다.
+    // (외부 트랜잭션이 롤백 책임을 진다 — admin.test.ts 의 atomicity 테스트가 이를 검증한다.)
+    expect(state.revocations).toHaveLength(1);
+    expect(state.users[0]?.sessionsRevokedAt).not.toBeNull();
+    expect(state.auditLogs).toHaveLength(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
