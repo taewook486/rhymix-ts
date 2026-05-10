@@ -45,6 +45,12 @@ export interface DbValidationResult {
 export interface ValidateOptions {
   /** 개발 환경 등에서 슈퍼유저 차단을 우회. */
   allowSuperuser?: boolean;
+  /**
+   * Schema가 사전에 `db push`로 적용된 개발 환경에서 예약 테이블 충돌을
+   * 무시. 비어있는 테이블이라면 seed가 그대로 INSERT 가능. production에서는
+   * 절대 활성화하지 말 것.
+   */
+  allowExistingTables?: boolean;
 }
 
 /**
@@ -127,7 +133,7 @@ export async function validateDbConnection(
       };
     }
 
-    // 4) 예약 테이블 충돌 검사.
+    // 4) 예약 테이블 충돌 검사 — opts.allowExistingTables=true면 우회.
     const result = await client.query(
       `SELECT tablename FROM pg_tables
         WHERE schemaname = $1 AND tablename = ANY($2)`,
@@ -136,7 +142,7 @@ export async function validateDbConnection(
     const collidingTables = (result.rows as Array<{ tablename: string }>).map(
       (r) => r.tablename,
     );
-    if (collidingTables.length > 0) {
+    if (collidingTables.length > 0 && !opts.allowExistingTables) {
       return {
         ok: false,
         errors: [

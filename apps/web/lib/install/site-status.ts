@@ -20,11 +20,21 @@ export interface InstallStatus {
 }
 
 async function readStatus(): Promise<InstallStatus> {
-  const site = (await prisma.site.findFirst({
-    where: { installedAt: { not: null } },
-  })) as InstallStatus['site'];
-
   const envLocked = process.env.INSTALL_LOCK === '1';
+
+  let site: InstallStatus['site'] = null;
+  try {
+    site = (await prisma.site.findFirst({
+      where: { installedAt: { not: null } },
+    })) as InstallStatus['site'];
+  } catch (err) {
+    // P2021: 테이블이 아직 존재하지 않음(설치 전 또는 schema 미적용 상태).
+    // 미설치 상태로 간주하여 /install로 라우팅되도록 처리.
+    const code = (err as { code?: string } | null)?.code;
+    if (code !== 'P2021' && code !== 'P2010') {
+      throw err;
+    }
+  }
 
   if (site) {
     return { installed: true, site };

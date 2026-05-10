@@ -10,17 +10,17 @@
  */
 import Link from 'next/link';
 
-import { clearWizardSession, getWizardSession } from '@/lib/install/wizard-session';
+import { getWizardSession } from '@/lib/install/wizard-session';
 
 export const dynamic = 'force-dynamic';
 
 export default async function InstallCompletePage() {
   const session = await getWizardSession();
   const justCompleted = session.step === 'finish';
-  if (justCompleted) {
-    // 1회성 환영: 세션을 즉시 폐기하여 재방문 시 fallback 분기로 이동.
-    await clearWizardSession();
-  }
+  // Next.js 16: Server Component 렌더 중 쿠키 수정 금지.
+  // 위저드 세션은 60분 TTL로 자연 만료되며, 쿠키 scope=/install이라
+  // 다른 라우트에 영향 없음. 명시 폐기는 Slice E의 "logout" server action
+  // 또는 별도 cleanup hook으로 옮길 예정.
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">

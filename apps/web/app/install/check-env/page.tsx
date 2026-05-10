@@ -86,10 +86,9 @@ export default async function CheckEnvPage() {
   const report = await runEnvDiagnostics(buildIO());
   const hasError = report.overall === 'error';
 
-  // 진단이 error가 아니면 다음 단계 진입을 허용 (REQ-INSTALL-022 게이트 충족).
-  if (!hasError) {
-    await setEnvChecksPass();
-  }
+  // Next.js 16: Server Component 렌더 중 쿠키 수정 금지.
+  // envChecksPass 마크는 "다음" 버튼의 form action(setEnvChecksPass)에서
+  // 처리되며, action 내부에서 redirect까지 수행합니다.
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -126,12 +125,14 @@ export default async function CheckEnvPage() {
               다음
             </button>
           ) : (
-            <Link
-              href="/install/db-config"
-              className="rounded-md bg-[rgb(var(--color-primary))] px-4 py-2 text-sm text-white hover:opacity-90"
-            >
-              다음
-            </Link>
+            <form action={setEnvChecksPass}>
+              <button
+                type="submit"
+                className="rounded-md bg-[rgb(var(--color-primary))] px-4 py-2 text-sm text-white hover:opacity-90"
+              >
+                다음
+              </button>
+            </form>
           )}
         </div>
       </div>

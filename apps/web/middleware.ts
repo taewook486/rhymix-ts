@@ -28,12 +28,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  const isInstallLocked = process.env.INSTALL_LOCK === '1';
+  // (2) 설치 상태 조회 — env 잠금과 DB 잠금을 OR로 결합.
+  // env(INSTALL_LOCK)와 DB(Site.installedAt) 중 어느 한 쪽이라도 true면 잠금.
+  // PROGRESS.md Open Question 1번 — 게이팅 측면에서 OR이 가장 안전.
+  const status = await getInstallStatus();
+  const isInstallLocked = process.env.INSTALL_LOCK === '1' || status.installed;
 
-  // (2) INSTALL_LOCK=1일 때 /install 및 /api/install/* 차단.
+  // (3) 잠금 상태에서 /install 및 /api/install/* 차단.
   // 단, /install/complete는 1회성 환영 페이지 표시를 위해 예외(REQ-INSTALL-014 사후 UX).
-  // 페이지 자체가 세션 마커(`step==='finish'`)가 없으면 fallback 안내로 분기하므로,
-  // 미들웨어 단계에서 추가 검증은 불필요합니다.
   if (
     isInstallLocked &&
     !pathname.startsWith('/install/complete') &&
@@ -42,8 +44,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return new NextResponse('Gone', { status: 410 });
   }
 
-  // (3) 미설치 인스턴스 → /install로 리다이렉트 (install/api/install 경로는 허용).
-  const status = await getInstallStatus();
+  // (4) 미설치 인스턴스 → /install로 리다이렉트 (install/api/install 경로는 허용).
   if (
     !status.installed &&
     !pathname.startsWith('/install') &&

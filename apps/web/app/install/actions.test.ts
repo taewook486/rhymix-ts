@@ -130,11 +130,19 @@ describe('agreeLicense', () => {
 });
 
 describe('setEnvChecksPass', () => {
-  it('the system shall mark env checks as passing and persist the session', async () => {
+  it('the system shall mark env checks as passing and redirect to /install/db-config', async () => {
     sessionState.licenseAccepted = true;
-    await setEnvChecksPass();
+    // redirect()는 NEXT_REDIRECT 예외를 throw하므로 rejects 어서션 사용.
+    await expect(setEnvChecksPass()).rejects.toThrow();
     expect(sessionState.envChecksPass).toBe(true);
     expect(sessionState.save).toHaveBeenCalled();
+  });
+
+  it('the system shall redirect to /install when license has not been accepted', async () => {
+    sessionState.licenseAccepted = false;
+    await expect(setEnvChecksPass()).rejects.toThrow();
+    expect(sessionState.envChecksPass).toBe(false);
+    expect(sessionState.save).not.toHaveBeenCalled();
   });
 });
 

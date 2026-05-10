@@ -75,19 +75,22 @@ export async function agreeLicense(
 }
 
 /**
- * Step 2 보조 — 환경 자가진단 통과 마크.
+ * Step 2 → Step 3 전이 — 환경 자가진단 통과 마크 후 db-config로 redirect.
  *
- * 진단 페이지 렌더 결과 `overall !== 'error'`인 경우 호출되어 다음 단계
- * 진입을 허용합니다.
+ * "다음" 버튼이 form action으로 invoke합니다. Server Component 렌더 중
+ * 쿠키 수정은 Next.js 16에서 금지되므로 반드시 server action으로만 호출.
  */
 export async function setEnvChecksPass(): Promise<void> {
   const session = await getWizardSession();
-  if (!session.licenseAccepted) return;
+  if (!session.licenseAccepted) {
+    redirect('/install');
+  }
   session.envChecksPass = true;
   if (session.step === 'license' || session.step === 'env-check') {
     session.step = 'env-check';
   }
   await session.save?.();
+  redirect('/install/db-config');
 }
 
 /** validateDbConnection 결과 코드 → 필드/폼 오류 메시지 매핑(한국어). */
@@ -149,6 +152,8 @@ export async function validateDbConfig(
   const config: DbConfig = parsed.data;
   const result = await validateDbConnection(config, {
     allowSuperuser: process.env.NODE_ENV === 'development',
+    // dev 모드에서는 schema가 사전 push된 상태일 수 있으므로 충돌 검사 우회.
+    allowExistingTables: process.env.NODE_ENV === 'development',
   });
   if (!result.ok) {
     return { ok: false, ...mapDbErrors(result.errors) };
