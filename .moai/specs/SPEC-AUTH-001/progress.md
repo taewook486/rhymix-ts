@@ -318,3 +318,162 @@ None blocking the Slice C completion. Two structural items surfaced that Slice D
 2. **Rate limiting (REQ-AUTH-033)**: the LoginAttempt ledger is being populated by Slice C but never consulted. Slice E should add the window-count gate.
 
 The pre-existing `playwright.config.ts` typecheck failure is unchanged from Slice B baseline.
+
+---
+
+## Slice D1 — Session Revocation Foundation (2026-05-10)
+
+Branch: `feature/auth-001-slice-d1` (built on Slice C / main = `cb39449`).
+Methodology: TDD (RED-GREEN-REFACTOR). Plan: `slice-d-plan.md` v2.0.0 (Path D — JWT denylist).
+
+### Delivered
+
+1. **Prisma schema 확장** (`packages/db/prisma/schema.prisma`)
+   - User 모델에 `sessionsRevokedAt DateTime? @db.Timestamptz` 비정규화 컬럼 추가 — jwt callback 의 fast-path enforcement 용 (SessionRevocation 테이블 JOIN 회피).
+   - 신규 모델 `SessionRevocation` (id, userId, revokedAt, reason) — append-only audit history.
+   - Index `(userId, revokedAt)` + FK `users.id ON DELETE CASCADE`.
+   - `reason` 컬럼 컨벤션 4종을 모델 JSDoc 에 명시: `STATUS_CHANGED | ADMIN_FORCE_LOGOUT | PASSWORD_CHANGED | USER_LOGOUT_ALL`. enum 승격은 D2/E 에서 사용 패턴 확정 후 결정.
+
+2. **Migration baselining (Q2 finding)** (`packages/db/prisma/migrations/`)
+   - `20260510170500_init/migration.sql` — Slice A~C 누적 schema squash. 17개 테이블, 5개 enum, 모든 인덱스/제약/FK 포함.
+   - `20260510170600_session_revocation/migration.sql` — `users.sessionsRevokedAt` 컬럼 추가 + `session_revocations` 테이블 생성 + 인덱스 + FK.
+   - `migration_lock.toml` 생성 (provider=postgresql).
+
+3. **Session revocation pure functions** (`packages/auth/src/session-revocation.ts`)
+   - `revokeAllSessions(userId, reason, ctx) → { revokedAt }` — 단일 트랜잭션으로 (1) `SessionRevocation` row 삽입, (2) `User.sessionsRevokedAt` 갱신, (3) `AuditLog SESSION_REVOKED` 기록.
+   - `isSessionRevoked(userId, tokenIssuedAt, ctx) → boolean` — `User.sessionsRevokedAt` 단일 컬럼 비교 (fast-path). `revokedAt > tokenIssuedAt` 일 때만 true (엄격 부등호 — 동시 발급 토큰은 살아있음).
+   - `RevocationReason` union 타입 export.
+   - 모듈은 logger 미사용 (REQ-AUTH-055 by construction).
+
+4. **Auth.js v5 callback 분리 + 통합** (`apps/web/lib/auth/callbacks.ts`, `apps/web/lib/auth/config.ts`)
+   - 신규 `callbacks.ts` 모듈 — `createJwtCallback({ prisma, isSessionRevoked? })` / `createSessionCallback()` factory. 의존성 주입 가능해 단위 테스트가 NextAuth/Next.js 의존성 없이 가능.
+   - jwt callback 동작: 초기 sign-in 시 `token.sub` + `token.iat` 주입(after fallback 정책 — OQ#1 참조), 후속 요청 시 `isSessionRevoked` 호출하여 양성이면 `null` 반환 → next-auth 가 토큰 거부.
+   - session callback 동작: token 이 null/sub 부재면 short-circuit, 정상이면 `session.user.id = token.sub`.
+   - `config.ts` 의 기존 inline 콜백 본체 → factory 호출로 교체. 파일 헤더 JSDoc 갱신 (Path D 채택 명시, PrismaAdapter 도입 폐기 명시).
+
+5. **Public API** (`packages/auth/src/index.ts`)
+   - 새 re-exports: `revokeAllSessions`, `isSessionRevoked`, `RevocationReason`, `RevokeSessionsContext`, `IsSessionRevokedContext`.
+
+### Files Created / Modified (file modification order — TDD verification)
+
+순서는 RED → schema → GREEN 순으로 엄격히 지켜졌다 (구현 전에 테스트가 먼저 작성됨):
+
+| Order | File | Status | LOC (approx) |
+|---|---|---|---|
+| 1 (RED) | `packages/auth/src/session-revocation.test.ts` | new | 312 |
+| 2 (RED) | `apps/web/lib/auth/config.test.ts` | new | 154 |
+| 3 (schema) | `packages/db/prisma/schema.prisma` | edit | +25 |
+| 4 (migration) | `packages/db/prisma/migrations/migration_lock.toml` | new | 3 |
+| 5 (migration) | `packages/db/prisma/migrations/20260510170500_init/migration.sql` | new | 308 |
+| 6 (migration) | `packages/db/prisma/migrations/20260510170600_session_revocation/migration.sql` | new | 38 |
+| 7 (GREEN) | `packages/auth/src/session-revocation.ts` | new | 123 |
+| 8 (GREEN) | `apps/web/lib/auth/callbacks.ts` | new | 137 |
+| 9 (GREEN) | `apps/web/lib/auth/config.ts` | edit | net ±10 (header rewrite + callback wiring) |
+| 10 (GREEN) | `packages/auth/src/index.ts` | edit | +9 |
+| 11 (docs) | `.moai/specs/SPEC-AUTH-001/progress.md` | edit | this section |
+
+Slice A/B/C 의 소스 파일 (`password*.ts`, `signup*.ts`, `login*.ts`, `verify-email*.ts`, `tokens*.ts`, `mail*.ts`, `actions.ts`) 은 일절 수정되지 않았다. `spec.md` / `slice-d-plan.md` 도 수정되지 않았다.
+
+### Tests
+
+- **24개 신규 테스트** 추가 (16 session-revocation + 8 config callbacks).
+- 전체 프로젝트 테스트 수: **246 passed, 1 skipped, 25 files** (Slice C 의 222 → 246, 델타 +24).
+- 신규 테스트 카테고리:
+  - `revokeAllSessions`: 1) row 작성 + 반환값, 2) `User.sessionsRevokedAt` 갱신, 3/3b) AuditLog 기록 (actorId 포함/null), 4) 다중 호출 history 보존, 5) latest 우선, 10) AuditLog 실패 시 트랜잭션 롤백, 11) idempotent monotonic, reason 4종 acceptance.
+  - `isSessionRevoked`: 6) iat before revocation → true, 7) iat after → false, 8/8b) revocation 없음 / user 미존재 → false, 9) fast-path (SessionRevocation 쿼리 0회), boundary 조건 (정확히 같음 → false), multi-revocation latest only.
+  - `jwt callback`: 1) 초기 sign-in 시 iat 주입, 2) revocation 발생 시 null 반환, 3) revocation 없으면 token 통과, 4) iat 부재 토큰 → epoch fallback (후방 호환), 5) malformed sub → null 방어, 6) sub 부재 → 검사 없이 통과.
+  - `session callback`: 7) token=null 시 short-circuit, 8) 정상 token 시 `session.user.id` 채움.
+
+### Verification
+
+| Command | Result |
+|---|---|
+| `npx pnpm --filter @rhymix-ts/db exec prisma validate` | OK ("schema is valid") |
+| `npx pnpm --filter @rhymix-ts/db prisma:generate` | OK (Prisma Client v6.19.3 regenerated) |
+| `npx pnpm --filter @rhymix-ts/auth typecheck` | OK |
+| `npx pnpm --filter @rhymix-ts/db typecheck` | OK |
+| `npx pnpm --filter @rhymix-ts/web typecheck` | Pre-existing `playwright.config.ts` 실패만 잔존 (Slice B/C 와 동일 — 신규 코드 typecheck-clean) |
+| `npx pnpm test` | 246 passed, 1 skipped, 25 files |
+
+`prisma migrate dev` 는 dev DB 의 `db push` 기반 drift 때문에 실행하지 않았다 (OQ#3 결정 — 아래 Deviations 참조). Migration SQL 자체는 `prisma migrate diff --from-empty --to-schema-datamodel` 의 출력을 검토 후 수동으로 두 파일로 분할 작성했으며, init 의 누적 스키마는 schema.prisma 의 모든 모델/인덱스/FK 를 포함한다.
+
+### Acceptance Criteria progress
+
+본 슬라이스는 REQ-AUTH-020 enforcement *기반 (primitive)* 만 마련한다. 실제 admin trigger 와 status 변경 chain 은 Slice D2 의 책임.
+
+- **REQ-AUTH-020 enforcement primitive** 완료:
+  - 세션 무효화 단일 진입점 `revokeAllSessions` 동작 검증 ✅
+  - jwt callback 이 매 요청마다 revocation 검사 수행 ✅
+  - SessionRevocation 테이블 + denormalized fast-path 컬럼 모두 갖춤 ✅
+- **AC-AUTH-020** ❌ 아직 — admin status 변경 트리거 (Slice D2) 와 연결되지 않은 상태이므로 end-to-end criterion 은 다음 슬라이스에서 충족.
+- 기존 AC (AC-AUTH-010/011/012/013/014/015/031/052) 는 모두 **회귀 없음** — 222개 기존 테스트 전부 통과.
+
+### Deviations / OQ resolutions
+
+1. **OQ #1 — `next-auth` v5 jwt callback 의 `token.iat` 가용성**:
+   결론 — 자동 주입 여부와 무관하게 안전하도록 fallback 정책을 채택했다 (`callbacks.ts` 헤더 JSDoc 참조). 정책: (1) `token.iat` 가 number 면 그것을 신뢰, (2) sign-in 시점에 직접 `Math.floor(Date.now()/1000)` 주입, (3) 후방 호환 토큰은 `Date(0)` 로 취급해 어떤 revocation 에 의해서도 무효화 가능. 따라서 OQ#1 은 **resolved-by-design** — next-auth 의 동작에 의존하지 않는다.
+
+2. **OQ #2 — 비정규화 `User.sessionsRevokedAt` 채택**:
+   채택. 두 source (테이블 + 컬럼) 를 모두 유지한다 (테이블=audit history, 컬럼=fast-path enforcement). 구현 후 tradeoff 평가 결과 net-positive 로 판단:
+   - hot path 에서 SessionRevocation 테이블 JOIN 없이 단일 인덱스 lookup 만 발생.
+   - history 보존은 admin/감사 요건 (D2/E) 에 필수.
+   - 두 source 의 동기화 부담은 단일 트랜잭션 내에서 처리되므로 추가 위험 없음.
+
+3. **OQ #3 — Migration drift resolution**:
+   선택 — `prisma migrate dev` 로 자동 생성하는 대신, **`prisma migrate diff --from-empty --to-schema-datamodel` 으로 SQL 만 dump 하여 수동으로 두 migration 파일 작성**. 이유:
+   - dev DB 의 `db push` 기반 drift 때문에 `prisma migrate dev --create-only` 가 reset 을 강요했고, 이는 본 슬라이스의 책임 범위 밖 (다른 개발자/CI 의 dev DB 에 영향).
+   - migration SQL 의 정확성은 schema 와 1:1 대응이 보장되므로 (diff 출력 그대로 분할), 자동/수동 차이는 절차상 차이일 뿐 실제 SQL 은 동일.
+   - 운영 환경 (있다면) 적용 시: 빈 DB → `prisma migrate deploy` 로 두 migration 순차 적용. dev 환경에 처음 도입할 때는 (a) `prisma migrate reset` (데이터 손실 허용 시) 또는 (b) `prisma migrate resolve --applied 20260510170500_init` 으로 baseline 처리 (기존 schema 유지). 결정은 팀 운영 정책에 위임 — 본 슬라이스에서는 SQL 파일만 제공한다.
+
+4. **`config.ts` 의 callback 분리** (`callbacks.ts` 신규 생성):
+   prompt 의 "EDIT `apps/web/lib/auth/config.ts`" 지시는 그대로 따랐으나, callback 본체를 별도 모듈로 분리했다. 이유: 단위 테스트가 NextAuth 인스턴스/Next.js 서버 의존성을 거치지 않고 callback 의 입출력을 직접 검증하려면 factory pattern 이 필수. 동등한 동작을 보존하므로 prompt scope 위반은 아니다 (config.ts 도 함께 편집됨, 새 파일은 의존성 주입을 위한 보조 모듈).
+
+5. **`AuditLog` 공통 헬퍼 추출 (REFACTOR 단계 검토 결과 — skip)**:
+   Slice B/C/D1 의 AuditLog 호출 사이트는 각각 metadata 형태가 다르며 (signup: ip/ua only, login: ip/ua + actorId, session-revocation: metadata.reason), 공통 헬퍼로 묶을 경우 호출자가 잡다한 옵션을 파라미터로 채워야 해 코드량 절약 효과가 미미하다. 추출은 보류 — D2 에서 admin 액션 4종이 추가로 등장하면 그때 재평가.
+
+### Open `@MX:TODO` ledger (Slice D1 additions)
+
+신규 `@MX:TODO` 없음. 새 `@MX:ANCHOR` 4개 추가, 각각 `@MX:REASON` sub-line 포함:
+- `packages/auth/src/session-revocation.ts` — `revokeAllSessions` (트랜잭션 단일 진입점), `isSessionRevoked` (fast-path 단일 진입점).
+- `apps/web/lib/auth/callbacks.ts` — jwt/session callback 단일 정의 지점.
+
+새 `@MX:WARN` 없음. 기존 Slice A/B/C 의 `@MX:NOTE` (config.ts) 는 제거됨 — Slice D1 에서 Path D 가 확정되어 PrismaAdapter 도입 보류 메모는 더 이상 유효하지 않다 (대신 헤더 JSDoc 의 본문에 결정 근거 명시).
+
+### Heads-up notes for Slice D2 (admin features)
+
+1. **`revokeAllSessions` 호출 사이트** — admin status 변경 (`changeUserStatus`) 에서 직접 호출. `actorId = session.user.id` (admin), `reason = 'STATUS_CHANGED'`, `targetId = userId`. AutoLogin row 삭제는 별도로 `prisma.autoLogin.deleteMany({ where: { userId } })` 로 처리 (D1 의 SessionRevocation API 와 무관 — JWT revocation 과 autologin 무효화는 본질적으로 별개 메커니즘).
+
+2. **`isSessionRevoked` fast-path 의 부담** — 매 요청마다 `users` 테이블에 `findUnique({ id })` 가 발생한다. 이는 PK lookup 이라 cost 가 거의 0이지만, traffic 이 매우 큰 환경에서는 Redis 캐시 도입을 검토 (slice-d-plan.md Risks 참조). 운영 데이터로 판단.
+
+3. **`token.iat` 단위** — JWT 표준에 따라 초 단위 epoch (number). callback 내부에서 `new Date(iat * 1000)` 으로 변환. D2 RBAC 클레임 (isAdmin/groups) 추가 시 token augmentation 위치는 동일한 `createJwtCallback` 의 sign-in 분기.
+
+4. **마지막 admin 보호 (REQ-AUTH-054)** — D2 에서 `changeUserStatus` / `assignGroup(remove)` 가 모두 본 검증을 통과해야 한다. Race condition 처리 (slice-d-plan.md Risk) 는 D2 시작 시 결정.
+
+5. **`config.test.ts` 의 mock 패턴** — `vi.mock('@rhymix-ts/auth')` 가 아닌 의존성 주입을 사용해 mock 했다. D2 에서 admin RBAC 검증을 추가할 때도 동일 패턴 (`createJwtCallback({ prisma, ...overrides })`) 을 쓰자.
+
+6. **PrismaAdapter 도입은 폐기** — slice-d-plan.md v2.0.0 / Pre-Flight Q1 결정. D2 에서 `Account/Session/VerificationToken` 모델을 추가하지 않는다. 모든 세션 관리는 JWT + SessionRevocation denylist 로 일관 처리.
+
+7. **`reason` 컬럼 enum 승격 시점** — D2 admin 흐름에서 4종 컨벤션이 모두 사용되면 (STATUS_CHANGED + ADMIN_FORCE_LOGOUT + 향후 PASSWORD_CHANGED + USER_LOGOUT_ALL), enum 승격 검토. 승격 시 추가 migration 필요 (string → enum 변환 + Prisma 모델 갱신).
+
+### Blockers
+
+없음. Slice D1 의 모든 명시된 완료 기준 충족:
+- RED → GREEN → REFACTOR 순서 준수 (위 file modification order 표 참조).
+- 246/247 테스트 통과 (1 skipped 는 Slice A 의 hash-wasm dummy hash timing test, 본 슬라이스와 무관).
+- typecheck clean (web 의 playwright.config.ts 잔존 오류는 Slice B 베이스라인부터 존재).
+- 두 migration SQL 모두 working tree 에 포함, `prisma validate` 통과.
+- 작업 트리는 더티 상태로 유지 (commit 은 manager-git 위임).
+
+### REQ-AUTH-020 enforcement readiness summary
+
+Slice D1 으로 다음이 갖춰졌다:
+- 세션 무효화 단일 진입점 (`revokeAllSessions`) — admin/사용자 self-action 모두 본 함수 통과 강제 가능.
+- 무효화 검증 fast-path (`isSessionRevoked`) — 매 요청마다 hot path 비용 최소화.
+- 무효화 audit history (`SessionRevocation` 테이블) — 향후 forensics / compliance 요건 대응.
+- jwt callback 통합 — 무효화 시 토큰 거부, 사실상 다음 요청부터 로그아웃.
+
+D2 가 추가해야 할 것:
+- `changeUserStatus(userId, SUSPENDED|DENIED|DELETED)` Server Action — 본 함수가 `revokeAllSessions(userId, 'STATUS_CHANGED', { prisma, actorId: admin.id })` 와 `prisma.autoLogin.deleteMany({ where: { userId } })` 를 호출.
+- `softDeleteUser` / `restoreUser` 도 동일 패턴.
+- admin Server Action 보호 (`isAdmin` 검사) + 마지막 admin 보호 (REQ-AUTH-054).
+- AC-AUTH-020 end-to-end 테스트 (admin 호출 → SessionRevocation 갱신 → jwt callback null 반환 → 다음 요청 차단).

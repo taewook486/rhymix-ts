@@ -55,3 +55,11 @@ export type {
   VerifyEmailSuccess,
   VerifyEmailFailure,
 } from './verify-email';
+
+// SPEC-AUTH-001 Slice D1 — session revocation foundation (REQ-AUTH-020 primitive).
+export { revokeAllSessions, isSessionRevoked } from './session-revocation';
+export type {
+  RevocationReason,
+  RevokeSessionsContext,
+  IsSessionRevokedContext,
+} from './session-revocation';
