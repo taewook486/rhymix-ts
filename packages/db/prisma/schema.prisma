@@ -158,12 +158,18 @@ model User {
   createdAt         DateTime   @default(now()) @db.Timestamptz
   updatedAt         DateTime   @updatedAt @db.Timestamptz
   deletedAt         DateTime?  @db.Timestamptz
+  // SPEC-AUTH-001 Slice D1 REQ-AUTH-020 enforcement primitive.
+  // Denormalized "latest revocation" timestamp; SessionRevocation table holds the audit history.
+  // jwt callback compares token.iat against this single column for fast-path enforcement
+  // (avoids JOIN/subquery on every request).
+  sessionsRevokedAt DateTime?  @db.Timestamptz
 
   groups      MemberGroupMember[]
   autoLogins  AutoLogin[]
   emailTokens EmailAuthToken[]
   devices     MemberDevice[]
   agreements  MemberAgreement[]
+  revocations SessionRevocation[]
 
   @@index([status])
   @@index([emailAddress])
@@ -327,6 +333,31 @@ model AuditLog {
   @@index([targetId, createdAt])
   @@index([action, createdAt])
   @@map("audit_logs")
+}
+
+// SPEC-AUTH-001 Slice D1 REQ-AUTH-020: session revocation denylist.
+//
+// JWT 전략을 유지하면서 즉시 무효화 효과를 얻기 위한 테이블. jwt callback 이
+// 매 요청마다 User.sessionsRevokedAt (denormalized fast-path) 또는 본 테이블의
+// 최신 row 를 조회해 token.iat 와 비교한다. 본 테이블은 audit history 를 보존하며,
+// 최신값 비교 자체는 fast-path 컬럼을 사용한다.
+//
+// reason 컬럼은 문자열 컨벤션 (4종):
+//   - STATUS_CHANGED         : admin 이 user.status 를 변경한 경우 (D2)
+//   - ADMIN_FORCE_LOGOUT     : admin 이 명시적으로 강제 로그아웃 트리거 (D2)
+//   - PASSWORD_CHANGED       : 비밀번호 변경/재설정 후 모든 세션 무효화 (Slice F)
+//   - USER_LOGOUT_ALL        : 사용자 본인이 "모든 기기에서 로그아웃" 요청
+// 사용 패턴이 안정되면 enum 으로 승격을 검토한다 (D2/E 시점).
+model SessionRevocation {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  revokedAt DateTime @default(now()) @db.Timestamptz
+  reason    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@map("session_revocations")
 }
 
 // =====================================================================
