@@ -231,3 +231,5 @@ Version: 2.0.0
 Created: 2026-05-10 (v1.0.0)
 Revised: 2026-05-10 (v2.0.0 — Adapter path abandoned; Path D (JWT denylist) adopted after pre-flight Q1 finding)
 Author: manager-spec via /moai plan SPEC-AUTH-001 Slice D
+
+Status (2026-05-10 EOD): D1 ✅ merged (PR #2 / 4f57664), D2 ✅ merged (PR #3 / 61aaaa4). 다음 슬라이스 (E) 계획은 별도 plan 단계에서 갱신.

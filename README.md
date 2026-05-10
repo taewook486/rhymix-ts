@@ -2,7 +2,7 @@
 
 TypeScript + Next.js 16 redesign of the [Rhymix](https://github.com/rhymix/rhymix) CMS.
 
-> Status: **SPEC-INSTALL-001 완료 (148 unit + 7 E2E) · SPEC-AUTH-001 Slice A/B/C 완료 (222 unit) · Slice D 진행 예정**.
+> Status: **SPEC-INSTALL-001 완료 (148 unit + 7 E2E) · SPEC-AUTH-001 Slice A–D2 완료 (291 unit) · Slice E 계획 예정**.
 > Reference instance running at `http://localhost:8080` (PHP, Docker).
 
 ## Architecture (locked)
@@ -114,7 +114,7 @@ pnpm test:e2e
 | SPEC | 상태 | 테스트 | 비고 |
 |---|---|---|---|
 | SPEC-INSTALL-001 | 완료 | 148 unit + 7 E2E | 4단계 설치 위저드, SiteLock |
-| SPEC-AUTH-001 | 진행 중 (Slice C/5) | 222 unit | 비밀번호·회원가입·로그인·이메일 인증 |
+| SPEC-AUTH-001 | 진행 중 (Slice D2/5 완료) | 291 unit | 비밀번호·회원가입·로그인·이메일 인증·세션 무효화·관리자 RBAC |
 | SPEC-ADMIN-001 | 미착수 | — | foundation |
 | SPEC-CONTENT-001 | 미착수 | — | 게시판/문서/댓글 |
 | SPEC-THEME-001 | 미착수 | — | 테마/레이아웃/스킨 |
@@ -126,21 +126,23 @@ pnpm test:e2e
 | A | Argon2id 비밀번호 모듈 + Prisma 스키마 확장 | 완료 |
 | B | 회원가입 파이프라인 + 메일 디스패처 + 토큰 유틸 | 완료 |
 | C | 로그인 + 이메일 인증 + Auth.js v5 Credentials Provider + Server Actions | 완료 |
-| D | PrismaAdapter 마이그레이션 + 관리자 상태 변경 + 자동 로그인 | 예정 |
+| D1 | JWT denylist (SessionRevocation) + jwt/session callback 통합 + migration baselining | 완료 |
+| D2 | 관리자 RBAC + 회원 status 변경 즉시 세션 무효화 + soft delete | 완료 |
 | E | 레이트 리미팅 + HTTP/E2E 통합 + `/login`, `/signup`, `/verify-email` 페이지 | 예정 |
 
 ## Next Step
 
-Slice D 구현 — Auth.js PrismaAdapter 마이그레이션 및 관리자 세션 제어:
+Slice E 구현 — 자동 로그인 회전, 레이트 리미팅, 관리자 역할 토글, JWT 클레임 주입:
 
 ```bash
 /moai run SPEC-AUTH-001
 ```
 
-Slice D 주요 작업:
-- `schema.prisma`에 `Account` / `Session` / `VerificationToken` 모델 추가
-- `@auth/prisma-adapter` 설치 및 `session.strategy: 'database'` 전환
-- REQ-AUTH-020: 관리자 상태 변경 → 즉시 세션 무효화
+Slice E 주요 작업:
+- REQ-AUTH-018/019: AutoLogin 토큰 회전 로직
+- REQ-AUTH-033: IP 기반 레이트 리미팅 reject 로직
+- 관리자 역할 토글 (admin role-toggle)
+- JWT 클레임 주입 (JWT claim injection)
 
 이후 구현 순서:
 
