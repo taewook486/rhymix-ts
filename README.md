@@ -87,9 +87,27 @@ pnpm build        # production build via turbo
 pnpm typecheck    # tsc --noEmit across all packages
 pnpm lint         # next lint + per-package linters
 pnpm test         # vitest suites (when added)
+pnpm test:e2e     # playwright E2E (install wizard) — see "E2E 테스트 실행"
 pnpm format       # prettier write
 pnpm db:studio    # open Prisma Studio
 ```
+
+### E2E 테스트 실행
+
+설치 위저드 happy path / 재설치 차단 / SiteLock 503 시나리오를 Playwright로 검증합니다.
+
+```bash
+# 1회: 크로미움 브라우저 바이너리 다운로드 (~120MB)
+pnpm exec playwright install chromium
+
+# Postgres 컨테이너 가동 (이미 떠있으면 생략)
+docker start rhymix-ts-db
+
+# E2E 실행 — webServer가 pnpm dev를 자동 기동합니다.
+pnpm test:e2e
+```
+
+매 테스트는 `apps/web/e2e/support/db-reset.ts`로 install 관련 테이블을 TRUNCATE 후 시작합니다 — 운영 DB로 절대 가리키지 마세요.
 
 ## Next Step
 
