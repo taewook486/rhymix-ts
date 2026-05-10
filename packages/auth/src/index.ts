@@ -35,3 +35,23 @@ export type {
   SignupFailure,
   SignupResult,
 } from './signup';
+
+// SPEC-AUTH-001 Slice C — login pipeline (REQ-AUTH-013/014/015/051/052).
+export { login } from './login';
+export type {
+  LoginInput,
+  LoginConfig,
+  LoginUser,
+  LoginResult,
+  LoginFailure,
+} from './login';
+
+// SPEC-AUTH-001 Slice C — email verification (REQ-AUTH-012, AC-AUTH-012).
+export { verifyEmail } from './verify-email';
+export type {
+  VerifyEmailInput,
+  VerifyEmailCtx,
+  VerifyEmailErrorCode,
+  VerifyEmailSuccess,
+  VerifyEmailFailure,
+} from './verify-email';
