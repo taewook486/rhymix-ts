@@ -15,7 +15,8 @@ import { prisma } from '@rhymix-ts/db';
 
 export interface InstallStatus {
   installed: boolean;
-  site: { id: number; installedAt: Date | null } | null;
+  // scheme은 REQ-INSTALL-040 HSTS 헤더 결정에 필요.
+  site: { id: number; installedAt: Date | null; scheme?: string } | null;
   lockedAt?: Date;
 }
 
@@ -24,9 +25,11 @@ async function readStatus(): Promise<InstallStatus> {
 
   let site: InstallStatus['site'] = null;
   try {
-    site = (await prisma.site.findFirst({
+    const row = await prisma.site.findFirst({
       where: { installedAt: { not: null } },
-    })) as InstallStatus['site'];
+      select: { id: true, installedAt: true, scheme: true },
+    });
+    site = row as InstallStatus['site'];
   } catch (err) {
     // P2021: 테이블이 아직 존재하지 않음(설치 전 또는 schema 미적용 상태).
     // 미설치 상태로 간주하여 /install로 라우팅되도록 처리.
