@@ -63,3 +63,23 @@ export type {
   RevokeSessionsContext,
   IsSessionRevokedContext,
 } from './session-revocation';
+
+// SPEC-AUTH-001 Slice D2 — RBAC primitives (REQ-AUTH-034, REQ-AUTH-054).
+export {
+  resolveAdminPrivilege,
+  isLastAdmin,
+  assertCanDemote,
+  ADMIN_DEMOTION_LOCK_ID,
+  LastAdminProtectedError,
+} from './rbac';
+
+// SPEC-AUTH-001 Slice D2 — admin features (REQ-AUTH-020, REQ-AUTH-021).
+export { changeUserStatus, softDeleteUser } from './admin';
+export type {
+  AdminCtx,
+  AdminStatusTransition,
+  ChangeStatusInput,
+  ChangeStatusResult,
+  SoftDeleteInput,
+  SoftDeleteResult,
+} from './admin';
