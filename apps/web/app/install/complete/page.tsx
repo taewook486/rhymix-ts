@@ -1,0 +1,65 @@
+/**
+ * SPEC-INSTALL-001 / Step 5: 설치 완료 환영 페이지 (REQ-INSTALL-014 사후 UX).
+ *
+ * `performInstall` 직후 리다이렉트되어 1회성으로 환영 메시지를 표시합니다.
+ * 본 페이지가 첫 렌더될 때 위저드 세션을 폐기하므로 (REQ-INSTALL-005),
+ * 새로고침 시 두 번째 렌더는 "이미 설치 완료" 안내로 fallback합니다.
+ *
+ * 미들웨어는 `/install/complete` 경로를 INSTALL_LOCK 차단에서 예외 처리
+ * 합니다(REQ-INSTALL-023 미세 조정 — Slice D7).
+ */
+import Link from 'next/link';
+
+import { clearWizardSession, getWizardSession } from '@/lib/install/wizard-session';
+
+export const dynamic = 'force-dynamic';
+
+export default async function InstallCompletePage() {
+  const session = await getWizardSession();
+  const justCompleted = session.step === 'finish';
+  if (justCompleted) {
+    // 1회성 환영: 세션을 즉시 폐기하여 재방문 시 fallback 분기로 이동.
+    await clearWizardSession();
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl px-6 py-12">
+      <h1 className="text-2xl font-bold">
+        {justCompleted ? '설치가 완료되었습니다.' : '이미 설치가 완료된 사이트입니다.'}
+      </h1>
+
+      {justCompleted ? (
+        <>
+          <p className="mt-4 text-sm">Rhymix-TS에 오신 것을 환영합니다.</p>
+          <section className="mt-8 rounded-md border bg-white/50 p-4 text-sm">
+            <h2 className="font-semibold">다음 단계 안내</h2>
+            <ul className="mt-2 list-disc pl-5 leading-7">
+              <li>관리자 대시보드에서 첫 모듈 인스턴스를 생성하세요. (SPEC-ADMIN-001)</li>
+              <li>회원 그룹 권한을 설정하세요. (SPEC-AUTH-001)</li>
+              <li>로그인 페이지에서 방금 만든 관리자 계정으로 로그인하세요.</li>
+            </ul>
+          </section>
+        </>
+      ) : (
+        <p className="mt-4 text-sm">
+          이 화면은 설치 직후 1회만 표시됩니다. 로그인 후 관리자 페이지에서 작업하세요.
+        </p>
+      )}
+
+      <div className="mt-8 flex items-center gap-3">
+        <Link
+          href="/admin"
+          className="rounded-md bg-[rgb(var(--color-primary))] px-4 py-2 text-sm text-white hover:opacity-90"
+        >
+          관리자 대시보드로 이동
+        </Link>
+        <Link
+          href="/login"
+          className="rounded-md border px-4 py-2 text-sm hover:bg-black/5"
+        >
+          로그인 페이지로 이동
+        </Link>
+      </div>
+    </main>
+  );
+}

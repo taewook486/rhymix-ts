@@ -68,6 +68,14 @@ describe('middleware', () => {
     expect(res.status).toBe(200);
   });
 
+  it('the system shall allow /install/complete when INSTALL_LOCK=1 (one-shot welcome page)', async () => {
+    process.env.INSTALL_LOCK = '1';
+    getInstallStatus.mockResolvedValue({ installed: true, site: { id: 1, installedAt: new Date() } });
+    const { middleware } = await loadMiddleware();
+    const res = await middleware(makeReq('/install/complete'));
+    expect(res.status).toBe(200);
+  });
+
   it('the system shall pass through ordinary routes when already installed', async () => {
     getInstallStatus.mockResolvedValue({
       installed: true,

@@ -64,6 +64,22 @@ export const adminConfigSchema = z
   });
 export type AdminConfig = z.infer<typeof adminConfigSchema>;
 
+/**
+ * 일회용 이메일 차단을 포함한 관리자 폼 스키마 팩토리 (REQ-INSTALL-054).
+ *
+ * `schemas.ts`가 `@rhymix-ts/auth`에 의존하면 패키지 간 순환이 발생할 수
+ * 있어, 검사기를 호출자가 주입하는 형태로 분리합니다. `actions.ts`에서
+ * `isDisposableEmail`을 인자로 합성합니다.
+ */
+export function adminConfigSchemaWithDisposableCheck(
+  isDisposable: (email: string) => boolean,
+): typeof adminConfigSchema {
+  return adminConfigSchema.refine((d) => !isDisposable(d.email), {
+    message: 'Disposable email addresses are not allowed',
+    path: ['email'],
+  }) as unknown as typeof adminConfigSchema;
+}
+
 // ---------------------------------------------------------------------------
 // Step 2 — License agreement
 // ---------------------------------------------------------------------------

@@ -12,17 +12,31 @@
  * @MX:REASON: 단계 게이트(licenseAccepted/envChecksPass/dbConfigValidated)는 모두 이 파일에서만 변이된다.
  * @MX:SPEC: SPEC-INSTALL-001 REQ-INSTALL-011, REQ-INSTALL-013, REQ-INSTALL-050
  */
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import {
+  adminConfigSchema,
   dbConfigSchema,
   licenseAgreementSchema,
+  type AdminConfig,
   type DbConfig,
 } from '@rhymix-ts/core';
-import { validateDbConnection, type DbValidationCode } from '@rhymix-ts/db';
+import {
+  acquireInstallLock,
+  seedInstall,
+  validateDbConnection,
+  type DbValidationCode,
+} from '@rhymix-ts/db';
+import {
+  hashPassword,
+  isDisposableEmail,
+  PASSWORD_VERSION_TAG,
+} from '@rhymix-ts/auth';
 
 import { type ActionState } from '@/lib/install/action-state';
 import { getWizardSession } from '@/lib/install/wizard-session';
+import { requireWizardStep } from '@/lib/install/wizard-guards';
 
 /** Zod issues를 fieldErrors 맵으로 변환. */
 function zodToFieldErrors(error: {
@@ -145,4 +159,132 @@ export async function validateDbConfig(
   session.step = 'admin';
   await session.save?.();
   redirect('/install/admin-config');
+}
+
+/**
+ * Step 4 — 관리자 계정 + 최종 설치 실행 (REQ-INSTALL-014, 015, 053, 054).
+ *
+ * 1) 위저드 단계 가드 (license/env/db 모두 통과해야 진입)
+ * 2) `adminConfigSchema` 파싱
+ * 3) 운영 환경에서 일회용 이메일 차단
+ * 4) `session.db` 존재 확인
+ * 5) advisory lock 획득(미획득 시 즉시 거부)
+ * 6) 비밀번호 해싱 → seedInstall 트랜잭션 실행
+ * 7) lock 해제 → step='finish'로 갱신 → /install/complete 리다이렉트
+ *
+ * 세션 폐기는 `/install/complete` 페이지가 첫 렌더 시 수행합니다 (UX 연속성
+ * 확보 + step==='finish' 마커 검사 통과).
+ *
+ * @MX:ANCHOR: 영구 DB 변경(seedInstall) 호출의 단일 진입점 (fan_in: admin-config 폼, 향후 CLI/admin re-install).
+ * @MX:REASON: 본 함수가 부분 실행되면 advisory lock leak 또는 부분 시드가 발생한다.
+ * @MX:SPEC: SPEC-INSTALL-001 REQ-INSTALL-014, REQ-INSTALL-015, REQ-INSTALL-053, REQ-INSTALL-054
+ */
+export async function performInstall(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await getWizardSession();
+  // 1) 단계 가드 — 미충족 시 redirect.
+  requireWizardStep('admin', session);
+
+  // 2) Zod 파싱.
+  const raw = {
+    email: formData.get('email'),
+    password: formData.get('password'),
+    password2: formData.get('password2'),
+    nickName: formData.get('nickName'),
+    userId: formData.get('userId'),
+    timeZone: formData.get('timeZone'),
+    useSsl: formData.get('useSsl'),
+    useSitelock: formData.get('useSitelock') === 'true' || formData.get('useSitelock') === 'on',
+  };
+  const parsed = adminConfigSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, fieldErrors: zodToFieldErrors(parsed.error) };
+  }
+  const admin: AdminConfig = parsed.data;
+
+  // 3) 운영 환경 일회용 이메일 차단.
+  if (process.env.NODE_ENV === 'production' && isDisposableEmail(admin.email)) {
+    return {
+      ok: false,
+      fieldErrors: { email: '일회용 이메일 주소는 사용할 수 없습니다.' },
+    };
+  }
+
+  // 4) DB 설정 존재 확인.
+  if (!session.db) {
+    return {
+      ok: false,
+      formError: 'DB 설정이 없습니다. 이전 단계로 돌아가 다시 검증해주세요.',
+    };
+  }
+
+  // 5) advisory lock 획득.
+  const { prisma } = await import('@rhymix-ts/db');
+  const lock = await acquireInstallLock(prisma);
+  if (!lock.acquired) {
+    return {
+      ok: false,
+      formError: '다른 설치가 이미 진행 중입니다.',
+    };
+  }
+
+  try {
+    // 6) 비밀번호 해싱 + 요청 메타데이터 수집.
+    const passwordHash = await hashPassword(admin.password);
+    const h = await headers();
+    const installerIp =
+      h.get('x-forwarded-for') ?? h.get('x-real-ip') ?? 'unknown';
+    const installerUserAgent = h.get('user-agent') ?? 'unknown';
+    const hostname = h.get('host') ?? 'localhost';
+    const rhymixTsVersion = process.env.npm_package_version ?? '0.0.0';
+
+    try {
+      await seedInstall(
+        {
+          site: {
+            defaultLanguage: session.language ?? 'en',
+            timeZone: admin.timeZone,
+            scheme: admin.useSsl === 'always' ? 'https' : 'http',
+            rhymixTsVersion,
+            // databaseSchemaVersion은 본 슬라이스에서는 'init' 고정.
+            // _prisma_migrations 테이블에서 읽어오는 개선은 추후 슬라이스로 이전.
+            databaseSchemaVersion: 'init',
+            installerIp,
+            installerUserAgent,
+          },
+          domain: { hostname },
+          admin: {
+            userId: admin.userId,
+            emailAddress: admin.email,
+            passwordHash,
+            nickName: admin.nickName,
+            userName: admin.nickName,
+            passwordVersion: PASSWORD_VERSION_TAG,
+          },
+          sitelock: {
+            enabled: admin.useSitelock,
+            // 단순화: SiteLock allowlist 시드는 installerIp 1개로 부트스트랩.
+            allowlist: admin.useSitelock ? [installerIp] : [],
+          },
+        },
+        prisma,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        ok: false,
+        formError: `설치 실패: ${message}`,
+      };
+    }
+
+    // 7) 세션을 finish 단계로 갱신 — /install/complete가 자체 렌더 시 폐기.
+    session.step = 'finish';
+    await session.save?.();
+  } finally {
+    await lock.release();
+  }
+
+  redirect('/install/complete');
 }

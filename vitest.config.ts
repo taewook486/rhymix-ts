@@ -29,8 +29,10 @@ export default defineConfig({
       reporter: ['text', 'html', 'json-summary'],
       include: [
         'packages/auth/src/password.ts',
+        'packages/auth/src/disposable-email.ts',
         'packages/core/src/install/**/*.ts',
         'packages/db/src/install-validate.ts',
+        'packages/db/src/install/**/*.ts',
         'apps/web/lib/install/**/*.ts',
         'apps/web/middleware.ts',
         'apps/web/app/api/install/**/*.ts',

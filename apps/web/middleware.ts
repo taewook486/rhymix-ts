@@ -31,8 +31,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const isInstallLocked = process.env.INSTALL_LOCK === '1';
 
   // (2) INSTALL_LOCK=1일 때 /install 및 /api/install/* 차단.
+  // 단, /install/complete는 1회성 환영 페이지 표시를 위해 예외(REQ-INSTALL-014 사후 UX).
+  // 페이지 자체가 세션 마커(`step==='finish'`)가 없으면 fallback 안내로 분기하므로,
+  // 미들웨어 단계에서 추가 검증은 불필요합니다.
   if (
     isInstallLocked &&
+    !pathname.startsWith('/install/complete') &&
     (pathname.startsWith('/install') || pathname.startsWith('/api/install'))
   ) {
     return new NextResponse('Gone', { status: 410 });

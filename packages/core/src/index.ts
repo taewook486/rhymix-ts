@@ -25,6 +25,7 @@ export type { SupportedLanguage } from './i18n/languages';
 export {
   dbConfigSchema,
   adminConfigSchema,
+  adminConfigSchemaWithDisposableCheck,
   licenseAgreementSchema,
   installSessionSchema,
   envCheckResultSchema,
