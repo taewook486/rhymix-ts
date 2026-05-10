@@ -1,23 +1,21 @@
 /**
- * Auth.js v5 NextAuth configuration — SPEC-AUTH-001 Slice C.
+ * Auth.js v5 NextAuth configuration — SPEC-AUTH-001 Slice C → Slice D1.
  *
  * 본 파일은 next-auth v5 (beta) 의 단일 진입점이며 Credentials Provider 의
  * `authorize()` 콜백에서 packages/auth 의 `login()` 을 호출한다. 즉, Auth.js 는
  * 세션 발급/쿠키 처리/리다이렉트만 담당하고, 실제 자격증명 검증/감사 로깅/
  * password rehash 는 `packages/auth` 가 단일 진입점으로 처리한다 (REQ-AUTH-013/14/15).
  *
- * Slice C 의 세션 전략 (deviation):
- *   - 본 슬라이스에서는 `session.strategy = 'jwt'` 를 사용한다.
- *   - SPEC L546 / REQ-AUTH-020 은 즉시 무효화를 위해 database 세션을 요구하지만,
- *     PrismaAdapter 는 `Account` / `Session` / `VerificationToken` Prisma 모델을
- *     필요로 하며 이는 현재 schema.prisma 에 존재하지 않는다 (Slice A 가 정의한
- *     스키마에는 Auth.js 어댑터용 모델이 없다). 스키마 확장은 escalation 대상이라
- *     본 슬라이스에서는 도입하지 않는다 — REQ-AUTH-020 (admin status change → session
- *     revocation) 자체가 Slice D 의 책임이므로 그 시점에 함께 추가한다.
- *   - JWT 전략에서도 `signOut()` + 쿠키 만료 변경으로 즉시 무효화 효과를 얻을 수 있으나,
- *     관리자가 외부에서 강제 무효화하려면 database 세션이 필요하다는 SPEC 의 결정이 정확.
+ * 세션 전략 (Slice D1 update):
+ *   - `session.strategy = 'jwt'` 를 유지한다 (Slice C 결정 + Slice D plan v2.0.0
+ *     Path D 채택). PrismaAdapter 도입은 폐기되었다 (User.id Int 와 Auth.js Adapter
+ *     string 타입 호환성 불가 — slice-d-plan.md Pre-Flight Q1 참조).
+ *   - 즉시 무효화 (REQ-AUTH-020) 는 Slice D1 의 SessionRevocation denylist 와 jwt
+ *     callback 의 token.iat 비교로 달성한다. admin status 변경 시 트리거 (D2) 도
+ *     본 메커니즘 위에 올라간다.
  *
- * @MX:NOTE: PrismaAdapter 도입은 Slice D 에서 — Account/Session/VerificationToken 모델 추가와 함께.
+ * @MX:NOTE: jwt/session callback 본체는 ./callbacks 로 분리되어 단위 테스트 가능 (Slice D1).
+ * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-020
  */
 
 import NextAuth, { type NextAuthConfig } from 'next-auth';
@@ -25,6 +23,8 @@ import Credentials from 'next-auth/providers/credentials';
 
 import { login } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
+
+import { createJwtCallback, createSessionCallback } from './callbacks';
 
 /**
  * Best-effort IP/User-Agent 추출 — Auth.js Credentials authorize() 의 두 번째
@@ -103,21 +103,19 @@ export const authConfig: NextAuthConfig = {
       return true;
     },
     /**
-     * JWT 토큰에 추가 클레임을 실어 보낸다 (현재는 id 만 반영).
-     * Slice D 에서 isAdmin / groups 클레임 추가 예정.
+     * JWT 콜백 — Slice D1 부터 SessionRevocation denylist 검사를 수행한다.
+     * 자세한 정책은 ./callbacks.ts 참조.
+     *
+     * NextAuthConfig 의 callback 타입은 next-auth 내부 타입(JWT, AdapterUser 등)
+     * 에 강하게 결합되어 있으나 본 callback factory 는 그 일부 필드만 사용하므로
+     * `as unknown as ...` 캐스트로 의도적으로 넓게 매칭시킨다.
      */
-    async jwt({ token, user }) {
-      if (user) {
-        token.sub = user.id;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
-      }
-      return session;
-    },
+    jwt: createJwtCallback({ prisma }) as unknown as NonNullable<
+      NextAuthConfig['callbacks']
+    >['jwt'],
+    session: createSessionCallback() as unknown as NonNullable<
+      NextAuthConfig['callbacks']
+    >['session'],
   },
 };
 
