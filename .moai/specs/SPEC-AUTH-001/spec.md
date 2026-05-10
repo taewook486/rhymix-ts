@@ -81,7 +81,7 @@ Rhymix CMS의 핵심 회원·인증 시스템을 Next.js 16(App Router)와 Postg
 ### State-Driven Requirements
 
 - **REQ-AUTH-030**: While a member's `status` is `UNAUTHED`, the system shall reject login attempts with a "verify your email" error and offer a resend-verification action.
-- **REQ-AUTH-031**: While a member's `status` is `SUSPENDED` or `DENIED`, the system shall reject login attempts with a status-specific error message.
+- **REQ-AUTH-031**: While a member's `status` is `SUSPENDED` or `DENIED`, the system shall reject login attempts. (Note: 2026-05-10 amendment — status-specific 메시지 요구는 REQ-AUTH-051(정보 누출 방지) 우선 정책에 의해 무효화됨. 응답은 INVALID_CREDENTIALS로 통일된다. Slice C 구현 일치.)
 - **REQ-AUTH-032**: While `password_force_change_after_days` is configured and a member's password is older than the configured threshold, the system shall require password change on next login before granting full access.
 - **REQ-AUTH-033**: While the count of failed `LoginAttempt` records for an IP within the configured window exceeds `max_error_count`, the system shall reject all further login attempts from that IP until the window expires.
 - **REQ-AUTH-034**: While a member belongs to a group with `is_admin = true` OR has `is_admin = true` directly, the system shall grant administrator privileges.
@@ -152,7 +152,8 @@ Rhymix CMS의 핵심 회원·인증 시스템을 Next.js 16(App Router)와 Postg
 ### AC-AUTH-031 (REQ-AUTH-031 정지 회원 로그인 차단)
 - **Given** member.status = SUSPENDED인 회원이 있고
 - **When** 올바른 자격증명으로 로그인을 시도하면
-- **Then** "계정이 정지되었습니다" 메시지가 반환되고 세션은 생성되지 않으며 LoginAttempt도 증가하지 않는다
+- **Then** 시스템은 INVALID_CREDENTIALS로 통일된 에러 응답을 반환한다 (REQ-AUTH-051 우선)
+- Note: REQ-AUTH-031의 status-specific 메시지 요구는 REQ-AUTH-051(정보 누출 방지) 우선 정책에 의해 무효화됨. 2026-05-10 amendment, Slice C 구현 일치.
 
 ### AC-AUTH-033 (REQ-AUTH-033 IP 레이트리미팅)
 - **Given** site config의 max_error_count=5, window=10min이고 같은 IP에서 5회 실패가 누적되었고
