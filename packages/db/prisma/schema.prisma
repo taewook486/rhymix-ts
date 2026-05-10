@@ -1,23 +1,23 @@
-// Rhymix-TS Prisma Schema (initial sketch from SPECs)
+// Rhymix-TS Prisma Schema
 //
-// This schema is a STARTING POINT derived from:
-//   - SPEC-INSTALL-001 (Site, SiteSetting)
-//   - SPEC-AUTH-001    (User, MemberGroup, AutoLogin, etc.)
-//   - SPEC-CONTENT-001 (Document, Comment, FileAttachment, etc.)
-//   - SPEC-ADMIN-001   (Domain, ModuleInstance, Menu, Widget)
-//   - SPEC-THEME-001   (Theme, Layout, Skin, ThemeAssignment)
-//
-// Each SPEC's domain model section contains the detailed schema; this file
-// captures only the FOUNDATION needed for /moai run SPEC-INSTALL-001.
-// The complete schema will grow during implementation cycles.
+// SPEC sources:
+//   - SPEC-INSTALL-001 (Site, SiteSetting, ModuleInstance, Domain)
+//   - SPEC-AUTH-001    (User + auth domain models — Slice A expansion)
+//   - SPEC-CONTENT-001 (Document, Comment, FileAttachment — DEFERRED)
+//   - SPEC-ADMIN-001   (Domain, ModuleInstance, Menu, Widget — partial)
+//   - SPEC-THEME-001   (Theme, Layout, Skin, ThemeAssignment — DEFERRED)
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // SPEC-AUTH-001 REQ-AUTH-002: citext for case-insensitive identifier columns.
+  // pgcrypto is reserved for future random/HMAC helpers (audit log, tokens).
+  extensions = [citext, pgcrypto]
 }
 
 // =====================================================================
@@ -91,7 +91,13 @@ model ModuleInstance {
 }
 
 // =====================================================================
-// SPEC-AUTH-001: Member system (foundational stub)
+// SPEC-AUTH-001: Member system (Slice A — full domain model)
+//
+// Deviation from spec.md sketch: User.id stays as Int @default(autoincrement())
+// to preserve compatibility with SPEC-INSTALL-001 seed code and tests. The SPEC
+// sketch used cuid() Strings; converting now would require coordinated changes
+// across install seed/install-validate and break already-shipped behavior. All
+// FK userId columns in this Slice are Int to match.
 // =====================================================================
 
 enum UserStatus {
@@ -102,30 +108,66 @@ enum UserStatus {
   DELETED
 }
 
-model User {
-  id              Int        @id @default(autoincrement())
-  userId          String     @unique
-  emailAddress    String     @unique
-  passwordHash    String
-  passwordVersion String     @default("argon2id-v1")
-  userName        String?
-  nickName        String     @unique
-  phoneNumber     String?
-  phoneCountry    String?
-  status          UserStatus @default(UNAUTHED)
-  isAdmin         Boolean    @default(false)
-  denied          Boolean    @default(false)
-  lastLoginAt     DateTime?
-  lastLoginIp     String?
-  extraVars       Json       @default("{}")
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  deletedAt       DateTime?
+enum EmailAuthTokenType {
+  SIGNUP
+  PASSWORD_RESET
+  EMAIL_CHANGE
+}
 
-  groups MemberGroupMember[]
+enum DeniedIdentifierKind {
+  USER_ID
+  NICK_NAME
+}
+
+enum LoginAttemptResult {
+  SUCCESS
+  INVALID_CREDENTIALS
+  STATUS_BLOCKED
+  RATE_LIMITED
+}
+
+enum PasswordPolicyLevel {
+  NORMAL
+  STRONG
+  VERY_STRONG
+}
+
+model User {
+  id                Int        @id @default(autoincrement())
+  // REQ-AUTH-002: citext for case-insensitive uniqueness on identifier columns.
+  userId            String     @unique @db.Citext
+  emailAddress      String     @unique @db.Citext
+  // SPEC-AUTH-001 PHC-encoded Argon2id hash.
+  passwordHash      String
+  // Backward-compat tag (install slice). Mirrors PASSWORD_VERSION_TAG in @rhymix-ts/auth.
+  passwordVersion   String     @default("argon2id-v1")
+  // SPEC-AUTH-001 REQ-AUTH-014: explicit algo + last-changed timestamp drive auto-rehash.
+  passwordAlgo      String     @default("argon2id")
+  passwordChangedAt DateTime   @default(now()) @db.Timestamptz
+  userName          String?
+  // citext on nickName so duplicate-only-by-case is rejected (REQ-AUTH-002 spirit).
+  nickName          String     @unique @db.Citext
+  phoneNumber       String?    @unique
+  phoneCountry      String?
+  status            UserStatus @default(UNAUTHED)
+  isAdmin           Boolean    @default(false)
+  denied            Boolean    @default(false)
+  lastLoginAt       DateTime?  @db.Timestamptz
+  lastLoginIp       String?
+  extraVars         Json       @default("{}")
+  createdAt         DateTime   @default(now()) @db.Timestamptz
+  updatedAt         DateTime   @updatedAt @db.Timestamptz
+  deletedAt         DateTime?  @db.Timestamptz
+
+  groups      MemberGroupMember[]
+  autoLogins  AutoLogin[]
+  emailTokens EmailAuthToken[]
+  devices     MemberDevice[]
+  agreements  MemberAgreement[]
 
   @@index([status])
   @@index([emailAddress])
+  @@index([createdAt])
   @@map("users")
 }
 
@@ -137,7 +179,7 @@ model MemberGroup {
   isAdmin   Boolean  @default(false)
   imageMark String?
   listOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz
 
   members MemberGroupMember[]
 
@@ -147,16 +189,146 @@ model MemberGroup {
 model MemberGroupMember {
   groupId  Int
   userId   Int
-  joinedAt DateTime @default(now())
+  joinedAt DateTime @default(now()) @db.Timestamptz
 
   group MemberGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([groupId, userId])
+  @@index([userId])
   @@map("member_group_members")
 }
 
+// SPEC-AUTH-001 REQ-AUTH-018, REQ-AUTH-019, REQ-AUTH-053: rotating remember-me secret.
+model AutoLogin {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  securityKey String   @unique
+  previousKey String?  @unique
+  ip          String
+  userAgent   String   @db.Text
+  deviceId    String?
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  lastUsedAt  DateTime @default(now()) @db.Timestamptz
+  expiresAt   DateTime @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auto_logins")
+}
+
+// SPEC-AUTH-001 REQ-AUTH-011, REQ-AUTH-012, REQ-AUTH-016: single-use email tokens.
+model EmailAuthToken {
+  id         Int                @id @default(autoincrement())
+  userId     Int
+  authKey    String             @unique
+  authType   EmailAuthTokenType
+  payload    Json?
+  createdAt  DateTime           @default(now()) @db.Timestamptz
+  expiresAt  DateTime           @db.Timestamptz
+  consumedAt DateTime?          @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, authType])
+  @@index([expiresAt])
+  @@map("email_auth_tokens")
+}
+
+// SPEC-AUTH-001 REQ-AUTH-043: per-device tracking for autologin trust.
+model MemberDevice {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  deviceId    String
+  ip          String
+  userAgent   String   @db.Text
+  firstSeenAt DateTime @default(now()) @db.Timestamptz
+  lastSeenAt  DateTime @default(now()) @db.Timestamptz
+  trusted     Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@map("member_devices")
+}
+
+// SPEC-AUTH-001 US-AUTH-009: configurable signup form (per-site overrides).
+model JoinFormField {
+  id        Int      @id @default(autoincrement())
+  siteSrl   Int      @default(0)
+  fieldName String
+  fieldType String
+  label     String
+  required  Boolean  @default(false)
+  visible   Boolean  @default(true)
+  fieldOrder Int     @default(0)
+  options   Json?
+
+  @@unique([siteSrl, fieldName])
+  @@map("join_form_fields")
+}
+
+// SPEC-AUTH-001 Open Question 6: legal-agreement versioning at signup time.
+model MemberAgreement {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  agreementKey String
+  version      String
+  agreedAt     DateTime @default(now()) @db.Timestamptz
+  ip           String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, agreementKey])
+  @@map("member_agreements")
+}
+
+// SPEC-AUTH-001 REQ-AUTH-015, REQ-AUTH-033: brute-force / rate-limit ledger.
+model LoginAttempt {
+  id         Int                @id @default(autoincrement())
+  ip         String
+  identifier String?
+  result     LoginAttemptResult
+  createdAt  DateTime           @default(now()) @db.Timestamptz
+
+  @@index([ip, createdAt])
+  @@index([createdAt])
+  @@map("login_attempts")
+}
+
+// SPEC-AUTH-001 REQ-AUTH-052: signup-time blocklist for user_id / nickname patterns.
+model DeniedIdentifier {
+  id        Int                  @id @default(autoincrement())
+  kind      DeniedIdentifierKind
+  pattern   String               @db.Citext
+  reason    String?
+  createdBy String?
+  createdAt DateTime             @default(now()) @db.Timestamptz
+
+  @@unique([kind, pattern])
+  @@map("denied_identifiers")
+}
+
+// SPEC-AUTH-001 REQ-AUTH-004: append-only audit log for state-changing auth events.
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  actorId   Int?
+  targetId  Int?
+  action    String
+  metadata  Json     @default("{}")
+  ip        String?
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([actorId, createdAt])
+  @@index([targetId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
 // =====================================================================
-// Additional models (Document, Comment, Layout, Theme, etc.) are
-// DEFERRED to their respective /moai run SPEC-XXX-001 cycles.
+// SPEC-CONTENT-001 / SPEC-THEME-001 models DEFERRED to their own slices.
 // =====================================================================
