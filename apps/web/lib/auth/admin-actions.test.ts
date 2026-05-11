@@ -13,15 +13,18 @@ const {
   authMock,
   changeUserStatusMock,
   softDeleteUserMock,
+  toggleAdminRoleMock,
 } = vi.hoisted(() => ({
   authMock: vi.fn(),
   changeUserStatusMock: vi.fn(),
   softDeleteUserMock: vi.fn(),
+  toggleAdminRoleMock: vi.fn(),
 }));
 
 vi.mock('@rhymix-ts/auth', () => ({
   changeUserStatus: changeUserStatusMock,
   softDeleteUser: softDeleteUserMock,
+  toggleAdminRole: toggleAdminRoleMock,
 }));
 
 vi.mock('@rhymix-ts/db', () => ({
@@ -35,6 +38,7 @@ vi.mock('@/lib/auth/config', () => ({
 import {
   setMemberStatusAction,
   deleteMemberAction,
+  toggleAdminRoleAction,
   initialAdminActionState,
 } from './admin-actions';
 
@@ -42,6 +46,7 @@ beforeEach(() => {
   authMock.mockReset();
   changeUserStatusMock.mockReset();
   softDeleteUserMock.mockReset();
+  toggleAdminRoleMock.mockReset();
 });
 
 function buildForm(values: Record<string, string>): FormData {
@@ -206,5 +211,63 @@ describe('deleteMemberAction', () => {
       code: 'INSUFFICIENT_PRIVILEGES',
     });
     expect(softDeleteUserMock).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// toggleAdminRoleAction
+// ---------------------------------------------------------------------------
+
+describe('toggleAdminRoleAction', () => {
+  it('9) admin 호출자 + 승격 → ok:true', async () => {
+    authMock.mockResolvedValue({
+      user: { id: 1, isAdmin: true, groups: [] },
+    });
+    toggleAdminRoleMock.mockResolvedValue({ ok: true });
+    const result = await toggleAdminRoleAction(
+      initialAdminActionState,
+      buildForm({ targetUserId: '42', setAdmin: 'true' }),
+    );
+    expect(result).toMatchObject({ ok: true });
+    expect(toggleAdminRoleMock).toHaveBeenCalledWith(
+      { targetUserId: 42, setAdmin: true, actorId: 1 },
+      expect.any(Object),
+    );
+  });
+
+  it('10) LAST_ADMIN_PROTECTED → formError 포함', async () => {
+    authMock.mockResolvedValue({
+      user: { id: 1, isAdmin: true, groups: [] },
+    });
+    toggleAdminRoleMock.mockResolvedValue({
+      ok: false,
+      code: 'LAST_ADMIN_PROTECTED',
+    });
+    const result = await toggleAdminRoleAction(
+      initialAdminActionState,
+      buildForm({ targetUserId: '1', setAdmin: 'false' }),
+    );
+    expect(result).toMatchObject({
+      ok: false,
+      code: 'LAST_ADMIN_PROTECTED',
+    });
+    if (!result.ok) {
+      expect(typeof result.formError).toBe('string');
+    }
+  });
+
+  it('11) 비-admin 호출자 → INSUFFICIENT_PRIVILEGES', async () => {
+    authMock.mockResolvedValue({
+      user: { id: 5, isAdmin: false, groups: [] },
+    });
+    const result = await toggleAdminRoleAction(
+      initialAdminActionState,
+      buildForm({ targetUserId: '42', setAdmin: 'true' }),
+    );
+    expect(result).toMatchObject({
+      ok: false,
+      code: 'INSUFFICIENT_PRIVILEGES',
+    });
+    expect(toggleAdminRoleMock).not.toHaveBeenCalled();
   });
 });

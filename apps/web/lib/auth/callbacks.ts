@@ -44,6 +44,16 @@ export interface CallbackDeps {
     tokenIssuedAt: Date,
     ctx: { prisma: PrismaClient },
   ) => Promise<boolean>;
+  /**
+   * Slice E-5: RBAC claims enrichment. Sign-in 시 사용자의 isAdmin + groups 를
+   * DB 에서 조회하는 함수. 미지정 시 prisma 를 직접 사용한다.
+   */
+  fetchUserForClaims?: (
+    userId: number,
+  ) => Promise<{
+    isAdmin: boolean;
+    groups: Array<{ group: { id: number; isAdmin: boolean } }>;
+  } | null>;
 }
 
 interface JwtCallbackArgs {
@@ -57,11 +67,44 @@ interface SessionCallbackArgs {
 }
 
 // ---------------------------------------------------------------------------
+// Default RBAC claims fetcher
+// ---------------------------------------------------------------------------
+
+/**
+ * Slice E-5: 기본 RBAC claims 조회 함수. Production 에서 사용.
+ * MemberGroupMember → MemberGroup 관계를 통해 groups 를 조회한다.
+ * 테스트에서는 fetchUserForClaims 를 주입하여 DB 의존성을 제거한다.
+ *
+ * 주의: 이 함수는 createJwtCallback 의 closure 에서 deps.prisma 에 접근한다.
+ * 아래 factory 에서 동적으로 바인딩.
+ */
+function buildDefaultFetchUserForClaims(prisma: PrismaClient) {
+  return async (userId: number) => {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        groups: {
+          include: {
+            group: { select: { id: true, isAdmin: true } },
+          },
+        },
+      },
+    } as never) as {
+      isAdmin: boolean;
+      groups: Array<{ group: { id: number; isAdmin: boolean } }>;
+    } | null;
+
+    return user;
+  };
+}
+
+// ---------------------------------------------------------------------------
 // jwt callback factory
 // ---------------------------------------------------------------------------
 
 export function createJwtCallback(deps: CallbackDeps) {
   const isRevoked = deps.isSessionRevoked ?? defaultIsSessionRevoked;
+  const defaultFetchUserForClaims = buildDefaultFetchUserForClaims(deps.prisma);
 
   return async function jwt(
     args: JwtCallbackArgs,
@@ -76,6 +119,26 @@ export function createJwtCallback(deps: CallbackDeps) {
       if (typeof token.iat !== 'number') {
         token.iat = Math.floor(Date.now() / 1000);
       }
+
+      // Slice E-5: RBAC claims enrichment — isAdmin + groups 를 토큰에 주입.
+      const userId = Number.parseInt(String(user.id), 10);
+      if (Number.isFinite(userId) && userId > 0) {
+        try {
+          const fetchFn = deps.fetchUserForClaims ?? defaultFetchUserForClaims;
+          const userData = await fetchFn(userId);
+          if (userData) {
+            token.isAdmin = userData.isAdmin;
+            token.groups = userData.groups.map((m) => ({
+              id: m.group.id,
+              isAdmin: m.group.isAdmin,
+            }));
+          }
+        } catch {
+          // RBAC claims 주입 실패 시에도 로그인 자체는 성공해야 한다.
+          // isAdmin/groups 미주입 → session callback 에서 기본값으로 처리.
+        }
+      }
+
       return token;
     }
 
@@ -124,6 +187,11 @@ export function createSessionCallback() {
     }
     if (session.user) {
       session.user.id = token.sub;
+      // Slice E-5: RBAC claims 를 session.user 에 복사.
+      (session.user as Record<string, unknown>).isAdmin =
+        (token.isAdmin as boolean) ?? false;
+      (session.user as Record<string, unknown>).groups =
+        (token.groups as unknown[]) ?? [];
     }
     return session;
   };

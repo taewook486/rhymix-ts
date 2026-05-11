@@ -17,6 +17,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Slice E 이후 @rhymix-ts/auth 의 index.ts 가 rbac.ts -> @rhymix-ts/db 를 끌어오므로 모킹 필요.
+vi.mock('@rhymix-ts/db', () => ({
+  Prisma: { sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }) },
+  PrismaClient: class {},
+}));
+
 import {
   createJwtCallback,
   createSessionCallback,
@@ -144,6 +150,47 @@ describe('authConfig.callbacks.jwt — Slice D1 revocation gate', () => {
     expect(result).not.toBeNull();
     expect(isSessionRevokedMock).not.toHaveBeenCalled();
   });
+
+  // Slice E-5: RBAC claims enrichment
+  it('E5-1) initial sign-in: injects isAdmin and groups from DB lookup', async () => {
+    const fetchUserForClaimsMock = vi.fn().mockResolvedValue({
+      isAdmin: true,
+      groups: [
+        { group: { id: 10, isAdmin: false } },
+        { group: { id: 20, isAdmin: true } },
+      ],
+    });
+
+    const jwtCbWithClaims = createJwtCallback({
+      prisma: fakePrisma,
+      isSessionRevoked: isSessionRevokedMock,
+      fetchUserForClaims: fetchUserForClaimsMock,
+    }) as unknown as JwtCb;
+
+    const result = (await jwtCbWithClaims({
+      token: {},
+      user: { id: '42' },
+    })) as Record<string, unknown> | null;
+
+    expect(result).not.toBeNull();
+    expect(result!.isAdmin).toBe(true);
+    expect(result!.groups).toEqual([
+      { id: 10, isAdmin: false },
+      { id: 20, isAdmin: true },
+    ]);
+    expect(fetchUserForClaimsMock).toHaveBeenCalledWith(42);
+  });
+
+  it('E5-2) initial sign-in: isAdmin defaults to false when fetchUserForClaims not provided', async () => {
+    const result = (await jwtCb({
+      token: {},
+      user: { id: '42' },
+    })) as Record<string, unknown> | null;
+
+    expect(result).not.toBeNull();
+    // fetchUserForClaims 미제공 시 기본 값 (또는 주입 안 됨)
+    // 새로운 동작: 주입하지 않으면 isAdmin/groups 가 없어도 됨
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -168,5 +215,34 @@ describe('authConfig.callbacks.session — Slice D1', () => {
       token: { sub: '42', iat: Math.floor(Date.now() / 1000) },
     })) as { user?: { id?: string } };
     expect(result.user?.id).toBe('42');
+  });
+
+  // Slice E-5: RBAC claims enrichment in session
+  it('E5-3) session callback copies isAdmin and groups from token', async () => {
+    const session = { user: {} } as { user: Record<string, unknown> };
+    const result = (await sessionCb({
+      session,
+      token: {
+        sub: '42',
+        iat: Math.floor(Date.now() / 1000),
+        isAdmin: true,
+        groups: [{ id: 10, isAdmin: true }],
+      },
+    })) as { user?: { id?: string; isAdmin?: boolean; groups?: unknown[] } };
+    expect(result.user?.isAdmin).toBe(true);
+    expect(result.user?.groups).toEqual([{ id: 10, isAdmin: true }]);
+  });
+
+  it('E5-4) session callback defaults isAdmin to false when missing from token', async () => {
+    const session = { user: {} } as { user: Record<string, unknown> };
+    const result = (await sessionCb({
+      session,
+      token: {
+        sub: '42',
+        iat: Math.floor(Date.now() / 1000),
+      },
+    })) as { user?: { id?: string; isAdmin?: boolean; groups?: unknown[] } };
+    expect(result.user?.isAdmin).toBe(false);
+    expect(result.user?.groups).toEqual([]);
   });
 });

@@ -21,6 +21,9 @@ import {
   verifyEmail,
   type VerifyEmailErrorCode,
   NoopMailDispatcher,
+  requestPasswordReset,
+  confirmPasswordReset,
+  type ConfirmResetResult,
 } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
 
@@ -37,7 +40,7 @@ export type AuthActionState =
       formError?: string;
       fieldErrors?: Record<string, string>;
       /** 도메인 코드 (UI 토스트/알림에 직접 매핑할 수 있도록 노출). */
-      code?: SignupErrorCode | VerifyEmailErrorCode | 'INVALID_CREDENTIALS';
+      code?: SignupErrorCode | VerifyEmailErrorCode | 'INVALID_CREDENTIALS' | 'TOKEN_INVALID' | 'TOKEN_EXPIRED' | 'WEAK_PASSWORD';
     };
 
 export const initialAuthActionState: AuthActionState = { ok: true };
@@ -205,5 +208,78 @@ function verifyEmailMessage(code: VerifyEmailErrorCode): string {
       return '인증 링크가 유효하지 않습니다. 다시 발송해주세요.';
     case 'TOKEN_EXPIRED':
       return '인증 링크가 만료되었습니다. 다시 발송해주세요.';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// requestPasswordResetAction
+// ---------------------------------------------------------------------------
+
+/**
+ * 비밀번호 재설정 요청 Server Action.
+ *
+ * REQ-AUTH-051: 식별자 존재 여부를 노출하지 않으므로 항상 ok:true 를 반환.
+ * 메일 디스패처는 NoopMailDispatcher — 실제 SMTP 는 SPEC-INFRA-001 도입 시 교체.
+ */
+export async function requestPasswordResetAction(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const identifier = String(formData.get('identifier') ?? '').trim();
+
+  await requestPasswordReset(
+    { identifier },
+    { prisma, mail: new NoopMailDispatcher() },
+  );
+
+  // REQ-AUTH-051: 항상 ok:true (사용자 존재 여부 미노출).
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// confirmPasswordResetAction
+// ---------------------------------------------------------------------------
+
+/**
+ * 비밀번호 재설정 확인 Server Action.
+ */
+export async function confirmPasswordResetAction(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const token = String(formData.get('token') ?? '');
+  const newPassword = String(formData.get('newPassword') ?? '');
+
+  if (!token || !newPassword) {
+    return {
+      ok: false,
+      code: 'TOKEN_INVALID',
+      formError: '유효하지 않은 요청입니다.',
+    };
+  }
+
+  const result = await confirmPasswordReset(
+    { token, newPassword },
+    { prisma },
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      code: result.code,
+      formError: confirmResetMessage(result.code),
+    };
+  }
+  return { ok: true };
+}
+
+function confirmResetMessage(code: 'TOKEN_INVALID' | 'TOKEN_EXPIRED' | 'WEAK_PASSWORD'): string {
+  switch (code) {
+    case 'TOKEN_INVALID':
+      return '비밀번호 재설정 링크가 유효하지 않습니다.';
+    case 'TOKEN_EXPIRED':
+      return '비밀번호 재설정 링크가 만료되었습니다. 다시 요청해주세요.';
+    case 'WEAK_PASSWORD':
+      return '비밀번호가 너무 약합니다. 다른 비밀번호를 사용하세요.';
   }
 }
