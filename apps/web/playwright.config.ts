@@ -21,7 +21,8 @@ function loadEnvLocal(): void {
     if (!line || line.startsWith('#')) continue;
     const match = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
     if (!match) continue;
-    const [, key, rawValue] = match;
+    const key = match[1]!;
+    const rawValue = match[2]!;
     if (process.env[key] !== undefined && process.env[key] !== '') continue;
     let value = rawValue;
     if (
