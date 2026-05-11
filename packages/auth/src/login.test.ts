@@ -124,6 +124,7 @@ function buildFakePrisma(opts: FakeOptions = {}) {
       },
     },
     loginAttempt: {
+      count: async () => 0,
       create: async (args: { data: FakeLoginAttempt }) => {
         const row = { ...args.data, id: nextLoginAttemptId++ };
         loginAttempts.push(args.data);

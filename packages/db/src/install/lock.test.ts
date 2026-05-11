@@ -7,6 +7,14 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 
+// `@prisma/client`는 prisma generate 없이 PrismaClient 초기화에 실패한다.
+// 본 단위 테스트는 $queryRaw만 필요하므로 Prisma.sql만 최소 mock한다.
+vi.mock('@prisma/client', () => ({
+  Prisma: {
+    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+  },
+}));
+
 import { acquireInstallLock } from './lock';
 
 interface FakePrisma {

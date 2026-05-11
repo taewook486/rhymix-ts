@@ -16,7 +16,7 @@
  * @MX:REASON: 권한 검증과 actorId 추출, 도메인 함수 위임이 한 곳에 모여야 우회 경로가 생기지 않는다.
  * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-020, REQ-AUTH-021, REQ-AUTH-034
  */
-import { changeUserStatus, softDeleteUser } from '@rhymix-ts/auth';
+import { changeUserStatus, softDeleteUser, toggleAdminRole } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
 
 import { auth } from './config';
@@ -137,6 +137,40 @@ export async function deleteMemberAction(
 
   const result = await softDeleteUser(
     { targetUserId, actorId },
+    { prisma },
+  );
+  if (!result.ok) {
+    return fail(result.code);
+  }
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// toggleAdminRoleAction
+// ---------------------------------------------------------------------------
+
+export async function toggleAdminRoleAction(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const session = await auth();
+  if (!isAdminSession(session)) {
+    return fail('INSUFFICIENT_PRIVILEGES');
+  }
+  const actorId = session.user.id;
+
+  const targetUserId = parseTargetUserId(formData);
+  const setAdminRaw = String(formData.get('setAdmin') ?? '').trim();
+  if (targetUserId === null || (setAdminRaw !== 'true' && setAdminRaw !== 'false')) {
+    return fail('VALIDATION_FAILED');
+  }
+
+  const result = await toggleAdminRole(
+    {
+      targetUserId,
+      setAdmin: setAdminRaw === 'true',
+      actorId,
+    },
     { prisma },
   );
   if (!result.ok) {

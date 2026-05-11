@@ -73,6 +73,37 @@ export {
   LastAdminProtectedError,
 } from './rbac';
 
+// SPEC-AUTH-001 Slice E — autologin / remember me (REQ-AUTH-018, REQ-AUTH-019, REQ-AUTH-053).
+export { createAutoLogin, verifyAutoLogin, revokeAutoLogin } from './autologin';
+export type {
+  CreateAutoLoginInput,
+  CreateAutoLoginCtx,
+  VerifyAutoLoginInput,
+  VerifyAutoLoginCtx,
+  AutoLoginResult,
+  RevokeAutoLoginInput,
+  RevokeAutoLoginCtx,
+} from './autologin';
+
+// SPEC-AUTH-001 Slice E — password reset (REQ-AUTH-016, REQ-AUTH-017, AC-AUTH-017).
+export { requestPasswordReset, confirmPasswordReset } from './password-reset';
+export type {
+  RequestPasswordResetInput,
+  RequestPasswordResetCtx,
+  ConfirmPasswordResetInput,
+  ConfirmPasswordResetCtx,
+  PasswordResetResult,
+  ConfirmResetResult,
+} from './password-reset';
+
+// SPEC-AUTH-001 Slice E — admin role toggle (REQ-AUTH-054, AC-AUTH-054).
+export { toggleAdminRole } from './admin-role';
+export type {
+  ToggleAdminRoleInput,
+  ToggleAdminRoleCtx,
+  ToggleAdminRoleResult,
+} from './admin-role';
+
 // SPEC-AUTH-001 Slice D2 — admin features (REQ-AUTH-020, REQ-AUTH-021).
 export { changeUserStatus, softDeleteUser } from './admin';
 export type {

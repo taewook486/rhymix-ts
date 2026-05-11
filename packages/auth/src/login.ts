@@ -43,6 +43,10 @@ export interface LoginInput {
 export interface LoginConfig {
   /** REQ-AUTH-041: only 'normal' is enforced in Slice C. */
   passwordPolicy: 'normal' | 'strong' | 'very_strong';
+  /** REQ-AUTH-033: IP 기반 rate-limit window 내 최대 실패 횟수 (기본 5). */
+  maxErrorCount?: number;
+  /** REQ-AUTH-033: rate-limit window 길이 (분, 기본 10). */
+  windowMinutes?: number;
 }
 
 /** Public-facing user payload — never includes passwordHash. */
@@ -63,7 +67,7 @@ export interface LoginResult {
 
 export interface LoginFailure {
   ok: false;
-  code: 'INVALID_CREDENTIALS';
+  code: 'INVALID_CREDENTIALS' | 'RATE_LIMITED';
   // 의도적으로 추가 필드 없음 — REQ-AUTH-051.
 }
 
@@ -112,6 +116,29 @@ export async function login(
   const identifier = rawInput.identifier.trim();
   const ip = rawInput.ip;
   const userAgent = rawInput.userAgent ?? '';
+
+  // 0.5) Rate-limit gate — REQ-AUTH-033, AC-AUTH-033.
+  //   window 내 INVALID_CREDENTIALS 실패 횟수가 maxErrorCount 이상이면 즉시 차단.
+  const maxErrorCount = ctx.config.maxErrorCount ?? 5;
+  const windowMinutes = ctx.config.windowMinutes ?? 10;
+  const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000);
+  const failCount = await ctx.prisma.loginAttempt.count({
+    where: {
+      ip,
+      result: 'INVALID_CREDENTIALS',
+      createdAt: { gt: windowStart },
+    } as never,
+  });
+  if (failCount >= maxErrorCount) {
+    await ctx.prisma.loginAttempt.create({
+      data: {
+        ip,
+        identifier,
+        result: 'RATE_LIMITED',
+      } as never,
+    });
+    return { ok: false, code: 'RATE_LIMITED' };
+  }
 
   // 1) DeniedIdentifier check — REQ-AUTH-052는 가입 단계가 1차이지만,
   //    이미 가입한 식별자가 사후 차단 목록에 추가될 수 있으므로 로그인에서도 검사.

@@ -16,6 +16,15 @@
  *   - self APPROVED: 차단 (의미 없음 + 4-eye 원칙)
  */
 
+// `@rhymix-ts/db`는 모듈 로드 시 PrismaClient를 초기화한다.
+// 단위 테스트는 fake prisma를 직접 주입하므로 초기화 없이 Prisma.sql만 제공한다.
+import { vi } from 'vitest';
+vi.mock('@rhymix-ts/db', () => ({
+  Prisma: {
+    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+  },
+}));
+
 import type { PrismaClient } from '@rhymix-ts/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 

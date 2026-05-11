@@ -17,6 +17,8 @@ const {
   signupMock,
   verifyEmailMock,
   signInMock,
+  requestPasswordResetMock,
+  confirmPasswordResetMock,
 } = vi.hoisted(() => ({
   headersGetMock: vi.fn((name: string) => {
     if (name === 'x-forwarded-for') return '203.0.113.5';
@@ -26,6 +28,8 @@ const {
   signupMock: vi.fn(),
   verifyEmailMock: vi.fn(),
   signInMock: vi.fn(),
+  requestPasswordResetMock: vi.fn(),
+  confirmPasswordResetMock: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -35,6 +39,8 @@ vi.mock('next/headers', () => ({
 vi.mock('@rhymix-ts/auth', () => ({
   signup: signupMock,
   verifyEmail: verifyEmailMock,
+  requestPasswordReset: requestPasswordResetMock,
+  confirmPasswordReset: confirmPasswordResetMock,
   // NoopMailDispatcher는 actions.ts에서 사용되므로 가벼운 더블 제공.
   NoopMailDispatcher: class {
     async dispatch(): Promise<void> {
@@ -55,6 +61,8 @@ import {
   signupAction,
   loginAction,
   verifyEmailAction,
+  requestPasswordResetAction,
+  confirmPasswordResetAction,
   initialAuthActionState,
 } from './actions';
 
@@ -62,6 +70,8 @@ beforeEach(() => {
   signupMock.mockReset();
   verifyEmailMock.mockReset();
   signInMock.mockReset();
+  requestPasswordResetMock.mockReset();
+  confirmPasswordResetMock.mockReset();
   headersGetMock.mockClear();
 });
 
@@ -195,5 +205,61 @@ describe('verifyEmailAction', () => {
     verifyEmailMock.mockResolvedValue({ ok: false, code: 'TOKEN_INVALID' });
     const result = await verifyEmailAction(initialAuthActionState, buildForm({ token: 'tok' }));
     expect(result).toMatchObject({ ok: false, code: 'TOKEN_INVALID' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// requestPasswordResetAction
+// ---------------------------------------------------------------------------
+
+describe('requestPasswordResetAction', () => {
+  it('항상 ok:true 반환 (REQ-AUTH-051)', async () => {
+    requestPasswordResetMock.mockResolvedValue({ ok: true });
+    const result = await requestPasswordResetAction(
+      initialAuthActionState,
+      buildForm({ identifier: 'alice@example.com' }),
+    );
+    expect(result).toEqual({ ok: true });
+    expect(requestPasswordResetMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// confirmPasswordResetAction
+// ---------------------------------------------------------------------------
+
+describe('confirmPasswordResetAction', () => {
+  it('성공 → ok:true', async () => {
+    confirmPasswordResetMock.mockResolvedValue({ ok: true });
+    const result = await confirmPasswordResetAction(
+      initialAuthActionState,
+      buildForm({ token: 'tok', newPassword: 'new-password-strong' }),
+    );
+    expect(result).toEqual({ ok: true });
+    expect(confirmPasswordResetMock).toHaveBeenCalledWith(
+      { token: 'tok', newPassword: 'new-password-strong' },
+      expect.any(Object),
+    );
+  });
+
+  it('WEAK_PASSWORD → formError 포함', async () => {
+    confirmPasswordResetMock.mockResolvedValue({ ok: false, code: 'WEAK_PASSWORD' });
+    const result = await confirmPasswordResetAction(
+      initialAuthActionState,
+      buildForm({ token: 'tok', newPassword: 'short' }),
+    );
+    expect(result).toMatchObject({ ok: false, code: 'WEAK_PASSWORD' });
+    if (!result.ok) {
+      expect(typeof result.formError).toBe('string');
+    }
+  });
+
+  it('빈 토큰 → TOKEN_INVALID', async () => {
+    const result = await confirmPasswordResetAction(
+      initialAuthActionState,
+      buildForm({ token: '', newPassword: 'some-password' }),
+    );
+    expect(result).toMatchObject({ ok: false, code: 'TOKEN_INVALID' });
+    expect(confirmPasswordResetMock).not.toHaveBeenCalled();
   });
 });
