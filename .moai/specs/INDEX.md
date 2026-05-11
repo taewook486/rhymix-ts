@@ -21,7 +21,7 @@
 |---|---|---|---|---|
 | [SPEC-INSTALL-001](./SPEC-INSTALL-001/spec.md) | Initial Installation Wizard | P0 | draft | ~330 |
 | [SPEC-ADMIN-001](./SPEC-ADMIN-001/spec.md) | Admin Dashboard & Module System | P0 | draft | 976 |
-| [SPEC-AUTH-001](./SPEC-AUTH-001/spec.md) | Authentication & Member System | P0 | in-progress (Slice A-D2/5 완료, 291 tests) | 633 |
+| [SPEC-AUTH-001](./SPEC-AUTH-001/spec.md) | Authentication & Member System | P0 | in-progress (Slice A-E 완료, 325 tests) | 633 |
 | [SPEC-CONTENT-001](./SPEC-CONTENT-001/spec.md) | Content & Board System | P0 | draft | 751 |
 | [SPEC-THEME-001](./SPEC-THEME-001/spec.md) | Theme, Layout & Skin System | P1 | draft | 656 |
 

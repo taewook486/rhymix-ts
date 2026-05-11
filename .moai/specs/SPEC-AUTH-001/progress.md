@@ -785,3 +785,114 @@ Methodology: TDD (RED-GREEN-REFACTOR). 5개 서브 태스크.
 ### Blockers
 
 없음. Slice E 의 5개 서브 태스크 모두 완료. 모든 신규 테스트 통과. 기존 테스트 회귀 없음.
+
+---
+
+## Slice F — Auth UI Pages + Middleware (2026-05-11)
+
+Branch: `main` (built on Slice E / main = `29bdeca`).
+Methodology: TDD (RED-GREEN-REFACTOR).
+
+### Delivered
+
+1. **(auth) Layout** (`apps/web/app/(auth)/layout.tsx`)
+   - Server Component, min-h-screen flex 중앙 정렬, max-w-md 카드 컨테이너.
+   - 모든 인증 페이지(login, signup, verify-email, password-reset)가 공유.
+
+2. **Login Page** (`apps/web/app/(auth)/login/page.tsx`)
+   - Client Component, `useActionState(loginAction, initialAuthActionState)`.
+   - identifier(text) + password(password) 필드, 에러 메시지 Alert 표시.
+   - /signup, /password-reset 링크 포함.
+
+3. **Signup Page** (`apps/web/app/(auth)/signup/page.tsx`)
+   - Client Component, `useActionState(signupAction, initialAuthActionState)`.
+   - userId, email, password, nickName 4개 필드.
+   - 성공 시 "이메일을 확인하세요" 메시지 표시 (리다이렉트 없음).
+
+4. **Verify Email Page** (`apps/web/app/(auth)/verify-email/page.tsx`)
+   - Server Component, `searchParams` (Promise) 에서 token 추출.
+   - 토큰 없음: "잘못된 접근입니다" 에러 표시.
+   - `verifyEmail` 도메인 함수 직접 호출 (Server Action 불필요).
+   - 성공/실패 메시지 표시.
+
+5. **Password Reset Request Page** (`apps/web/app/(auth)/password-reset/page.tsx`)
+   - Client Component, `useActionState(requestPasswordResetAction, ...)`.
+   - identifier 필드, 제출 후 항상 동일한 성공 메시지 (REQ-AUTH-051).
+
+6. **Password Reset Confirm Page** (`apps/web/app/(auth)/password-reset/confirm/page.tsx`)
+   - Client Component, `useSearchParams()` 로 URL 토큰 추출.
+   - 토큰 없음: 에러 메시지, 토큰 있음: 새 비밀번호 폼 + hidden token input.
+   - `useActionState(confirmPasswordResetAction, ...)`.
+
+7. **Middleware** (`apps/web/middleware.ts`)
+   - `NextAuth(authConfig).auth` wrapper 패턴.
+   - protectedRoutes: /dashboard, /admin, /settings, /profile → 비인증 시 /login 리다이렉트 (callbackUrl 포함).
+   - authOnlyRoutes: /login, /signup, /password-reset → 인증 시 / 리다이렉트.
+   - matcher: API, _next/static, _next/image, favicon.ico 제외.
+
+8. **playwright.config.ts fix**
+   - 기존 regex match 의 undefined 가능성 typecheck 에러 수정 (`match[1]!`, `match[2]!`).
+
+### Files Created / Modified
+
+| File | Status | LOC (approx) |
+|---|---|---|
+| `apps/web/app/(auth)/layout.tsx` | new | 17 |
+| `apps/web/app/(auth)/login/page.tsx` | new | 87 |
+| `apps/web/app/(auth)/login/page.test.tsx` | new | 97 |
+| `apps/web/app/(auth)/signup/page.tsx` | new | 132 |
+| `apps/web/app/(auth)/signup/page.test.tsx` | new | 108 |
+| `apps/web/app/(auth)/verify-email/page.tsx` | new | 82 |
+| `apps/web/app/(auth)/verify-email/page.test.tsx` | new | 88 |
+| `apps/web/app/(auth)/password-reset/page.tsx` | new | 95 |
+| `apps/web/app/(auth)/password-reset/page.test.tsx` | new | 94 |
+| `apps/web/app/(auth)/password-reset/confirm/page.tsx` | new | 98 |
+| `apps/web/app/(auth)/password-reset/confirm/page.test.tsx` | new | 114 |
+| `apps/web/middleware.ts` | new | 44 |
+| `apps/web/middleware.test.ts` | new | 117 |
+| `apps/web/playwright.config.ts` | edit | +2/-2 |
+| `vitest.config.ts` | edit | +3 (esbuild jsx: automatic) |
+| `apps/web/package.json` | edit (+devDeps: @testing-library/react, jest-dom, user-event, jsdom) | +4 |
+
+### Tests
+
+- **29개 신규 테스트** 추가 (5 login + 5 signup + 4 verify-email + 4 password-reset + 4 password-reset/confirm + 7 middleware).
+- 전체 프로젝트 테스트 수: **354 passed, 3 skipped** (Slice E 의 325 → 354, 델타 +29).
+- 기존 325개 테스트 전부 통과 (회귀 없음).
+
+### Verification
+
+| Command | Result |
+|---|---|
+| `pnpm test` | 354 passed, 3 skipped, 0 failed |
+| `pnpm --filter @rhymix-ts/web typecheck` (Slice F 파일만) | 0 errors (playwright.config.ts fix 포함) |
+
+### Acceptance Criteria
+
+- **AC-AUTH-F001** ✅ — Login form: identifier + password 필드, loginAction 연결, 에러 표시, pending 상태 처리
+- **AC-AUTH-F002** ✅ — Signup form: 4개 필드, signupAction 연결, 성공 시 "이메일을 확인하세요" 메시지
+- **AC-AUTH-F003** ✅ — verify-email: token 자동 실행, 성공/실패 메시지 표시
+- **AC-AUTH-F004** ✅ — Password reset request: 항상 성공 메시지 (REQ-AUTH-051 no disclosure)
+- **AC-AUTH-F005** ✅ — Password reset confirm: token + newPassword 제출, 에러 표시
+- **AC-AUTH-F006** ✅ — Middleware: 비인증 사용자 보호 경로 → /login 리다이렉트 (callbackUrl 포함)
+- **AC-AUTH-F007** ✅ — Middleware: 인증 사용자 인증 전용 경로 → / 리다이렉트
+- **AC-AUTH-F008** ✅ — playwright.config.ts typecheck clean (기존 에러 수정 완료)
+
+### Deviations
+
+1. **shadcn/ui 미사용** — `apps/web/components/ui/` 가 비어있으므로 plain HTML + Tailwind CSS 사용.
+2. **vitest config 변경** — `esbuild.jsx: 'automatic'` 추가 (tsx 테스트 파일에서 React auto-import 필요).
+3. **verify-email 은 Server Component 에서 도메인 함수 직접 호출** — Server Action form 제출이 아닌 링크 클릭 흐름이므로 `verifyEmail` 을 직접 호출.
+4. **Signup 성공 감지** — `useState(submitted)` 로 Server Action 호출 완료를 추적하고, `ok:true + submitted` 조합으로 성공 메시지 표시.
+5. **테스트에서 `vi.mock('react')` 패턴** — `useActionState` ESM binding 을 오버라이드하기 위해 `vi.mock('react', importOriginal)` 사용. JSX transform은 `esbuild.jsx: 'automatic'`이 `react/jsx-runtime` 을 직접 사용하므로 react 모듈 모킹에 영향받지 않음.
+
+### Open `@MX:TODO` ledger (Slice F additions)
+
+신규 `@MX:TODO` 없음. 새 `@MX:NOTE` 2개, `@MX:ANCHOR` 1개 추가:
+- `apps/web/app/(auth)/verify-email/page.tsx` — `@MX:NOTE`: Server Component 에서 도메인 함수 직접 호출.
+- `apps/web/app/(auth)/login/page.tsx` — `@MX:NOTE`: loginAction 의 유일한 UI 진입점.
+- `apps/web/middleware.ts` — `@MX:ANCHOR`: 모든 페이지 요청이 통과하는 미들웨어.
+
+### Blockers
+
+없음. Slice F 의 모든 명시된 완료 기준 충족.
