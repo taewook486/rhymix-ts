@@ -689,6 +689,7 @@ by default:
 - **Prisma + PostgreSQL JSONB**: For `manifest`, `extraVars`, `tokensOverride` storage.
 - **Zod 3.23+**: For manifest validation and tokens schema.
 - **shadcn/ui**: As primitive layer for admin UI; theme tokens map onto shadcn token names.
+- **Zustand**: Client-side UI state management (modals, sidebars, notifications — RSC-incompatible state only).
 
 ### Risks
 

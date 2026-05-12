@@ -13,6 +13,7 @@
 | Auth | Auth.js v5 (NextAuth) | Credentials Provider 우선 |
 | API | tRPC + Server Actions 혼합 | end-to-end 타입 안전 |
 | UI | Tailwind CSS 4 + shadcn/ui | CSS variables 기반 테마 |
+| 상태 관리 | Zustand | 클라이언트 UI 상태 (모달, 사이드바 등) — RSC 불가 영역 |
 | Testing | Vitest + Playwright | TDD 기반 |
 
 ## SPEC 목록

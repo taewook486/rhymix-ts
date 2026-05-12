@@ -1067,7 +1067,7 @@ and immediately see populated dashboard widgets and a working public site.
 
 - **인프라**: PostgreSQL 15+ (citext 확장 필수), 선택적 Redis.
 - **런타임**: Node.js 20+ (Next.js 16 요구사항), Edge 호환성을 위해 Prisma는 RSC + Node 런타임에서만 사용.
-- **라이브러리**: Next.js 16, React 19, TypeScript 5.9+, Prisma 6+, Zod 3, tRPC 11, NextAuth/Auth.js v5(인증은 SPEC-AUTH-001에서 사용).
+- **라이브러리**: Next.js 16, React 19, TypeScript 5.9+, Prisma 6+, Zod 3, tRPC 11, NextAuth/Auth.js v5(인증은 SPEC-AUTH-001에서 사용), Tailwind CSS 4, shadcn/ui, Zustand(클라이언트 UI 상태 — 모달·사이드바·알림 등 RSC 불가 영역).
 
 ### 다운스트림(본 SPEC을 기반으로 하는 SPEC)
 
