@@ -40,7 +40,8 @@ export type RevocationReason =
   | 'STATUS_CHANGED'
   | 'ADMIN_FORCE_LOGOUT'
   | 'PASSWORD_CHANGED'
-  | 'USER_LOGOUT_ALL';
+  | 'USER_LOGOUT_ALL'
+  | 'TOKEN_REUSE_DETECTED';
 
 export interface RevokeSessionsContext {
   /**

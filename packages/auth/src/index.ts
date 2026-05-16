@@ -83,3 +83,21 @@ export type {
   SoftDeleteInput,
   SoftDeleteResult,
 } from './admin';
+
+// SPEC-AUTH-001 Slice E — autologin rotation + token reuse detection (REQ-AUTH-018/019/053).
+export {
+  issueAutoLogin,
+  verifyAutoLogin,
+  rotateAutoLogin,
+  detectTokenReuse,
+  AutoLoginConfigError,
+  NoopSecurityAlertDispatcher,
+} from './autologin';
+export type {
+  AutoLoginIssueContext,
+  AutoLoginCtx,
+  DetectReuseCtx,
+  IssuedAutoLogin,
+  VerifyResult,
+  SecurityAlertDispatcher,
+} from './autologin';
