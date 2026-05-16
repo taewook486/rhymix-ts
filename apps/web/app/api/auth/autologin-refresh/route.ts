@@ -10,8 +10,10 @@
  */
 
 import { cookies, headers } from 'next/headers';
-import { verifyAutoLogin } from '@rhymix-ts/auth';
+import { registerAutoLoginMarker, verifyAutoLogin } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
+
+import { signIn } from '@/lib/auth/config';
 
 export async function POST(request: Request) {
   try {
@@ -51,6 +53,18 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30,
       path: '/',
+    });
+
+    // Slice H — autologin trust marker + NextAuth signIn 연동.
+    // verifyAutoLogin 은 이미 통과했으므로 재호출하면 같은 securityKey 가
+    // previousKey 와 매치되어 TOKEN_THEFT 가 발동된다. 따라서 in-memory marker
+    // 를 발급해 authorize() 가 verifyAutoLogin 우회로 user lookup 만 하도록 한다.
+    // @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-019
+    const autologinNonce = registerAutoLoginMarker(result.userId);
+    await signIn('credentials', {
+      autologinUserId: String(result.userId),
+      autologinNonce,
+      redirect: false,
     });
 
     return Response.json(

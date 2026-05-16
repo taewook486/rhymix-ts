@@ -18,6 +18,8 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const {
   verifyAutoLoginMock,
+  registerAutoLoginMarkerMock,
+  signInMock,
   cookieStore,
   headersGetMock,
 } = vi.hoisted(() => {
@@ -58,6 +60,8 @@ const {
 
   return {
     verifyAutoLoginMock: vi.fn(),
+    registerAutoLoginMarkerMock: vi.fn(() => 'fixed-nonce-xyz'),
+    signInMock: vi.fn().mockResolvedValue(undefined),
     cookieStore: cookies,
     headersGetMock: vi.fn((name: string) => {
       if (name === 'x-forwarded-for') return '203.0.113.5';
@@ -74,6 +78,11 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@rhymix-ts/auth', () => ({
   verifyAutoLogin: verifyAutoLoginMock,
+  registerAutoLoginMarker: registerAutoLoginMarkerMock,
+}));
+
+vi.mock('@/lib/auth/config', () => ({
+  signIn: signInMock,
 }));
 
 vi.mock('@rhymix-ts/db', () => ({
@@ -95,6 +104,8 @@ describe('autologin-refresh Route Handler', () => {
       if (name === 'user-agent') return 'vitest-ua';
       return null;
     });
+    registerAutoLoginMarkerMock.mockReturnValue('fixed-nonce-xyz');
+    signInMock.mockResolvedValue(undefined);
   });
 
   // -------------------------------------------------------------------------
@@ -210,5 +221,83 @@ describe('autologin-refresh Route Handler', () => {
   it('G-9: should return 405 for GET request', async () => {
     const response = await GET();
     expect(response.status).toBe(405);
+  });
+
+  // -------------------------------------------------------------------------
+  // H-4: 검증 성공 시 registerAutoLoginMarker + signIn 호출 (Slice H)
+  // -------------------------------------------------------------------------
+  it('H-4: should register marker and call signIn after successful verifyAutoLogin', async () => {
+    cookieStore.set('rx_autologin', 'old-key');
+    cookieStore._setCalls.length = 0;
+
+    verifyAutoLoginMock.mockResolvedValue({
+      ok: true,
+      userId: 42,
+      autoLoginId: 1,
+      newSecurityKey: 'new-key-xyz',
+    });
+
+    const req = new Request('http://localhost:3000/api/auth/autologin-refresh', {
+      method: 'POST',
+    });
+
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toEqual({ ok: true, userId: 42 });
+
+    // registerAutoLoginMarker 는 userId 와 함께 호출되어야 한다.
+    expect(registerAutoLoginMarkerMock).toHaveBeenCalledWith(42);
+
+    // signIn 은 'credentials' 와 autologinUserId/autologinNonce 와 함께 호출되어야 한다.
+    expect(signInMock).toHaveBeenCalledTimes(1);
+    expect(signInMock).toHaveBeenCalledWith(
+      'credentials',
+      expect.objectContaining({
+        autologinUserId: '42',
+        autologinNonce: 'fixed-nonce-xyz',
+        redirect: false,
+      }),
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // H-5: 검증 실패 시 signIn / registerAutoLoginMarker 호출되지 않음 (G 회귀)
+  // -------------------------------------------------------------------------
+  it('H-5: should NOT call signIn or registerMarker when verifyAutoLogin fails', async () => {
+    cookieStore.set('rx_autologin', 'stolen-key');
+    cookieStore._setCalls.length = 0;
+
+    verifyAutoLoginMock.mockResolvedValue({ ok: false, code: 'TOKEN_THEFT' });
+
+    const req = new Request('http://localhost:3000/api/auth/autologin-refresh', {
+      method: 'POST',
+    });
+
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toEqual({ ok: false, code: 'THEFT' });
+    expect(registerAutoLoginMarkerMock).not.toHaveBeenCalled();
+    expect(signInMock).not.toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // H-5b: NO_TOKEN 케이스도 signIn 호출하지 않음
+  // -------------------------------------------------------------------------
+  it('H-5b: should NOT call signIn when cookie missing (NO_TOKEN)', async () => {
+    const req = new Request('http://localhost:3000/api/auth/autologin-refresh', {
+      method: 'POST',
+    });
+
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toEqual({ ok: false, code: 'NO_TOKEN' });
+    expect(signInMock).not.toHaveBeenCalled();
+    expect(registerAutoLoginMarkerMock).not.toHaveBeenCalled();
   });
 });

@@ -21,7 +21,7 @@
 import NextAuth, { type NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 
-import { login } from '@rhymix-ts/auth';
+import { consumeAutoLoginMarker, login } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
 
 import { createJwtCallback, createSessionCallback } from './callbacks';
@@ -62,8 +62,56 @@ export const authConfig: NextAuthConfig = {
       credentials: {
         identifier: { label: 'Identifier', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        autologinUserId: { label: 'AutoLoginUserId', type: 'text' },
+        autologinNonce: { label: 'AutoLoginNonce', type: 'text' },
       },
+      // @MX:ANCHOR: NextAuth Credentials Provider 의 유일한 인증 진입점.
+      //   autologin (Branch A, Slice H) / password (Branch B, Slice C) 두 경로가
+      //   모두 본 함수를 통과해야 세션이 발급된다.
+      // @MX:REASON: autologin 우회 또는 password 우회는 곧 세션 도용 — REQ-AUTH-013,
+      //   REQ-AUTH-019 enforcement chain 의 최종 게이트.
+      // @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-013, REQ-AUTH-019
       async authorize(credentials, req) {
+        // -------------------------------------------------------------------
+        // Branch A — autologin trust marker (Slice H, REQ-AUTH-019)
+        //
+        // Route Handler `/api/auth/autologin-refresh` 가 verifyAutoLogin 통과 후
+        // signIn() 으로 본 분기를 호출한다. verifyAutoLogin 을 여기서 재호출하면
+        // 같은 securityKey 가 previousKey 와 매치되어 TOKEN_THEFT 가 발동되므로,
+        // one-shot in-memory marker 로만 신뢰를 전달한다.
+        // -------------------------------------------------------------------
+        const autologinUserIdRaw =
+          typeof credentials?.autologinUserId === 'string'
+            ? credentials.autologinUserId
+            : '';
+        const autologinNonce =
+          typeof credentials?.autologinNonce === 'string'
+            ? credentials.autologinNonce
+            : '';
+
+        if (autologinUserIdRaw && autologinNonce) {
+          const userId = Number.parseInt(autologinUserIdRaw, 10);
+          if (!Number.isFinite(userId) || userId <= 0) {
+            return null;
+          }
+          const consumed = consumeAutoLoginMarker(userId, autologinNonce);
+          if (!consumed) {
+            return null;
+          }
+          const user = await prisma.user.findUnique({ where: { id: userId } });
+          if (!user || user.status !== 'APPROVED') {
+            return null;
+          }
+          return {
+            id: String(user.id),
+            name: user.nickName ?? user.emailAddress,
+            email: user.emailAddress,
+          };
+        }
+
+        // -------------------------------------------------------------------
+        // Branch B — identifier + password (Slice C, 기존 동작 유지)
+        // -------------------------------------------------------------------
         const identifier =
           typeof credentials?.identifier === 'string'
             ? credentials.identifier
