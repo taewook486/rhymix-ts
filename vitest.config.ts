@@ -14,6 +14,7 @@ export default defineConfig({
       '@/': path.join(__dirname, 'apps/web') + '/',
       '@/lib': path.join(__dirname, 'apps/web/lib'),
       '@/app': path.join(__dirname, 'apps/web/app'),
+      '@/server': path.join(__dirname, 'apps/web/server'),
     },
   },
   test: {
@@ -32,6 +33,7 @@ export default defineConfig({
       'apps/**/proxy.test.ts',
       'apps/**/app/**/*.test.ts',
       'apps/**/app/**/*.test.tsx',
+      'apps/**/server/**/*.test.ts',
       'apps/**/components/**/*.test.tsx',
     ],
     coverage: {
@@ -45,10 +47,12 @@ export default defineConfig({
         'packages/db/src/install-validate.ts',
         'packages/db/src/install/**/*.ts',
         'apps/web/lib/install/**/*.ts',
+        'apps/web/lib/db/**/*.ts',
         'apps/web/middleware.ts',
         'apps/web/proxy.ts',
         'apps/web/app/api/install/**/*.ts',
         'apps/web/app/install/actions.ts',
+        'apps/web/server/api/**/*.ts',
       ],
       exclude: [
         '**/*.test.ts',

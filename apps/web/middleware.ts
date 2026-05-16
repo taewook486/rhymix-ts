@@ -1,32 +1,89 @@
 /**
- * NextAuth 미들웨어 — SPEC-AUTH-001 Slice F.
+ * NextAuth 미들웨어 — SPEC-AUTH-001 Slice F + SPEC-ADMIN-001 Slice B.
  *
- * 보호 경로(protectedRoutes) 에 비인증 사용자가 접근하면 /login 으로 리다이렉트하고,
- * 인증 전용 경로(authOnlyRoutes) 에 인증 사용자가 접근하면 / 로 리다이렉트한다.
+ * 처리 순서:
+ *   1. forceHttps 검사 (REQ-ADMIN-014) — 인증보다 먼저 실행.
+ *   2. Host → Domain 해석 + 헤더 주입 (REQ-ADMIN-010, REQ-ADMIN-011).
+ *   3. 기존 AUTH-001 Slice F 인증 보호 (REQ-AUTH-F006, REQ-AUTH-F007).
  *
- * @MX:ANCHOR: [AUTO] 모든 페이지 요청이 통과하는 미들웨어 — 인증 라우팅의 단일 진입점.
- * @MX:REASON: 보호 경로와 인증 전용 경로를 한 곳에서 관리하여 우회 방지.
- * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-F006, REQ-AUTH-F007
+ * @MX:ANCHOR: [AUTO] 모든 페이지 요청이 통과하는 미들웨어 — 인증·라우팅 컨텍스트의 단일 진입점.
+ * @MX:REASON: REQ-ADMIN-010/011 에서 주입한 헤더를 라우트/Server Component/tRPC 모두가 신뢰.
+ *             헤더 스푸핑은 Node Runtime + Same-origin 가정 위에서 방지됨.
+ * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-F006, SPEC-ADMIN-001 REQ-ADMIN-010~014
  */
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import NextAuth from 'next-auth';
 
 import { authConfig } from '@/lib/auth/config';
+import { prisma } from '@/lib/db/prisma';
+
+export const runtime = 'nodejs';
 
 const protectedRoutes = ['/dashboard', '/admin', '/settings', '/profile'];
 const authOnlyRoutes = ['/login', '/signup', '/password-reset'];
 
 const { auth } = NextAuth(authConfig);
 
-export default auth((req) => {
+export default auth(async (req: NextRequest & { auth: unknown }) => {
   const { nextUrl } = req;
-  const isLoggedIn = !!req.auth;
 
-  const isProtected = protectedRoutes.some((r) =>
-    nextUrl.pathname.startsWith(r),
-  );
-  const isAuthRoute = authOnlyRoutes.some((r) =>
-    nextUrl.pathname.startsWith(r),
-  );
+  // -------------------------------------------------------------------------
+  // 단계 1: Host → Domain 해석 (REQ-ADMIN-010)
+  // @MX:NOTE: [AUTO] forceHttps 는 인증 검사보다 먼저 실행되어야 함 (REQ-ADMIN-014).
+  // -------------------------------------------------------------------------
+  const rawHost = req.headers.get('host') ?? '';
+  const hostname = rawHost.split(':')[0]; // port 제거
+
+  let domain: {
+    id: number;
+    siteId: number;
+    forceHttps: boolean;
+    defaultLanguage: string | null;
+    site: { defaultLanguage: string };
+  } | null = null;
+
+  domain = await prisma.domain.findFirst({
+    where: { hostname },
+    select: {
+      id: true,
+      siteId: true,
+      forceHttps: true,
+      defaultLanguage: true,
+      site: { select: { defaultLanguage: true } },
+    },
+  });
+
+  // REQ-ADMIN-011: hostname 매칭 실패 시 isDefault=true 도메인 폴백
+  if (!domain) {
+    domain = await prisma.domain.findFirst({
+      where: { isDefault: true },
+      select: {
+        id: true,
+        siteId: true,
+        forceHttps: true,
+        defaultLanguage: true,
+        site: { select: { defaultLanguage: true } },
+      },
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // 단계 2: forceHttps 검사 (REQ-ADMIN-014)
+  // -------------------------------------------------------------------------
+  if (domain?.forceHttps && nextUrl.protocol === 'http:') {
+    const httpsUrl = new URL(nextUrl.toString());
+    httpsUrl.protocol = 'https:';
+    return NextResponse.redirect(httpsUrl, 301);
+  }
+
+  // -------------------------------------------------------------------------
+  // 단계 3: 기존 AUTH-001 인증 보호 (REQ-AUTH-F006, REQ-AUTH-F007)
+  // -------------------------------------------------------------------------
+  const isLoggedIn = !!(req as { auth: unknown }).auth;
+
+  const isProtected = protectedRoutes.some((r) => nextUrl.pathname.startsWith(r));
+  const isAuthRoute = authOnlyRoutes.some((r) => nextUrl.pathname.startsWith(r));
 
   if (!isLoggedIn && isProtected) {
     const loginUrl = new URL('/login', nextUrl);
@@ -37,6 +94,18 @@ export default auth((req) => {
   if (isLoggedIn && isAuthRoute) {
     return Response.redirect(new URL('/', nextUrl), 307);
   }
+
+  // -------------------------------------------------------------------------
+  // 단계 4: 도메인 헤더 주입 (REQ-ADMIN-010/011)
+  // -------------------------------------------------------------------------
+  const res = NextResponse.next();
+  if (domain) {
+    res.headers.set('x-site-id', String(domain.siteId));
+    res.headers.set('x-domain-id', String(domain.id));
+    const lang = domain.defaultLanguage ?? domain.site.defaultLanguage;
+    res.headers.set('x-language', lang);
+  }
+  return res;
 });
 
 export const config = {
