@@ -18,7 +18,9 @@
     "paths": {
       "@/*": ["./*"],
       "@/app/*": ["./app/*"],
-      "@/lib/*": ["./lib/*"]
+      "@/lib/*": ["./lib/*"],
+      "@rhymix-ts/ui": ["../../packages/ui/src/index.ts"],
+      "@rhymix-ts/ui/components": ["../../packages/ui/src/components/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
