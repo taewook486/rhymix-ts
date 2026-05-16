@@ -247,6 +247,27 @@ describe('module-instance-service (단위 테스트 — mock)', () => {
     resetRegistry();
   });
 
+  it('A-6-mock-length: 길이 위반 mid → MidLengthError', async () => {
+    const { MidLengthError } = await import('./errors');
+    const board = makeBoard();
+    registerModule(board);
+
+    const mockPrisma = {} as Parameters<typeof createModuleInstance>[1]['prisma'];
+
+    await expect(
+      createModuleInstance(
+        {
+          siteId: 1,
+          moduleCode: 'board',
+          mid: '',  // 빈 문자열 → 길이 위반
+          name: 'Test',
+          actor: { memberId: 1 },
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(MidLengthError);
+  });
+
   it('A-6-mock: 유효하지 않은 mid → createModuleInstance 진입 전 에러', async () => {
     const { MidInvalidError } = await import('./errors');
     const board = makeBoard();
@@ -288,5 +309,226 @@ describe('module-instance-service (단위 테스트 — mock)', () => {
         { prisma: mockPrisma },
       ),
     ).rejects.toThrow(MidReservedError);
+  });
+
+  // A-6-mock-success: createModuleInstance 정상 흐름 (트랜잭션 완료 경로 커버)
+  it('A-6-mock-success: createModuleInstance 정상 흐름 — 생성된 인스턴스를 반환한다', async () => {
+    const board = makeBoard();
+    registerModule(board);
+
+    const createdInstance = { id: 99, siteId: 1, moduleCode: 'board', mid: 'test', name: 'Test' };
+    const instanceWithConfig = { ...createdInstance, config: { config: { skinName: 'default' } } };
+
+    const mockTx = {
+      moduleInstance: {
+        create: vi.fn().mockResolvedValueOnce(createdInstance),
+        findUniqueOrThrow: vi.fn().mockResolvedValueOnce(instanceWithConfig),
+      },
+      moduleConfig: {
+        create: vi.fn().mockResolvedValueOnce({}),
+      },
+    };
+
+    const mockPrisma = {
+      $transaction: vi.fn(async (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx)),
+    } as unknown as Parameters<typeof createModuleInstance>[1]['prisma'];
+
+    const result = await createModuleInstance(
+      {
+        siteId: 1,
+        moduleCode: 'board',
+        mid: 'test',
+        name: 'Test',
+        actor: { memberId: 1 },
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.id).toBe(99);
+    expect(result.mid).toBe('test');
+
+    // onInstall 호출 확인
+    expect(board.onInstall).toHaveBeenCalledOnce();
+    expect(board.onInstall).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instance: createdInstance,
+        actor: expect.objectContaining({ memberId: 1 }),
+      }),
+    );
+
+    // findUniqueOrThrow 가 올바른 인자로 호출되었는지 확인
+    expect(mockTx.moduleInstance.findUniqueOrThrow).toHaveBeenCalledWith({
+      where: { id: 99 },
+      include: { config: true },
+    });
+  });
+
+  // A-7-mock: mid 충돌 시 P2002 → MidConflictError 변환
+  it('A-7-mock: $transaction 내 P2002 에러 → MidConflictError 로 변환', async () => {
+    const { Prisma } = await import('@prisma/client');
+    const board = makeBoard();
+    registerModule(board);
+
+    const p2002Error = new Prisma.PrismaClientKnownRequestError(
+      'Unique constraint failed',
+      { code: 'P2002', clientVersion: '5.0.0' },
+    );
+
+    const mockTx = {
+      moduleInstance: {
+        create: vi.fn().mockRejectedValueOnce(p2002Error),
+      },
+      moduleConfig: { create: vi.fn() },
+    };
+
+    const mockPrisma = {
+      $transaction: vi.fn(async (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx)),
+    } as unknown as Parameters<typeof createModuleInstance>[1]['prisma'];
+
+    await expect(
+      createModuleInstance(
+        {
+          siteId: 1,
+          moduleCode: 'board',
+          mid: 'notice',
+          name: 'Notice',
+          actor: { memberId: 1 },
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(MidConflictError);
+  });
+
+  // A-8-mock: onInstall throw 시 에러 re-throw (트랜잭션 롤백 의미)
+  it('A-8-mock: onInstall throw → createModuleInstance 가 동일 에러 re-throw', async () => {
+    const board = makeBoard();
+    board.onInstall.mockRejectedValueOnce(new Error('install failed'));
+    registerModule(board);
+
+    const createdInstance = { id: 42, siteId: 1, moduleCode: 'board', mid: 'qna', name: 'Q&A' };
+
+    const mockTx = {
+      moduleInstance: {
+        create: vi.fn().mockResolvedValueOnce(createdInstance),
+        findUniqueOrThrow: vi.fn(),
+      },
+      moduleConfig: {
+        create: vi.fn().mockResolvedValueOnce({}),
+      },
+    };
+
+    const mockPrisma = {
+      $transaction: vi.fn(async (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx)),
+    } as unknown as Parameters<typeof createModuleInstance>[1]['prisma'];
+
+    await expect(
+      createModuleInstance(
+        {
+          siteId: 1,
+          moduleCode: 'board',
+          mid: 'qna',
+          name: 'Q&A',
+          actor: { memberId: 1 },
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow('install failed');
+
+    // onInstall 이 호출되었음을 확인
+    expect(board.onInstall).toHaveBeenCalledOnce();
+    // findUniqueOrThrow 는 호출되지 않아야 함 (onInstall 실패로 트랜잭션 중단)
+    expect(mockTx.moduleInstance.findUniqueOrThrow).not.toHaveBeenCalled();
+  });
+
+  // A-9-mock: indexModuleInstanceId 참조 시 IndexModuleProtectedError
+  it('A-9-mock: domain.count > 0 → deleteModuleInstance 가 IndexModuleProtectedError throw', async () => {
+    const board = makeBoard();
+    registerModule(board);
+
+    const existingInstance = { id: 10, siteId: 1, moduleCode: 'board', mid: 'hub', name: 'Hub' };
+
+    const mockPrisma = {
+      moduleInstance: {
+        findUniqueOrThrow: vi.fn().mockResolvedValueOnce(existingInstance),
+      },
+      domain: {
+        count: vi.fn().mockResolvedValueOnce(1),
+      },
+    } as unknown as Parameters<typeof deleteModuleInstance>[2]['prisma'];
+
+    await expect(
+      deleteModuleInstance(10, { memberId: 1 }, { prisma: mockPrisma }),
+    ).rejects.toThrow(IndexModuleProtectedError);
+
+    // domain.count 가 올바른 조건으로 호출되었는지 확인
+    expect(mockPrisma.domain.count).toHaveBeenCalledWith({
+      where: { indexModuleInstanceId: 10 },
+    });
+  });
+
+  // A-10-mock: deleteModuleInstance 정상 흐름
+  it('A-10-mock: domain.count === 0 → onUninstall 호출 + moduleInstance.delete 호출', async () => {
+    const board = makeBoard();
+    registerModule(board);
+
+    const existingInstance = { id: 20, siteId: 1, moduleCode: 'board', mid: 'freetalk', name: 'Freetalk' };
+
+    const mockTx = {
+      moduleInstance: {
+        delete: vi.fn().mockResolvedValueOnce(existingInstance),
+      },
+    };
+
+    const mockPrisma = {
+      moduleInstance: {
+        findUniqueOrThrow: vi.fn().mockResolvedValueOnce(existingInstance),
+      },
+      domain: {
+        count: vi.fn().mockResolvedValueOnce(0),
+      },
+      $transaction: vi.fn(async (fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx)),
+    } as unknown as Parameters<typeof deleteModuleInstance>[2]['prisma'];
+
+    const result = await deleteModuleInstance(20, { memberId: 1 }, { prisma: mockPrisma });
+
+    expect(result.ok).toBe(true);
+    expect(result.deletedId).toBe(20);
+
+    // onUninstall 호출 확인
+    expect(board.onUninstall).toHaveBeenCalledOnce();
+    expect(board.onUninstall).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instance: existingInstance,
+        actor: expect.objectContaining({ memberId: 1 }),
+      }),
+    );
+
+    // delete 호출 확인
+    expect(mockTx.moduleInstance.delete).toHaveBeenCalledWith({ where: { id: 20 } });
+  });
+
+  // A-11-mock: getModuleInstanceByMid citext 조회 파라미터 검증
+  it('A-11-mock: getModuleInstanceByMid — findFirst 를 insensitive mode 로 호출한다', async () => {
+    const expectedResult = { id: 5, siteId: 1, moduleCode: 'board', mid: 'board-ci', name: 'Board CI', config: null };
+
+    const mockPrisma = {
+      moduleInstance: {
+        findFirst: vi.fn().mockResolvedValueOnce(expectedResult),
+      },
+    } as unknown as Parameters<typeof getModuleInstanceByMid>[2]['prisma'];
+
+    const found = await getModuleInstanceByMid(1, 'BOARD-CI', { prisma: mockPrisma });
+
+    expect(found).toEqual(expectedResult);
+    expect(mockPrisma.moduleInstance.findFirst).toHaveBeenCalledWith({
+      where: {
+        siteId: 1,
+        mid: {
+          equals: 'BOARD-CI',
+          mode: 'insensitive',
+        },
+      },
+      include: { config: true },
+    });
   });
 });
