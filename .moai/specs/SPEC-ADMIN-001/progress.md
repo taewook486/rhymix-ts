@@ -76,3 +76,46 @@ Tests:      405 passed | 9 skipped (414)
 - 관리자 UI (모듈 인스턴스 목록/생성/삭제 페이지)
 - onInstall/onUninstall 훅을 구현하는 실제 board 모듈
 - ModuleRegistry 부트스트랩 (HMR-safe Next.js 서버 시작 시 1회 등록)
+
+---
+
+## Slice B — Host 미들웨어 + [mid] 라우팅 + tRPC admin.module.* (2026-05-16 완료)
+
+- Commit: 1919c07 | PR #9
+- Tests: 412 → 424 (+12, B-1~B-12 전부 PASS)
+- 구현:
+  - middleware.ts Node Runtime + Host → Domain 해석 + forceHttps 301 (REQ-ADMIN-010/011/014)
+  - apps/web/app/[mid]/page.tsx 동적 라우팅 (REQ-ADMIN-012)
+  - apps/web/app/page.tsx indexModuleInstanceId redirect (REQ-ADMIN-013)
+  - tRPC 설정 (initTRPC, publicProcedure, protectedAdminProcedure)
+  - admin.module.{create,list,get,delete} tRPC CRUD (REQ-ADMIN-020~022)
+  - getServerCaller() Server Component 헬퍼
+
+---
+
+## Slice C — Admin Shell UI + 모듈 관리 페이지 + shadcn/ui (2026-05-16 완료)
+
+- Commit: 44f18f6 | PR #10
+- Tests: 424 → 435 (+11, C-1~C-11 전부 PASS)
+- 구현:
+  - packages/ui/src/components/ shadcn/ui 컴포넌트 8종 (Button, Input, Label, Table, Dialog, DropdownMenu, Badge, Toaster)
+  - apps/web/app/admin/layout.tsx Admin Shell (auth guard + sidebar + topbar)
+  - apps/web/app/admin/modules/* 모듈 인스턴스 목록/생성 페이지
+  - AdminSidebar, AdminTopbar, ModuleTable, CreateModuleForm, DeleteModuleButton
+  - getServerCaller() + Server Actions 패턴 확립
+
+---
+
+## Slice D — auditLogger + Menu/MenuItem CRUD + AdminLog 조회 (2026-05-16 완료)
+
+- Commit: 1bd743b | PR #11
+- Tests: 435 → 447 (+12, D-1~D-12 전부 PASS)
+- 구현:
+  - auditLogger tRPC 미들웨어 (protectedAdminProcedure 체인, REQ-ADMIN-070/071)
+  - admin.menu.{create,list,get,delete} tRPC CRUD (REQ-ADMIN-030)
+  - admin.menuItem.{create,update,delete} tRPC CRUD (REQ-ADMIN-032/033)
+  - admin.log.list (필터+페이지네이션, REQ-ADMIN-072 부분)
+  - /admin/menu/* 메뉴 관리 UI 페이지
+  - /admin/logs AdminLog 조회 페이지
+  - AdminSidebar menu/logs 링크 활성화
+- Slice E 이월: DnD reorder(REQ-ADMIN-031), CSV 내보내기(REQ-ADMIN-072 완결), Site 설정, 회원 관리
