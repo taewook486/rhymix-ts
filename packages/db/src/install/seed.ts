@@ -155,9 +155,9 @@ export async function seedInstall(
       await tx.moduleInstance.create({
         data: {
           mid,
-          module: 'board',
+          moduleCode: 'board',
+          name: mid,
           siteId: site.id,
-          isDefault: false,
         },
       });
     }
