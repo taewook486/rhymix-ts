@@ -1,28 +1,30 @@
 /**
- * 관리자 대시보드 placeholder — SPEC-ADMIN-001에서 본격 구현 예정.
+ * 관리자 대시보드 — SPEC-ADMIN-001 Slice C.
  *
- * 본 페이지의 유일한 목적은 `/install/complete`의 "관리자 대시보드로 이동"
- * 버튼이 404가 되지 않도록 하는 것입니다.
+ * 모듈 인스턴스 수를 표시하는 간략 카드.
+ * 후속 슬라이스 (Slice D) 에서 위젯으로 교체 예정.
+ * @MX:SPEC: SPEC-ADMIN-001 Admin Shell IA
  */
-import Link from 'next/link';
+import { getServerCaller } from '@/lib/trpc/server'
+import { getCurrentSiteId } from '@/lib/admin/site-context'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
-export default function AdminPlaceholderPage() {
+export default async function AdminDashboardPage() {
+  const siteId = await getCurrentSiteId()
+  const caller = await getServerCaller()
+  const instances = await caller.admin.module.list({ siteId })
+
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="text-2xl font-bold">관리자 대시보드 — 구현 예정</h1>
-      <p className="mt-4 text-sm">
-        SPEC-ADMIN-001에서 본격 구현될 예정입니다. 지금은 자리표시자입니다.
-      </p>
-      <div className="mt-8">
-        <Link
-          href="/login"
-          className="rounded-md border px-4 py-2 text-sm hover:bg-black/5"
-        >
-          로그아웃 (로그인 페이지로 이동)
-        </Link>
+    <section>
+      <h1 className="text-2xl font-bold mb-6">대시보드</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg border border-zinc-200 p-6">
+          <p className="text-sm text-zinc-500 mb-1">모듈 인스턴스</p>
+          <p className="text-3xl font-bold">{instances.length}</p>
+          <p className="text-xs text-zinc-400 mt-2">등록된 모듈 수</p>
+        </div>
       </div>
-    </main>
-  );
+    </section>
+  )
 }
