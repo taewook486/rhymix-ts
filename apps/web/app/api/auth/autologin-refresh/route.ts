@@ -44,8 +44,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // TODO: After verifyAutoLogin returns newSecurityKey, update cookie here
-    cookieStore.set('rx_autologin', securityKey, {
+    // REQ-AUTH-019 key rotation: 새로 발급된 securityKey 로 쿠키 갱신.
+    cookieStore.set('rx_autologin', result.newSecurityKey, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
