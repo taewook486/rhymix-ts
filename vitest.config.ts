@@ -41,6 +41,7 @@ export default defineConfig({
         'packages/auth/src/password.ts',
         'packages/auth/src/disposable-email.ts',
         'packages/core/src/install/**/*.ts',
+        'packages/core/src/modules/**/*.ts',
         'packages/db/src/install-validate.ts',
         'packages/db/src/install/**/*.ts',
         'apps/web/lib/install/**/*.ts',

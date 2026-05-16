@@ -36,8 +36,10 @@ model Site {
   rhymixTsVersion       String    @default("0.0.0")
   databaseSchemaVersion String    @default("init")
 
-  settings SiteSetting[]
-  domains  Domain[]
+  settings        SiteSetting[]
+  domains         Domain[]
+  menus           Menu[]
+  moduleInstances ModuleInstance[]
 
   @@map("sites")
 }
@@ -57,37 +59,170 @@ model SiteSetting {
 }
 
 // =====================================================================
-// SPEC-ADMIN-001: Multi-domain + module instance system (sketch)
+// SPEC-ADMIN-001: Multi-domain + module instance system (Slice A)
 // =====================================================================
 
 model Domain {
-  id              Int     @id @default(autoincrement())
-  siteId          Int
-  hostname        String  @unique
-  isDefault       Boolean @default(false)
-  defaultLayoutId Int?
-  defaultMenuId   Int?
-  scheme          String  @default("https")
+  id                    Int             @id @default(autoincrement())
+  siteId                Int
+  // citext 로 대소문자 무관 유니크 제약 (REQ-ADMIN-001 정신 — hostname 도 동일)
+  hostname              String          @unique @db.Citext
+  isDefault             Boolean         @default(false)
+  // REQ-ADMIN-014: HTTPS 강제 플래그 — Slice B 미들웨어가 이 컬럼을 본다
+  forceHttps            Boolean         @default(true)
+  defaultLanguage       String?
+  defaultTimezone       String?
+  defaultLayoutId       Int?
+  defaultMobileLayoutId Int?
+  defaultMenuId         Int?
+  // REQ-ADMIN-006: 이 도메인의 인덱스(홈) 모듈 인스턴스
+  indexModuleInstanceId Int?
+  // install 호환성을 위해 scheme 컬럼 유지 (Slice B 미들웨어는 forceHttps 만 사용)
+  scheme                String          @default("https")
+  // 도메인별 설정 (robots, csp 등) — Slice B 에서 채워짐
+  settings              Json            @default("{}")
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
-  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site                Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  indexModuleInstance ModuleInstance? @relation("IndexModule", fields: [indexModuleInstanceId], references: [id])
 
   @@index([siteId])
   @@map("domains")
 }
 
-// Stub for ModuleInstance — full schema lands during /moai run SPEC-ADMIN-001
+// SPEC-ADMIN-001 Slice A — 완전 정의 (stub 에서 교체)
+// REQ-ADMIN-001: mid citext, 길이 1-80, 패턴 ^[a-z0-9][a-z0-9_-]*$
+// REQ-ADMIN-007: ModuleConfig 1:1 분리 (configSchema Zod 검증)
 model ModuleInstance {
+  id             Int           @id @default(autoincrement())
+  siteId         Int
+  // REQ-ADMIN-001: moduleCode "board", "wiki", "shop" 등 전역 고유 모듈 식별자
+  moduleCode     String
+  // REQ-ADMIN-001: citext + @@unique([siteId, mid]) — 사이트 범위 내 유니크
+  mid            String        @db.Citext
+  name           String
+  browserTitle   String?
+  description    String?
+  layoutId       Int?
+  mobileLayoutId Int?
+  skin           String?
+  mobileSkin     String?
+  menuId         Int?
+  isDefault      Boolean       @default(false)
+  rssEnabled     Boolean       @default(false)
+  rssTitle       String?
+  rssDescription String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  site          Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  // REQ-ADMIN-007: 설정은 ModuleConfig 로 분리
+  config        ModuleConfig?
+  // REQ-ADMIN-006: 이 인스턴스를 인덱스로 사용하는 도메인 역참조
+  domainsAsIndex Domain[]     @relation("IndexModule")
+
+  // 핵심: 전역 @unique 제거 + 사이트 범위 복합 유니크 (Q2 Pre-Flight 결정)
+  @@unique([siteId, mid])
+  @@index([moduleCode])
+  @@map("module_instances")
+}
+
+// REQ-ADMIN-007: 인스턴스 코어 필드와 가변 설정(JSON) 분리
+model ModuleConfig {
+  id               Int            @id @default(autoincrement())
+  moduleInstanceId Int            @unique
+  // ModuleDefinition.configSchema (Zod) 로 검증된 설정 블롭
+  config           Json           @default("{}")
+  updatedAt        DateTime       @updatedAt
+
+  moduleInstance ModuleInstance @relation(fields: [moduleInstanceId], references: [id], onDelete: Cascade)
+
+  @@map("module_configs")
+}
+
+// REQ-ADMIN-030: 사이트별 메뉴 + MenuItem 트리
+model Menu {
+  id          Int        @id @default(autoincrement())
+  siteId      Int
+  title       String
+  isAdminMenu Boolean    @default(false)
+  listOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  site  Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  items MenuItem[]
+
+  @@index([siteId])
+  @@map("menus")
+}
+
+// REQ-ADMIN-030: parentId 자기 참조 트리 구조
+// REQ-ADMIN-032: groupIds ACL
+// REQ-ADMIN-033: 버튼 상태별 JSON (normalBtn, hoverBtn, activeBtn)
+model MenuItem {
+  id              Int        @id @default(autoincrement())
+  menuId          Int
+  parentId        Int?
+  title           String
+  url             String?
+  icon            String?
+  cssClass        String?
+  description     String?
+  groupIds        Int[]      @default([])
+  openInNewWindow Boolean    @default(false)
+  expand          Boolean    @default(false)
+  listOrder       Int        @default(0)
+  normalBtn       Json?
+  hoverBtn        Json?
+  activeBtn       Json?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  menu     Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent   MenuItem?  @relation("MenuItemTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children MenuItem[] @relation("MenuItemTree")
+
+  @@index([menuId, parentId, listOrder])
+  @@map("menu_items")
+}
+
+// REQ-ADMIN-070~072: 관리자 mutation before/after 감사 로그
+// AuditLog (AUTH-001) 와 별도 — PK BigInt, target String, diff Json
+model AdminLog {
+  id        BigInt   @id @default(autoincrement())
+  actorId   Int
+  // "create" | "update" | "delete" | "configure" | "cache.purge.all"
+  action    String
+  // "module:notice" | "menu:1" | "site:settings"
+  target    String
+  diff      Json     @default("{}")
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([actorId, createdAt])
+  @@index([target, createdAt])
+  @@index([action, createdAt])
+  @@map("admin_logs")
+}
+
+// REQ-ADMIN-100: 관리자별 즐겨찾기 핀
+model AdminFavorite {
   id        Int      @id @default(autoincrement())
-  mid       String   @unique
-  module    String
-  siteId    Int?
-  isDefault Boolean  @default(false)
-  config    Json     @default("{}")
+  memberId  Int
+  label     String
+  href      String
+  icon      String?
+  listOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([module])
-  @@map("module_instances")
+  user User @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId, listOrder])
+  @@map("admin_favorites")
 }
 
 // =====================================================================
@@ -164,12 +299,13 @@ model User {
   // (avoids JOIN/subquery on every request).
   sessionsRevokedAt DateTime?  @db.Timestamptz
 
-  groups      MemberGroupMember[]
-  autoLogins  AutoLogin[]
-  emailTokens EmailAuthToken[]
-  devices     MemberDevice[]
-  agreements  MemberAgreement[]
-  revocations SessionRevocation[]
+  groups          MemberGroupMember[]
+  autoLogins      AutoLogin[]
+  emailTokens     EmailAuthToken[]
+  devices         MemberDevice[]
+  agreements      MemberAgreement[]
+  revocations     SessionRevocation[]
+  adminFavorites  AdminFavorite[]
 
   @@index([status])
   @@index([emailAddress])
