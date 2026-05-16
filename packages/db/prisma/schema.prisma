@@ -206,17 +206,24 @@ model MemberGroupMember {
 }
 
 // SPEC-AUTH-001 REQ-AUTH-018, REQ-AUTH-019, REQ-AUTH-053: rotating remember-me secret.
+//
+// Slice E (2026-05): securityKey/previousKey 평문 컬럼을 HMAC-SHA256 해시 컬럼으로 교체.
+//   - tokenHash         : 현재 활성 토큰의 HMAC-SHA256 해시 (base64url, 43-char)
+//   - previousTokenHash : 직전 토큰의 해시 — rotateAutoLogin 시 tokenHash 가 여기로 이동.
+//                         재사용 감지 (REQ-AUTH-053) 용 — 매치되면 전체 세션 무효화.
+//
+// 쿠키 값 포맷: `<AutoLogin.id>.<token>` — 점은 base64url 문자셋에 없으므로 안전한 구분자.
 model AutoLogin {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  securityKey String   @unique
-  previousKey String?  @unique
-  ip          String
-  userAgent   String   @db.Text
-  deviceId    String?
-  createdAt   DateTime @default(now()) @db.Timestamptz
-  lastUsedAt  DateTime @default(now()) @db.Timestamptz
-  expiresAt   DateTime @db.Timestamptz
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  tokenHash         String   @unique
+  previousTokenHash String?  @unique
+  ip                String
+  userAgent         String   @db.Text
+  deviceId          String?
+  createdAt         DateTime @default(now()) @db.Timestamptz
+  lastUsedAt        DateTime @default(now()) @db.Timestamptz
+  expiresAt         DateTime @db.Timestamptz
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
