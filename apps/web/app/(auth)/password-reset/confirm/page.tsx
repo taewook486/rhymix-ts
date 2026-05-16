@@ -30,15 +30,12 @@ export default function PasswordResetConfirmPage() {
   );
 
   // 성공 시 /login 으로 리다이렉트
+  // isPending 이 false 로 전환된 후 state.ok 가 true 이면 제출 완료로 판별
   useEffect(() => {
-    if (state.ok && token) {
-      // state.ok 가 초기 상태일 수도 있으므로 pending 이 끝났고
-      // formAction 이 실행된 후인지 확인이 필요하지만,
-      // useActionState 의 초기 상태가 ok:true 이므로
-      // 실제 제출이 완료된 시점은 isPending 이 false 로 전환되는 때이다.
-      // 여기서는 단순히 state.ok 와 _submitted 로 판별한다.
+    if (state.ok && !isPending && token) {
+      router.push('/login');
     }
-  }, [state, token, router]);
+  }, [state.ok, isPending, token, router]);
 
   // 토큰이 없는 경우
   if (!token) {

@@ -1,12 +1,14 @@
 'use client';
 
 /**
- * 로그인 페이지 — SPEC-AUTH-001 Slice F.
+ * 로그인 페이지 — SPEC-AUTH-001 Slice F (updated in Slice G).
  *
  * useActionState 를 사용하여 loginAction 을 호출하고,
  * 에러 메시지를 표시하며 성공 시 callbackUrl 또는 / 로 리다이렉트한다.
  *
- * @MX:NOTE: [AUTO] 로그인 폼 Client Component — loginAction Server Action 의 유일한 UI 진입점.
+ * Slice G: rememberMe 체크박스 추가 — 선택 시 autologin 쿠키를 발급한다.
+ *
+ * @MX:NOTE: 로그인 폼 Client Component — loginAction Server Action 의 유일한 UI 진입점.
  */
 import { useActionState } from 'react';
 import Link from 'next/link';
@@ -62,6 +64,19 @@ export default function LoginPage() {
             className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isPending}
           />
+        </div>
+
+        <div className="flex items-center">
+          <input
+            id="rememberMe"
+            name="rememberMe"
+            type="checkbox"
+            className="w-4 h-4 border border-gray-300 rounded cursor-pointer"
+            disabled={isPending}
+          />
+          <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-700 cursor-pointer">
+            로그인 상태 유지
+          </label>
         </div>
 
         <button

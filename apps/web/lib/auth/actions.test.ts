@@ -17,23 +17,58 @@ const {
   signupMock,
   verifyEmailMock,
   signInMock,
+  authMock,
   requestPasswordResetMock,
   confirmPasswordResetMock,
-} = vi.hoisted(() => ({
-  headersGetMock: vi.fn((name: string) => {
-    if (name === 'x-forwarded-for') return '203.0.113.5';
-    if (name === 'user-agent') return 'vitest-ua';
-    return null;
-  }),
-  signupMock: vi.fn(),
-  verifyEmailMock: vi.fn(),
-  signInMock: vi.fn(),
-  requestPasswordResetMock: vi.fn(),
-  confirmPasswordResetMock: vi.fn(),
-}));
+  createAutoLoginMock,
+  cookieStore,
+} = vi.hoisted(() => {
+  const cookieSetCalls: Array<{
+    name: string;
+    value: string;
+    options?: Record<string, unknown>;
+  }> = [];
+  const cookieDeleteCalls: string[] = [];
+  const cookies = {
+    get: vi.fn(),
+    set: (
+      name: string,
+      value: string,
+      options?: Record<string, unknown>,
+    ) => {
+      cookieSetCalls.push({ name, value, options });
+    },
+    delete: (name: string) => {
+      cookieDeleteCalls.push(name);
+    },
+    _setCalls: cookieSetCalls,
+    _deleteCalls: cookieDeleteCalls,
+    _reset() {
+      cookieSetCalls.length = 0;
+      cookieDeleteCalls.length = 0;
+    },
+  };
+
+  return {
+    headersGetMock: vi.fn((name: string) => {
+      if (name === 'x-forwarded-for') return '203.0.113.5';
+      if (name === 'user-agent') return 'vitest-ua';
+      return null;
+    }),
+    signupMock: vi.fn(),
+    verifyEmailMock: vi.fn(),
+    signInMock: vi.fn(),
+    authMock: vi.fn(),
+    requestPasswordResetMock: vi.fn(),
+    confirmPasswordResetMock: vi.fn(),
+    createAutoLoginMock: vi.fn(),
+    cookieStore: cookies,
+  };
+});
 
 vi.mock('next/headers', () => ({
   headers: () => Promise.resolve({ get: headersGetMock }),
+  cookies: () => Promise.resolve(cookieStore),
 }));
 
 vi.mock('@rhymix-ts/auth', () => ({
@@ -41,6 +76,7 @@ vi.mock('@rhymix-ts/auth', () => ({
   verifyEmail: verifyEmailMock,
   requestPasswordReset: requestPasswordResetMock,
   confirmPasswordReset: confirmPasswordResetMock,
+  createAutoLogin: createAutoLoginMock,
   // NoopMailDispatcher는 actions.ts에서 사용되므로 가벼운 더블 제공.
   NoopMailDispatcher: class {
     async dispatch(): Promise<void> {
@@ -55,6 +91,7 @@ vi.mock('@rhymix-ts/db', () => ({
 
 vi.mock('@/lib/auth/config', () => ({
   signIn: signInMock,
+  auth: authMock,
 }));
 
 import {
@@ -70,9 +107,12 @@ beforeEach(() => {
   signupMock.mockReset();
   verifyEmailMock.mockReset();
   signInMock.mockReset();
+  authMock.mockReset();
   requestPasswordResetMock.mockReset();
   confirmPasswordResetMock.mockReset();
+  createAutoLoginMock.mockReset();
   headersGetMock.mockClear();
+  cookieStore._reset();
 });
 
 function buildForm(values: Record<string, string>): FormData {
@@ -177,6 +217,118 @@ describe('loginAction', () => {
     await expect(
       loginAction(initialAuthActionState, buildForm({ identifier: 'a', password: 'b' })),
     ).rejects.toBe(redirectErr);
+  });
+
+  // -------------------------------------------------------------------------
+  // Slice G: rememberMe 분기
+  // -------------------------------------------------------------------------
+
+  // G-1: rememberMe=on + 로그인 성공 → createAutoLogin 호출 + 쿠키 설정
+  it('G-1: rememberMe=on → calls createAutoLogin and sets rx_autologin cookie', async () => {
+    signInMock.mockResolvedValue(undefined);
+    authMock.mockResolvedValue({ user: { id: '42' } });
+    createAutoLoginMock.mockResolvedValue({ securityKey: 'auto-login-token-xyz' });
+
+    const fd = buildForm({
+      identifier: 'alice',
+      password: 'correct-passphrase',
+      rememberMe: 'on',
+    });
+    const result = await loginAction(initialAuthActionState, fd);
+
+    expect(result).toEqual({ ok: true });
+    expect(createAutoLoginMock).toHaveBeenCalledTimes(1);
+    const arg = createAutoLoginMock.mock.calls[0]![0] as {
+      userId: number;
+      ip: string;
+      userAgent: string;
+    };
+    expect(arg.userId).toBe(42);
+    expect(arg.ip).toBe('203.0.113.5');
+    expect(arg.userAgent).toBe('vitest-ua');
+
+    // 쿠키 설정 검증
+    expect(cookieStore._setCalls.length).toBeGreaterThanOrEqual(1);
+    const cookie = cookieStore._setCalls[cookieStore._setCalls.length - 1]!;
+    expect(cookie.name).toBe('rx_autologin');
+    expect(cookie.value).toBe('auto-login-token-xyz');
+    expect(cookie.options).toMatchObject({
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    });
+  });
+
+  // G-2: rememberMe 없음 + 로그인 성공 → createAutoLogin 호출 안 함, 쿠키 미설정
+  it('G-2: rememberMe absent → does NOT call createAutoLogin or set cookie', async () => {
+    signInMock.mockResolvedValue(undefined);
+
+    const fd = buildForm({
+      identifier: 'alice',
+      password: 'correct-passphrase',
+      // rememberMe 미설정
+    });
+    const result = await loginAction(initialAuthActionState, fd);
+
+    expect(result).toEqual({ ok: true });
+    expect(createAutoLoginMock).not.toHaveBeenCalled();
+    expect(authMock).not.toHaveBeenCalled();
+    expect(cookieStore._setCalls).toHaveLength(0);
+  });
+
+  // G-3: rememberMe=on + 로그인 실패 → createAutoLogin 호출 안 함
+  it('G-3: rememberMe=on but signIn fails → no autologin issued', async () => {
+    const err = Object.assign(new Error('Invalid credentials'), {
+      type: 'CredentialsSignin',
+      name: 'CredentialsSignin',
+    });
+    signInMock.mockRejectedValue(err);
+
+    const fd = buildForm({
+      identifier: 'alice',
+      password: 'wrong-pw',
+      rememberMe: 'on',
+    });
+    const result = await loginAction(initialAuthActionState, fd);
+
+    expect(result).toMatchObject({ ok: false, code: 'INVALID_CREDENTIALS' });
+    expect(createAutoLoginMock).not.toHaveBeenCalled();
+    expect(cookieStore._setCalls).toHaveLength(0);
+  });
+
+  // G-4: rememberMe=on + createAutoLogin throw → 로그인 자체는 성공 (graceful degradation)
+  it('G-4: createAutoLogin failure does NOT break login success', async () => {
+    signInMock.mockResolvedValue(undefined);
+    authMock.mockResolvedValue({ user: { id: '42' } });
+    createAutoLoginMock.mockRejectedValue(new Error('DB down'));
+
+    const fd = buildForm({
+      identifier: 'alice',
+      password: 'correct-passphrase',
+      rememberMe: 'on',
+    });
+    const result = await loginAction(initialAuthActionState, fd);
+
+    expect(result).toEqual({ ok: true });
+    // 쿠키는 설정되지 않아야 한다 (createAutoLogin 실패 시).
+    expect(cookieStore._setCalls).toHaveLength(0);
+  });
+
+  // G-4b: rememberMe=on + session.user.id 없음 → 쿠키 미설정 (방어적 분기)
+  it('G-4b: missing session user.id → graceful skip, no cookie', async () => {
+    signInMock.mockResolvedValue(undefined);
+    authMock.mockResolvedValue(null);
+
+    const fd = buildForm({
+      identifier: 'alice',
+      password: 'correct-passphrase',
+      rememberMe: 'on',
+    });
+    const result = await loginAction(initialAuthActionState, fd);
+
+    expect(result).toEqual({ ok: true });
+    expect(createAutoLoginMock).not.toHaveBeenCalled();
+    expect(cookieStore._setCalls).toHaveLength(0);
   });
 });
 
