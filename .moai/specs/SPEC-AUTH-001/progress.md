@@ -896,3 +896,64 @@ Methodology: TDD (RED-GREEN-REFACTOR).
 ### Blockers
 
 없음. Slice F 의 모든 명시된 완료 기준 충족.
+
+---
+
+## Slice H — autologin ↔ NextAuth 세션 완전 연동 (2026-05-16)
+
+**브랜치**: `feature/auth-001-slice-h` (from `main` @ 08cae8c)
+**완료 상태**: ✅ TDD RED-GREEN-REFACTOR 완결
+
+### 핵심 결정 사항
+
+1. **Path 3 (in-memory trust marker) 채택** — Route Handler 가 verifyAutoLogin 성공 후 `registerAutoLoginMarker(userId)` 로 one-shot nonce 발급. NextAuth `authorize()` 는 `consumeAutoLoginMarker(userId, nonce)` 로 소비 후 user lookup 만 수행한다.
+2. **verifyAutoLogin 재호출 금지** — Route Handler 에서 이미 통과한 동일 securityKey 를 authorize() 가 재호출하면 `previousKey` 매치 → `TOKEN_THEFT` 발동되는 자기파괴 시나리오. trust marker 가 이를 방지한다.
+3. **signIn() Route Handler 호환성 검증 완료** — next-auth `5.0.0-beta.31` `lib/actions.js` 라인 45-47 에서 `cookieJar.set(c.name, c.value, c.options)` 로 응답 쿠키에 직접 주입함을 확인. `signIn('credentials', { redirect: false })` 가 Route Handler context 에서 NextAuth session cookie 를 정상 발급한다.
+4. **AutoLoginRefresher useRef guard** — 클라이언트 컴포넌트가 컴포넌트 라이프사이클당 단 1회만 `/api/auth/autologin-refresh` 를 호출. `status==='unauthenticated' && document.cookie.includes('rx_autologin=')` AND 조건.
+
+### 추가/수정된 파일
+
+| 파일 | 변경 |
+|------|------|
+| `packages/auth/src/autologin-marker.ts` | 신규 — `registerAutoLoginMarker`, `consumeAutoLoginMarker`, in-memory Map 기반 |
+| `packages/auth/src/autologin-marker.test.ts` | 신규 — 5 specification tests (H-M1~H-M5) |
+| `packages/auth/src/index.ts` | re-export 추가 |
+| `apps/web/lib/auth/config.ts` | `authorize()` 에 Branch A (autologin) 분기 추가, `@MX:ANCHOR` 부여 |
+| `apps/web/lib/auth/authorize.test.ts` | 신규 — 8 specification tests (H-1~H-3 + 회귀) |
+| `apps/web/app/api/auth/autologin-refresh/route.ts` | `registerAutoLoginMarker` + `signIn('credentials', ...)` 호출 추가 |
+| `apps/web/app/api/auth/autologin-refresh/route.test.ts` | H-4, H-5, H-5b 테스트 추가 (8 total, was 5) |
+| `apps/web/components/auth/SessionProviderWrapper.tsx` | 신규 — client boundary for NextAuth `SessionProvider` |
+| `apps/web/components/auth/AutoLoginRefresher.tsx` | 신규 — useSession + fetch + router.refresh, useRef guard |
+| `apps/web/components/auth/AutoLoginRefresher.test.tsx` | 신규 — 8 specification tests (H-6~H-9, jsdom) |
+| `apps/web/app/layout.tsx` | `SessionProviderWrapper` + `AutoLoginRefresher` mount |
+| `vitest.config.ts` | include 에 `apps/**/components/**/*.test.tsx` 추가 |
+
+### 테스트 결과
+
+베이스라인 (main @ 08cae8c) 비-tsx 통과: 358 tests
+Slice H 종료 시 비-tsx 통과: **358 → 379 passed** (21 신규 — autologin-marker 5 + authorize 8 + route H-4/H-5/H-5b 3 + 기존 5 route → 8 = 차이 3)
+
+상세:
+- `packages/auth/src/autologin-marker.test.ts` — 5/5 ✅
+- `apps/web/lib/auth/authorize.test.ts` — 8/8 ✅
+- `apps/web/app/api/auth/autologin-refresh/route.test.ts` — 8/8 ✅ (G-5~G-9, H-4, H-5, H-5b)
+
+tsx 테스트 (jsdom 의존):
+- `apps/web/components/auth/AutoLoginRefresher.test.tsx` — 8 tests 작성 완료. 본 환경에 `jsdom` / `@testing-library/react` 가 설치되지 않아 실행 불가. 기존 `apps/web/app/(auth)/**/*.test.tsx` 5건 동일 상태 (pre-existing 환경 갭). `pnpm install` 실행 후 정상 동작 예상.
+
+### @MX 태그 변경
+
+- 추가: `@MX:ANCHOR` 1건 (`config.ts` `authorize`) — fan_in 다수 (Credentials Provider 유일 진입점)
+- 추가: `@MX:WARN` 1건 (`autologin-marker.ts`) — process-scoped Map, multi-instance 비호환 (REASON 포함)
+- 추가: `@MX:NOTE` 2건 (`SessionProviderWrapper.tsx`, `AutoLoginRefresher.tsx`)
+
+### Out of Scope (의도적 미구현)
+
+- 분산 환경 대응 (Redis 등) — SPEC-INFRA-001 단계에서 처리
+- E2E Playwright autologin 시나리오
+- `SessionProvider` refetchInterval / refetchOnWindowFocus 옵션 튜닝
+- 기존 `as unknown as ...` 캐스팅 정리
+
+### Blockers
+
+없음. 환경적 제약 (jsdom 미설치)는 사전 존재했고 본 슬라이스 산출물의 코드 품질에 영향 없음.

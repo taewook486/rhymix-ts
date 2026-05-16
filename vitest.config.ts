@@ -32,6 +32,7 @@ export default defineConfig({
       'apps/**/proxy.test.ts',
       'apps/**/app/**/*.test.ts',
       'apps/**/app/**/*.test.tsx',
+      'apps/**/components/**/*.test.tsx',
     ],
     coverage: {
       provider: 'v8',

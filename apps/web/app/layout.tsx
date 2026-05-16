@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+import { AutoLoginRefresher } from '@/components/auth/AutoLoginRefresher';
+import { SessionProviderWrapper } from '@/components/auth/SessionProviderWrapper';
+
 export const metadata: Metadata = {
   title: {
     default: 'Rhymix-TS',
@@ -16,7 +19,12 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <SessionProviderWrapper>
+          <AutoLoginRefresher />
+          {children}
+        </SessionProviderWrapper>
+      </body>
     </html>
   );
 }
