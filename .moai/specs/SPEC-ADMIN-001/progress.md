@@ -118,7 +118,7 @@ Tests:      405 passed | 9 skipped (414)
   - /admin/menu/* 메뉴 관리 UI 페이지
   - /admin/logs AdminLog 조회 페이지
   - AdminSidebar menu/logs 링크 활성화
-- Slice E 이월: DnD reorder(REQ-ADMIN-031), CSV 내보내기(REQ-ADMIN-072 완결), Site 설정, 회원 관리
+- Slice E 이월: DnD reorder(REQ-ADMIN-031), CSV 내보내기(REQ-ADMIN-072 완결), Site 설정, 회원 관리 → Slice E에서 완결
 
 ---
 
@@ -137,3 +137,19 @@ Tests:      405 passed | 9 skipped (414)
   - `/admin/members` 회원 관리 페이지 — E-5
 - 수정 사항: Site 모델 실제 필드 기준으로 site.ts/page.tsx 정렬 (name/contactEmail 필드 없음 확인)
 - Acceptance Criteria: AC-E-1-1/1-2, AC-E-2-1/2-2, AC-E-3-1/3-2, AC-E-4-1/4-2/4-3/4-4 전부 PASS
+
+---
+
+## Slice F — System Health Dashboard + Cache Management (2026-05-16 완료)
+
+- Tests: 467 → 482 (+15, F-1~F-2 전부 PASS)
+- TypeScript: Slice F 파일 0 errors
+- 구현:
+  - `admin.system.health` tRPC (Node.js 버전/플랫폼/DB ping/env 마스킹, REQ-ADMIN-080/081) — F-1
+  - `/admin/system` 시스템 헬스 페이지 — F-1
+  - `lib/cache/adapter.ts` CacheAdapter + NextJsCacheAdapter (REQ-ADMIN-060) — F-2
+  - `CACHE_TAGS` 상수 추가 (`lib/admin/cache-keys.ts`) — F-2
+  - `admin.cache.purge({ scope, id? })` tRPC + AdminLog 자동 기록 (REQ-ADMIN-061/062/063) — F-2
+  - `/admin/system/cache` 캐시 관리 페이지 — F-2
+  - AdminSidebar 시스템 헬스 + 캐시 관리 링크 추가 — F-1, F-2
+- Acceptance Criteria: AC-F-1-1/1-2/1-3, AC-F-2-1/2-2/2-3 전부 PASS

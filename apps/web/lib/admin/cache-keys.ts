@@ -1,5 +1,5 @@
 /**
- * Admin 메뉴 캐시 키 — SPEC-ADMIN-001 Slice D.
+ * Admin 메뉴 캐시 키 — SPEC-ADMIN-001 Slice D + Slice F.
  *
  * admin / public 메뉴 캐시 키의 single source of truth.
  * 실제 unstable_cache 적용은 캐시 슬라이스에서 수행.
@@ -20,3 +20,16 @@ export type MenuCacheScope = 'admin' | 'public'
 export function menuCacheKey(siteId: number, scope: MenuCacheScope): string {
   return `menu:${scope}:${siteId}`
 }
+
+/**
+ * 캐시 무효화 태그 — SPEC-ADMIN-001 Slice F (REQ-ADMIN-060~063).
+ *
+ * admin.cache.purge 프로시저에서 사용하는 캐시 태그 팩토리.
+ */
+export const CACHE_TAGS = {
+  module: (id: string | number) => `module:${id}`,
+  menu:   (id: string | number) => `menu:${id}`,
+  widget: (name: string)         => `widget:${name}`,
+  domain: (id: string | number)  => `domain:${id}`,
+  ALL_PREFIXES: ['module', 'menu', 'widget', 'domain'] as const,
+} as const;

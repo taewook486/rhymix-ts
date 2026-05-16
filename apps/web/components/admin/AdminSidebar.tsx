@@ -10,7 +10,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@rhymix-ts/ui'
-import { LayoutDashboard, Package, Menu, ScrollText, Users, Settings } from 'lucide-react'
+import { LayoutDashboard, Package, Menu, ScrollText, Users, Settings, Activity, Trash2 } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -56,7 +56,9 @@ const NAV: ReadonlyArray<NavSection> = [
   {
     section: '시스템',
     items: [
-      { href: '/admin/logs', label: '관리자 로그', icon: ScrollText },
+      { href: '/admin/logs',          label: '관리자 로그', icon: ScrollText },
+      { href: '/admin/system',        label: '시스템 헬스', icon: Activity },
+      { href: '/admin/system/cache',  label: '캐시 관리',   icon: Trash2 },
     ],
   },
 ]
