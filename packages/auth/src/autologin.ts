@@ -49,7 +49,7 @@ export interface VerifyAutoLoginCtx {
 }
 
 export type AutoLoginResult =
-  | { ok: true; userId: number; autoLoginId: number }
+  | { ok: true; userId: number; autoLoginId: number; newSecurityKey: string }
   | { ok: false; code: 'TOKEN_INVALID' | 'TOKEN_THEFT' };
 
 export interface RevokeAutoLoginInput {
@@ -117,7 +117,7 @@ export async function verifyAutoLogin(
       } as never,
     });
 
-    return { ok: true, userId: autoLoginRecord.userId, autoLoginId: autoLoginRecord.id };
+    return { ok: true, userId: autoLoginRecord.userId, autoLoginId: autoLoginRecord.id, newSecurityKey: newKey };
   }
 
   // 2) securityKey 매치 실패 → previousKey 에서 도난 감지 확인.

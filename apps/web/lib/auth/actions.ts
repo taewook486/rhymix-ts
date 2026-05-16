@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * Server Actions — SPEC-AUTH-001 Slice C.
+ * Server Actions — SPEC-AUTH-001 Slice C (updated in Slice G).
  *
  * 본 파일은 React Server Actions 형태로 가입/로그인/이메일 인증을 노출한다.
  * tRPC 프로시저(spec.md L425) 는 Slice D 이후로 미룬다 — Slice C 는 Auth.js v5
@@ -24,10 +24,12 @@ import {
   requestPasswordReset,
   confirmPasswordReset,
   type ConfirmResetResult,
+  createAutoLogin,
 } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
 
-import { signIn } from './config';
+import { signIn, auth } from './config';
+import { cookies } from 'next/headers';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,11 +133,13 @@ function signupErrorMessage(code: SignupErrorCode): string {
  * Auth.js 는 자체 redirect throw 를 사용하므로, 호출이 throw 하면 그대로 전파해
  * Next.js 의 정상 redirect 처리로 이어지게 한다 (catch 절은 인증 실패만 캐치).
  */
+/** * 로그인 Server Action — Auth.js v5 의 `signIn('credentials', ...)` 을 호출한다. * * `signIn` 내부에서 Credentials Provider 의 `authorize()` 가 실행되며, 그 안에서 * `packages/auth/login()` 이 호출되어 검증/감사로그/rehash 가 일어난다. * * Slice G: rememberMe 옵션이 추가되어 true 일 때 `createAutoLogin()` 을 호출해 * autologin 쿠키를 발급한다. * * Auth.js 는 자체 redirect throw 를 사용하므로, 호출이 throw 하면 그대로 전파해 * Next.js 의 정상 redirect 처리로 이어지게 한다 (catch 절은 인증 실패만 캐치). */
 export async function loginAction(
   _prev: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
   const identifier = String(formData.get('identifier') ?? '').trim();
+  const rememberMe = String(formData.get('rememberMe') ?? '') === 'on';
   const password = String(formData.get('password') ?? '');
   if (!identifier || !password) {
     return {
@@ -151,6 +155,39 @@ export async function loginAction(
       password,
       redirect: false,
     });
+    // Slice G: rememberMe 일 때 autologin 쿠키 발급.
+    if (rememberMe) {
+      try {
+        const session = await auth();
+        if (!session?.user?.id) {
+          return { ok: true };
+        }
+        const userId = Number.parseInt(session.user.id, 10);
+        if (!Number.isFinite(userId) || userId <= 0) {
+          return { ok: true };
+        }
+        const { ip, userAgent } = await readClientHints();
+        const result = await createAutoLogin(
+          {
+            userId,
+            ip,
+            userAgent,
+            deviceId: undefined,
+          },
+          { prisma },
+        );
+        const cookieStore = await cookies();
+        cookieStore.set('rx_autologin', result.securityKey, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 30,
+          path: '/',
+        });
+      } catch {
+        // autologin 발급 실패 시에도 로그인 자체는 성공.
+      }
+    }
     return { ok: true };
   } catch (err) {
     // CredentialsSignin 등 Auth.js 가 throw 하는 인증 실패를 일관 응답으로 변환.
