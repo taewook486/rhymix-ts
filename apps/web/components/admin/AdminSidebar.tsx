@@ -10,7 +10,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@rhymix-ts/ui'
-import { LayoutDashboard, Package, Menu, ScrollText } from 'lucide-react'
+import { LayoutDashboard, Package, Menu, ScrollText, Users, Settings } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -42,14 +42,14 @@ const NAV: ReadonlyArray<NavSection> = [
   {
     section: '사이트 설정',
     items: [
-      { href: '/admin/site/settings', label: '일반 설정', disabled: true },
+      { href: '/admin/settings/site', label: '일반 설정', icon: Settings },
       { href: '/admin/menu', label: '메뉴 편집', icon: Menu },
     ],
   },
   {
     section: '회원',
     items: [
-      { href: '/admin/members', label: '회원 목록', disabled: true },
+      { href: '/admin/members', label: '회원 관리', icon: Users },
       { href: '/admin/members/groups', label: '회원 그룹', disabled: true },
     ],
   },

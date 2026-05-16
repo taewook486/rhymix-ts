@@ -3,6 +3,7 @@ import './globals.css';
 
 import { AutoLoginRefresher } from '@/components/auth/AutoLoginRefresher';
 import { SessionProviderWrapper } from '@/components/auth/SessionProviderWrapper';
+import { TRPCProvider } from '@/providers/TRPCProvider';
 
 export const metadata: Metadata = {
   title: {
@@ -20,10 +21,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
-        <SessionProviderWrapper>
-          <AutoLoginRefresher />
-          {children}
-        </SessionProviderWrapper>
+        <TRPCProvider>
+          <SessionProviderWrapper>
+            <AutoLoginRefresher />
+            {children}
+          </SessionProviderWrapper>
+        </TRPCProvider>
       </body>
     </html>
   );

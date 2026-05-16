@@ -1,18 +1,19 @@
 /**
- * admin.menuItem tRPC 라우터 — SPEC-ADMIN-001 Slice D.
+ * admin.menuItem tRPC 라우터 — SPEC-ADMIN-001 Slice D + Slice E.
  *
- * MenuItem 단위 CRUD: list / create / update / delete.
+ * MenuItem 단위 CRUD: list / create / update / delete / reorder.
+ *
+ * @MX:ANCHOR: [AUTO] admin.menuItem.reorder — DnD 순서 갱신 단일 진입점.
+ * @MX:REASON: 모든 MenuItem 순서 갱신은 이 프로시저를 통해 단일 $transaction 으로 처리돼야
+ *             부분 적용(partial update)을 방지할 수 있음. fan_in >= 3 (DnD UI, tests, admin page).
+ * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-031
  *
  * @MX:NOTE: [AUTO] admin.menuItem.update 의 $transaction 패턴.
  *           parentId + listOrder 를 단일 transaction 으로 갱신 (REQ-ADMIN-031 transactional 부분).
- *           배치 reorder (다수 MenuItem 동시 갱신) 는 Slice E 의 dnd-kit 도입 시 admin.menuItem.reorder 로 추가.
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-030, REQ-ADMIN-031, REQ-ADMIN-032, REQ-ADMIN-033
- *
- * @MX:TODO: [AUTO] Slice E 에서 드래그앤드롭 reorder (admin.menuItem.reorder) 도입.
- * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-031
- * @MX:PRIORITY: P1
  */
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { router, protectedAdminProcedure } from '../../trpc';
 
 /**
@@ -92,4 +93,46 @@ export const adminMenuItemRouter = router({
     .mutation(({ ctx, input }) =>
       ctx.prisma.menuItem.delete({ where: { id: input.id } }),
     ),
+
+  /**
+   * MenuItem 배치 reorder — DnD 드래그 완료 시 호출 (REQ-ADMIN-031).
+   * 단일 $transaction 으로 모든 items 의 listOrder / parentId 를 원자적으로 갱신한다.
+   */
+  reorder: protectedAdminProcedure
+    .input(
+      z.object({
+        menuId: z.number().int().positive(),
+        items: z.array(
+          z.object({
+            id: z.number().int().positive(),
+            parentId: z.number().int().nullable(),
+            listOrder: z.number().int(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 1. menuId 존재 확인
+      const menu = await ctx.prisma.menu.findUnique({ where: { id: input.menuId } });
+      if (!menu) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'menu not found' });
+      }
+
+      // 2. 빈 items → no-op
+      if (input.items.length === 0) {
+        return { updated: 0 };
+      }
+
+      // 3. 단일 트랜잭션으로 일괄 갱신
+      await ctx.prisma.$transaction(
+        input.items.map((item) =>
+          ctx.prisma.menuItem.update({
+            where: { id: item.id },
+            data: { parentId: item.parentId, listOrder: item.listOrder },
+          }),
+        ),
+      );
+
+      return { updated: input.items.length };
+    }),
 });

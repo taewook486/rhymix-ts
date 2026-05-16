@@ -119,3 +119,21 @@ Tests:      405 passed | 9 skipped (414)
   - /admin/logs AdminLog 조회 페이지
   - AdminSidebar menu/logs 링크 활성화
 - Slice E 이월: DnD reorder(REQ-ADMIN-031), CSV 내보내기(REQ-ADMIN-072 완결), Site 설정, 회원 관리
+
+---
+
+## Slice E — DnD Reorder + CSV Export + Site Settings + Member Management (2026-05-16 완료)
+
+- Tests: 447 → 467 (+20, E-1~E-5 전부 PASS)
+- TypeScript: Slice E 파일 0 errors (next-auth 기존 오류 제외)
+- 구현:
+  - TRPCProvider 클라이언트 설정 (`apps/web/providers/TRPCProvider.tsx`) — E-1
+  - `admin.menuItem.reorder` 단일 $transaction 갱신 (REQ-ADMIN-031) — E-2
+  - MenuItemDnDTree 컴포넌트 (DnD fallback UI, @dnd-kit WSL2 설치 보류) — E-2
+  - `/api/admin/logs/export` CSV Route Handler (REQ-ADMIN-072 완결) — E-3
+  - `admin.site.get/update/domain.list/domain.update` tRPC (REQ-ADMIN-050/051/052) — E-4
+  - `/admin/settings/site` 사이트 설정 페이지 — E-4
+  - `admin.user.list/get/update/bulk/deniedList.*` tRPC (US-7) — E-5
+  - `/admin/members` 회원 관리 페이지 — E-5
+- 수정 사항: Site 모델 실제 필드 기준으로 site.ts/page.tsx 정렬 (name/contactEmail 필드 없음 확인)
+- Acceptance Criteria: AC-E-1-1/1-2, AC-E-2-1/2-2, AC-E-3-1/3-2, AC-E-4-1/4-2/4-3/4-4 전부 PASS
