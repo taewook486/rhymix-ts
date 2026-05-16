@@ -1,16 +1,16 @@
 'use client'
 /**
- * Admin 사이드바 컴포넌트 — SPEC-ADMIN-001 Slice C.
+ * Admin 사이드바 컴포넌트 — SPEC-ADMIN-001 Slice C + Slice D.
  *
  * @MX:NOTE: [AUTO] sidebar IA 의 single source of truth.
  *           spec.md line 904-926 과 1:1 매핑.
- *           Slice D 에서 항목이 enable 로 바뀔 때마다 NAV 배열을 수정.
+ *           Slice D: /admin/menu, /admin/logs 활성화.
  * @MX:SPEC: SPEC-ADMIN-001 Admin Shell IA
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@rhymix-ts/ui'
-import { LayoutDashboard, Package } from 'lucide-react'
+import { LayoutDashboard, Package, Menu, ScrollText } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -43,7 +43,7 @@ const NAV: ReadonlyArray<NavSection> = [
     section: '사이트 설정',
     items: [
       { href: '/admin/site/settings', label: '일반 설정', disabled: true },
-      { href: '/admin/site/menu', label: '메뉴 편집', disabled: true },
+      { href: '/admin/menu', label: '메뉴 편집', icon: Menu },
     ],
   },
   {
@@ -56,7 +56,7 @@ const NAV: ReadonlyArray<NavSection> = [
   {
     section: '시스템',
     items: [
-      { href: '/admin/logs', label: '관리자 로그', disabled: true },
+      { href: '/admin/logs', label: '관리자 로그', icon: ScrollText },
     ],
   },
 ]
