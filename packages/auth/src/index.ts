@@ -75,6 +75,12 @@ export {
 
 // SPEC-AUTH-001 Slice E — autologin / remember me (REQ-AUTH-018, REQ-AUTH-019, REQ-AUTH-053).
 export { createAutoLogin, verifyAutoLogin, revokeAutoLogin } from './autologin';
+
+// SPEC-AUTH-001 Slice H — autologin trust marker (Route Handler ↔ authorize() one-shot signal).
+export {
+  registerAutoLoginMarker,
+  consumeAutoLoginMarker,
+} from './autologin-marker';
 export type {
   CreateAutoLoginInput,
   CreateAutoLoginCtx,
