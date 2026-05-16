@@ -29,6 +29,7 @@ export default defineConfig({
       'packages/**/src/**/*.test.ts',
       'packages/**/test/**/*.test.ts',
       'apps/**/lib/**/*.test.ts',
+      'apps/**/lib/**/*.test.tsx',
       'apps/**/middleware.test.ts',
       'apps/**/proxy.test.ts',
       'apps/**/app/**/*.test.ts',

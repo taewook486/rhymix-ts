@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./install/diagnostics": "./src/install/diagnostics.ts",
-    "./modules": "./src/modules/index.ts"
+    "./modules": "./src/modules/index.ts",
+    "./widgets": "./src/widgets/index.ts"
   },
   "scripts": {
     "lint": "echo 'no lint'",
