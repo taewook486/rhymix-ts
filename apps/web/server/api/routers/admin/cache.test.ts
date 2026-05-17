@@ -39,7 +39,11 @@ vi.mock('@/lib/db/prisma', () => ({
 // ---------------------------------------------------------------------------
 
 const mockAdminLogCreate = vi.fn();
+const mockSiteSettingFindFirst = vi.fn();
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
   },
@@ -71,6 +75,7 @@ describe('admin.cache tRPC router (Slice F)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: 1 });
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
   });
 
   it('F-2-2: purge({ scope:\'all\' }) → 4개 prefix 태그 revalidate (REQ-ADMIN-062)', async () => {

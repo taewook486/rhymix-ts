@@ -1,7 +1,7 @@
 ---
 id: SPEC-ADMIN-001
 title: Admin Dashboard & Module System
-status: draft
+status: completed
 priority: P0
 created: 2026-05-10
 domain: admin

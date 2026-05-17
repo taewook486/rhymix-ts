@@ -497,5 +497,25 @@ model SessionRevocation {
 }
 
 // =====================================================================
+// SPEC-ADMIN-001 Slice I: WidgetInstance DB 프리셋 (REQ-ADMIN-043)
+// =====================================================================
+
+// @MX:NOTE: [AUTO] widgetName 은 packages/core/src/widgets/registry.ts 의 in-memory
+//           WidgetRegistry 와 연결 키다. DB 에 WidgetDefinition 을 저장하지 않으며
+//           widgetName 문자열로 런타임에 getWidget(widgetName) 으로 조회한다.
+// @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-043
+model WidgetInstance {
+  id         Int      @id @default(autoincrement())
+  widgetName String
+  label      String
+  props      Json     @default("{}")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([widgetName])
+  @@map("widget_instances")
+}
+
+// =====================================================================
 // SPEC-CONTENT-001 / SPEC-THEME-001 models DEFERRED to their own slices.
 // =====================================================================

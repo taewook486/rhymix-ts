@@ -32,8 +32,12 @@ const mockAdminFavoriteFindMany = vi.fn();
 const mockAdminFavoriteCreate = vi.fn();
 const mockAdminFavoriteDelete = vi.fn();
 const mockTransaction = vi.fn().mockImplementation(async (ops: unknown[]) => Promise.all(ops));
+const mockSiteSettingFindFirst = vi.fn();
 
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   adminFavorite: {
     findMany: (...args: unknown[]) => mockAdminFavoriteFindMany(...args),
     create: (...args: unknown[]) => mockAdminFavoriteCreate(...args),
@@ -69,6 +73,7 @@ const nonAdminCtx = {
 describe('admin.favorite tRPC router (Slice H-3)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
   });
 
   it('H-3-1: favorite.list → findMany called with { where: { memberId: 1 } }', async () => {

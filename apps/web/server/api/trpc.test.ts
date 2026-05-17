@@ -27,7 +27,11 @@ vi.mock('@/lib/db/prisma', () => ({
 // ---------------------------------------------------------------------------
 
 const mockAdminLogCreate = vi.fn();
+const mockSiteSettingFindFirst = vi.fn();
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
   },
@@ -59,6 +63,7 @@ describe('auditLogger middleware (Slice D)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
   });
 
   it('D-1: admin mutation → adminLog.create 가 actorId/action/diff/ip 를 포함해 호출됨 (REQ-ADMIN-070, REQ-ADMIN-071)', async () => {

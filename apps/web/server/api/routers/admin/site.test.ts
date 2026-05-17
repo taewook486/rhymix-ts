@@ -31,8 +31,12 @@ const mockDomainFindMany = vi.fn();
 const mockDomainUpdate = vi.fn();
 const mockAdminLogCreate = vi.fn();
 const mockSiteTransaction = vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) => fn({}));
+const mockSiteSettingFindFirst = vi.fn();
 
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   site: {
     findFirst: (...args: unknown[]) => mockSiteFindFirst(...args),
     update: (...args: unknown[]) => mockSiteUpdate(...args),
@@ -66,6 +70,7 @@ describe('admin.site tRPC router (Slice E-4)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
   });
 
   it('E-4-1: admin.site.get → Site 레코드 반환 (REQ-ADMIN-050)', async () => {

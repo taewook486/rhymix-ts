@@ -31,7 +31,11 @@ vi.mock('@/lib/db/prisma', () => ({
 
 const mockQueryRaw = vi.fn();
 const mockAdminLogCreate = vi.fn();
+const mockSiteSettingFindFirst = vi.fn();
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   $queryRaw: (...args: unknown[]) => mockQueryRaw(...args),
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
@@ -65,6 +69,7 @@ describe('admin.system tRPC router (Slice F)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
     // 환경변수 스냅샷 보관
     originalEnv = { ...process.env };
   });

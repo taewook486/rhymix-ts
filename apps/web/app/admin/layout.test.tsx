@@ -22,6 +22,17 @@ vi.mock('@/lib/auth/admin-middleware', () => ({
   isAdminSession: vi.fn(),
 }))
 
+// 2FA 헬퍼 mock — Slice I (REQ-ADMIN-023)
+vi.mock('@/lib/auth/two-factor', () => ({
+  isAdminTwoFactorRequired: vi.fn().mockResolvedValue(false),
+  isSessionTwoFactorVerified: vi.fn().mockReturnValue(true),
+}))
+
+// DB mock
+vi.mock('@rhymix-ts/db', () => ({
+  prisma: {},
+}))
+
 // admin 컴포넌트들 mock (layout 의존)
 vi.mock('@/components/admin/AdminSidebar', () => ({
   AdminSidebar: () => React.createElement('nav', { 'data-testid': 'sidebar' }, '사이드바'),

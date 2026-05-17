@@ -49,8 +49,12 @@ const mockDeniedIdentifierFindMany = vi.fn();
 const mockAdminLogCreate = vi.fn();
 const mockMemberGroupMemberFindMany = vi.fn();
 const mockUserTransaction = vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) => fn({}));
+const mockSiteSettingFindFirst = vi.fn();
 
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   user: {
     findMany: (...args: unknown[]) => mockUserFindMany(...args),
     count: (...args: unknown[]) => mockUserCount(...args),
@@ -89,6 +93,7 @@ describe('admin.user tRPC router (Slice E-5)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
     // actor 조회 기본값
     mockUserFindUnique.mockResolvedValue({ id: 1, isAdmin: true, status: 'APPROVED' });
     mockMemberGroupMemberFindMany.mockResolvedValue([]);
