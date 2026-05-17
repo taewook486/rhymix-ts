@@ -121,6 +121,8 @@ model ModuleInstance {
   config        ModuleConfig?
   // REQ-ADMIN-006: 이 인스턴스를 인덱스로 사용하는 도메인 역참조
   domainsAsIndex Domain[]     @relation("IndexModule")
+  // SPEC-CONTENT-001 Slice A: board 모듈 역참조 (1:1)
+  board         Board?
 
   // 핵심: 전역 @unique 제거 + 사이트 범위 복합 유니크 (Q2 Pre-Flight 결정)
   @@unique([siteId, mid])
@@ -299,13 +301,18 @@ model User {
   // (avoids JOIN/subquery on every request).
   sessionsRevokedAt DateTime?  @db.Timestamptz
 
-  groups          MemberGroupMember[]
-  autoLogins      AutoLogin[]
-  emailTokens     EmailAuthToken[]
-  devices         MemberDevice[]
-  agreements      MemberAgreement[]
-  revocations     SessionRevocation[]
-  adminFavorites  AdminFavorite[]
+  groups            MemberGroupMember[]
+  autoLogins        AutoLogin[]
+  emailTokens       EmailAuthToken[]
+  devices           MemberDevice[]
+  agreements        MemberAgreement[]
+  revocations       SessionRevocation[]
+  adminFavorites    AdminFavorite[]
+  // SPEC-CONTENT-001 Slice A: 게시판 모듈 역참조
+  documentsAuthored Document[]          @relation("DocumentAuthor")
+  commentsAuthored  Comment[]           @relation("CommentAuthor")
+  documentUpdates   DocumentUpdateLog[]
+  trashDeleted      Trash[]
 
   @@index([status])
   @@index([emailAddress])
@@ -517,5 +524,308 @@ model WidgetInstance {
 }
 
 // =====================================================================
-// SPEC-CONTENT-001 / SPEC-THEME-001 models DEFERRED to their own slices.
+// SPEC-CONTENT-001 Slice A — Foundation 스키마
 // =====================================================================
+
+enum DocumentStatus {
+  PUBLIC
+  SECRET
+  TEMP
+}
+
+enum CommentStatus {
+  ALLOW
+  DISABLE
+}
+
+enum UploadTargetType {
+  DOCUMENT
+  COMMENT
+}
+
+enum VoteType {
+  UP
+  DOWN
+  BLAME
+}
+
+// 게시판 설정 테이블 (Board별 별도 정형 컬럼; ModuleConfig JSON 과 공존)
+// SPEC-CONTENT-001 REQ-CONTENT-001: 1 ModuleInstance ─ 1 Board (1:1)
+model Board {
+  id                   Int            @id @default(autoincrement())
+  moduleInstanceId     Int            @unique
+  moduleSrl            BigInt?        @unique
+  name                 String
+  description          String?
+  skin                 String?
+  layoutId             Int?
+  mobileSkin           String?
+  mobileLayoutId       Int?
+  listCount            Int            @default(20)
+  pageCount            Int            @default(10)
+  orderTarget          String         @default("list_order")
+  exceptNotice         Boolean        @default(false)
+  consultation         Boolean        @default(false)
+  useAnonymous         Boolean        @default(false)
+  updateLog            Boolean        @default(false)
+  trashUse             Boolean        @default(true)
+  useStatus            DocumentStatus[] @default([PUBLIC, SECRET, TEMP])
+  useCategory          Boolean        @default(false)
+  documentLengthLimit  Int            @default(1048576)
+  commentLengthLimit   Int            @default(131072)
+  protectDeleteContent Int            @default(0)
+  protectUpdateContent Int            @default(0)
+  protectDeleteComment Int            @default(0)
+  protectUpdateComment Int            @default(0)
+  permissions          Json           @default("{}")
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  moduleInstance ModuleInstance   @relation(fields: [moduleInstanceId], references: [id], onDelete: Cascade)
+  documents      Document[]
+  categories     DocumentCategory[]
+  extraKeys      DocumentExtraKey[]
+
+  @@index([moduleSrl])
+  @@map("boards")
+}
+
+// 게시판 게시물
+model Document {
+  id              Int            @id @default(autoincrement())
+  documentSrl     BigInt?        @unique
+  boardId         Int
+  categoryId      Int?
+  title           String
+  titleBold       Boolean        @default(false)
+  titleColor      String?
+  content         String
+  contentText     String?
+  authorId        Int?
+  userIdSnapshot  String?        @db.Citext
+  nickName        String?
+  memberId        String?
+  email           String?        @db.Citext
+  ipAddress       String?
+  password        String?
+  readedCount     Int            @default(0)
+  votedCount      Int            @default(0)
+  blamedCount     Int            @default(0)
+  commentCount    Int            @default(0)
+  trackbackCount  Int            @default(0)
+  uploadedCount   Int            @default(0)
+  status          DocumentStatus @default(PUBLIC)
+  commentStatus   CommentStatus  @default(ALLOW)
+  isNotice        Boolean        @default(false)
+  langCode        String         @default("ko")
+  allowTrackback  Boolean        @default(false)
+  notifyMessage   Boolean        @default(false)
+  tags            String[]       @default([])
+  extraVars       Json           @default("{}")
+  listOrder       BigInt         @default(0)
+  updateOrder     BigInt         @default(0)
+  regdate         DateTime       @default(now()) @db.Timestamptz
+  lastUpdate      DateTime       @updatedAt @db.Timestamptz
+  deletedAt       DateTime?      @db.Timestamptz
+  searchVector    Unsupported("tsvector")?
+
+  board      Board                @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  category   DocumentCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  author     User?                @relation("DocumentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  comments   Comment[]
+  files      FileAttachment[]     @relation("DocumentFiles")
+  updateLogs DocumentUpdateLog[]
+  votes      DocumentVote[]
+  reports    DocumentReport[]
+  trash      Trash?
+
+  @@index([boardId, status, regdate(sort: Desc)])
+  @@index([boardId, isNotice, listOrder(sort: Desc)])
+  @@index([boardId, categoryId, listOrder(sort: Desc)])
+  @@index([authorId])
+  @@index([tags], type: Gin)
+  @@index([extraVars], type: Gin)
+  @@map("documents")
+}
+
+// 댓글
+model Comment {
+  id             Int           @id @default(autoincrement())
+  commentSrl     BigInt?       @unique
+  documentId     Int
+  parentId       Int?
+  boardId        Int
+  content        String
+  isSecret       Boolean       @default(false)
+  password       String?
+  votedCount     Int           @default(0)
+  blamedCount    Int           @default(0)
+  authorId       Int?
+  userIdSnapshot String?       @db.Citext
+  nickName       String?
+  memberId       String?
+  email          String?       @db.Citext
+  ipAddress      String?
+  status         Int           @default(1)
+  listOrder      BigInt        @default(0)
+  regdate        DateTime      @default(now()) @db.Timestamptz
+  lastUpdate     DateTime      @updatedAt @db.Timestamptz
+  deletedAt      DateTime?     @db.Timestamptz
+
+  document Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  parent   Comment?        @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies  Comment[]       @relation("CommentReplies")
+  author   User?           @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  files    FileAttachment[] @relation("CommentFiles")
+
+  @@index([documentId, listOrder])
+  @@index([parentId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+// 카테고리 (계층 구조 허용)
+model DocumentCategory {
+  id            Int      @id @default(autoincrement())
+  categorySrl   BigInt?  @unique
+  boardId       Int
+  parentId      Int?
+  title         String
+  description   String?
+  color         String?
+  expand        Boolean  @default(true)
+  isDefault     Boolean  @default(false)
+  groupIds      Int[]    @default([])
+  documentCount Int      @default(0)
+  listOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  board     Board             @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  parent    DocumentCategory? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  DocumentCategory[] @relation("CategoryTree")
+  documents Document[]
+
+  @@index([boardId, parentId, listOrder])
+  @@map("document_categories")
+}
+
+// 게시판 부가 키 정의
+model DocumentExtraKey {
+  id            Int     @id @default(autoincrement())
+  boardId       Int
+  varIdx        Int
+  varName       String
+  varType       String  @default("text")
+  varIsRequired Boolean @default(false)
+  varSearch     Boolean @default(false)
+  varSort       Boolean @default(false)
+  varOptions    Json?
+  langCode      String  @default("ko")
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, varIdx, langCode])
+  @@index([boardId])
+  @@map("document_extra_keys")
+}
+
+// 파일 첨부
+model FileAttachment {
+  id               Int              @id @default(autoincrement())
+  fileSrl          BigInt?          @unique
+  uploadTargetType UploadTargetType
+  documentId       Int?
+  commentId        Int?
+  sourceFilename   String
+  uploadedFilename String
+  fileSize         BigInt
+  mimeType         String
+  width            Int?
+  height           Int?
+  duration         Int?
+  directDownload   Boolean          @default(false)
+  downloadCount    Int              @default(0)
+  coverImage       Boolean          @default(false)
+  isvalid          Boolean          @default(true)
+  memberId         String?
+  storageKey       String
+  regdate          DateTime         @default(now()) @db.Timestamptz
+
+  document Document? @relation("DocumentFiles", fields: [documentId], references: [id], onDelete: SetNull)
+  comment  Comment?  @relation("CommentFiles", fields: [commentId], references: [id], onDelete: SetNull)
+
+  @@index([documentId])
+  @@index([commentId])
+  @@map("file_attachments")
+}
+
+// 게시물 수정 로그
+model DocumentUpdateLog {
+  id           Int      @id @default(autoincrement())
+  documentId   Int
+  prevTitle    String
+  prevContent  String
+  prevExtraVars Json?
+  editorId     Int?
+  editorIp     String?
+  regdate      DateTime @default(now()) @db.Timestamptz
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  editor   User?    @relation(fields: [editorId], references: [id], onDelete: SetNull)
+
+  @@index([documentId, regdate(sort: Desc)])
+  @@map("document_update_logs")
+}
+
+// 게시물/댓글 투표
+model DocumentVote {
+  id         Int      @id @default(autoincrement())
+  documentId Int
+  commentId  Int?
+  voterId    String
+  voteType   VoteType
+  point      Int      @default(1)
+  regdate    DateTime @default(now()) @db.Timestamptz
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, voterId, voteType])
+  @@index([documentId])
+  @@index([commentId])
+  @@map("document_votes")
+}
+
+// 게시물/댓글 신고
+model DocumentReport {
+  id         Int      @id @default(autoincrement())
+  documentId Int?
+  commentId  Int?
+  reporterId String
+  reporterIp String?
+  reason     String
+  resolved   Boolean  @default(false)
+  regdate    DateTime @default(now()) @db.Timestamptz
+
+  document Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@index([documentId])
+  @@index([commentId])
+  @@index([resolved])
+  @@map("document_reports")
+}
+
+// 휴지통 (소프트 삭제 게시물 임시 보관)
+model Trash {
+  id          Int      @id @default(autoincrement())
+  documentId  Int      @unique
+  deletedById Int?
+  deletedAt   DateTime @default(now()) @db.Timestamptz
+  expiresAt   DateTime @db.Timestamptz
+
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  deletedBy User?    @relation(fields: [deletedById], references: [id], onDelete: SetNull)
+
+  @@index([expiresAt])
+  @@map("document_trash")
+}

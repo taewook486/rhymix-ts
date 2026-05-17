@@ -1,12 +1,13 @@
 /**
- * types.ts — SPEC-ADMIN-001 Slice A
+ * types.ts — SPEC-ADMIN-001 Slice A / SPEC-CONTENT-001 Slice A
  *
  * 모듈 시스템 핵심 타입 정의.
  * ModuleDefinition 은 "board", "wiki", "shop" 같은 모듈 타입을 등록할 때 사용하는 인터페이스.
  */
 
 import type { z } from 'zod';
-import type { Prisma, ModuleInstance } from '@prisma/client';
+import type { Prisma, ModuleInstance, ModuleConfig } from '@prisma/client';
+import type { ReactNode } from 'react';
 
 // Prisma.TransactionClient 타입 재사용
 export type PrismaTransactionClient = Prisma.TransactionClient;
@@ -25,15 +26,36 @@ export interface ModuleLifecycleContext {
 }
 
 /**
+ * 모듈 라우트 핸들러의 props 타입.
+ * SPEC-CONTENT-001 Slice A: Next.js 16 App Router Server Component 시그니처와 호환.
+ *
+ * @MX:NOTE [AUTO]: Slice B 에서 actions 타입 구체화 예정. index/catchAll 시그니처 변경 주의.
+ * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-001
+ */
+export interface ModuleRoutePageProps {
+  instance: ModuleInstance & { config: ModuleConfig | null };
+  /** Next.js dynamic route params (mid 외 추가 파라미터) */
+  params: Record<string, string>;
+  /** URL query string parameters */
+  searchParams: Record<string, string | string[] | undefined>;
+}
+
+/**
+ * 모듈 라우트 인덱스 핸들러 타입.
+ * Next.js 16 App Router Server Component 와 동일한 시그니처.
+ */
+export type ModuleRouteIndex = (props: ModuleRoutePageProps) => Promise<ReactNode> | ReactNode;
+
+/**
  * 모듈별 라우트 핸들러 맵.
- * Slice A 에서는 빈 객체 허용 — Slice B 에서 실제 핸들러로 채워짐.
+ * Slice A 에서는 index placeholder — Slice B 에서 실제 게시판 목록 렌더러로 교체.
  */
 export interface ModuleRouteMap {
-  /** GET /[mid] */
-  index?: unknown;
-  /** GET /[mid]/[...slug] */
-  catchAll?: unknown;
-  /** Server Actions / api */
+  /** GET /[mid] — 모듈 인스턴스의 인덱스 페이지 */
+  index?: ModuleRouteIndex;
+  /** GET /[mid]/[...slug] — 모듈 내부 라우트 */
+  catchAll?: ModuleRouteIndex;
+  /** Server Actions / api endpoints (Slice B+ 에서 별도 타입화) */
   actions?: Record<string, unknown>;
 }
 
