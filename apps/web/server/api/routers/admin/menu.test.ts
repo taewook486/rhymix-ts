@@ -31,8 +31,12 @@ const mockMenuFindMany = vi.fn();
 const mockMenuFindUnique = vi.fn();
 const mockMenuDelete = vi.fn();
 const mockAdminLogCreate = vi.fn();
+const mockSiteSettingFindFirst = vi.fn();
 
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   menu: {
     create: (...args: unknown[]) => mockMenuCreate(...args),
     findMany: (...args: unknown[]) => mockMenuFindMany(...args),
@@ -63,6 +67,7 @@ describe('admin.menu tRPC router (Slice D)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
   });
 
   it('D-4: admin menu.create → prisma.menu.create 가 siteId/title/isAdminMenu 로 호출됨 (REQ-ADMIN-030)', async () => {

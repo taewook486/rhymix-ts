@@ -50,7 +50,12 @@ const mockTransaction = vi.fn().mockImplementation(async (fnOrArray: unknown) =>
   return (fnOrArray as (tx: unknown) => unknown)(tx);
 });
 
+const mockSiteSettingFindFirst = vi.fn();
+
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   menu: {
     findUnique: (...args: unknown[]) => mockMenuFindUnique(...args),
   },
@@ -84,6 +89,7 @@ describe('admin.menuItem tRPC router (Slice D)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
   });
 
   it('D-8: admin menuItem.create → prisma.menuItem.create 가 menuId/title/groupIds 로 호출됨 (REQ-ADMIN-030, REQ-ADMIN-032)', async () => {
@@ -174,6 +180,7 @@ describe('admin.menuItem.reorder (Slice E-2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
     // 기본적으로 menu 존재하는 상황
     mockMenuFindUnique.mockResolvedValue({ id: 1, title: '메인메뉴' });
     // menuItem.update 기본 반환값
@@ -247,5 +254,85 @@ describe('admin.menuItem.reorder (Slice E-2)', () => {
     const arg = mockTransaction.mock.calls[0]![0];
     expect(Array.isArray(arg)).toBe(true);
     expect(arg.length).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Slice I-2: cross-level DnD (REQ-ADMIN-031)
+// ---------------------------------------------------------------------------
+
+describe('admin.menuItem.reorder cross-level DnD (Slice I-2 — REQ-ADMIN-031)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
+    mockMenuFindUnique.mockResolvedValue({ id: 1, title: '메인메뉴' });
+    mockMenuItemUpdate.mockResolvedValue({ id: 1, listOrder: 0, parentId: null });
+  });
+
+  it('I-2-1: parentId 변경 + listOrder 갱신 → 단일 $transaction 으로 처리 (REQ-ADMIN-031)', async () => {
+    const { adminMenuItemRouter } = await import('./menu-item');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminMenuItemRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    // 아이템 1이 parentId: null → parentId: 5 로 이동
+    const items = [
+      { id: 1, parentId: 5, listOrder: 0 },
+    ];
+
+    const result = await caller.reorder({ menuId: 1, items });
+    expect(result).toMatchObject({ updated: 1 });
+
+    // menuItem.update 에 parentId: 5 + listOrder: 0 가 전달됨
+    expect(mockMenuItemUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 1 },
+        data: expect.objectContaining({ parentId: 5, listOrder: 0 }),
+      }),
+    );
+    // $transaction 호출됨
+    expect(mockTransaction).toHaveBeenCalledOnce();
+  });
+
+  it('I-2-2: 여러 항목의 parentId 가 각각 다른 값으로 → 모두 갱신 (REQ-ADMIN-031)', async () => {
+    mockMenuItemUpdate.mockResolvedValue({ id: 1, listOrder: 0, parentId: 5 });
+
+    const { adminMenuItemRouter } = await import('./menu-item');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminMenuItemRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const items = [
+      { id: 1, parentId: 5, listOrder: 0 },   // item1 → 부모 5 아래 0번째
+      { id: 2, parentId: 10, listOrder: 0 },  // item2 → 부모 10 아래 0번째
+      { id: 3, parentId: 10, listOrder: 1 },  // item3 → 부모 10 아래 1번째
+    ];
+
+    const result = await caller.reorder({ menuId: 1, items });
+    expect(result).toMatchObject({ updated: 3 });
+    expect(mockMenuItemUpdate).toHaveBeenCalledTimes(3);
+
+    // 각 항목이 올바른 parentId + listOrder 로 갱신됨
+    expect(mockMenuItemUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 1 },
+        data: expect.objectContaining({ parentId: 5, listOrder: 0 }),
+      }),
+    );
+    expect(mockMenuItemUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 2 },
+        data: expect.objectContaining({ parentId: 10, listOrder: 0 }),
+      }),
+    );
+    expect(mockMenuItemUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 3 },
+        data: expect.objectContaining({ parentId: 10, listOrder: 1 }),
+      }),
+    );
   });
 });

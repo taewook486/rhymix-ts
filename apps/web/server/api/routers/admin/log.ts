@@ -1,23 +1,19 @@
 /**
- * admin.log tRPC 라우터 — SPEC-ADMIN-001 Slice D.
+ * admin.log tRPC 라우터 — SPEC-ADMIN-001 Slice D + Slice I.
  *
- * AdminLog 조회: actor / action / target / 기간 필터 + offset 페이지네이션.
+ * AdminLog 조회: actor / action / target / ip / 기간 필터 + offset 페이지네이션.
  *
- * @MX:TODO: [AUTO] CSV 내보내기 — Slice E. /api/admin/logs/export.csv Route Handler.
+ * Slice I (REQ-ADMIN-072 IP): ip 필터 추가.
+ *
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-072
- * @MX:PRIORITY: P2
- *
- * @MX:TODO: [AUTO] IP 필터 — Slice E.
- * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-072
- * @MX:PRIORITY: P2
  */
 import { z } from 'zod';
 import { router, protectedAdminProcedure } from '../../trpc';
 
 export const adminLogRouter = router({
   /**
-   * 감사 로그 목록 + 필터 + 페이지네이션 (REQ-ADMIN-072 부분).
-   * CSV 내보내기 / IP 필터는 Slice E 이월.
+   * 감사 로그 목록 + 필터 + 페이지네이션 (REQ-ADMIN-072).
+   * ip: 부분 일치 필터 추가됨 (Slice I).
    */
   list: protectedAdminProcedure
     .input(
@@ -25,6 +21,7 @@ export const adminLogRouter = router({
         actorId: z.number().int().positive().optional(),
         action: z.string().optional(),   // 부분 일치 (contains)
         target: z.string().optional(),   // 부분 일치 (contains)
+        ip: z.string().optional(),       // 부분 일치 (contains) — REQ-ADMIN-072 IP 필터 (Slice I)
         from: z.date().optional(),
         to: z.date().optional(),
         page: z.number().int().min(1).default(1),
@@ -36,6 +33,7 @@ export const adminLogRouter = router({
         ...(input.actorId ? { actorId: input.actorId } : {}),
         ...(input.action ? { action: { contains: input.action } } : {}),
         ...(input.target ? { target: { contains: input.target } } : {}),
+        ...(input.ip ? { ip: { contains: input.ip } } : {}),
         ...(input.from || input.to
           ? {
               createdAt: {

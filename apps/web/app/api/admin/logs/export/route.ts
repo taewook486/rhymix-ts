@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
   const actorId = searchParams.get('actorId');
   const action = searchParams.get('action');
   const target = searchParams.get('target');
+  const ip = searchParams.get('ip');     // REQ-ADMIN-072 IP 필터 (Slice I)
   const from = searchParams.get('from');
   const to = searchParams.get('to');
 
@@ -42,6 +43,7 @@ export async function GET(req: NextRequest) {
       ...(actorId ? { actorId: Number(actorId) } : {}),
       ...(action ? { action: { contains: action } } : {}),
       ...(target ? { target: { contains: target } } : {}),
+      ...(ip ? { ip: { contains: ip } } : {}),
       ...(from || to
         ? {
             createdAt: {

@@ -79,7 +79,11 @@ vi.mock('@/lib/db/prisma', () => ({
 // ---------------------------------------------------------------------------
 
 const mockModuleInstanceFindMany = vi.fn();
+const mockSiteSettingFindFirst = vi.fn();
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
   moduleInstance: {
     findMany: (...args: unknown[]) => mockModuleInstanceFindMany(...args),
   },
@@ -110,6 +114,7 @@ const guestCtx = {
 describe('admin.module tRPC router (Slice B)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
   });
 
   it('B-7: admin 세션 + module.create → createModuleInstance 호출 및 결과 반환 (REQ-ADMIN-020)', async () => {

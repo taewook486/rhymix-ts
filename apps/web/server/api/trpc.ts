@@ -14,6 +14,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { isAdminSession } from '@/lib/auth/admin-middleware';
+import { isAdminTwoFactorRequired, isSessionTwoFactorVerified } from '@/lib/auth/two-factor';
 import type { Context } from './context';
 
 const t = initTRPC.context<Context>().create({ transformer: superjson });
@@ -25,13 +26,32 @@ export const createCallerFactory = t.createCallerFactory;
 /**
  * isAdmin 검증 미들웨어.
  * 실패 시 FORBIDDEN 에러 발생.
- * TODO (Slice E site-settings): requireAdmin2FAIfEnabled 추가.
  */
 const requireAdmin = t.middleware(({ ctx, next }) => {
   if (!isAdminSession(ctx.session)) {
     throw new TRPCError({ code: 'FORBIDDEN', message: '관리자 권한이 필요합니다.' });
   }
   return next({ ctx: { ...ctx, session: ctx.session } });
+});
+
+/**
+ * 2FA 강제 미들웨어 — SPEC-ADMIN-001 Slice I (REQ-ADMIN-023).
+ *
+ * SiteSetting.requireAdminTwoFactor=true 이고 세션에 twoFactorVerified 플래그가
+ * 없는 경우 FORBIDDEN 을 발생시킨다.
+ * requireAdmin 이후에 체인되므로 ctx.session 은 보장됨.
+ *
+ * NOTE: 실제 OTP 검증 UI(/login/two-factor)는 SPEC-AUTH-001 후속 슬라이스에서 구현.
+ */
+const requireAdmin2FAIfEnabled = t.middleware(async ({ ctx, next }) => {
+  const required = await isAdminTwoFactorRequired(ctx.prisma);
+  if (required && !isSessionTwoFactorVerified(ctx.session)) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: '2FA 인증이 필요합니다.',
+    });
+  }
+  return next();
 });
 
 /**
@@ -75,7 +95,12 @@ const auditLogger = t.middleware(async ({ ctx, type, path, input, next }) => {
 });
 
 /**
- * requireAdmin 이 먼저, auditLogger 가 나중 — actorId 가 session 에 의존하기 때문.
- * (requireAdmin 통과 후에만 auditLogger 가 실행되므로 ctx.session 은 보장됨)
+ * requireAdmin → requireAdmin2FAIfEnabled → auditLogger 체인.
+ * - requireAdmin: isAdmin 세션 확인
+ * - requireAdmin2FAIfEnabled: 2FA 설정 시 twoFactorVerified 플래그 확인 (REQ-ADMIN-023)
+ * - auditLogger: mutation 감사 로그 기록 (actorId 는 requireAdmin 통과 후 보장됨)
  */
-export const protectedAdminProcedure = publicProcedure.use(requireAdmin).use(auditLogger);
+export const protectedAdminProcedure = publicProcedure
+  .use(requireAdmin)
+  .use(requireAdmin2FAIfEnabled)
+  .use(auditLogger);
