@@ -1,9 +1,10 @@
 /**
- * admin 라우터 조합 — SPEC-ADMIN-001 Slice B + Slice D + Slice E + Slice F.
+ * admin 라우터 조합 — SPEC-ADMIN-001 Slice B + Slice D + Slice E + Slice F + Slice H.
  *
  * Slice D 에서 menu / menuItem / log 라우터 추가됨.
  * Slice E 에서 site / user 라우터 추가됨.
  * Slice F 에서 system / cache 라우터 추가됨.
+ * Slice H 에서 favorite 라우터 추가됨.
  */
 import { router } from '../../trpc';
 import { adminModuleRouter } from './module';
@@ -14,6 +15,7 @@ import { adminSiteRouter } from './site';
 import { adminUserRouter } from './user';
 import { adminSystemRouter } from './system';
 import { adminCacheRouter } from './cache';
+import { adminFavoriteRouter } from './favorite';
 
 export const adminRouter = router({
   module:   adminModuleRouter,
@@ -24,4 +26,5 @@ export const adminRouter = router({
   user:     adminUserRouter,
   system:   adminSystemRouter,
   cache:    adminCacheRouter,
+  favorite: adminFavoriteRouter,
 });
