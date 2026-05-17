@@ -21,9 +21,9 @@
 | ID | 제목 | 우선순위 | 상태 | 라인 |
 |---|---|---|---|---|
 | [SPEC-INSTALL-001](./SPEC-INSTALL-001/spec.md) | Initial Installation Wizard | P0 | draft | ~330 |
-| [SPEC-ADMIN-001](./SPEC-ADMIN-001/spec.md) | Admin Dashboard & Module System | P0 | in-progress (Slice A-D 완료, 447 tests) | 976 |
-| [SPEC-AUTH-001](./SPEC-AUTH-001/spec.md) | Authentication & Member System | P0 | completed (Slice A-H 완료, 447 tests) | 633 |
-| [SPEC-CONTENT-001](./SPEC-CONTENT-001/spec.md) | Content & Board System | P0 | draft | 751 |
+| [SPEC-ADMIN-001](./SPEC-ADMIN-001/spec.md) | Admin Dashboard & Module System | P0 | completed (Slice A-I 완료, 533 tests) | 976 |
+| [SPEC-AUTH-001](./SPEC-AUTH-001/spec.md) | Authentication & Member System | P0 | completed (Slice A-H 완료, 508 tests) | 633 |
+| [SPEC-CONTENT-001](./SPEC-CONTENT-001/spec.md) | Content & Board System | P0 | in-progress (Slice A 완료, 521 tests) | 751 |
 | [SPEC-THEME-001](./SPEC-THEME-001/spec.md) | Theme, Layout & Skin System | P1 | draft | 656 |
 
 **총 5개 SPEC** (EARS 형식, Prisma 스키마, tRPC API, 설치 플로우 포함)
