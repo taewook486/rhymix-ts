@@ -39,10 +39,15 @@ describe('boardModule', () => {
     const { boardModule } = await import('./index.js');
     expect(boardModule.routes.index).toBeDefined();
     expect(typeof boardModule.routes.index).toBe('function');
+    const fakePrisma = {
+      board: { findUnique: vi.fn().mockResolvedValue(null) },
+      document: { findMany: vi.fn().mockResolvedValue([]) },
+    };
     const fakeProps = {
       instance: { id: 1, moduleCode: 'board', mid: 'notice', name: '공지', config: null },
       params: {},
       searchParams: {},
+      prisma: fakePrisma,
     };
     // 반환값이 null 이 아닌 ReactNode 인지 확인 (string, object 모두 허용)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

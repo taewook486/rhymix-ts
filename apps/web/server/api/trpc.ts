@@ -104,3 +104,30 @@ export const protectedAdminProcedure = publicProcedure
   .use(requireAdmin)
   .use(requireAdmin2FAIfEnabled)
   .use(auditLogger);
+
+// ---------------------------------------------------------------------------
+// SPEC-CONTENT-001 Slice B — protectedProcedure
+// ---------------------------------------------------------------------------
+
+/**
+ * 일반 인증 미들웨어 — content.* 라우터에서 사용.
+ *
+ * session.user.id 가 없으면 UNAUTHORIZED.
+ * isAdmin 검사는 하지 않는다 (admin 게이팅이 필요하면 protectedAdminProcedure 사용).
+ *
+ * @MX:NOTE [AUTO]: 일반 인증 프로시저. content.* 라우터에서 사용.
+ */
+const requireAuth = t.middleware(({ ctx, next }) => {
+  const userId = ctx.session?.user?.id;
+  if (typeof userId !== 'number' || !Number.isFinite(userId)) {
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: '로그인이 필요합니다.' });
+  }
+  // ctx.session 을 non-nullable 로 narrowing
+  return next({ ctx: { ...ctx, session: ctx.session! } });
+});
+
+/**
+ * 일반 인증 프로시저.
+ * content.document.create / update / delete / content.comment.create / delete 등에서 사용.
+ */
+export const protectedProcedure = publicProcedure.use(requireAuth);

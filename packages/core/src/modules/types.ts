@@ -6,7 +6,7 @@
  */
 
 import type { z } from 'zod';
-import type { Prisma, ModuleInstance, ModuleConfig } from '@prisma/client';
+import type { Prisma, PrismaClient, ModuleInstance, ModuleConfig } from '@prisma/client';
 import type { ReactNode } from 'react';
 
 // Prisma.TransactionClient 타입 재사용
@@ -38,6 +38,8 @@ export interface ModuleRoutePageProps {
   params: Record<string, string>;
   /** URL query string parameters */
   searchParams: Record<string, string | string[] | undefined>;
+  /** Prisma 클라이언트 — apps/web 레이어에서 주입. packages/board 등 도메인 패키지가 직접 import 하지 않도록 props 경유. */
+  prisma: PrismaClient;
 }
 
 /**
@@ -53,6 +55,8 @@ export type ModuleRouteIndex = (props: ModuleRoutePageProps) => Promise<ReactNod
 export interface ModuleRouteMap {
   /** GET /[mid] — 모듈 인스턴스의 인덱스 페이지 */
   index?: ModuleRouteIndex;
+  /** GET /[mid]/write — 새 문서 작성 페이지 (Slice B) */
+  write?: ModuleRouteIndex;
   /** GET /[mid]/[...slug] — 모듈 내부 라우트 */
   catchAll?: ModuleRouteIndex;
   /** Server Actions / api endpoints (Slice B+ 에서 별도 타입화) */
