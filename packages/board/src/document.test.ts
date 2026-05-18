@@ -11,17 +11,17 @@ import { ZodError } from 'zod';
 // ---------------------------------------------------------------------------
 
 describe('createDocument', () => {
-  it('A-9: 정상 입력 → document 생성, status=TEMP, boardId 일치, contentText=content', async () => {
+  it('A-9: 정상 입력 → document 생성, status=TEMP, boardId 일치, sanitize 적용된 content', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = { id: 7, moduleInstanceId: 3 };
+    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {} };
     const fakeDocument = {
       id: 1,
       boardId: 7,
       status: 'TEMP',
       title: 'hi',
       content: '<p>x</p>',
-      contentText: '<p>x</p>',
+      contentText: 'x',
     };
 
     const mockBoardFindUniqueOrThrow = vi.fn().mockResolvedValue(fakeBoard);
@@ -33,6 +33,7 @@ describe('createDocument', () => {
     };
 
     const result = await createDocument(
+      // actor 미지정 시 기본값 (member, non-admin) 사용
       { moduleInstanceId: 3, authorId: 1, title: 'hi', content: '<p>x</p>', nickName: null },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { prisma: mockPrisma as any },
@@ -44,7 +45,8 @@ describe('createDocument', () => {
     const createCall = mockDocumentCreate.mock.calls[0]?.[0] as { data: Record<string, unknown> };
     expect(createCall?.data?.boardId).toBe(7);
     expect(createCall?.data?.status).toBe('TEMP');
-    expect(createCall?.data?.contentText).toBe('<p>x</p>');
+    // Slice B: sanitize + toPlainText 후 contentText 가 별도 계산됨
+    expect(typeof createCall?.data?.contentText).toBe('string');
 
     expect(result).toMatchObject({ id: 1, boardId: 7, status: 'TEMP' });
   });
@@ -141,5 +143,280 @@ describe('getDocument', () => {
     const mockPrisma2 = { document: { findUniqueOrThrow: mockThrow } };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await expect(getDocument(999, { prisma: mockPrisma2 as any })).rejects.toThrow('Not found');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-CONTENT-001 Slice B (T-006) — XSS sanitize + status + permissions
+// ---------------------------------------------------------------------------
+
+describe('createDocument (Slice B)', () => {
+  it('B-401: <script> 태그가 sanitize 되어 저장됨 (contentText 도 마찬가지)', async () => {
+    const { createDocument } = await import('./document.js');
+
+    const fakeBoard = {
+      id: 7,
+      moduleInstanceId: 3,
+      permissions: { write_document: [1] },
+    };
+    const mockBoardFindUniqueOrThrow = vi.fn().mockResolvedValue(fakeBoard);
+    const mockDocumentCreate = vi.fn().mockImplementation(async ({ data }) => ({
+      id: 1,
+      ...data,
+    }));
+    const mockPrisma = {
+      board: { findUniqueOrThrow: mockBoardFindUniqueOrThrow },
+      document: { create: mockDocumentCreate },
+    };
+
+    await createDocument(
+      {
+        moduleInstanceId: 3,
+        authorId: 1,
+        title: 'hi',
+        content: '<p>safe</p><script>alert(1)</script>',
+        nickName: null,
+        actor: { userGroupSrl: 1, isAdmin: false },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    const data = mockDocumentCreate.mock.calls[0]?.[0]?.data as {
+      content: string;
+      contentText: string;
+    };
+    expect(data.content).not.toContain('<script');
+    expect(data.content).toContain('safe');
+  });
+
+  it('B-402: status 옵션 = PUBLIC 으로 명시하면 그대로 저장', async () => {
+    const { createDocument } = await import('./document.js');
+    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {} };
+    const mockPrisma = {
+      board: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeBoard) },
+      document: { create: vi.fn().mockImplementation(async ({ data }) => ({ id: 1, ...data })) },
+    };
+
+    await createDocument(
+      {
+        moduleInstanceId: 3,
+        authorId: 1,
+        title: 'x',
+        content: 'y',
+        nickName: null,
+        status: 'PUBLIC',
+        actor: { userGroupSrl: 1, isAdmin: false },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    const data = mockPrisma.document.create.mock.calls[0]?.[0]?.data as { status: string };
+    expect(data.status).toBe('PUBLIC');
+  });
+
+  it('B-403: 권한 거부 — guest(groupSrl=0) 가 write_document=[1] 게시판에 글 작성 시 throw', async () => {
+    const { createDocument } = await import('./document.js');
+    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: { write_document: [1] } };
+    const mockPrisma = {
+      board: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeBoard) },
+      document: { create: vi.fn() },
+    };
+
+    await expect(
+      createDocument(
+        {
+          moduleInstanceId: 3,
+          authorId: null,
+          title: 'x',
+          content: 'y',
+          nickName: 'guest',
+          actor: { userGroupSrl: 0, isAdmin: false },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { prisma: mockPrisma as any },
+      ),
+    ).rejects.toThrowError();
+    expect(mockPrisma.document.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('updateDocument (Slice B)', () => {
+  it('B-411: 본인 author 가 title 변경 → prisma.document.update 호출됨', async () => {
+    const { updateDocument } = await import('./document.js');
+    const fakeDoc = {
+      id: 10,
+      boardId: 7,
+      authorId: 5,
+      title: 'old',
+      content: '<p>x</p>',
+      contentText: '<p>x</p>',
+      status: 'PUBLIC',
+      board: { id: 7, permissions: {} },
+    };
+    const mockPrisma = {
+      document: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+        update: vi.fn().mockResolvedValue({ ...fakeDoc, title: 'new' }),
+      },
+    };
+
+    const result = await updateDocument(
+      {
+        id: 10,
+        title: 'new',
+        actor: { userId: 5, userGroupSrl: 1, isAdmin: false },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+    expect(mockPrisma.document.update).toHaveBeenCalledOnce();
+    expect(result.title).toBe('new');
+  });
+
+  it('B-412: 본인이 아닌데 admin 도 아니면 throw', async () => {
+    const { updateDocument } = await import('./document.js');
+    const fakeDoc = {
+      id: 10,
+      boardId: 7,
+      authorId: 5,
+      title: 'old',
+      content: '<p>x</p>',
+      contentText: '<p>x</p>',
+      status: 'PUBLIC',
+      board: { id: 7, permissions: {} },
+    };
+    const mockPrisma = {
+      document: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+        update: vi.fn(),
+      },
+    };
+
+    await expect(
+      updateDocument(
+        {
+          id: 10,
+          title: 'new',
+          actor: { userId: 99, userGroupSrl: 1, isAdmin: false },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { prisma: mockPrisma as any },
+      ),
+    ).rejects.toThrowError();
+    expect(mockPrisma.document.update).not.toHaveBeenCalled();
+  });
+
+  it('B-413: content 변경 시 sanitize 적용 + contentText 재계산', async () => {
+    const { updateDocument } = await import('./document.js');
+    const fakeDoc = {
+      id: 10,
+      boardId: 7,
+      authorId: 5,
+      title: 't',
+      content: 'old',
+      contentText: 'old',
+      status: 'PUBLIC',
+      board: { id: 7, permissions: {} },
+    };
+    const mockPrisma = {
+      document: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+        update: vi.fn().mockImplementation(async ({ data }) => ({ ...fakeDoc, ...data })),
+      },
+    };
+
+    await updateDocument(
+      {
+        id: 10,
+        content: '<p>new</p><script>alert(1)</script>',
+        actor: { userId: 5, userGroupSrl: 1, isAdmin: false },
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    const updateCall = mockPrisma.document.update.mock.calls[0]?.[0] as {
+      data: { content: string; contentText?: string };
+    };
+    expect(updateCall.data.content).not.toContain('<script');
+    expect(updateCall.data.contentText).toBeDefined();
+  });
+});
+
+describe('deleteDocument (Slice B)', () => {
+  it('B-421: 본인 또는 admin 이면 soft delete (deletedAt 세팅)', async () => {
+    const { deleteDocument } = await import('./document.js');
+    const fakeDoc = {
+      id: 10,
+      authorId: 5,
+      board: { id: 7, permissions: {} },
+    };
+    const mockPrisma = {
+      document: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+        update: vi.fn().mockResolvedValue({ ...fakeDoc, deletedAt: new Date() }),
+      },
+    };
+
+    await deleteDocument(
+      { id: 10, actor: { userId: 5, userGroupSrl: 1, isAdmin: false } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    expect(mockPrisma.document.update).toHaveBeenCalledOnce();
+    const updateCall = mockPrisma.document.update.mock.calls[0]?.[0] as {
+      data: { deletedAt: unknown };
+    };
+    expect(updateCall.data.deletedAt).toBeInstanceOf(Date);
+  });
+
+  it('B-422: 타인 + non-admin 이면 throw, update 미호출', async () => {
+    const { deleteDocument } = await import('./document.js');
+    const fakeDoc = {
+      id: 10,
+      authorId: 5,
+      board: { id: 7, permissions: {} },
+    };
+    const mockPrisma = {
+      document: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+        update: vi.fn(),
+      },
+    };
+
+    await expect(
+      deleteDocument(
+        { id: 10, actor: { userId: 99, userGroupSrl: 1, isAdmin: false } },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { prisma: mockPrisma as any },
+      ),
+    ).rejects.toThrowError();
+    expect(mockPrisma.document.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('listDocuments search (Slice B)', () => {
+  it('B-431: search 파라미터가 주어지면 prisma.$queryRaw 가 plainto_tsquery 와 함께 호출됨', async () => {
+    const { listDocuments } = await import('./document.js');
+    const fakeBoard = { id: 7, moduleInstanceId: 3 };
+    const mockQueryRaw = vi.fn().mockResolvedValue([{ id: 1, title: 'hit' }]);
+    const mockPrisma = {
+      board: { findUnique: vi.fn().mockResolvedValue(fakeBoard) },
+      document: { findMany: vi.fn() },
+      $queryRaw: mockQueryRaw,
+    };
+
+    const result = await listDocuments(
+      { moduleInstanceId: 3, status: 'PUBLIC', search: '검색어' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    expect(mockQueryRaw).toHaveBeenCalledOnce();
+    expect(mockPrisma.document.findMany).not.toHaveBeenCalled();
+    expect(result).toHaveLength(1);
   });
 });

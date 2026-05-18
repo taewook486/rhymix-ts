@@ -140,3 +140,51 @@ describe('auditLogger middleware (Slice D)', () => {
     expect(mockAdminLogCreate).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// T-002: protectedProcedure (SPEC-CONTENT-001 Slice B)
+// ---------------------------------------------------------------------------
+
+describe('protectedProcedure (T-002)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('B-201: session 이 null 이면 UNAUTHORIZED 발생', async () => {
+    const { protectedProcedure, router, createCallerFactory } = await import('./trpc');
+
+    const testRouter = router({
+      ping: protectedProcedure.query(() => ({ ok: true })),
+    });
+
+    const createCaller = createCallerFactory(testRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(guestCtx as any);
+
+    await expect(caller.ping()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('B-202: session.user.id 가 있으면 정상 통과 + ctx.session 에 접근 가능', async () => {
+    const { protectedProcedure, router, createCallerFactory } = await import('./trpc');
+
+    const testRouter = router({
+      whoami: protectedProcedure.query(({ ctx }) => ({ userId: ctx.session.user.id })),
+    });
+
+    const memberCtx = {
+      session: { user: { id: 42, isAdmin: false, groups: [] } },
+      prisma: mockPrisma,
+      ip: '127.0.0.1',
+      userAgent: 'test-agent',
+    };
+
+    const createCaller = createCallerFactory(testRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(memberCtx as any);
+    const result = await caller.whoami();
+    expect(result).toEqual({ userId: 42 });
+  });
+
+  // 마침내 TRPCError 의 직접 import 가 필요하지 않다.
+  void TRPCError;
+});

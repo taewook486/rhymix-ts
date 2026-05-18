@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 /**
- * Specification tests for [mid] dynamic route — SPEC-ADMIN-001 Slice B.
+ * Specification tests for [mid] dynamic route — SPEC-CONTENT-001 Slice B (T-005).
  *
- * B-5: getModuleInstanceByMid 가 instance 반환 → 렌더에 instance.name, moduleCode, mid 포함.
- * B-6: getModuleInstanceByMid 가 null 반환 → notFound() 호출됨.
+ * B-901: getModuleDefinition + def.routes.index 위임 확인.
+ * B-902: instance 없으면 notFound() 호출.
+ * B-903: def 없으면 notFound() 호출.
  *
- * @MX:NOTE: [AUTO] 모든 모듈 인스턴스 페이지의 진입점 — Slice C 에서 def.routes.index() 로 교체 예정.
- * @MX:TODO: [AUTO] Slice C 에서 def.routes.index(props) 위임으로 교체.
+ * @MX:NOTE: [AUTO] Slice B 에서 def.routes.index() 위임으로 교체됨 (T-005).
+ * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-001
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -16,9 +17,14 @@ import { render, screen } from '@testing-library/react';
 // ---------------------------------------------------------------------------
 
 const mockGetModuleInstanceByMid = vi.fn();
+const mockGetModuleDefinition = vi.fn();
 
 vi.mock('@rhymix-ts/core/modules', () => ({
   getModuleInstanceByMid: (...args: unknown[]) => mockGetModuleInstanceByMid(...args),
+}));
+
+vi.mock('@/lib/modules/registry', () => ({
+  getModuleDefinition: (code: string) => mockGetModuleDefinition(code),
 }));
 
 const mockHeadersGet = vi.fn();
@@ -35,52 +41,72 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/db/prisma', () => ({
-  prisma: {
-    domain: { findFirst: vi.fn() },
-  },
+  prisma: {},
 }));
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('[mid] page (Slice B)', () => {
+describe('[mid] page (Slice B — module delegation)', () => {
+  const mockInstance = {
+    id: 1,
+    siteId: 1,
+    moduleCode: 'board',
+    mid: 'notice',
+    name: 'Notice',
+    config: null,
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    // 기본: x-site-id = '1'
     mockHeadersGet.mockImplementation((key: string) => {
       if (key === 'x-site-id') return '1';
       return null;
     });
   });
 
-  it('B-5: getModuleInstanceByMid 가 instance 반환 → 렌더에 name/moduleCode/mid 텍스트 포함 (REQ-ADMIN-012)', async () => {
-    const instance = {
-      id: 1,
-      siteId: 1,
-      moduleCode: 'board',
-      mid: 'notice',
-      name: 'Notice',
-      config: null,
-    };
-    mockGetModuleInstanceByMid.mockResolvedValueOnce(instance);
+  it('B-901: def.routes.index 가 존재할 때 위임 결과를 렌더한다 (REQ-CONTENT-001)', async () => {
+    mockGetModuleInstanceByMid.mockResolvedValueOnce(mockInstance);
+    mockGetModuleDefinition.mockReturnValueOnce({
+      code: 'board',
+      routes: {
+        index: async () => <p data-testid="board-index">board-index-output</p>,
+      },
+    });
 
     const { default: MidPage } = await import('./page');
-    const component = await MidPage({ params: Promise.resolve({ mid: 'notice' }) });
+    const component = await MidPage({
+      params: Promise.resolve({ mid: 'notice' }),
+      searchParams: Promise.resolve({}),
+    });
     render(component as React.ReactElement);
 
-    expect(screen.getByText('Notice')).toBeDefined();
-    expect(screen.getByText(/module=board/)).toBeDefined();
-    expect(screen.getByText(/mid=notice/)).toBeDefined();
+    expect(screen.getByTestId('board-index')).toBeDefined();
   });
 
-  it('B-6: getModuleInstanceByMid 가 null 반환 → notFound() 호출됨 (REQ-ADMIN-012)', async () => {
+  it('B-902: getModuleInstanceByMid 가 null 반환 → notFound() 호출됨 (REQ-CONTENT-001)', async () => {
     mockGetModuleInstanceByMid.mockResolvedValueOnce(null);
 
     const { default: MidPage } = await import('./page');
-
     await expect(
-      MidPage({ params: Promise.resolve({ mid: 'missing' }) }),
+      MidPage({
+        params: Promise.resolve({ mid: 'missing' }),
+        searchParams: Promise.resolve({}),
+      }),
+    ).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('B-903: getModuleDefinition 이 undefined 반환 → notFound() 호출됨', async () => {
+    mockGetModuleInstanceByMid.mockResolvedValueOnce(mockInstance);
+    mockGetModuleDefinition.mockReturnValueOnce(undefined);
+
+    const { default: MidPage } = await import('./page');
+    await expect(
+      MidPage({
+        params: Promise.resolve({ mid: 'notice' }),
+        searchParams: Promise.resolve({}),
+      }),
     ).rejects.toThrow('NEXT_NOT_FOUND');
   });
 });

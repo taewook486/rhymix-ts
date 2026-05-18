@@ -33,3 +33,25 @@ export const boardModule: ModuleDefinition<BoardConfig> = {
 
 export { BoardConfigSchema, defaultBoardConfig };
 export type { BoardConfig };
+
+// SPEC-CONTENT-001 Slice B — 도메인 함수 re-export (apps/web tRPC 라우터가 사용)
+export {
+  createDocument,
+  updateDocument,
+  deleteDocument,
+  listDocuments,
+  getDocument,
+  BoardPermissionDeniedError,
+  DocumentOwnershipError,
+} from './document.js';
+
+export {
+  createComment,
+  listComments,
+  deleteComment,
+} from './comment.js';
+
+export {
+  canPerformAction,
+} from './permissions.js';
+export type { BoardAction, PermissionContext } from './permissions.js';
