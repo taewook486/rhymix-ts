@@ -1,6 +1,14 @@
 # SPEC-CONTENT-001 — Slice B 플랜
 
-**Status**: in-progress (T-001~T-011 완료, T-005/T-012/T-013 잔여)
+## Slice B 완료
+
+- PR #14 merged to main on 2026-05-18
+- Tests: 521 → 588 passed (+67)
+- gh CLI installed at `C:\Users\taewo\bin\gh.exe`
+
+---
+
+**Status**: COMPLETED
 **Methodology**: TDD (RED → GREEN → REFACTOR)
 **Base**: main = 59a9bfc (CONTENT-001 Slice A 완료, 521 tests)
 **Scope**: tRPC 라우터 + 권한 매트릭스 + XSS sanitize + Comment 도메인 + FTS + Module Registry + [mid]/page.tsx 위임 + BoardIndexPage RSC + 글쓰기 페이지 + Server Action
@@ -165,9 +173,9 @@ Server Action 패턴:
 | B-601~603 | admin.board: list / get (protectedAdmin) | ✅ 완료 |
 | B-701~710 | content.document: list/get/create/update/delete | ✅ 완료 |
 | B-801~806 | content.comment: list/create/delete | ✅ 완료 |
-| B-901 | [mid]/page.tsx: def.routes.index 위임 확인 | ⏳ 잔여 |
-| B-1001 | BoardIndexPage: Document 목록 렌더 확인 | ⏳ 잔여 |
-| B-1101 | WritePage: form 렌더 + Server Action 연결 | ⏳ 잔여 |
+| B-901 | [mid]/page.tsx: def.routes.index 위임 확인 | ✅ 완료 |
+| B-1001 | BoardIndexPage: Document 목록 렌더 확인 | ✅ 완료 |
+| B-1101 | WritePage: form 렌더 + Server Action 연결 | ✅ 완료 |
 
 ---
 
@@ -187,7 +195,7 @@ Layer 3 (잔여): [mid]/page.tsx 위임 (T-005), BoardIndexPage RSC (T-012), 글
 
 ## 6. 완료 기준
 
-- [ ] T-005/T-012/T-013 구현 완료
-- [ ] `pnpm test --run` 전체 통과 (~560 tests)
-- [ ] `pnpm typecheck` 0 errors
-- [ ] packages/board, apps/web 빌드 성공
+- [x] T-005/T-012/T-013 구현 완료
+- [x] `pnpm test --run` 전체 통과 (588 tests)
+- [x] `pnpm typecheck` 0 errors
+- [x] packages/board, apps/web 빌드 성공
