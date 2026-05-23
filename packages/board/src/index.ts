@@ -76,3 +76,34 @@ export {
   searchTags,
 } from './search.js';
 export type { SearchDocumentsInput, SearchDocumentsResult } from './search.js';
+
+// SPEC-CONTENT-001 Slice D — Vote + Report + Trash + History
+export {
+  voteDocument,
+  getVoteCount,
+} from './vote.js';
+export type { VoteDocumentInput, VoteResult } from './vote.js';
+
+export {
+  reportDocument,
+  resolveReport,
+  listReports,
+  DuplicateReportError,
+} from './report.js';
+export type { ReportDocumentInput, AdminActor, ListReportsInput, ListReportsResult } from './report.js';
+
+export {
+  softDeleteDocument,
+  restoreDocument,
+  purgeDocument,
+  listTrash,
+  TrashNotFoundError,
+  TrashExpiredError,
+} from './trash.js';
+export type { SoftDeleteResult, TrashWithDocument, ListTrashResult } from './trash.js';
+
+export {
+  recordUpdate,
+  getUpdateHistory,
+} from './history.js';
+export type { RecordUpdateInput } from './history.js';

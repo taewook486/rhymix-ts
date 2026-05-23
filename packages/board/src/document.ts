@@ -22,6 +22,8 @@ import { Prisma } from '@prisma/client';
 import type { PrismaClient, Document } from '@prisma/client';
 import { canPerformAction } from './permissions.js';
 import { incrementDocumentCount } from './category.js';
+import { softDeleteDocument } from './trash.js';
+import { recordUpdate } from './history.js';
 
 // ---------------------------------------------------------------------------
 // 권한 거부 예외 (TRPCError 로 변환하기 위한 sentinel)
@@ -237,6 +239,35 @@ export async function updateDocument(
     data.contentText = toPlainText(safeContent);
   }
 
+  // @MX:NOTE [AUTO]: recordUpdate 를 반드시 트랜잭션 내에서 호출.
+  // @MX:REASON: board.updateLog=true 면 audit 의무 — 트랜잭션 외 호출 금지.
+  // @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-110
+  const board = doc.board as { updateLog?: boolean };
+  const titleChanged = parsed.title !== undefined && parsed.title !== doc.title;
+  const contentChanged = parsed.content !== undefined &&
+    sanitizeHtml(parsed.content) !== doc.content;
+  const shouldLog = board.updateLog === true && (titleChanged || contentChanged);
+
+  if (shouldLog) {
+    return ctx.prisma.$transaction(async (tx) => {
+      await recordUpdate(
+        {
+          documentId: doc.id,
+          prevTitle: doc.title,
+          prevContent: doc.content,
+          prevExtraVars: null,
+          editorId: parsed.actor.userId,
+          editorIp: null,
+        },
+        tx as unknown as PrismaClient,
+      );
+      return (tx as unknown as PrismaClient).document.update({
+        where: { id: parsed.id },
+        data,
+      });
+    });
+  }
+
   return ctx.prisma.document.update({
     where: { id: parsed.id },
     data,
@@ -254,40 +285,27 @@ const DeleteDocumentSchema = z.object({
 
 export type DeleteDocumentInput = z.input<typeof DeleteDocumentSchema>;
 
+/**
+ * deleteDocument — softDeleteDocument 의 thin wrapper.
+ * Slice B/C 의 외부 호출 시그니처/반환 타입을 유지하면서
+ * Trash 생성 로직을 trash.ts 로 위임한다 (DD-1~DD-3 회귀 보호).
+ */
 export async function deleteDocument(
   input: DeleteDocumentInput,
   ctx: { prisma: PrismaClient },
 ): Promise<Document> {
   const parsed = DeleteDocumentSchema.parse(input);
 
-  const doc = await ctx.prisma.document.findUniqueOrThrow({
-    where: { id: parsed.id },
-    include: { board: true },
-  });
+  const { document } = await softDeleteDocument(
+    {
+      documentId: parsed.id,
+      deletedById: parsed.actor.userId,
+      actor: parsed.actor,
+    },
+    ctx,
+  );
 
-  // 소유권 검사 — admin 이거나 본인
-  if (!parsed.actor.isAdmin && doc.authorId !== parsed.actor.userId) {
-    throw new DocumentOwnershipError(parsed.id);
-  }
-
-  // categoryId 있으면 트랜잭션 내에서 soft delete + incrementDocumentCount(-1)
-  if (doc.categoryId != null) {
-    return ctx.prisma.$transaction(async (tx) => {
-      const updated = await tx.document.update({
-        where: { id: parsed.id },
-        data: { deletedAt: new Date() },
-      });
-
-      await incrementDocumentCount(doc.categoryId!, -1, tx as unknown as PrismaClient);
-
-      return updated;
-    });
-  }
-
-  return ctx.prisma.document.update({
-    where: { id: parsed.id },
-    data: { deletedAt: new Date() },
-  });
+  return document;
 }
 
 // ---------------------------------------------------------------------------
