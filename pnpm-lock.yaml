@@ -197,6 +197,12 @@ importers:
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.0.0(react@19.0.0)
       rimraf:
         specifier: ^6.0.1
         version: 6.1.3

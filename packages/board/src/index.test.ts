@@ -42,6 +42,7 @@ describe('boardModule', () => {
     const fakePrisma = {
       board: { findUnique: vi.fn().mockResolvedValue(null) },
       document: { findMany: vi.fn().mockResolvedValue([]) },
+      documentCategory: { findMany: vi.fn().mockResolvedValue([]) },
     };
     const fakeProps = {
       instance: { id: 1, moduleCode: 'board', mid: 'notice', name: '공지', config: null },
