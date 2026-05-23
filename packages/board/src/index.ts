@@ -43,7 +43,10 @@ export {
   getDocument,
   BoardPermissionDeniedError,
   DocumentOwnershipError,
+  encodeCursor,
+  decodeCursor,
 } from './document.js';
+export type { DocumentListResult } from './document.js';
 
 export {
   createComment,
@@ -55,3 +58,21 @@ export {
   canPerformAction,
 } from './permissions.js';
 export type { BoardAction, PermissionContext } from './permissions.js';
+
+// SPEC-CONTENT-001 Slice C — Category CRUD + Search 도메인 함수
+export {
+  createCategory,
+  listCategoryTree,
+  updateCategory,
+  deleteCategory,
+  incrementDocumentCount,
+  buildCategoryTree,
+  CategoryHasChildrenError,
+} from './category.js';
+export type { CategoryNode } from './category.js';
+
+export {
+  searchDocuments,
+  searchTags,
+} from './search.js';
+export type { SearchDocumentsInput, SearchDocumentsResult } from './search.js';

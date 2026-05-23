@@ -1,9 +1,13 @@
 /**
- * content.document tRPC 라우터 — SPEC-CONTENT-001 Slice B (T-010).
+ * content.document tRPC 라우터 — SPEC-CONTENT-001 Slice B (T-010) + Slice C.
  *
  * Document 도메인 함수를 tRPC 엔드포인트로 노출.
  *   - list (public) / get (public)
  *   - create / update / delete (protected — 로그인 필요)
+ *
+ * Slice C 변경:
+ *   - list: categoryId, tags, sort, cursor, limit 파라미터 추가
+ *   - create: categoryId, tags 파라미터 추가
  *
  * actor 는 session.user 에서 추출해 도메인 함수로 주입한다 — 클라이언트가
  * 임의로 isAdmin 을 넘길 수 없도록 안전한 채널 확보.
@@ -62,6 +66,7 @@ function mapDomainError(err: unknown): never {
 export const contentDocumentRouter = router({
   /**
    * 게시판 글 목록 조회 — 누구나 호출 가능 (게시판 권한은 도메인에서 처리).
+   * Slice C: cursor pagination, categoryId, tags, sort 파라미터 추가.
    */
   list: publicProcedure
     .input(
@@ -69,6 +74,11 @@ export const contentDocumentRouter = router({
         moduleInstanceId: z.number().int().positive(),
         status: z.enum(['PUBLIC', 'SECRET', 'TEMP']).default('PUBLIC'),
         search: z.string().min(1).optional(),
+        categoryId: z.number().int().positive().optional(),
+        tags: z.array(z.string()).max(10).optional(),
+        sort: z.enum(['list_order', 'update_order']).default('list_order'),
+        cursor: z.string().optional(),
+        limit: z.number().int().min(1).max(100).optional(),
       }),
     )
     .query(async ({ ctx, input }) => listDocuments(input, { prisma: ctx.prisma })),
@@ -82,6 +92,7 @@ export const contentDocumentRouter = router({
 
   /**
    * 글 작성 — 인증 필수.
+   * Slice C: categoryId, tags 파라미터 추가.
    */
   create: protectedProcedure
     .input(
@@ -90,6 +101,8 @@ export const contentDocumentRouter = router({
         title: z.string().min(1).max(200),
         content: z.string().min(1),
         status: z.enum(['PUBLIC', 'SECRET', 'TEMP']).optional(),
+        categoryId: z.number().int().positive().nullable().optional(),
+        tags: z.array(z.string().max(50)).max(20).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -102,6 +115,8 @@ export const contentDocumentRouter = router({
             content: input.content,
             nickName: null,
             ...(input.status !== undefined ? { status: input.status } : {}),
+            ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
+            ...(input.tags !== undefined ? { tags: input.tags } : {}),
             actor: buildActor(ctx.session),
           },
           { prisma: ctx.prisma },
