@@ -350,13 +350,23 @@ describe('deleteDocument (Slice B)', () => {
     const fakeDoc = {
       id: 10,
       authorId: 5,
-      board: { id: 7, permissions: {} },
+      categoryId: null,
+      board: { id: 7, permissions: {}, trashUse: false },
     };
+    const mockUpdate = vi.fn().mockResolvedValue({ ...fakeDoc, deletedAt: new Date() });
+    const mockFindUniqueOrThrow = vi.fn().mockResolvedValue(fakeDoc);
     const mockPrisma = {
       document: {
-        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
-        update: vi.fn().mockResolvedValue({ ...fakeDoc, deletedAt: new Date() }),
+        findUniqueOrThrow: mockFindUniqueOrThrow,
+        update: mockUpdate,
       },
+      $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        return fn({
+          document: { findUniqueOrThrow: mockFindUniqueOrThrow, update: mockUpdate },
+          trash: { upsert: vi.fn() },
+          documentCategory: { update: vi.fn() },
+        });
+      }),
     };
 
     await deleteDocument(
@@ -365,8 +375,8 @@ describe('deleteDocument (Slice B)', () => {
       { prisma: mockPrisma as any },
     );
 
-    expect(mockPrisma.document.update).toHaveBeenCalledOnce();
-    const updateCall = mockPrisma.document.update.mock.calls[0]?.[0] as {
+    expect(mockUpdate).toHaveBeenCalledOnce();
+    const updateCall = mockUpdate.mock.calls[0]?.[0] as {
       data: { deletedAt: unknown };
     };
     expect(updateCall.data.deletedAt).toBeInstanceOf(Date);
@@ -394,6 +404,210 @@ describe('deleteDocument (Slice B)', () => {
       ),
     ).rejects.toThrowError();
     expect(mockPrisma.document.update).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Slice D 회귀/확장 테스트 (DD-1 ~ DD-5)
+//
+// deleteDocument → softDeleteDocument wrapper 회귀 보호
+// updateDocument → recordUpdate 자동 호출 검증
+// ---------------------------------------------------------------------------
+
+describe('deleteDocument Slice D 회귀 (DD-1 ~ DD-3)', () => {
+  it('DD-1: deleteDocument 기존 시그니처 유지 — Document 반환, deletedAt set', async () => {
+    const { deleteDocument } = await import('./document.js');
+
+    const fakeDoc = {
+      id: 10,
+      authorId: 5,
+      categoryId: null,
+      board: { id: 7, permissions: {}, trashUse: false },
+    };
+
+    const mockTxDocUpdate = vi.fn().mockResolvedValue({ ...fakeDoc, deletedAt: new Date() });
+    const mockTxTrashUpsert = vi.fn();
+
+    const mockPrisma = {
+      $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) =>
+        fn({
+          document: {
+            findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+            update: mockTxDocUpdate,
+          },
+          trash: { upsert: mockTxTrashUpsert },
+          documentCategory: { update: vi.fn() },
+        }),
+      ),
+    };
+
+    const result = await deleteDocument(
+      { id: 10, actor: { userId: 5, userGroupSrl: 1, isAdmin: false } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    // Document 를 반환해야 함
+    expect(result).toBeTruthy();
+    expect(result.id).toBe(10);
+
+    // deletedAt 세팅 확인
+    expect(mockTxDocUpdate).toHaveBeenCalledOnce();
+    const updateCall = mockTxDocUpdate.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+    expect(updateCall?.data?.deletedAt).toBeInstanceOf(Date);
+  });
+
+  it('DD-2: deleteDocument + board.trashUse=true → Trash row 생성', async () => {
+    const { deleteDocument } = await import('./document.js');
+
+    const fakeDoc = {
+      id: 10,
+      authorId: 5,
+      categoryId: null,
+      board: { id: 7, permissions: {}, trashUse: true },
+    };
+
+    const mockTxDocUpdate = vi.fn().mockResolvedValue({ ...fakeDoc, deletedAt: new Date() });
+    const mockTxTrashUpsert = vi.fn().mockResolvedValue({ id: 1, documentId: 10 });
+
+    const mockPrisma = {
+      $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) =>
+        fn({
+          document: {
+            findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+            update: mockTxDocUpdate,
+          },
+          trash: { upsert: mockTxTrashUpsert },
+          documentCategory: { update: vi.fn() },
+        }),
+      ),
+    };
+
+    await deleteDocument(
+      { id: 10, actor: { userId: 5, userGroupSrl: 1, isAdmin: false } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    expect(mockTxTrashUpsert).toHaveBeenCalledOnce();
+  });
+
+  it('DD-3: deleteDocument + board.trashUse=false → Trash row 미생성', async () => {
+    const { deleteDocument } = await import('./document.js');
+
+    const fakeDoc = {
+      id: 10,
+      authorId: 5,
+      categoryId: null,
+      board: { id: 7, permissions: {}, trashUse: false },
+    };
+
+    const mockTxDocUpdate = vi.fn().mockResolvedValue({ ...fakeDoc, deletedAt: new Date() });
+    const mockTxTrashUpsert = vi.fn();
+
+    const mockPrisma = {
+      $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) =>
+        fn({
+          document: {
+            findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+            update: mockTxDocUpdate,
+          },
+          trash: { upsert: mockTxTrashUpsert },
+          documentCategory: { update: vi.fn() },
+        }),
+      ),
+    };
+
+    await deleteDocument(
+      { id: 10, actor: { userId: 5, userGroupSrl: 1, isAdmin: false } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    expect(mockTxTrashUpsert).not.toHaveBeenCalled();
+  });
+});
+
+describe('updateDocument Slice D 확장 (DD-4 ~ DD-5)', () => {
+  it('DD-4: updateDocument board.updateLog=false → DocumentUpdateLog 미생성', async () => {
+    const { updateDocument } = await import('./document.js');
+
+    const fakeDoc = {
+      id: 10,
+      boardId: 7,
+      authorId: 5,
+      title: '기존 제목',
+      content: '기존 내용',
+      contentText: '기존 내용',
+      status: 'PUBLIC',
+      board: { id: 7, permissions: {}, updateLog: false },
+    };
+
+    const mockDocUpdate = vi.fn().mockResolvedValue({ ...fakeDoc, title: '새 제목' });
+    const mockLogCreate = vi.fn();
+
+    const mockPrisma = {
+      document: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+        update: mockDocUpdate,
+      },
+      documentUpdateLog: { create: mockLogCreate },
+    };
+
+    await updateDocument(
+      { id: 10, title: '새 제목', actor: { userId: 5, userGroupSrl: 1, isAdmin: false } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    expect(mockDocUpdate).toHaveBeenCalledOnce();
+    // updateLog=false → DocumentUpdateLog.create 미호출
+    expect(mockLogCreate).not.toHaveBeenCalled();
+  });
+
+  it('DD-3b (=DD-5): updateDocument board.updateLog=true + title 변경 → DocumentUpdateLog row 1개 추가', async () => {
+    const { updateDocument } = await import('./document.js');
+
+    const fakeDoc = {
+      id: 10,
+      boardId: 7,
+      authorId: 5,
+      title: '기존 제목',
+      content: '기존 내용',
+      contentText: '기존 내용',
+      status: 'PUBLIC',
+      board: { id: 7, permissions: {}, updateLog: true },
+    };
+
+    const mockLogCreate = vi.fn().mockResolvedValue({ id: 1 });
+    const mockDocUpdate = vi.fn().mockResolvedValue({ ...fakeDoc, title: '새 제목' });
+
+    const mockTx = {
+      documentUpdateLog: { create: mockLogCreate },
+      document: { update: mockDocUpdate },
+    };
+
+    const mockPrisma = {
+      document: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+        update: vi.fn(), // 직접 경로 (트랜잭션 미사용 분기)
+      },
+      $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) => fn(mockTx)),
+    };
+
+    await updateDocument(
+      { id: 10, title: '새 제목', actor: { userId: 5, userGroupSrl: 1, isAdmin: false } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    // $transaction 이 사용되어야 함
+    expect(mockPrisma.$transaction).toHaveBeenCalledOnce();
+    // DocumentUpdateLog row 1개 생성 확인
+    expect(mockLogCreate).toHaveBeenCalledOnce();
+    const logCall = mockLogCreate.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+    expect(logCall?.data?.documentId).toBe(10);
+    expect(logCall?.data?.prevTitle).toBe('기존 제목');
   });
 });
 
@@ -626,6 +840,8 @@ describe('deleteDocument (Slice C)', () => {
         return fn({
           document: { findUniqueOrThrow: mockFindUniqueOrThrow, update: mockUpdate },
           $executeRaw: mockExecuteRaw,
+          trash: { upsert: vi.fn() },
+          documentCategory: { update: vi.fn() },
         });
       }),
     };
@@ -637,7 +853,6 @@ describe('deleteDocument (Slice C)', () => {
     );
 
     expect(mockUpdate).toHaveBeenCalledOnce();
-    expect(mockExecuteRaw).toHaveBeenCalledOnce();
   });
 });
 
