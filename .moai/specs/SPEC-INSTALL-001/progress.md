@@ -89,3 +89,78 @@ install 관련 테스트: 104 passed, 3 skipped (107 total)
 | AC-A-7 | 003 | 대기 (CSRF 검증 누락) |
 | AC-A-8 | 052 | 구현됨 (buildSessionOptions) |
 | AC-A-9 | 회귀 | 대기 (seed-site-installed 헬퍼 필요) |
+
+---
+
+# SPEC-INSTALL-001 Slice B — Progress
+
+**날짜**: 2026-05-24
+**방법론**: DDD (ANALYZE → PRESERVE → IMPROVE)
+**베이스라인**: 828 tests passing (feature/install-001-slice-a 완료 후 시작)
+
+---
+
+## ANALYZE Phase
+
+### REQ 매핑 (Slice B 범위)
+
+| REQ | 설명 | 상태 | 비고 |
+|-----|------|------|------|
+| REQ-INSTALL-013 | DB config 폼 검증 (superuser 거부/연결/권한/테이블 충돌) | **이미 구현** | `install-validate.ts` (Slice A에서 미리 구현됨) |
+| REQ-INSTALL-022 | dbConfigValidated=false 시 admin-config 접근 차단 | **이미 구현** | `wizard-guards.ts`의 requireWizardStep |
+| REQ-INSTALL-053 | pg_advisory_lock 유틸 | **이미 구현** | `packages/db/src/install/lock.ts` |
+| REQ-INSTALL-050 | DB 비밀번호 평문 미노출 (iron-session 암호화 의존) | **이미 구현** | wizard-session.ts |
+
+### 발견된 갭
+
+- Slice B 명세 위치(`packages/db/src/install/db-validator.ts`, `advisory-lock.ts`)에 파일 없음
+  - 실제 구현은 `install-validate.ts`, `install/lock.ts`에 존재
+  - re-export 파일 생성으로 명세 준수
+
+---
+
+## PRESERVE Phase
+
+- 기존 828 테스트 전체 통과 확인
+- 관련 테스트 현황:
+  - `install-validate.test.ts`: 10 passed, 2 skipped (통합)
+  - `install/lock.test.ts`: 3 passed (단위), 1 skipped (통합)
+  - `wizard-guards.test.ts`: 8 passed (DV-1~2 해당 케이스 포함)
+  - `actions.test.ts`: 21 passed (validateDbConfig 6개 케이스 포함)
+
+---
+
+## IMPROVE Phase
+
+### 완료된 작업
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `packages/db/src/install/db-validator.ts` | 신규 — install-validate.ts re-export (Slice B 명세 위치) |
+| `packages/db/src/install/advisory-lock.ts` | 신규 — lock.ts re-export (Slice B 명세 위치) |
+| `packages/db/src/install/db-validator.test.ts` | 신규 — DB-1~6, CH-1~2 (8 tests) |
+| `packages/db/src/install/advisory-lock.test.ts` | 신규 — AL-1~2 + 3번째 (3 tests) |
+| `apps/web/app/install/db-config/db-config.test.ts` | 신규 — DV-1~2, CH-1~2 (4 tests) |
+
+---
+
+## 수락 기준 (Slice B)
+
+| AC | REQ | 상태 |
+|----|-----|------|
+| AC-B-1: DB superuser 거부 | REQ-INSTALL-013.1 | 완료 (DB-1) |
+| AC-B-2: 연결 시도 + 권한 검증 | REQ-INSTALL-013.2~3 | 완료 (DB-2, DB-5, DB-6) |
+| AC-B-3: 테이블 충돌 409 거부 | REQ-INSTALL-013.4 | 완료 (DB-3) |
+| AC-B-4: 성공 시 세션 저장 + redirect | REQ-INSTALL-013.5~6 | 완료 (DB-4, actions.test.ts) |
+| AC-B-5: dbConfigValidated=false 시 admin 차단 | REQ-INSTALL-022 | 완료 (DV-1~2) |
+| AC-B-6: advisory lock 획득/해제 | REQ-INSTALL-053 | 완료 (AL-1~2) |
+| AC-B-7: DB 비밀번호 평문 미노출 | REQ-INSTALL-050 | 완료 (iron-session 암호화 의존) |
+| AC-B-8: 회귀 없음 | — | 완료 (828 → 843 passing) |
+
+---
+
+## 테스트 결과 (Slice B 완료)
+
+- **베이스라인**: 828 passing
+- **완료 후**: 843 passing (+15), 9 skipped (통합 테스트), 0 failing
+- **신규 테스트 파일**: 3개 (db-validator.test.ts, advisory-lock.test.ts, db-config.test.ts)
