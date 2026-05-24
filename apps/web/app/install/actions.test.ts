@@ -47,9 +47,16 @@ vi.mock('next/navigation', () => ({
   redirect: redirectMock,
 }));
 
+// csrfToken 검증: 기본으로 '유효한 토큰' 시뮬레이션 (csrfToken = 'valid-token')
+let csrfValid = true;
 vi.mock('@/lib/install/wizard-session', () => ({
   getWizardSession: async () => sessionState,
   clearWizardSession: clearSessionMock,
+  verifyCsrfToken: (_session: unknown, formToken: string | null) => {
+    // csrfValid 제어 변수로 테스트별 행동 조절
+    if (!csrfValid) return false;
+    return formToken === 'valid-token';
+  },
 }));
 
 vi.mock('@rhymix-ts/db', () => ({
@@ -93,6 +100,8 @@ beforeEach(() => {
   isDisposableMock.mockReset();
   headersMock.mockReset();
   clearSessionMock.mockReset();
+  // CSRF mock 기본값: 유효한 토큰
+  csrfValid = true;
   // 기본값: production이 아닌 dev 환경(performInstall에서 disposable check 우회).
   // 테스트 케이스에서 필요 시 NODE_ENV를 'production'으로 변경.
   // NODE_ENV는 readonly로 타이핑되어 있어 동적 indexer로 우회.
@@ -111,6 +120,7 @@ describe('agreeLicense', () => {
   it('the system shall set licenseAccepted=true and redirect to /install/check-env on valid agreement', async () => {
     const fd = new FormData();
     fd.set('accepted', 'true');
+    fd.set('csrfToken', 'valid-token');
     await expect(agreeLicense({ ok: true }, fd)).rejects.toThrow(
       /__REDIRECT__:\/install\/check-env$/,
     );
@@ -120,12 +130,53 @@ describe('agreeLicense', () => {
 
   it('the system shall return a fieldError when license is not accepted', async () => {
     const fd = new FormData();
+    fd.set('csrfToken', 'valid-token');
     const result = await agreeLicense({ ok: true }, fd);
     expect(result.ok).toBe(false);
     if (result.ok === false) {
       expect(result.fieldErrors?.accepted).toMatch(/동의/);
     }
     expect(sessionState.licenseAccepted).toBe(false);
+  });
+
+  // LA-1: CSRF 정상 검증 → licenseAccepted=true, redirect
+  it('LA-1: the system shall set licenseAccepted=true and redirect when csrfToken is valid (REQ-INSTALL-003, 011)', async () => {
+    const fd = new FormData();
+    fd.set('accepted', 'true');
+    fd.set('csrfToken', 'valid-token');
+    await expect(agreeLicense({ ok: true }, fd)).rejects.toThrow(
+      /__REDIRECT__:\/install\/check-env$/,
+    );
+    expect(sessionState.licenseAccepted).toBe(true);
+    expect(sessionState.save).toHaveBeenCalled();
+  });
+
+  // LA-2: agreed=false 또는 누락 → 세션 변경 없음, form error 반환
+  it('LA-2: the system shall return fieldError and not mutate session when agreed=false (REQ-INSTALL-011)', async () => {
+    const fd = new FormData();
+    fd.set('accepted', 'false');
+    fd.set('csrfToken', 'valid-token');
+    const result = await agreeLicense({ ok: true }, fd);
+    expect(result.ok).toBe(false);
+    if (result.ok === false) {
+      expect(result.fieldErrors?.accepted).toBeDefined();
+    }
+    expect(sessionState.licenseAccepted).toBe(false);
+    expect(sessionState.save).not.toHaveBeenCalled();
+  });
+
+  // LA-3: CSRF 토큰 불일치 → 401 수준 에러, 세션 변경 없음
+  it('LA-3: the system shall return formError and not mutate session when csrfToken is invalid (REQ-INSTALL-003)', async () => {
+    const fd = new FormData();
+    fd.set('accepted', 'true');
+    fd.set('csrfToken', 'wrong-token'); // 불일치
+    const result = await agreeLicense({ ok: true }, fd);
+    expect(result.ok).toBe(false);
+    if (result.ok === false) {
+      expect(result.formError).toMatch(/보안 토큰|CSRF|토큰/);
+    }
+    expect(sessionState.licenseAccepted).toBe(false);
+    expect(sessionState.save).not.toHaveBeenCalled();
   });
 });
 

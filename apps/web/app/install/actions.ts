@@ -35,7 +35,7 @@ import {
 } from '@rhymix-ts/auth';
 
 import { type ActionState } from '@/lib/install/action-state';
-import { getWizardSession } from '@/lib/install/wizard-session';
+import { getWizardSession, verifyCsrfToken } from '@/lib/install/wizard-session';
 import { requireWizardStep } from '@/lib/install/wizard-guards';
 
 /** Zod issues를 fieldErrors 맵으로 변환. */
@@ -54,11 +54,24 @@ function zodToFieldErrors(error: {
  * Step 1 — 라이선스 동의.
  *
  * `accepted=true`일 때만 세션에 동의 플래그를 세우고 다음 단계로 리다이렉트.
+ * CSRF double-submit cookie 검증 (REQ-INSTALL-003) 수행 후 처리합니다.
  */
 export async function agreeLicense(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const session = await getWizardSession();
+
+  // REQ-INSTALL-003: CSRF double-submit cookie 검증 (2차 방어선).
+  // Next.js Server Actions 자체의 origin 검증이 1차 방어선.
+  const formCsrfToken = formData.get('csrfToken') as string | null;
+  if (!verifyCsrfToken(session, formCsrfToken)) {
+    return {
+      ok: false,
+      formError: '보안 토큰이 유효하지 않습니다. 페이지를 새로고침하고 다시 시도해주세요.',
+    };
+  }
+
   const accepted = formData.get('accepted') === 'true' || formData.get('accepted') === 'on';
   const parsed = licenseAgreementSchema.safeParse({ accepted });
   if (!parsed.success) {
@@ -67,7 +80,6 @@ export async function agreeLicense(
       fieldErrors: { accepted: '라이선스에 동의해야 진행할 수 있습니다.' },
     };
   }
-  const session = await getWizardSession();
   session.licenseAccepted = true;
   session.step = 'env-check';
   await session.save?.();

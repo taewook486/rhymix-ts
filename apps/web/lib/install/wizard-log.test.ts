@@ -8,6 +8,7 @@ import {
   __resetWizardLogForTests,
   getRecentLogs,
   logStepTransition,
+  redactSensitiveKeys,
 } from './wizard-log';
 
 afterEach(() => {
@@ -63,5 +64,58 @@ describe('wizard-log', () => {
     const store = (globalThis as unknown as { [k: symbol]: Store | undefined })[STORE_KEY];
     expect(store).toBeDefined();
     expect(store?.entries.some((e) => e.ip === '203.0.113.1')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CH-2: password 키 redact 테스트 (REQ-INSTALL-051)
+// ---------------------------------------------------------------------------
+
+describe('redactSensitiveKeys', () => {
+  it('CH-2: the system shall mask "password" key value as [REDACTED]', () => {
+    const result = redactSensitiveKeys({ password: 'Secret123!', step: 'admin' });
+    expect(result.password).toBe('[REDACTED]');
+    expect(result.step).toBe('admin');
+  });
+
+  it('CH-2: the system shall mask "pass", "secret", "token" key values as [REDACTED]', () => {
+    const result = redactSensitiveKeys({
+      pass: 'db-pass',
+      secret: 'my-secret',
+      token: 'csrf-token',
+      user: 'admin',
+    });
+    expect(result.pass).toBe('[REDACTED]');
+    expect(result.secret).toBe('[REDACTED]');
+    expect(result.token).toBe('[REDACTED]');
+    expect(result.user).toBe('admin');
+  });
+
+  it('CH-2: the system shall recursively redact nested sensitive keys', () => {
+    const result = redactSensitiveKeys({
+      config: { password: 'nested-pass', host: 'localhost' },
+    });
+    const nested = result.config as Record<string, unknown>;
+    expect(nested.password).toBe('[REDACTED]');
+    expect(nested.host).toBe('localhost');
+  });
+
+  it('CH-2: the system shall not redact non-sensitive keys', () => {
+    const result = redactSensitiveKeys({ ip: '127.0.0.1', step: 'license', userAgent: 'bot' });
+    expect(result.ip).toBe('127.0.0.1');
+    expect(result.step).toBe('license');
+    expect(result.userAgent).toBe('bot');
+  });
+
+  it('CH-2: logStepTransition with meta containing password → ring buffer entry has [REDACTED]', () => {
+    logStepTransition({
+      step: 'admin',
+      ip: '1.2.3.4',
+      userAgent: 'test',
+      meta: { password: 'Secret123!', email: 'admin@example.com' },
+    });
+    const logs = getRecentLogs(1);
+    expect(logs[0]?.meta?.password).toBe('[REDACTED]');
+    expect(logs[0]?.meta?.email).toBe('admin@example.com');
   });
 });

@@ -24,15 +24,19 @@ vi.mock('@/lib/auth/config', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Slice B Mocks — prisma domain 해석
+// Slice B Mocks — prisma domain 해석 + Slice A site 해석
 // ---------------------------------------------------------------------------
 
 const mockDomainFindFirst = vi.fn();
+const mockSiteFindFirst = vi.fn();
 
 vi.mock('@/lib/db/prisma', () => ({
   prisma: {
     domain: {
       findFirst: (...args: unknown[]) => mockDomainFindFirst(...args),
+    },
+    site: {
+      findFirst: (...args: unknown[]) => mockSiteFindFirst(...args),
     },
   },
 }));
@@ -55,7 +59,19 @@ function createReq(pathname: string, isLoggedIn: boolean) {
 // Tests
 // ---------------------------------------------------------------------------
 
+// 기존 middleware 테스트에서 install gate가 통과하도록 site가 이미 설치된 것으로 모킹.
+const siteInstalledFixture = {
+  id: 1,
+  installedAt: new Date('2026-01-01T00:00:00.000Z'),
+};
+
 describe('middleware', () => {
+  beforeEach(() => {
+    // install gate 우회: 설치된 site 반환
+    mockSiteFindFirst.mockResolvedValue(siteInstalledFixture);
+    mockDomainFindFirst.mockResolvedValue(null);
+  });
+
   it('비인증 사용자가 /dashboard 접근 시 /login 으로 리다이렉트', async () => {
     const mod = await import('./middleware');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -185,6 +201,8 @@ const domainFixture = {
 describe('middleware — Slice B (Host 해석 + forceHttps)', () => {
   beforeEach(() => {
     mockDomainFindFirst.mockReset();
+    // install gate 우회: 설치된 site 반환
+    mockSiteFindFirst.mockResolvedValue(siteInstalledFixture);
   });
 
   it('B-1: Host=example.com, scheme=https → x-site-id/x-domain-id/x-language 헤더 주입 (REQ-ADMIN-010)', async () => {
@@ -247,5 +265,81 @@ describe('middleware — Slice B (Host 해석 + forceHttps)', () => {
 
     const status = response?.status ?? 200;
     expect(status).not.toBe(301);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Slice A: Install gate 테스트 (REQ-INSTALL-001, 020)
+// ---------------------------------------------------------------------------
+
+describe('middleware — Slice A (Install gate)', () => {
+  beforeEach(() => {
+    mockDomainFindFirst.mockResolvedValue(null);
+  });
+
+  it('MW-1: Site.installedAt IS NULL 상태에서 / 접근 시 302 → /install', async () => {
+    // 미설치 상태: site.findFirst가 null 반환
+    mockSiteFindFirst.mockResolvedValue(null);
+
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/', false);
+    const response = await handler(req);
+
+    expect(response).toBeDefined();
+    expect(response.status).toBe(302);
+    const location = response.headers.get('location');
+    expect(new URL(location!).pathname).toBe('/install');
+  });
+
+  it('MW-2: Site.installedAt IS NOT NULL 상태에서 / 접근 시 기존 동작 유지 (회귀 방어)', async () => {
+    // 설치된 상태: site.findFirst가 installedAt 포함 row 반환
+    mockSiteFindFirst.mockResolvedValue(siteInstalledFixture);
+
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/', false);
+    const response = await handler(req);
+
+    // 302 /install 가 아닌 정상 응답 (200 또는 307)
+    const location = response?.headers.get('location');
+    if (location) {
+      expect(new URL(location).pathname).not.toBe('/install');
+    } else {
+      expect(response?.status ?? 200).not.toBe(302);
+    }
+  });
+
+  it('MW-3: 미설치 상태에서도 /_next/static/... 는 302 /install 없음', async () => {
+    mockSiteFindFirst.mockResolvedValue(null);
+
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/_next/static/chunks/main.js', false);
+    const response = await handler(req);
+
+    const status = response?.status ?? 200;
+    // 302 /install 로 리다이렉트되지 않아야 함
+    if (status === 302 || status === 307) {
+      const location = response?.headers.get('location') ?? '';
+      expect(new URL(location).pathname).not.toBe('/install');
+    }
+    expect(status).not.toBe(302);
+  });
+
+  it('MW-3: 미설치 상태에서도 /api/install/* 는 302 /install 없음', async () => {
+    mockSiteFindFirst.mockResolvedValue(null);
+
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/api/install/rewrite-test/abc', false);
+    const response = await handler(req);
+
+    const status = response?.status ?? 200;
+    expect(status).not.toBe(302);
   });
 });
