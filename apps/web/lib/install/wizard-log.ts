@@ -16,6 +16,8 @@ export interface WizardLogEntry {
   ip: string;
   userAgent: string;
   timestamp: Date;
+  /** 추가 컨텍스트 — 민감 키는 자동으로 [REDACTED] 처리됨 (REQ-INSTALL-051). */
+  meta?: Record<string, unknown>;
 }
 
 interface WizardLogStore {
@@ -34,14 +36,48 @@ function getStore(): WizardLogStore {
   return g[STORE_KEY];
 }
 
+/**
+ * 민감 키를 [REDACTED]로 마스킹하는 redactor — REQ-INSTALL-051.
+ *
+ * password, pass, secret, token, key 등 민감한 키를 포함하는 객체를
+ * 로그에 기록하기 전에 값을 마스킹합니다.
+ *
+ * @MX:NOTE: [AUTO] 위저드 로그에서 민감 정보 노출 방지 — REQ-INSTALL-051.
+ */
+const SENSITIVE_KEYS = /^(password|pass|secret|token|key|credential|auth)$/i;
+
+export function redactSensitiveKeys(
+  obj: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (SENSITIVE_KEYS.test(k)) {
+      result[k] = '[REDACTED]';
+    } else if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      result[k] = redactSensitiveKeys(v as Record<string, unknown>);
+    } else {
+      result[k] = v;
+    }
+  }
+  return result;
+}
+
 /** Append a step-transition entry; evicts oldest when capacity exceeded. */
 export function logStepTransition(entry: {
   step: InstallStep;
   ip: string;
   userAgent: string;
+  meta?: Record<string, unknown>;
 }): void {
   const store = getStore();
-  store.entries.push({ ...entry, timestamp: new Date() });
+  const safeEntry: WizardLogEntry = {
+    step: entry.step,
+    ip: entry.ip,
+    userAgent: entry.userAgent,
+    timestamp: new Date(),
+    meta: entry.meta ? redactSensitiveKeys(entry.meta) : undefined,
+  };
+  store.entries.push(safeEntry);
   if (store.entries.length > WIZARD_LOG_BUFFER_SIZE) {
     store.entries.splice(0, store.entries.length - WIZARD_LOG_BUFFER_SIZE);
   }

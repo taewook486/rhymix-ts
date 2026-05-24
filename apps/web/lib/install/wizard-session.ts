@@ -21,8 +21,16 @@ import {
   NEXTAUTH_SECRET_MIN_LENGTH,
 } from '@rhymix-ts/core';
 
-/** iron-session에 봉인되는 위저드 페이로드 형태. */
+/**
+ * iron-session에 봉인되는 위저드 페이로드 형태.
+ *
+ * InstallSession 기반 + iron-session 메서드 + Slice A 추가 필드:
+ * - csrfToken: double-submit cookie 패턴 (REQ-INSTALL-003)
+ * - startedAt: 세션 시작 시간 (만료 검증용, US-INSTALL-012)
+ */
 export type WizardSession = InstallSession & {
+  csrfToken?: string;
+  startedAt?: Date | string;
   destroy?: () => Promise<void> | void;
   save?: () => Promise<void> | void;
 };
@@ -61,6 +69,51 @@ function applyDefaults(session: WizardSession): WizardSession {
   if (!session.step) session.step = 'license';
   if (!session.language) session.language = 'en';
   return session;
+}
+
+/**
+ * CSRF double-submit cookie 패턴 — REQ-INSTALL-003.
+ *
+ * 세션에 csrfToken 이 없으면 새로 생성하여 저장. 폼의 hidden field 와
+ * 이 토큰을 비교하여 CSRF 방어를 2차로 강화합니다.
+ */
+export async function getOrCreateCsrfToken(session: WizardSession): Promise<string> {
+  if (!session.csrfToken) {
+    const { webcrypto } = await import('node:crypto');
+    const bytes = webcrypto.getRandomValues(new Uint8Array(32));
+    session.csrfToken = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    await session.save?.();
+  }
+  return session.csrfToken;
+}
+
+/**
+ * CSRF 토큰 검증 — formData의 csrfToken 과 세션 토큰 비교.
+ *
+ * @returns true 이면 검증 통과
+ */
+export function verifyCsrfToken(session: WizardSession, formToken: string | null): boolean {
+  if (!formToken) return false;
+  if (!session.csrfToken) return false;
+  return formToken === session.csrfToken;
+}
+
+/**
+ * 세션 만료 여부 확인 — REQ-INSTALL-004 / US-INSTALL-012.
+ *
+ * iron-session maxAge 가 자동으로 만료를 처리하지만, 서버 측에서도
+ * startedAt + 60min < now 조건으로 명시적으로 검증할 수 있습니다.
+ *
+ * @returns true 이면 세션 만료 (호출자는 clearWizardSession 호출 필요)
+ */
+export function isWizardSessionExpired(session: WizardSession): boolean {
+  if (!session.startedAt) return false;
+  const startedAt =
+    session.startedAt instanceof Date ? session.startedAt : new Date(session.startedAt);
+  const expiresAt = new Date(startedAt.getTime() + 60 * 60 * 1000); // 60분
+  return new Date() > expiresAt;
 }
 
 /**
