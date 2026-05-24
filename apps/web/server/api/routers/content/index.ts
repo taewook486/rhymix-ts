@@ -1,13 +1,14 @@
 /**
- * content 라우터 조합 — SPEC-CONTENT-001 Slice B + Slice C + Slice D.
+ * content 라우터 조합 — SPEC-CONTENT-001 Slice B + Slice C + Slice D + Slice E.
  *
- * content.document.*  — 글 CRUD + 검색
- * content.comment.*   — 댓글 CRUD
- * content.category.*  — 카테고리 트리 조회 (Slice C)
- * content.search.*    — FTS + 태그 자동완성 (Slice C)
- * content.vote.*      — 투표 토글 + 카운트 (Slice D)
- * content.report.*    — 신고 생성 (Slice D)
- * content.history.*   — 수정 이력 조회 (Slice D)
+ * content.document.*    — 글 CRUD + 검색
+ * content.comment.*     — 댓글 CRUD
+ * content.category.*    — 카테고리 트리 조회 (Slice C)
+ * content.search.*      — FTS + 태그 자동완성 (Slice C)
+ * content.vote.*        — 투표 토글 + 카운트 (Slice D)
+ * content.report.*      — 신고 생성 (Slice D)
+ * content.history.*     — 수정 이력 조회 (Slice D)
+ * content.attachment.*  — 파일 첨부 presign + 관리 (Slice E)
  */
 import { router } from '../../trpc';
 import { contentDocumentRouter } from './document';
@@ -17,6 +18,7 @@ import { contentSearchRouter } from './search';
 import { contentVoteRouter } from './vote';
 import { contentReportRouter } from './report';
 import { contentHistoryRouter } from './history';
+import { contentAttachmentRouter } from './attachment';
 
 export const contentRouter = router({
   document: contentDocumentRouter,
@@ -26,4 +28,5 @@ export const contentRouter = router({
   vote: contentVoteRouter,
   report: contentReportRouter,
   history: contentHistoryRouter,
+  attachment: contentAttachmentRouter,
 });

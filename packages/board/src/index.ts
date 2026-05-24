@@ -107,3 +107,32 @@ export {
   getUpdateHistory,
 } from './history.js';
 export type { RecordUpdateInput } from './history.js';
+
+// SPEC-CONTENT-001 Slice E — File Attachments + Rate Limiting
+export {
+  requestUpload,
+  completeUpload,
+  deleteAttachment,
+  listAttachments,
+  UnsupportedMimeTypeError,
+  FileTooLargeError,
+  InvalidUploadTokenError,
+  UploadHeadMismatchError,
+  VirusDetectedError,
+  AttachmentOwnershipError,
+} from './attachment.js';
+export type { RequestUploadInput, RequestUploadResult, CompleteUploadInput } from './attachment.js';
+
+export {
+  checkRateLimit,
+  recordAttempt,
+  resolveLimit,
+  RateLimitedError,
+  RATE_LIMITS,
+} from './rate-limit.js';
+export type { ContentEndpoint, RateLimitConfig } from './rate-limit.js';
+
+export { NoopScanner, FakeMalwareScanner } from './storage/scanner.js';
+export { InMemoryStorage } from './storage/memory.js';
+export { S3Storage } from './storage/s3.js';
+export type { FileStorage, VirusScanner } from './storage/types.js';
