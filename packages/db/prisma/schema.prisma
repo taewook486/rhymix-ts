@@ -435,6 +435,20 @@ model MemberAgreement {
   @@map("member_agreements")
 }
 
+// SPEC-CONTENT-001 Slice E REQ-CONTENT-140: 컨텐츠 쓰기 rate limiting ledger.
+// LoginAttempt 패턴 + endpoint 차원 추가.
+model ContentRateLimit {
+  id         BigInt   @id @default(autoincrement())
+  ip         String
+  identifier String?  // userId.toString() 또는 익명이면 null
+  endpoint   String   // "document.create" | "comment.create" | "attachment.upload"
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  @@index([ip, endpoint, createdAt])
+  @@index([identifier, endpoint, createdAt])
+  @@map("content_rate_limits")
+}
+
 // SPEC-AUTH-001 REQ-AUTH-015, REQ-AUTH-033: brute-force / rate-limit ledger.
 model LoginAttempt {
   id         Int                @id @default(autoincrement())
