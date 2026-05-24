@@ -1,5 +1,5 @@
 /**
- * document.ts — SPEC-CONTENT-001 Slice B (T-006) + Slice C (T-003)
+ * document.ts — SPEC-CONTENT-001 Slice B (T-006) + Slice C (T-003) + Slice F
  *
  * Document 도메인 함수.
  * Slice B 변경사항:
@@ -14,7 +14,13 @@
  *   - deleteDocument: categoryId 있으면 incrementDocumentCount(-1) 호출.
  *   - encodeCursor/decodeCursor 유틸 추가.
  *
- * REQ-CONTENT-010, REQ-CONTENT-020, REQ-CONTENT-040, REQ-CONTENT-080, REQ-CONTENT-081.
+ * Slice F 변경사항:
+ *   - createDocument / updateDocument: extraVars input 추가 (optional, PUT semantics).
+ *   - 트랜잭션 외부에서 keys 조회 + 동적 Zod parse.
+ *   - ExtraVarsRequiredError / ExtraVarsNotConfiguredError 신규 에러 클래스.
+ *
+ * REQ-CONTENT-010, REQ-CONTENT-020, REQ-CONTENT-040, REQ-CONTENT-080, REQ-CONTENT-081,
+ * REQ-CONTENT-120, REQ-CONTENT-121.
  */
 import { z } from 'zod';
 import DOMPurify from 'isomorphic-dompurify';
@@ -24,6 +30,33 @@ import { canPerformAction } from './permissions.js';
 import { incrementDocumentCount } from './category.js';
 import { softDeleteDocument } from './trash.js';
 import { recordUpdate } from './history.js';
+import { buildExtraVarsSchema } from './extra-vars-schema.js';
+
+// ---------------------------------------------------------------------------
+// Slice F: extraVars 관련 에러 클래스
+// ---------------------------------------------------------------------------
+
+/**
+ * 게시판에 required extra key 가 있는데 input 에 extraVars 가 없을 때.
+ */
+export class ExtraVarsRequiredError extends Error {
+  readonly code = 'EXTRA_VARS_REQUIRED';
+  constructor(public readonly boardId: number) {
+    super(`Board ${boardId} has required extra keys but extraVars input is missing`);
+    this.name = 'ExtraVarsRequiredError';
+  }
+}
+
+/**
+ * 게시판에 extra key 가 없는데 input 에 extraVars 가 있을 때.
+ */
+export class ExtraVarsNotConfiguredError extends Error {
+  readonly code = 'EXTRA_VARS_NOT_CONFIGURED';
+  constructor(public readonly boardId: number) {
+    super(`Board ${boardId} has no extra keys defined but extraVars input is non-empty`);
+    this.name = 'ExtraVarsNotConfiguredError';
+  }
+}
 
 // ---------------------------------------------------------------------------
 // 권한 거부 예외 (TRPCError 로 변환하기 위한 sentinel)
@@ -134,6 +167,8 @@ const CreateDocumentSchema = z.object({
   // Slice C 추가
   categoryId: z.number().int().positive().nullable().default(null),
   tags: z.array(z.string().max(50)).max(20).default([]),
+  // Slice F 추가
+  extraVars: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type CreateDocumentInput = z.input<typeof CreateDocumentSchema>;
@@ -151,6 +186,31 @@ export async function createDocument(
   // 권한 검사 — write_document
   if (!canPerformAction(board, 'write_document', parsed.actor)) {
     throw new BoardPermissionDeniedError('write_document');
+  }
+
+  // Slice F: extraVars 검증 (트랜잭션 외부)
+  let validatedExtraVars: Record<string, unknown> | undefined;
+  {
+    const keys = await ctx.prisma.documentExtraKey.findMany({
+      where: { boardId: board.id, langCode: 'ko' },
+      orderBy: { varIdx: 'asc' },
+    });
+
+    if (parsed.extraVars !== undefined) {
+      if (keys.length === 0 && Object.keys(parsed.extraVars).length > 0) {
+        throw new ExtraVarsNotConfiguredError(board.id);
+      }
+      if (keys.length > 0) {
+        const schema = buildExtraVarsSchema(keys);
+        validatedExtraVars = schema.parse(parsed.extraVars) as Record<string, unknown>;
+      }
+    } else {
+      // extraVars 미전달 시 required 키 존재 여부 검사
+      const hasRequired = keys.some((k) => k.varIsRequired);
+      if (hasRequired) {
+        throw new ExtraVarsRequiredError(board.id);
+      }
+    }
   }
 
   // XSS sanitize
@@ -171,6 +231,7 @@ export async function createDocument(
           status: parsed.status,
           categoryId: parsed.categoryId,
           tags: parsed.tags,
+          extraVars: validatedExtraVars,
         },
       });
 
@@ -190,6 +251,7 @@ export async function createDocument(
       contentText: safeContentText,
       status: parsed.status,
       tags: parsed.tags,
+      extraVars: validatedExtraVars,
     },
   });
 }
@@ -204,6 +266,8 @@ const UpdateDocumentSchema = z.object({
   content: z.string().min(1).optional(),
   status: z.enum(['PUBLIC', 'SECRET', 'TEMP']).optional(),
   actor: AuthorActorSchema,
+  // Slice F 추가 (PUT semantics: 전달하면 전체 교체)
+  extraVars: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type UpdateDocumentInput = z.input<typeof UpdateDocumentSchema>;
@@ -229,6 +293,23 @@ export async function updateDocument(
     throw new BoardPermissionDeniedError('write_document');
   }
 
+  // Slice F: extraVars 검증 (PUT semantics, 트랜잭션 외부)
+  let validatedExtraVars: Record<string, unknown> | undefined;
+  if (parsed.extraVars !== undefined) {
+    const keys = await ctx.prisma.documentExtraKey.findMany({
+      where: { boardId: doc.boardId, langCode: 'ko' },
+      orderBy: { varIdx: 'asc' },
+    });
+
+    if (keys.length === 0 && Object.keys(parsed.extraVars).length > 0) {
+      throw new ExtraVarsNotConfiguredError(doc.boardId);
+    }
+    if (keys.length > 0) {
+      const schema = buildExtraVarsSchema(keys);
+      validatedExtraVars = schema.parse(parsed.extraVars) as Record<string, unknown>;
+    }
+  }
+
   // 부분 업데이트 페이로드 구성
   const data: Prisma.DocumentUpdateInput = {};
   if (parsed.title !== undefined) data.title = parsed.title;
@@ -238,6 +319,7 @@ export async function updateDocument(
     data.content = safeContent;
     data.contentText = toPlainText(safeContent);
   }
+  if (validatedExtraVars !== undefined) data.extraVars = validatedExtraVars;
 
   // @MX:NOTE [AUTO]: recordUpdate 를 반드시 트랜잭션 내에서 호출.
   // @MX:REASON: board.updateLog=true 면 audit 의무 — 트랜잭션 외 호출 금지.

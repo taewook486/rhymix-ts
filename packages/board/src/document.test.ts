@@ -32,6 +32,7 @@ describe('createDocument', () => {
     const mockPrisma = {
       board: { findUniqueOrThrow: mockBoardFindUniqueOrThrow },
       document: { create: mockDocumentCreate },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue([]) },
     };
 
     const result = await createDocument(
@@ -166,6 +167,7 @@ describe('createDocument (Slice B)', () => {
     const mockPrisma = {
       board: { findUniqueOrThrow: mockBoardFindUniqueOrThrow },
       document: { create: mockDocumentCreate },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue([]) },
     };
 
     await createDocument(
@@ -195,6 +197,7 @@ describe('createDocument (Slice B)', () => {
     const mockPrisma = {
       board: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeBoard) },
       document: { create: vi.fn().mockImplementation(async ({ data }) => ({ id: 1, ...data })) },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue([]) },
     };
 
     await createDocument(
@@ -791,6 +794,7 @@ describe('createDocument (Slice C)', () => {
     const mockPrisma = {
       board: { findUniqueOrThrow: mockBoardFind },
       document: { create: mockDocCreate },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue([]) },
       $executeRaw: mockExecuteRaw,
       $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
         return fn({
@@ -885,6 +889,206 @@ describe('listDocuments — Breaking Change 회귀 보장 (D-9)', () => {
       items: [],
       nextCursor: null,
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-CONTENT-001 Slice F — DD-1 ~ DD-6: extraVars 통합 검증
+// ---------------------------------------------------------------------------
+
+describe('createDocument + extraVars (Slice F — DD-1 ~ DD-5)', () => {
+  it('DD-F1: extraVars 포함 정상 생성 → prisma.document.create.data.extraVars 가 저장됨', async () => {
+    const { createDocument } = await import('./document.js');
+
+    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeKeys = [
+      { id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+      { id: 2, boardId: 10, varIdx: 1, varName: 'eventDate', varType: 'date', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+    ];
+    const mockDocCreate = vi.fn().mockResolvedValue({ id: 1, boardId: 10, extraVars: { price: 100, eventDate: '2026-06-01' } });
+
+    const mockPrisma = {
+      board: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeBoard) },
+      document: { create: mockDocCreate },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue(fakeKeys) },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await createDocument(
+      {
+        moduleInstanceId: 3,
+        authorId: 1,
+        title: 'test',
+        content: '<p>내용</p>',
+        nickName: null,
+        extraVars: { price: 100, eventDate: '2026-06-01' },
+      },
+      { prisma: mockPrisma as any },
+    );
+
+    expect(mockDocCreate).toHaveBeenCalledOnce();
+    const createCall = mockDocCreate.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+    expect(createCall?.data?.extraVars).toMatchObject({ price: 100, eventDate: '2026-06-01' });
+  });
+
+  it('DD-F2: extraVars 검증 실패 → ZodError throw', async () => {
+    const { createDocument } = await import('./document.js');
+
+    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeKeys = [
+      { id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: true, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+    ];
+    const mockPrisma = {
+      board: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeBoard) },
+      document: { create: vi.fn() },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue(fakeKeys) },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(
+      createDocument(
+        {
+          moduleInstanceId: 3,
+          authorId: 1,
+          title: 'test',
+          content: '<p>내용</p>',
+          nickName: null,
+          extraVars: { price: 'not-a-number' }, // 타입 불일치
+        },
+        { prisma: mockPrisma as any },
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('DD-F3: 키 미정의 게시판 + extraVars 포함 → ExtraVarsNotConfiguredError', async () => {
+    const { createDocument, ExtraVarsNotConfiguredError } = await import('./document.js');
+
+    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const mockPrisma = {
+      board: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeBoard) },
+      document: { create: vi.fn() },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue([]) }, // 키 없음
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(
+      createDocument(
+        {
+          moduleInstanceId: 3,
+          authorId: 1,
+          title: 'test',
+          content: '<p>내용</p>',
+          nickName: null,
+          extraVars: { foo: 1 }, // 정의 없는 키
+        },
+        { prisma: mockPrisma as any },
+      ),
+    ).rejects.toThrow(ExtraVarsNotConfiguredError);
+  });
+
+  it('DD-F4: required 키 있는 게시판 + extraVars 미전달 → ExtraVarsRequiredError', async () => {
+    const { createDocument, ExtraVarsRequiredError } = await import('./document.js');
+
+    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeKeys = [
+      { id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: true, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+    ];
+    const mockPrisma = {
+      board: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeBoard) },
+      document: { create: vi.fn() },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue(fakeKeys) },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(
+      createDocument(
+        {
+          moduleInstanceId: 3,
+          authorId: 1,
+          title: 'test',
+          content: '<p>내용</p>',
+          nickName: null,
+          // extraVars 없음
+        },
+        { prisma: mockPrisma as any },
+      ),
+    ).rejects.toThrow(ExtraVarsRequiredError);
+  });
+
+  it('DD-F5: required 키 없는 게시판 + extraVars 미전달 → 기존 동작 통과', async () => {
+    const { createDocument } = await import('./document.js');
+
+    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeKeys = [
+      { id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+    ];
+    const mockDocCreate = vi.fn().mockResolvedValue({ id: 1, boardId: 10 });
+    const mockPrisma = {
+      board: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeBoard) },
+      document: { create: mockDocCreate },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue(fakeKeys) },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await createDocument(
+      {
+        moduleInstanceId: 3,
+        authorId: 1,
+        title: 'test',
+        content: '<p>내용</p>',
+        nickName: null,
+        // extraVars 없음, required 아니므로 통과
+      },
+      { prisma: mockPrisma as any },
+    );
+
+    expect(mockDocCreate).toHaveBeenCalledOnce();
+  });
+});
+
+describe('updateDocument + extraVars (Slice F — DD-F6)', () => {
+  it('DD-F6: updateDocument extraVars → PUT semantics (전체 교체)', async () => {
+    const { updateDocument } = await import('./document.js');
+
+    const fakeDoc = {
+      id: 10,
+      boardId: 7,
+      authorId: 5,
+      title: '제목',
+      content: '<p>내용</p>',
+      contentText: '내용',
+      status: 'PUBLIC',
+      extraVars: { price: 100, eventDate: '2026-01-01' }, // 기존 값
+      board: { id: 7, permissions: {}, updateLog: false },
+    };
+    const fakeKeys = [
+      { id: 1, boardId: 7, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+      { id: 2, boardId: 7, varIdx: 1, varName: 'eventDate', varType: 'date', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+    ];
+    const mockDocUpdate = vi.fn().mockResolvedValue({ ...fakeDoc, extraVars: { price: 200 } });
+    const mockPrisma = {
+      document: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(fakeDoc),
+        update: mockDocUpdate,
+      },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue(fakeKeys) },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await updateDocument(
+      {
+        id: 10,
+        actor: { userId: 5, userGroupSrl: 1, isAdmin: false },
+        extraVars: { price: 200 }, // eventDate 없음 → PUT: eventDate 제거됨
+      },
+      { prisma: mockPrisma as any },
+    );
+
+    expect(mockDocUpdate).toHaveBeenCalledOnce();
+    const updateCall = mockDocUpdate.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+    // PUT semantics: 전달된 값만 저장됨 (eventDate 없음)
+    expect(updateCall?.data?.extraVars).toMatchObject({ price: 200 });
+    expect((updateCall?.data?.extraVars as Record<string, unknown>)?.eventDate).toBeUndefined();
   });
 });
 

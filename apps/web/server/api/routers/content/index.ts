@@ -1,5 +1,5 @@
 /**
- * content 라우터 조합 — SPEC-CONTENT-001 Slice B + Slice C + Slice D + Slice E.
+ * content 라우터 조합 — SPEC-CONTENT-001 Slice B + Slice C + Slice D + Slice E + Slice F.
  *
  * content.document.*    — 글 CRUD + 검색
  * content.comment.*     — 댓글 CRUD
@@ -9,6 +9,7 @@
  * content.report.*      — 신고 생성 (Slice D)
  * content.history.*     — 수정 이력 조회 (Slice D)
  * content.attachment.*  — 파일 첨부 presign + 관리 (Slice E)
+ * content.extraKeys.*   — 게시판 extra key 목록 조회 (Slice F)
  */
 import { router } from '../../trpc';
 import { contentDocumentRouter } from './document';
@@ -19,14 +20,16 @@ import { contentVoteRouter } from './vote';
 import { contentReportRouter } from './report';
 import { contentHistoryRouter } from './history';
 import { contentAttachmentRouter } from './attachment';
+import { contentExtraKeysRouter } from './extra-keys';
 
 export const contentRouter = router({
-  document: contentDocumentRouter,
-  comment: contentCommentRouter,
-  category: contentCategoryRouter,
-  search: contentSearchRouter,
-  vote: contentVoteRouter,
-  report: contentReportRouter,
-  history: contentHistoryRouter,
+  document:  contentDocumentRouter,
+  comment:   contentCommentRouter,
+  category:  contentCategoryRouter,
+  search:    contentSearchRouter,
+  vote:      contentVoteRouter,
+  report:    contentReportRouter,
+  history:   contentHistoryRouter,
   attachment: contentAttachmentRouter,
+  extraKeys: contentExtraKeysRouter,
 });

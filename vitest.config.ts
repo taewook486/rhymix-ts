@@ -20,6 +20,9 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
+    environmentMatchGlobs: [
+      ['packages/board/src/components/**/*.test.tsx', 'jsdom'],
+    ],
     env: {
       // DB 없는 환경에서 통합 테스트를 기본으로 skip한다.
       // 실제 DB 테스트가 필요한 경우 SKIP_DB_TESTS=0으로 오버라이드.
@@ -27,6 +30,7 @@ export default defineConfig({
     },
     include: [
       'packages/**/src/**/*.test.ts',
+      'packages/**/src/**/*.test.tsx',
       'packages/**/test/**/*.test.ts',
       'apps/**/lib/**/*.test.ts',
       'apps/**/lib/**/*.test.tsx',
