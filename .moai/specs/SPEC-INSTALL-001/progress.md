@@ -164,3 +164,78 @@ install 관련 테스트: 104 passed, 3 skipped (107 total)
 - **베이스라인**: 828 passing
 - **완료 후**: 843 passing (+15), 9 skipped (통합 테스트), 0 failing
 - **신규 테스트 파일**: 3개 (db-validator.test.ts, advisory-lock.test.ts, db-config.test.ts)
+
+---
+
+# SPEC-INSTALL-001 Slice C — Progress
+
+**날짜**: 2026-05-25
+**방법론**: TDD (RED → GREEN → REFACTOR)
+**베이스라인**: 843 tests passing (feature/install-001-slice-b 완료 후 시작)
+
+---
+
+## ANALYZE Phase
+
+### REQ 매핑 (Slice C 범위)
+
+| REQ | 설명 | 상태 | 파일 |
+|-----|------|------|------|
+| REQ-INSTALL-014 | performInstall Server Action — seed + 세션 → /install/complete | **이미 구현** | `apps/web/app/install/actions.ts` |
+| REQ-INSTALL-015 | 트랜잭션 실패 시 전체 롤백 → /install/db-config | **이미 구현** | `packages/db/src/install/seed.ts` (`$transaction`) + actions.ts try/finally |
+| REQ-INSTALL-053 | pg_advisory_lock 동시 설치 방지 | **이미 구현** | `packages/db/src/install/lock.ts` (Slice B에서 확인됨) |
+| REQ-INSTALL-054 | 일회용 이메일 도메인 차단 (프로덕션) | **이미 구현** | `packages/auth/src/disposable-email.ts` |
+
+### 발견된 갭
+
+- 모든 Slice C 요건이 이전 구현 사이클(`c6f4e3f`: old slice D)에서 미리 구현됨
+- 7개 performInstall 단위 테스트, seedInstall 2개 단위 테스트 모두 통과 중
+- 신규 추가 사항 없음 — 문서화 및 공식 슬라이스 마킹만 수행
+
+---
+
+## PRESERVE Phase
+
+- 기존 843 테스트 전체 통과 확인 (0 failing, 9 skipped)
+
+### 핵심 테스트 현황 (Slice C 관련)
+
+| 테스트 파일 | 테스트 수 | 상태 |
+|-------------|-----------|------|
+| `actions.test.ts` (performInstall 7개) | 7 | ✓ 통과 |
+| `packages/db/src/install/seed.test.ts` | 2 | ✓ 통과 |
+| `packages/db/src/install/lock.test.ts` | 3 | ✓ 통과 |
+| `packages/auth/src/disposable-email.test.ts` | (포함) | ✓ 통과 |
+
+---
+
+## IMPROVE Phase
+
+### 완료된 작업 (기존 구현 확인)
+
+| 파일 | 내용 |
+|------|------|
+| `apps/web/app/install/actions.ts` | `performInstall`: Zod 검증 → 일회용 이메일 차단 → advisory lock → seedInstall → session.step='finish' → redirect('/install/complete') |
+| `packages/db/src/install/seed.ts` | `seedInstall`: 8-step `$transaction` (Site → Domain → MemberGroup×2 → User → Site.update → MemberGroupMember → ModuleInstance×3 → SiteSetting×3) |
+| `apps/web/app/install/complete/page.tsx` | 설치 완료 환영 페이지 — `session.step==='finish'` 분기 |
+| `apps/web/app/install/actions.test.ts` | performInstall 7개 케이스 (happy path, lock fail, seed throw, disposable email ×2, missing DB, step gate) |
+| `packages/db/src/install/seed.test.ts` | 트랜잭션 시퀀스 검증 + 롤백 전파 확인 |
+
+---
+
+## 수락 기준 (Slice C)
+
+| AC | REQ | 상태 |
+|----|-----|------|
+| AC-INSTALL-004: seed 실패 시 롤백 + db-config 리다이렉트 | REQ-INSTALL-014, 015 | 완료 (seed.test.ts + actions.test.ts) |
+| AC-INSTALL-007: 동시 설치 → advisory lock → 두 번째 requst 거부 | REQ-INSTALL-053 | 완료 (actions.test.ts: lock not acquired) |
+| 일회용 이메일 차단 (production) | REQ-INSTALL-054 | 완료 (actions.test.ts: disposable email) |
+| 회귀 없음 | — | 완료 (843 → 843 passing) |
+
+---
+
+## 테스트 결과 (Slice C 완료)
+
+- **베이스라인**: 843 passing
+- **완료 후**: 843 passing (+0 신규), 9 skipped (통합 테스트), 0 failing
+- **비고**: 모든 Slice C 구현이 이전 커밋에 이미 포함됨. 이 PR은 공식 슬라이스 마킹 및 문서화 커밋.
