@@ -33,6 +33,12 @@ vi.mock('@rhymix-ts/board', () => ({
   deleteDocument: (...args: unknown[]) => mockDeleteDocument(...args),
   BoardPermissionDeniedError,
   DocumentOwnershipError,
+  ExtraVarsRequiredError: class ExtraVarsRequiredError extends Error {
+    readonly code = 'EXTRA_VARS_REQUIRED';
+  },
+  ExtraVarsNotConfiguredError: class ExtraVarsNotConfiguredError extends Error {
+    readonly code = 'EXTRA_VARS_NOT_CONFIGURED';
+  },
 }));
 
 // NextAuth + DB mock
@@ -184,5 +190,86 @@ describe('content.document tRPC router (Slice B)', () => {
     await expect(
       caller.create({ moduleInstanceId: 3, title: 'x', content: 'y' }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-CONTENT-001 Slice F — CT-1 ~ CT-3: extraVars tRPC 통합
+// ---------------------------------------------------------------------------
+
+// Slice F 에러 클래스 추가 (vi.mock 은 파일 상단의 mock 블록에서 이미 @rhymix-ts/board 를 mock 함)
+class ExtraVarsRequiredError extends Error {
+  readonly code = 'EXTRA_VARS_REQUIRED';
+}
+class ExtraVarsNotConfiguredError extends Error {
+  readonly code = 'EXTRA_VARS_NOT_CONFIGURED';
+}
+
+// @rhymix-ts/board mock 에 Slice F 에러 클래스도 추가해야 하므로 별도 describe 블록
+// vi.mock 은 hoist 되어 상단 블록만 유효 → 여기서는 domain mock 을 직접 확인
+describe('content.document tRPC router (Slice F — CT-1 ~ CT-3)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Slice F: @rhymix-ts/board mock 에서 ExtraVarsRequiredError/ExtraVarsNotConfiguredError 가
+    // import 될 수 있도록 mock factory 에서 이미 제공됨.
+    // vi.mock 상단 블록에 이미 정의된 클래스를 재활용한다.
+  });
+
+  it('CT-1: content.document.create + extraVars 정상 → createDocument 에 extraVars 전달', async () => {
+    mockCreateDocument.mockResolvedValueOnce({ id: 1, boardId: 10, extraVars: { price: 100 } });
+
+    const { contentDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCallerFactory(contentDocumentRouter)(memberCtx as any);
+
+    const result = await caller.create({
+      moduleInstanceId: 3,
+      title: 'extraVars test',
+      content: '<p>내용</p>',
+      extraVars: { price: 100 },
+    });
+    expect(mockCreateDocument).toHaveBeenCalledOnce();
+    const callArgs = mockCreateDocument.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(callArgs?.extraVars).toMatchObject({ price: 100 });
+    expect(result).toMatchObject({ id: 1 });
+  });
+
+  it('CT-2: 잘못된 extraVars → BAD_REQUEST (ZodError 자동 매핑)', async () => {
+    // ZodError throw 시 tRPC 가 BAD_REQUEST 로 변환
+    const { ZodError } = await import('zod');
+    mockCreateDocument.mockRejectedValueOnce(new ZodError([]));
+
+    const { contentDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCallerFactory(contentDocumentRouter)(memberCtx as any);
+
+    await expect(
+      caller.create({
+        moduleInstanceId: 3,
+        title: 'extraVars test',
+        content: '<p>내용</p>',
+        extraVars: { price: 'wrong-type' },
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('CT-3: required 키 누락 → BAD_REQUEST (ExtraVarsRequiredError)', async () => {
+    mockCreateDocument.mockRejectedValueOnce(new ExtraVarsRequiredError('required'));
+
+    const { contentDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCallerFactory(contentDocumentRouter)(memberCtx as any);
+
+    await expect(
+      caller.create({
+        moduleInstanceId: 3,
+        title: 'extraVars test',
+        content: '<p>내용</p>',
+        // extraVars 누락
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 });

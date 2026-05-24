@@ -12,7 +12,7 @@
  * actor 는 session.user 에서 추출해 도메인 함수로 주입한다 — 클라이언트가
  * 임의로 isAdmin 을 넘길 수 없도록 안전한 채널 확보.
  */
-import { z } from 'zod';
+import { z, ZodError } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { router, publicProcedure, protectedProcedure } from '../../trpc';
 import {
@@ -23,6 +23,8 @@ import {
   deleteDocument,
   BoardPermissionDeniedError,
   DocumentOwnershipError,
+  ExtraVarsRequiredError,
+  ExtraVarsNotConfiguredError,
 } from '@rhymix-ts/board';
 
 /**
@@ -59,6 +61,20 @@ function mapDomainError(err: unknown): never {
   }
   if (err instanceof DocumentOwnershipError) {
     throw new TRPCError({ code: 'FORBIDDEN', message: err.message });
+  }
+  // ZodError from domain (extraVars 검증 실패) → BAD_REQUEST
+  if (err instanceof ZodError) {
+    throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err });
+  }
+  // Slice F: extraVars 관련 에러 → BAD_REQUEST (code 프로퍼티로 비교하여 mock 호환성 확보)
+  if (err instanceof Error) {
+    const code = (err as { code?: string }).code;
+    if (code === 'EXTRA_VARS_REQUIRED' || err instanceof ExtraVarsRequiredError) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: err.message });
+    }
+    if (code === 'EXTRA_VARS_NOT_CONFIGURED' || err instanceof ExtraVarsNotConfiguredError) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: err.message });
+    }
   }
   throw err;
 }
@@ -103,6 +119,8 @@ export const contentDocumentRouter = router({
         status: z.enum(['PUBLIC', 'SECRET', 'TEMP']).optional(),
         categoryId: z.number().int().positive().nullable().optional(),
         tags: z.array(z.string().max(50)).max(20).optional(),
+        // Slice F 추가
+        extraVars: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -117,6 +135,7 @@ export const contentDocumentRouter = router({
             ...(input.status !== undefined ? { status: input.status } : {}),
             ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
             ...(input.tags !== undefined ? { tags: input.tags } : {}),
+            ...(input.extraVars !== undefined ? { extraVars: input.extraVars } : {}),
             actor: buildActor(ctx.session),
           },
           { prisma: ctx.prisma },
@@ -136,6 +155,8 @@ export const contentDocumentRouter = router({
         title: z.string().min(1).max(200).optional(),
         content: z.string().min(1).optional(),
         status: z.enum(['PUBLIC', 'SECRET', 'TEMP']).optional(),
+        // Slice F 추가 (PUT semantics: 전달하면 전체 교체)
+        extraVars: z.record(z.string(), z.unknown()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -146,6 +167,7 @@ export const contentDocumentRouter = router({
             ...(input.title !== undefined ? { title: input.title } : {}),
             ...(input.content !== undefined ? { content: input.content } : {}),
             ...(input.status !== undefined ? { status: input.status } : {}),
+            ...(input.extraVars !== undefined ? { extraVars: input.extraVars } : {}),
             actor: buildActorWithId(ctx.session),
           },
           { prisma: ctx.prisma },

@@ -136,3 +136,25 @@ export { NoopScanner, FakeMalwareScanner } from './storage/scanner.js';
 export { InMemoryStorage } from './storage/memory.js';
 export { S3Storage } from './storage/s3.js';
 export type { FileStorage, VirusScanner } from './storage/types.js';
+
+// SPEC-CONTENT-001 Slice F — Custom Fields
+export {
+  listExtraKeys,
+  createExtraKey,
+  updateExtraKey,
+  deleteExtraKey,
+  reorderExtraKeys,
+  ExtraKeyDuplicateNameError,
+  ExtraKeyOptionsRequiredError,
+} from './extra-keys.js';
+export type { ExtraKeyOptions, CreateExtraKeyInput, UpdateExtraKeyInput } from './extra-keys.js';
+
+export {
+  buildExtraVarsSchema,
+  evictExtraVarsSchemaCache,
+} from './extra-vars-schema.js';
+
+export {
+  ExtraVarsRequiredError,
+  ExtraVarsNotConfiguredError,
+} from './document.js';
