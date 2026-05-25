@@ -13,6 +13,7 @@ import type { z } from 'zod';
 import { BoardConfigSchema, defaultBoardConfig, type BoardConfig } from './config.js';
 import { onInstallBoard } from './on-install.js';
 import { BoardIndexPage } from './routes/index-page.js';
+import { BoardViewPage } from './routes/view-page.js';
 
 export const boardModule: ModuleDefinition<BoardConfig> = {
   code: 'board',
@@ -24,6 +25,7 @@ export const boardModule: ModuleDefinition<BoardConfig> = {
   onInstall: onInstallBoard,
   routes: {
     index: BoardIndexPage,
+    view: BoardViewPage as unknown as import('@rhymix-ts/core/modules').ModuleRouteIndex,
   },
   cacheTags: (instanceId) => [
     `board:${instanceId}`,
@@ -133,6 +135,8 @@ export {
 export type { ContentEndpoint, RateLimitConfig } from './rate-limit.js';
 
 export { NoopScanner, FakeMalwareScanner } from './storage/scanner.js';
+export { ClamAVScanner, ClamAVConnectionError } from './storage/clamav.js';
+export type { ClamAVScannerOptions } from './storage/clamav.js';
 export { InMemoryStorage } from './storage/memory.js';
 export { S3Storage } from './storage/s3.js';
 export type { FileStorage, VirusScanner } from './storage/types.js';
