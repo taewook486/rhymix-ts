@@ -46,6 +46,25 @@ async function readStatus(): Promise<InstallStatus> {
     // DB row missing but env still locked — defensive lock-out.
     return { installed: true, site: null, lockedAt: new Date() };
   }
+
+  // REQ-INSTALL-042: 클라우드 환경에서 .env.local 쓰기 불가 시 SiteSetting 테이블의
+  // install_lock 키로 설치 완료 여부를 폴백 확인.
+  try {
+    const lockRow = await prisma.siteSetting.findFirst({
+      where: { key: 'install_lock' },
+      select: { key: true, value: true },
+    });
+    if (lockRow && lockRow.value === true) {
+      return { installed: true, site: null };
+    }
+  } catch (err) {
+    // P2021/P2010: 테이블 미존재 또는 DB 접근 불가 — 안전하게 미설치로 처리.
+    const code = (err as { code?: string } | null)?.code;
+    if (code !== 'P2021' && code !== 'P2010') {
+      throw err;
+    }
+  }
+
   return { installed: false, site: null };
 }
 
