@@ -843,3 +843,131 @@ model Trash {
   @@index([expiresAt])
   @@map("document_trash")
 }
+
+// =====================================================================
+// SPEC-THEME-001: Theme / Layout / Skin / Assignment system
+// =====================================================================
+
+enum ThemeStatus {
+  INSTALLED
+  ACTIVE
+  DISABLED
+}
+
+enum LayoutType {
+  DESKTOP
+  MOBILE
+}
+
+enum AssignmentScope {
+  SITE
+  DOMAIN
+  MODULE_INSTANCE
+}
+
+enum MobileLayoutMode {
+  USE_DEFAULT   // mlayout_srl = -1
+  RESPONSIVE    // mlayout_srl = -2 (recommended default)
+  SPECIFIC      // explicit mobile layout
+}
+
+model Theme {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  displayName String
+  version     String
+  author      String?
+  parent      String?
+  manifest    Json
+  tokensSchema Json
+  status      ThemeStatus @default(INSTALLED)
+  installedAt DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt
+
+  layouts     Layout[]
+  skins       Skin[]
+  widgetStyles WidgetStyle[]
+  assignments ThemeAssignment[]
+
+  @@index([status])
+  @@map("themes")
+}
+
+model Layout {
+  id         String     @id @default(cuid())
+  legacySrl  Int?       @unique
+  themeId    String
+  name       String
+  title      String
+  layoutPath String
+  layoutType LayoutType @default(DESKTOP)
+  siteSrl    Int?
+  extraVars  Json?
+
+  theme      Theme      @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@unique([themeId, name, layoutType])
+  @@index([siteSrl])
+  @@map("layouts")
+}
+
+model Skin {
+  id            String   @id @default(cuid())
+  themeId       String
+  moduleType    String
+  name          String
+  title         String
+  componentPath String
+
+  theme         Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  colorSets     ColorSet[]
+
+  @@unique([themeId, moduleType, name])
+  @@index([moduleType])
+  @@map("skins")
+}
+
+model ColorSet {
+  id     String @id @default(cuid())
+  skinId String
+  name   String
+  tokens Json
+
+  skin   Skin   @relation(fields: [skinId], references: [id], onDelete: Cascade)
+
+  @@unique([skinId, name])
+  @@map("color_sets")
+}
+
+model WidgetStyle {
+  id            String @id @default(cuid())
+  themeId       String
+  name          String
+  componentPath String
+
+  theme         Theme  @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@unique([themeId, name])
+  @@map("widget_styles")
+}
+
+model ThemeAssignment {
+  id               String          @id @default(cuid())
+  themeId          String
+  scope            AssignmentScope
+  refType          String
+  refId            String
+  layoutName       String?
+  mobileLayoutName String?
+  mlayoutMode      MobileLayoutMode @default(RESPONSIVE)
+  skinName         String?
+  tokensOverride   Json?
+  createdAt        DateTime        @default(now()) @db.Timestamptz
+  updatedAt        DateTime        @updatedAt
+
+  theme            Theme           @relation(fields: [themeId], references: [id])
+
+  @@unique([scope, refType, refId])
+  @@index([refId])
+  @@map("theme_assignments")
+}
