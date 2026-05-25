@@ -2,7 +2,7 @@
 
 TypeScript + Next.js 16 redesign of the [Rhymix](https://github.com/rhymix/rhymix) CMS.
 
-> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (799 unit) · SPEC-THEME-001 완료 (946 unit)**.
+> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (975 unit) · SPEC-THEME-001 완료 (946 unit)**.
 > Reference instance running at `http://localhost:8080` (PHP, Docker).
 
 ## Architecture (locked)
@@ -116,7 +116,7 @@ pnpm test:e2e
 | SPEC-INSTALL-001 | 완료 | 164 unit + 7 E2E | 4단계 설치 위저드, SiteLock, HSTS, INSTALL_LOCK |
 | SPEC-AUTH-001 | 완료 (Slice A–H) | 508 unit | 비밀번호·회원가입·로그인·이메일 인증·세션 무효화·관리자 RBAC·레이트 리미팅 |
 | SPEC-ADMIN-001 | 완료 (Slice A–I) | 533 unit | 관리자 대시보드, 모듈 인스턴스 시스템, 멀티 도메인 |
-| SPEC-CONTENT-001 | 완료 (Slice A–F) | 799 unit | 게시판/문서/댓글/첨부파일/FTS |
+| SPEC-CONTENT-001 | 완료 (Slice A–F + UI) | 975 unit | 게시판/문서/댓글/첨부파일/FTS/View Page/ClamAV/Comment UI/Tiptap |
 | SPEC-THEME-001 | 완료 (Slice A–F) | 946 unit | 테마/레이아웃/스킨/토큰/다크모드/프리뷰/위젯 |
 
 ## Next Step
