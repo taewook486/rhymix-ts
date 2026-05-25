@@ -56,9 +56,9 @@ export async function seedInstalledSite(opts: SeedInstalledOptions = {}): Promis
     const siteId = siteRes.rows[0]!.id;
 
     await client.query(
-      `INSERT INTO domains ("siteId", hostname, "isDefault", scheme)
-       VALUES ($1, $2, true, $3)`,
-      [siteId, hostname, scheme],
+      `INSERT INTO domains ("siteId", hostname, "isDefault", scheme, "forceHttps", "updatedAt")
+       VALUES ($1, $2, true, $3, $4, NOW())`,
+      [siteId, hostname, scheme, scheme === 'https'],
     );
 
     const userRes = await client.query<{ id: number }>(

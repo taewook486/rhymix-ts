@@ -74,7 +74,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm dev',
     cwd: '../..',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3000/api/health',
     timeout: 90_000,
     reuseExistingServer: !process.env.CI,
     stdout: 'pipe',
