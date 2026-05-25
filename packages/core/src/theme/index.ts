@@ -12,3 +12,14 @@ export { getDarkModeConfig, buildDarkMediaQuery } from './dark-mode';
 export type { DarkModeConfig } from './dark-mode';
 export { installTheme } from './installer';
 export type { InstallResult, InstalledTheme, InstallOptions } from './installer';
+export {
+  parsePreviewCookie,
+  serializePreviewCookie,
+  isPreviewValid,
+  createPreviewState,
+  PREVIEW_COOKIE_NAME,
+  PREVIEW_TTL_MS,
+} from './preview';
+export type { PreviewState } from './preview';
+export { resolveMobileLayout } from './mobile-layout';
+export type { MobileLayoutSrl, MobileLayoutResolution } from './mobile-layout';
