@@ -10,7 +10,7 @@
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import type { PrismaClient, DocumentUpdateLog } from '@prisma/client';
-import { BoardPermissionDeniedError } from './document.js';
+import { BoardPermissionDeniedError } from './document';
 
 // ---------------------------------------------------------------------------
 // 스키마

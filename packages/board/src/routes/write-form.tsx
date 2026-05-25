@@ -11,7 +11,7 @@
 'use client';
 
 import React from 'react';
-import { TiptapEditor } from '../components/TiptapEditor.js';
+import { TiptapEditor } from '../components/TiptapEditor';
 
 // ---------------------------------------------------------------------------
 // Props

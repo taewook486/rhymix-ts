@@ -155,17 +155,15 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   // 7. Site 업데이트 (트랜잭션 외부 — 싱글턴이므로 독립 처리)
-  if (bundle.site) {
-    const existingSite = await prisma.site.findFirst();
-    if (existingSite) {
-      await prisma.site.update({
-        where: { id: existingSite.id },
-        data: {
-          defaultLanguage: bundle.site.defaultLanguage,
-          timeZone: bundle.site.timeZone,
-        },
-      });
-    }
+  const existingSite = await prisma.site.findFirst();
+  if (bundle.site && existingSite) {
+    await prisma.site.update({
+      where: { id: existingSite.id },
+      data: {
+        defaultLanguage: bundle.site.defaultLanguage,
+        timeZone: bundle.site.timeZone,
+      },
+    });
   }
 
   // 8. dryRun=false → $transaction callback 으로 Domain + ModuleInstance 원자적 적용
@@ -183,6 +181,7 @@ export async function POST(req: Request): Promise<Response> {
             hostname: domain.hostname,
             isDefault: domain.isDefault,
             forceHttps: domain.forceHttps,
+            siteId: existingSite?.id ?? 1,
           },
         });
       }
@@ -196,6 +195,7 @@ export async function POST(req: Request): Promise<Response> {
             mid: mi.mid,
             moduleCode: mi.moduleCode,
             name: mi.name,
+            siteId: existingSite?.id ?? 1,
           },
         });
       }

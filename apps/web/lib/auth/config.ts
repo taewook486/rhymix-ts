@@ -18,7 +18,10 @@
  * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-020
  */
 
-import NextAuth, { type NextAuthConfig } from 'next-auth';
+import NextAuth from 'next-auth';
+// next-auth v5 beta31 + TS 5.9: NextAuthConfig not re-exported correctly; use compatible stub
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type NextAuthConfig = Record<string, any>;
 import Credentials from 'next-auth/providers/credentials';
 
 import { consumeAutoLoginMarker, login } from '@rhymix-ts/auth';
@@ -143,7 +146,7 @@ export const authConfig: NextAuthConfig = {
      * /admin 경로 보호. 본 콜백은 middleware.ts 에서도 사용 가능하지만, Slice C 는
      * Auth.js 기본 미들웨어 통합만 제공하고 세분화된 RBAC 는 Slice D 에서 다룬다.
      */
-    async authorized({ auth, request }) {
+    async authorized({ auth, request }: { auth: { user?: unknown } | null; request: { nextUrl: URL } }) {
       const { pathname } = request.nextUrl;
       if (pathname.startsWith('/admin')) {
         return Boolean(auth?.user);
@@ -167,4 +170,6 @@ export const authConfig: NextAuthConfig = {
   },
 };
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+// next-auth v5 beta31 + TS 5.9: default import resolves as namespace; cast needed
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const { handlers, auth, signIn, signOut } = (NextAuth as any)(authConfig);

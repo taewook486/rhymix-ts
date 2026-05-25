@@ -4,7 +4,7 @@
  * @MX:NOTE [AUTO]: NoopScanner 는 Slice E 기본값.
  * 운영 환경에서는 ClamAVScanner 로 교체 필요 (SPEC-INFRA-001 이월).
  */
-import type { VirusScanner } from './types.js';
+import type { VirusScanner } from './types';
 
 /**
  * NoopScanner — 항상 clean: true 반환.

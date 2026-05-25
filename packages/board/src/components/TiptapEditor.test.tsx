@@ -55,7 +55,7 @@ vi.mock('@tiptap/starter-kit', () => ({
 // ---------------------------------------------------------------------------
 // SUT import — mock 이 먼저 hoisting 된 뒤 import 됨
 // ---------------------------------------------------------------------------
-import { TiptapEditor } from './TiptapEditor.js';
+import { TiptapEditor } from './TiptapEditor';
 
 // ---------------------------------------------------------------------------
 // Tests

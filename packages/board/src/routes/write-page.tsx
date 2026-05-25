@@ -10,7 +10,7 @@
  * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-010 REQ-CONTENT-130
  */
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
-import { WriteBoardForm } from './write-form.js';
+import { WriteBoardForm } from './write-form';
 
 interface WriteBoardPageProps extends ModuleRoutePageProps {
   action: string; // Server Action URL (apps/web 레이어에서 주입)
@@ -22,7 +22,7 @@ export async function BoardWritePage(props: WriteBoardPageProps) {
       <h1>{props.instance.name} — 글쓰기</h1>
       <WriteBoardForm
         action={props.action}
-        moduleInstanceId={props.instance.id}
+        moduleInstanceId={String(props.instance.id)}
         cancelHref={`/${props.instance.mid}`}
       />
     </main>

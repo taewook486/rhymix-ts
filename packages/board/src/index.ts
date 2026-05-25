@@ -10,10 +10,10 @@
  */
 import type { ModuleDefinition } from '@rhymix-ts/core/modules';
 import type { z } from 'zod';
-import { BoardConfigSchema, defaultBoardConfig, type BoardConfig } from './config.js';
-import { onInstallBoard } from './on-install.js';
-import { BoardIndexPage } from './routes/index-page.js';
-import { BoardViewPage } from './routes/view-page.js';
+import { BoardConfigSchema, defaultBoardConfig, type BoardConfig } from './config';
+import { onInstallBoard } from './on-install';
+import { BoardIndexPage } from './routes/index-page';
+import { BoardViewPage } from './routes/view-page';
 
 export const boardModule: ModuleDefinition<BoardConfig> = {
   code: 'board',
@@ -47,19 +47,19 @@ export {
   DocumentOwnershipError,
   encodeCursor,
   decodeCursor,
-} from './document.js';
-export type { DocumentListResult } from './document.js';
+} from './document';
+export type { DocumentListResult } from './document';
 
 export {
   createComment,
   listComments,
   deleteComment,
-} from './comment.js';
+} from './comment';
 
 export {
   canPerformAction,
-} from './permissions.js';
-export type { BoardAction, PermissionContext } from './permissions.js';
+} from './permissions';
+export type { BoardAction, PermissionContext } from './permissions';
 
 // SPEC-CONTENT-001 Slice C — Category CRUD + Search 도메인 함수
 export {
@@ -70,29 +70,29 @@ export {
   incrementDocumentCount,
   buildCategoryTree,
   CategoryHasChildrenError,
-} from './category.js';
-export type { CategoryNode } from './category.js';
+} from './category';
+export type { CategoryNode } from './category';
 
 export {
   searchDocuments,
   searchTags,
-} from './search.js';
-export type { SearchDocumentsInput, SearchDocumentsResult } from './search.js';
+} from './search';
+export type { SearchDocumentsInput, SearchDocumentsResult } from './search';
 
 // SPEC-CONTENT-001 Slice D — Vote + Report + Trash + History
 export {
   voteDocument,
   getVoteCount,
-} from './vote.js';
-export type { VoteDocumentInput, VoteResult } from './vote.js';
+} from './vote';
+export type { VoteDocumentInput, VoteResult } from './vote';
 
 export {
   reportDocument,
   resolveReport,
   listReports,
   DuplicateReportError,
-} from './report.js';
-export type { ReportDocumentInput, AdminActor, ListReportsInput, ListReportsResult } from './report.js';
+} from './report';
+export type { ReportDocumentInput, AdminActor, ListReportsInput, ListReportsResult } from './report';
 
 export {
   softDeleteDocument,
@@ -101,14 +101,14 @@ export {
   listTrash,
   TrashNotFoundError,
   TrashExpiredError,
-} from './trash.js';
-export type { SoftDeleteResult, TrashWithDocument, ListTrashResult } from './trash.js';
+} from './trash';
+export type { SoftDeleteResult, TrashWithDocument, ListTrashResult } from './trash';
 
 export {
   recordUpdate,
   getUpdateHistory,
-} from './history.js';
-export type { RecordUpdateInput } from './history.js';
+} from './history';
+export type { RecordUpdateInput } from './history';
 
 // SPEC-CONTENT-001 Slice E — File Attachments + Rate Limiting
 export {
@@ -122,8 +122,8 @@ export {
   UploadHeadMismatchError,
   VirusDetectedError,
   AttachmentOwnershipError,
-} from './attachment.js';
-export type { RequestUploadInput, RequestUploadResult, CompleteUploadInput } from './attachment.js';
+} from './attachment';
+export type { RequestUploadInput, RequestUploadResult, CompleteUploadInput } from './attachment';
 
 export {
   checkRateLimit,
@@ -131,15 +131,15 @@ export {
   resolveLimit,
   RateLimitedError,
   RATE_LIMITS,
-} from './rate-limit.js';
-export type { ContentEndpoint, RateLimitConfig } from './rate-limit.js';
+} from './rate-limit';
+export type { ContentEndpoint, RateLimitConfig } from './rate-limit';
 
-export { NoopScanner, FakeMalwareScanner } from './storage/scanner.js';
-export { ClamAVScanner, ClamAVConnectionError } from './storage/clamav.js';
-export type { ClamAVScannerOptions } from './storage/clamav.js';
-export { InMemoryStorage } from './storage/memory.js';
-export { S3Storage } from './storage/s3.js';
-export type { FileStorage, VirusScanner } from './storage/types.js';
+export { NoopScanner, FakeMalwareScanner } from './storage/scanner';
+export { ClamAVScanner, ClamAVConnectionError } from './storage/clamav';
+export type { ClamAVScannerOptions } from './storage/clamav';
+export { InMemoryStorage } from './storage/memory';
+export { S3Storage } from './storage/s3';
+export type { FileStorage, VirusScanner } from './storage/types';
 
 // SPEC-CONTENT-001 Slice F — Custom Fields
 export {
@@ -150,15 +150,15 @@ export {
   reorderExtraKeys,
   ExtraKeyDuplicateNameError,
   ExtraKeyOptionsRequiredError,
-} from './extra-keys.js';
-export type { ExtraKeyOptions, CreateExtraKeyInput, UpdateExtraKeyInput } from './extra-keys.js';
+} from './extra-keys';
+export type { ExtraKeyOptions, CreateExtraKeyInput, UpdateExtraKeyInput } from './extra-keys';
 
 export {
   buildExtraVarsSchema,
   evictExtraVarsSchemaCache,
-} from './extra-vars-schema.js';
+} from './extra-vars-schema';
 
 export {
   ExtraVarsRequiredError,
   ExtraVarsNotConfiguredError,
-} from './document.js';
+} from './document';

@@ -8,9 +8,8 @@
  *
  * @MX:NOTE: [AUTO] 비밀번호 재설정 확인 폼 — useSearchParams 로 URL 토큰 추출.
  */
-import { useActionState } from 'react';
+import { Suspense, useActionState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import Link from 'next/link';
 
 import {
@@ -19,7 +18,7 @@ import {
   type AuthActionState,
 } from '@/lib/auth/actions';
 
-export default function PasswordResetConfirmPage() {
+function PasswordResetConfirmInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -97,5 +96,13 @@ export default function PasswordResetConfirmPage() {
         </Link>
       </div>
     </>
+  );
+}
+
+export default function PasswordResetConfirmPage() {
+  return (
+    <Suspense>
+      <PasswordResetConfirmInner />
+    </Suspense>
   );
 }

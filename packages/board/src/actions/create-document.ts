@@ -13,7 +13,7 @@
  */
 import { z } from 'zod';
 import type { PrismaClient } from '@prisma/client';
-import { createDocument } from '../document.js';
+import { createDocument } from '../document';
 
 const CreateDocumentFormSchema = z.object({
   moduleInstanceId: z.coerce.number().int().positive(),

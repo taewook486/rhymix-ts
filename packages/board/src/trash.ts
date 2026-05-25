@@ -9,7 +9,7 @@
  * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-100
  */
 import type { PrismaClient, Document, Trash } from '@prisma/client';
-import { DocumentOwnershipError, BoardPermissionDeniedError } from './document.js';
+import { DocumentOwnershipError, BoardPermissionDeniedError } from './document';
 
 // ---------------------------------------------------------------------------
 // 에러

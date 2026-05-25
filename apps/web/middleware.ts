@@ -36,7 +36,9 @@ function isInstallPath(pathname: string): boolean {
   return pathname.startsWith('/install') || pathname.startsWith('/api/install/');
 }
 
-const { auth } = NextAuth(authConfig);
+// next-auth v5 beta31 + TS 5.9: default import resolves as namespace; cast needed
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { auth } = (NextAuth as any)(authConfig);
 
 export default auth(async (req: NextRequest & { auth: unknown }) => {
   const { nextUrl } = req;

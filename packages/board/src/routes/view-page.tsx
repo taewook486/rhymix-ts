@@ -7,11 +7,12 @@
  * @MX:NOTE [AUTO]: BoardViewPage는 BoardIndexPage 와 동일한 prisma 주입 패턴을 따름.
  * @MX:SPEC: SPEC-CONTENT-001
  */
+import React from 'react';
 import type { PrismaClient } from '@prisma/client';
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
-import { getDocument } from '../document.js';
-import { listComments } from '../comment.js';
-import { listAttachments } from '../attachment.js';
+import { getDocument } from '../document';
+import { listComments } from '../comment';
+import { listAttachments } from '../attachment';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -37,7 +38,7 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
  * @MX:REASON: fan_in >= 3 (apps/web/app/[mid]/[id]/page.tsx, boardModule.routes, 테스트).
  * @MX:SPEC: SPEC-CONTENT-001
  */
-export async function BoardViewPage(props: BoardViewPageProps): Promise<JSX.Element> {
+export async function BoardViewPage(props: BoardViewPageProps): Promise<React.ReactElement> {
   const { instance, documentId, prisma, session } = props;
   const mid = instance.mid;
 
@@ -52,10 +53,12 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<JSX.Elem
     session !== null &&
     (session.user.id === doc.authorId || session.user.isAdmin);
 
-  // 작성일 포맷 (한국어 기준)
-  const createdDateStr = doc.createdAt instanceof Date
-    ? doc.createdAt.toLocaleDateString('ko-KR')
-    : String(doc.createdAt);
+  // 작성일 포맷 (한국어 기준) — Prisma 스키마 필드명은 regdate
+  const regdate = (doc as unknown as { regdate?: Date; createdAt?: Date }).regdate
+    ?? (doc as unknown as { createdAt?: Date }).createdAt;
+  const createdDateStr = regdate instanceof Date
+    ? regdate.toLocaleDateString('ko-KR')
+    : String(regdate ?? '');
 
   return (
     <main className="max-w-3xl mx-auto p-4">

@@ -9,7 +9,7 @@
  */
 import { z } from 'zod';
 import type { PrismaClient, DocumentReport } from '@prisma/client';
-import { BoardPermissionDeniedError } from './document.js';
+import { BoardPermissionDeniedError } from './document';
 
 // ---------------------------------------------------------------------------
 // 에러

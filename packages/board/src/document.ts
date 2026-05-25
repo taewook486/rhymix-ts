@@ -23,14 +23,18 @@
  * REQ-CONTENT-120, REQ-CONTENT-121.
  */
 import { z } from 'zod';
-import DOMPurify from 'isomorphic-dompurify';
+// isomorphic-dompurify is lazy-loaded in sanitizeHtml() to avoid loading jsdom
+// during Next.js page collection (module init time). This prevents the Windows
+// path issue where Turbopack maps __dirname to D:\ROOT.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _DOMPurify: any = null;
 import { Prisma } from '@prisma/client';
 import type { PrismaClient, Document } from '@prisma/client';
-import { canPerformAction } from './permissions.js';
-import { incrementDocumentCount } from './category.js';
-import { softDeleteDocument } from './trash.js';
-import { recordUpdate } from './history.js';
-import { buildExtraVarsSchema } from './extra-vars-schema.js';
+import { canPerformAction } from './permissions';
+import { incrementDocumentCount } from './category';
+import { softDeleteDocument } from './trash';
+import { recordUpdate } from './history';
+import { buildExtraVarsSchema } from './extra-vars-schema';
 
 // ---------------------------------------------------------------------------
 // Slice F: extraVars 관련 에러 클래스
@@ -127,7 +131,11 @@ export function decodeCursor(token: string): { listOrder: bigint; id: number } {
  * SSR/Node 환경에서도 동작하도록 isomorphic-dompurify 사용.
  */
 function sanitizeHtml(html: string): string {
-  return DOMPurify.sanitize(html);
+  if (!_DOMPurify) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _DOMPurify = require('isomorphic-dompurify');
+  }
+  return _DOMPurify.sanitize(html);
 }
 
 /**
@@ -231,7 +239,7 @@ export async function createDocument(
           status: parsed.status,
           categoryId: parsed.categoryId,
           tags: parsed.tags,
-          extraVars: validatedExtraVars,
+          extraVars: validatedExtraVars as Prisma.InputJsonValue | undefined,
         },
       });
 
@@ -251,7 +259,7 @@ export async function createDocument(
       contentText: safeContentText,
       status: parsed.status,
       tags: parsed.tags,
-      extraVars: validatedExtraVars,
+      extraVars: validatedExtraVars as Prisma.InputJsonValue | undefined,
     },
   });
 }
@@ -319,7 +327,7 @@ export async function updateDocument(
     data.content = safeContent;
     data.contentText = toPlainText(safeContent);
   }
-  if (validatedExtraVars !== undefined) data.extraVars = validatedExtraVars;
+  if (validatedExtraVars !== undefined) data.extraVars = validatedExtraVars as Prisma.InputJsonValue;
 
   // @MX:NOTE [AUTO]: recordUpdate 를 반드시 트랜잭션 내에서 호출.
   // @MX:REASON: board.updateLog=true 면 audit 의무 — 트랜잭션 외 호출 금지.

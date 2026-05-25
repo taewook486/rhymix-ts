@@ -13,14 +13,14 @@
  */
 import { randomUUID } from 'node:crypto';
 import type { PrismaClient, FileAttachment } from '@prisma/client';
-import type { FileStorage } from './storage/types.js';
-import type { VirusScanner } from './storage/types.js';
-import { assertMimeAllowed, assertSizeAllowed } from './storage/mime.js';
-import { signUploadToken, verifyUploadToken } from './storage/upload-token.js';
+import type { FileStorage } from './storage/types';
+import type { VirusScanner } from './storage/types';
+import { assertMimeAllowed, assertSizeAllowed } from './storage/mime';
+import { signUploadToken, verifyUploadToken } from './storage/upload-token';
 
 // Re-export error classes for consumers
-export { UnsupportedMimeTypeError, FileTooLargeError } from './storage/mime.js';
-export { InvalidUploadTokenError } from './storage/upload-token.js';
+export { UnsupportedMimeTypeError, FileTooLargeError } from './storage/mime';
+export { InvalidUploadTokenError } from './storage/upload-token';
 
 /**
  * 업로드 head 불일치 에러 (PUT 미수행 또는 사이즈/MIME 불일치)

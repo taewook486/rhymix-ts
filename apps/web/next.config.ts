@@ -10,6 +10,7 @@ const config: NextConfig = {
   },
   transpilePackages: [
     '@rhymix-ts/auth',
+    '@rhymix-ts/board',
     '@rhymix-ts/core',
     '@rhymix-ts/db',
     '@rhymix-ts/ui',
@@ -23,6 +24,8 @@ const config: NextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
+  // Turbopack (Next.js 16 default) — empty config to suppress webpack warning
+  turbopack: {},
 };
 
 export default config;

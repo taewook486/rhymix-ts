@@ -11,7 +11,7 @@
  */
 import { z } from 'zod';
 import type { DocumentExtraKey } from '@prisma/client';
-import type { ExtraKeyOptions } from './extra-keys.js';
+import type { ExtraKeyOptions } from './extra-keys';
 
 // ---------------------------------------------------------------------------
 // LRU 캐시 (최대 100 entry)

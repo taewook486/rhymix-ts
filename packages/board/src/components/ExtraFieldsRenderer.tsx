@@ -9,7 +9,7 @@
  */
 import React from 'react';
 import type { DocumentExtraKey } from '@prisma/client';
-import type { ExtraKeyOptions } from '../extra-keys.js';
+import type { ExtraKeyOptions } from '../extra-keys';
 
 // ---------------------------------------------------------------------------
 // Props

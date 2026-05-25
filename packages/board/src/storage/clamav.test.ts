@@ -18,8 +18,8 @@ vi.mock('net', () => {
 });
 
 import net from 'net';
-import { ClamAVScanner, ClamAVConnectionError } from './clamav.js';
-import { InMemoryStorage } from './memory.js';
+import { ClamAVScanner, ClamAVConnectionError } from './clamav';
+import { InMemoryStorage } from './memory';
 
 // 테스트용 가짜 소켓 생성 헬퍼
 function createMockSocket(responses: string[]): Socket {
@@ -45,7 +45,8 @@ function createMockSocket(responses: string[]): Socket {
 
   // connect 이후 'connect' 이벤트 + PING 응답 순서 자동 emit
   const originalOn = emitter.on.bind(emitter);
-  (emitter as unknown as { on: typeof originalOn }).on = (event: string, listener: (...args: unknown[]) => void) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (emitter as unknown as { on: typeof originalOn }).on = (event: string, listener: (...args: any[]) => void) => {
     originalOn(event, listener);
     if (event === 'connect') {
       // 다음 틱에 connect 이벤트 발생

@@ -7,20 +7,25 @@
  * REQ-CONTENT-020 (댓글 생성), REQ-CONTENT-030 (댓글 삭제).
  */
 import { z } from 'zod';
-import DOMPurify from 'isomorphic-dompurify';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _DOMPurify: any = null;
 import type { PrismaClient, Comment } from '@prisma/client';
-import { canPerformAction } from './permissions.js';
+import { canPerformAction } from './permissions';
 import {
   BoardPermissionDeniedError,
   DocumentOwnershipError,
-} from './document.js';
+} from './document';
 
 // ---------------------------------------------------------------------------
 // HTML sanitize
 // ---------------------------------------------------------------------------
 
 function sanitizeHtml(html: string): string {
-  return DOMPurify.sanitize(html);
+  if (!_DOMPurify) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _DOMPurify = require('isomorphic-dompurify');
+  }
+  return _DOMPurify.sanitize(html);
 }
 
 // ---------------------------------------------------------------------------

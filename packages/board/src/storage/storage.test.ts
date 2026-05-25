@@ -4,9 +4,9 @@
  * F-1 ~ F-6: FileStorage interface + InMemoryStorage + MIME/size 가드 검증.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InMemoryStorage } from './memory.js';
-import { assertMimeAllowed, assertSizeAllowed, UnsupportedMimeTypeError, FileTooLargeError } from './mime.js';
-import { S3Storage } from './s3.js';
+import { InMemoryStorage } from './memory';
+import { assertMimeAllowed, assertSizeAllowed, UnsupportedMimeTypeError, FileTooLargeError } from './mime';
+import { S3Storage } from './s3';
 
 // AWS SDK mock
 vi.mock('@aws-sdk/client-s3', () => {

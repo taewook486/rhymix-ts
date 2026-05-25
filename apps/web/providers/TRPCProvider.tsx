@@ -12,13 +12,13 @@
 import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
-import { createTRPCReact } from '@trpc/react-query'
+import { createTRPCReact, type CreateTRPCReact } from '@trpc/react-query'
 import superjson from 'superjson'
 import type { AppRouter } from '@/server/api/root'
 
 // @MX:ANCHOR: [AUTO] 클라이언트 tRPC 훅 단일 출처.
 // @MX:REASON: 모든 클라이언트 컴포넌트가 이 인스턴스를 공유해야 React Query 캐시가 단일하게 관리됨.
-export const trpc = createTRPCReact<AppRouter>()
+export const trpc: CreateTRPCReact<AppRouter, unknown> = createTRPCReact<AppRouter>()
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())

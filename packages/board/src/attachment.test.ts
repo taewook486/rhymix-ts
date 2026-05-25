@@ -17,10 +17,10 @@ import {
   UploadHeadMismatchError,
   VirusDetectedError,
   AttachmentOwnershipError,
-} from './attachment.js';
-import { InMemoryStorage } from './storage/memory.js';
-import { NoopScanner, FakeMalwareScanner } from './storage/scanner.js';
-import { signUploadToken } from './storage/upload-token.js';
+} from './attachment';
+import { InMemoryStorage } from './storage/memory';
+import { NoopScanner, FakeMalwareScanner } from './storage/scanner';
+import { signUploadToken } from './storage/upload-token';
 
 const TEST_SECRET = 'test-secret-32-bytes-minimum-ok';
 

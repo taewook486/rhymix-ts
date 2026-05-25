@@ -7,7 +7,7 @@
  * @MX:REASON: 외부 tx 컨텍스트 밖에서 호출 금지. 같은 트랜잭션 안에서만 FK 참조 안전.
  */
 import type { ModuleLifecycleContext } from '@rhymix-ts/core/modules';
-import { defaultBoardConfig } from './config.js';
+import { defaultBoardConfig } from './config';
 
 export async function onInstallBoard(ctx: ModuleLifecycleContext): Promise<void> {
   await ctx.tx.board.create({

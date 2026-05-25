@@ -10,7 +10,7 @@
  */
 import { z } from 'zod';
 import type { PrismaClient, DocumentExtraKey } from '@prisma/client';
-import { evictExtraVarsSchemaCache } from './extra-vars-schema.js';
+import { evictExtraVarsSchemaCache } from './extra-vars-schema';
 
 // ---------------------------------------------------------------------------
 // varOptions 내부 스키마

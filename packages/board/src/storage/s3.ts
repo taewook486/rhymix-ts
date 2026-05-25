@@ -16,7 +16,7 @@ import {
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import type { FileStorage } from './types.js';
+import type { FileStorage } from './types';
 
 export interface S3StorageOptions {
   bucket: string;
@@ -141,6 +141,6 @@ export function createStorageFromEnv(): import('./types.js').FileStorage {
   }
 
   // fallback: InMemoryStorage (dev/test 환경)
-  const { InMemoryStorage } = require('./memory.js') as typeof import('./memory.js');
+  const { InMemoryStorage } = require('./memory') as typeof import('./memory');
   return new InMemoryStorage();
 }

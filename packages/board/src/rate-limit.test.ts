@@ -6,7 +6,7 @@
  * REQ-CONTENT-140: per-IP rate limits with sliding window.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { checkRateLimit, recordAttempt, RateLimitedError, RATE_LIMITS, resolveLimit } from './rate-limit.js';
+import { checkRateLimit, recordAttempt, RateLimitedError, RATE_LIMITS, resolveLimit } from './rate-limit';
 
 // ---------------------------------------------------------------------------
 // Prisma mock 빌더

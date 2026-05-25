@@ -4,7 +4,7 @@
  * 실제 HTTP 요청 없이 in-memory Map 으로 파일을 관리한다.
  * presign URL 은 페이크 URL 을 반환하고, put() helper 로 직접 파일을 채워넣는다.
  */
-import type { FileStorage } from './types.js';
+import type { FileStorage } from './types';
 
 interface StoredFile {
   buffer: Buffer;

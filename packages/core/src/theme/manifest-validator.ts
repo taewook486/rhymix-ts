@@ -14,7 +14,7 @@ export function parseManifest(input: unknown): ManifestParseResult {
   return {
     ok: false,
     error: 'MANIFEST_INVALID',
-    field: firstError.path.join('.') || 'root',
-    message: firstError.message,
+    field: firstError?.path.join('.') || 'root',
+    message: firstError?.message ?? 'Invalid manifest',
   };
 }

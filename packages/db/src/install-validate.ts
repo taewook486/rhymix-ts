@@ -16,7 +16,15 @@
  */
 import pg from 'pg';
 
-import type { DbConfig } from '@rhymix-ts/core';
+/** DB 접속 설정 — @rhymix-ts/core의 DbConfig와 동일한 구조 (순환 의존성 방지). */
+export interface DbConfig {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+  database: string;
+  schema: string;
+}
 
 /** 차단되는 슈퍼유저 계정명 (대소문자 무시). */
 const SUPERUSER_NAMES = new Set(['postgres', 'root', 'admin']);

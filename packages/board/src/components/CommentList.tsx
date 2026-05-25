@@ -11,9 +11,9 @@
  * @MX:SPEC: SPEC-CONTENT-001
  */
 import React, { useState } from 'react';
-import { CommentItem } from './CommentItem.js';
-import type { CommentItemProps } from './CommentItem.js';
-import { CommentForm } from './CommentForm.js';
+import { CommentItem } from './CommentItem';
+import type { CommentItemProps } from './CommentItem';
+import { CommentForm } from './CommentForm';
 
 // ---------------------------------------------------------------------------
 // Props

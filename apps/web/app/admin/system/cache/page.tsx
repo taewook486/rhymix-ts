@@ -7,8 +7,6 @@
  * @MX:NOTE: [AUTO] Server Action 으로 tRPC mutation 호출 — 기존 프로젝트 패턴 유지.
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-060~063
  */
-'use server'
-
 import { getServerCaller } from '@/lib/trpc/server'
 
 /**

@@ -8,7 +8,7 @@
  * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-031
  */
 import net from 'net';
-import type { VirusScanner, FileStorage } from './types.js';
+import type { VirusScanner, FileStorage } from './types';
 
 /**
  * ClamAV 연결/프로토콜 오류.
@@ -151,7 +151,7 @@ export class ClamAVScanner implements VirusScanner {
           } else {
             // "stream: <threat> FOUND" 형식
             const foundMatch = /^stream: (.+) FOUND$/.exec(line);
-            if (foundMatch) {
+            if (foundMatch?.[1]) {
               resolve({
                 clean: false,
                 threats: [foundMatch[1]],

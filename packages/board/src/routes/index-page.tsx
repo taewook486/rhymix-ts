@@ -8,9 +8,9 @@
  * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-010, REQ-CONTENT-020, REQ-CONTENT-080, REQ-CONTENT-081
  */
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
-import { listDocuments } from '../document.js';
-import { listCategoryTree } from '../category.js';
-import type { CategoryNode } from '../category.js';
+import { listDocuments } from '../document';
+import { listCategoryTree } from '../category';
+import type { CategoryNode } from '../category';
 
 /**
  * 카테고리 목록을 flat하게 변환해 <select> 옵션을 생성하는 헬퍼.

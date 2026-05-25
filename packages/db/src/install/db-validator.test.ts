@@ -10,7 +10,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { DbConfig } from '@rhymix-ts/core';
+import type { DbConfig } from '../install-validate';
 
 // ---------------------------------------------------------------------------
 // pg 모킹 — vi.hoisted 패턴으로 mock 생성자 안전하게 노출.
