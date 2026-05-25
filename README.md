@@ -2,7 +2,7 @@
 
 TypeScript + Next.js 16 redesign of the [Rhymix](https://github.com/rhymix/rhymix) CMS.
 
-> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 Slice A–D2 완료 (291 unit) · Slice E 계획 예정**.
+> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (799 unit) · SPEC-THEME-001 완료 (946 unit)**.
 > Reference instance running at `http://localhost:8080` (PHP, Docker).
 
 ## Architecture (locked)
@@ -114,42 +114,22 @@ pnpm test:e2e
 | SPEC | 상태 | 테스트 | 비고 |
 |---|---|---|---|
 | SPEC-INSTALL-001 | 완료 | 164 unit + 7 E2E | 4단계 설치 위저드, SiteLock, HSTS, INSTALL_LOCK |
-| SPEC-AUTH-001 | 진행 중 (Slice D2/5 완료) | 291 unit | 비밀번호·회원가입·로그인·이메일 인증·세션 무효화·관리자 RBAC |
-| SPEC-ADMIN-001 | 미착수 | — | foundation |
-| SPEC-CONTENT-001 | 미착수 | — | 게시판/문서/댓글 |
-| SPEC-THEME-001 | 미착수 | — | 테마/레이아웃/스킨 |
-
-### SPEC-AUTH-001 Slice 현황
-
-| Slice | 내용 | 상태 |
-|---|---|---|
-| A | Argon2id 비밀번호 모듈 + Prisma 스키마 확장 | 완료 |
-| B | 회원가입 파이프라인 + 메일 디스패처 + 토큰 유틸 | 완료 |
-| C | 로그인 + 이메일 인증 + Auth.js v5 Credentials Provider + Server Actions | 완료 |
-| D1 | JWT denylist (SessionRevocation) + jwt/session callback 통합 + migration baselining | 완료 |
-| D2 | 관리자 RBAC + 회원 status 변경 즉시 세션 무효화 + soft delete | 완료 |
-| E | 레이트 리미팅 + HTTP/E2E 통합 + `/login`, `/signup`, `/verify-email` 페이지 | 예정 |
+| SPEC-AUTH-001 | 완료 (Slice A–H) | 508 unit | 비밀번호·회원가입·로그인·이메일 인증·세션 무효화·관리자 RBAC·레이트 리미팅 |
+| SPEC-ADMIN-001 | 완료 (Slice A–I) | 533 unit | 관리자 대시보드, 모듈 인스턴스 시스템, 멀티 도메인 |
+| SPEC-CONTENT-001 | 완료 (Slice A–F) | 799 unit | 게시판/문서/댓글/첨부파일/FTS |
+| SPEC-THEME-001 | 완료 (Slice A–F) | 946 unit | 테마/레이아웃/스킨/토큰/다크모드/프리뷰/위젯 |
 
 ## Next Step
 
-Slice E 구현 — 자동 로그인 회전, 레이트 리미팅, 관리자 역할 토글, JWT 클레임 주입:
+모든 SPEC 구현 완료. 다음 단계는 E2E 통합 테스트 및 프로덕션 빌드 검증:
 
 ```bash
-/moai run SPEC-AUTH-001
+# E2E 테스트 실행
+pnpm test:e2e
+
+# 프로덕션 빌드 검증
+pnpm build
 ```
-
-Slice E 주요 작업:
-- REQ-AUTH-018/019: AutoLogin 토큰 회전 로직
-- REQ-AUTH-033: IP 기반 레이트 리미팅 reject 로직
-- 관리자 역할 토글 (admin role-toggle)
-- JWT 클레임 주입 (JWT claim injection)
-
-이후 구현 순서:
-
-1. SPEC-AUTH-001 Slice D/E (auth 완결)
-2. SPEC-ADMIN-001 (foundation: site, domain, module instance system)
-3. SPEC-CONTENT-001 (boards, documents, comments)
-4. SPEC-THEME-001 (theme/layout/skin)
 
 ## License
 

@@ -1,7 +1,7 @@
 ---
 id: SPEC-THEME-001
 title: Theme, Layout & Skin System
-status: draft
+status: completed
 priority: P1
 created: 2026-05-10
 domain: theme

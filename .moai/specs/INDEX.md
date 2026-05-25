@@ -24,7 +24,7 @@
 | [SPEC-ADMIN-001](./SPEC-ADMIN-001/spec.md) | Admin Dashboard & Module System | P0 | completed (Slice A-I 완료, 533 tests) | 976 |
 | [SPEC-AUTH-001](./SPEC-AUTH-001/spec.md) | Authentication & Member System | P0 | completed (Slice A-H 완료, 508 tests) | 633 |
 | [SPEC-CONTENT-001](./SPEC-CONTENT-001/spec.md) | Content & Board System | P0 | completed (Slice A-F 완료, 799 tests) | 751 |
-| [SPEC-THEME-001](./SPEC-THEME-001/spec.md) | Theme, Layout & Skin System | P1 | draft | 656 |
+| [SPEC-THEME-001](./SPEC-THEME-001/spec.md) | Theme, Layout & Skin System | P1 | completed (Slice A-F 완료, 946 tests) | 656 |
 
 **총 5개 SPEC** (EARS 형식, Prisma 스키마, tRPC API, 설치 플로우 포함)
 
