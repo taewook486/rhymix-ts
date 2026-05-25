@@ -23,3 +23,9 @@ export {
 export type { PreviewState } from './preview';
 export { resolveMobileLayout } from './mobile-layout';
 export type { MobileLayoutSrl, MobileLayoutResolution } from './mobile-layout';
+export { resolveWidgetStyle } from './widget-style';
+export type { WidgetStyleEntry, WidgetStyleResolution } from './widget-style';
+export { mergeThemeLayers, validateThemeInheritance } from './inheritance';
+export type { ThemeLayer, InheritedTheme } from './inheritance';
+export { classifyChange } from './hot-swap';
+export type { ChangeType, ThemeChange } from './hot-swap';
