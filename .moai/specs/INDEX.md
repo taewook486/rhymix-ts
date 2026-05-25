@@ -20,7 +20,7 @@
 
 | ID | 제목 | 우선순위 | 상태 | 라인 |
 |---|---|---|---|---|
-| [SPEC-INSTALL-001](./SPEC-INSTALL-001/spec.md) | Initial Installation Wizard | P0 | in-progress (Slice A-C 완료, 843 tests) | ~374 |
+| [SPEC-INSTALL-001](./SPEC-INSTALL-001/spec.md) | Initial Installation Wizard | P0 | completed (Slice A-D 완료, 859 tests) | ~374 |
 | [SPEC-ADMIN-001](./SPEC-ADMIN-001/spec.md) | Admin Dashboard & Module System | P0 | completed (Slice A-I 완료, 533 tests) | 976 |
 | [SPEC-AUTH-001](./SPEC-AUTH-001/spec.md) | Authentication & Member System | P0 | completed (Slice A-H 완료, 508 tests) | 633 |
 | [SPEC-CONTENT-001](./SPEC-CONTENT-001/spec.md) | Content & Board System | P0 | completed (Slice A-F 완료, 799 tests) | 751 |

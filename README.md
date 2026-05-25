@@ -2,7 +2,7 @@
 
 TypeScript + Next.js 16 redesign of the [Rhymix](https://github.com/rhymix/rhymix) CMS.
 
-> Status: **SPEC-INSTALL-001 완료 (148 unit + 7 E2E) · SPEC-AUTH-001 Slice A–D2 완료 (291 unit) · Slice E 계획 예정**.
+> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 Slice A–D2 완료 (291 unit) · Slice E 계획 예정**.
 > Reference instance running at `http://localhost:8080` (PHP, Docker).
 
 ## Architecture (locked)
@@ -113,7 +113,7 @@ pnpm test:e2e
 
 | SPEC | 상태 | 테스트 | 비고 |
 |---|---|---|---|
-| SPEC-INSTALL-001 | 완료 | 148 unit + 7 E2E | 4단계 설치 위저드, SiteLock |
+| SPEC-INSTALL-001 | 완료 | 164 unit + 7 E2E | 4단계 설치 위저드, SiteLock, HSTS, INSTALL_LOCK |
 | SPEC-AUTH-001 | 진행 중 (Slice D2/5 완료) | 291 unit | 비밀번호·회원가입·로그인·이메일 인증·세션 무효화·관리자 RBAC |
 | SPEC-ADMIN-001 | 미착수 | — | foundation |
 | SPEC-CONTENT-001 | 미착수 | — | 게시판/문서/댓글 |

@@ -1,7 +1,7 @@
 ---
 id: SPEC-INSTALL-001
 title: Initial Installation Wizard & First-Run Bootstrap
-status: draft
+status: completed
 priority: P0
 created: 2026-05-10
 domain: install
