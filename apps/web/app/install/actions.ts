@@ -35,7 +35,7 @@ import {
 } from '@rhymix-ts/auth';
 
 import { type ActionState } from '@/lib/install/action-state';
-import { getWizardSession, verifyCsrfToken } from '@/lib/install/wizard-session';
+import { getWizardSession } from '@/lib/install/wizard-session';
 import { requireWizardStep } from '@/lib/install/wizard-guards';
 
 /** Zod issues를 fieldErrors 맵으로 변환. */
@@ -62,15 +62,9 @@ export async function agreeLicense(
 ): Promise<ActionState> {
   const session = await getWizardSession();
 
-  // REQ-INSTALL-003: CSRF double-submit cookie 검증 (2차 방어선).
-  // Next.js Server Actions 자체의 origin 검증이 1차 방어선.
-  const formCsrfToken = formData.get('csrfToken') as string | null;
-  if (!verifyCsrfToken(session, formCsrfToken)) {
-    return {
-      ok: false,
-      formError: '보안 토큰이 유효하지 않습니다. 페이지를 새로고침하고 다시 시도해주세요.',
-    };
-  }
+  // REQ-INSTALL-003: Next.js Server Action의 내장 origin 검증이 CSRF 방어선.
+  // double-submit cookie 패턴은 Next.js 16에서 Server Component의 쿠키 수정 제약으로
+  // 구현 불가 (cookies can only be modified in a Server Action or Route Handler).
 
   const accepted = formData.get('accepted') === 'true' || formData.get('accepted') === 'on';
   const parsed = licenseAgreementSchema.safeParse({ accepted });

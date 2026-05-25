@@ -17,9 +17,13 @@ export function LicenseForm() {
     initialActionState,
   );
   const fieldError = state.ok === false ? state.fieldErrors?.accepted : undefined;
+  const formError = state.ok === false ? state.formError : undefined;
 
   return (
     <form action={formAction} className="mt-8 flex flex-col gap-4">
+      {formError ? (
+        <p className="text-sm text-red-600" role="alert">{formError}</p>
+      ) : null}
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
