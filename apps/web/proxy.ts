@@ -105,7 +105,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (
     !status.installed &&
     !pathname.startsWith('/install') &&
-    !pathname.startsWith('/api/install')
+    !pathname.startsWith('/api/install') &&
+    !pathname.startsWith('/api/auth')
   ) {
     const url = request.nextUrl.clone();
     url.pathname = '/install';
