@@ -5,3 +5,6 @@ export { resolveLayout } from './resolver';
 export type { LayoutResolution, ResolveLayoutOptions } from './resolver';
 export { createAssignmentStore } from './assignment-store';
 export type { AssignmentEntry, AssignmentStore } from './assignment-store';
+export { resolveSkin } from './skin-resolver';
+export type { SkinResolution, ResolveSkinOptions } from './skin-resolver';
+export { generateCssVariables, generateDarkCssVariables, getTailwindThemeExtension } from './token-css';
