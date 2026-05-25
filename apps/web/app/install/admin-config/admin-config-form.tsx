@@ -6,6 +6,7 @@
  * SiteLock 활성 시 인라인 경고를 노출하며, 제출은 `performInstall` server
  * action으로 처리됩니다. 시간대 목록은 서버에서 prop으로 주입.
  */
+import { useState } from 'react';
 import Link from 'next/link';
 import { useActionState } from 'react';
 
@@ -66,6 +67,8 @@ export function AdminConfigForm({ timeZones, defaultTimeZone }: AdminConfigFormP
   );
   const fieldErrors = state.ok === false ? state.fieldErrors : undefined;
   const formError = state.ok === false ? state.formError : undefined;
+  const [siteLockConfirmed, setSiteLockConfirmed] = useState(false);
+  const [siteLockModalOpen, setSiteLockModalOpen] = useState(false);
 
   return (
     <form action={formAction} className="mt-8 flex flex-col gap-4">
@@ -134,7 +137,19 @@ export function AdminConfigForm({ timeZones, defaultTimeZone }: AdminConfigFormP
       <fieldset className="mt-2 flex flex-col gap-2 rounded-md border p-3 text-sm">
         <legend className="px-1 text-xs">SiteLock</legend>
         <label className="flex items-center gap-2">
-          <input type="checkbox" name="useSitelock" value="true" />
+          <input
+            type="checkbox"
+            name="useSitelock"
+            value="true"
+            checked={siteLockConfirmed}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setSiteLockModalOpen(true);
+              } else {
+                setSiteLockConfirmed(false);
+              }
+            }}
+          />
           <span>SiteLock 사용 (현재 IP만 사이트 접근 허용)</span>
         </label>
         <p className="text-xs text-amber-700" role="note">
@@ -142,6 +157,44 @@ export function AdminConfigForm({ timeZones, defaultTimeZone }: AdminConfigFormP
           해제 가능합니다.
         </p>
       </fieldset>
+
+      {siteLockModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sitelock-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+        >
+          <div className="w-full max-w-md rounded-md bg-white p-6 shadow-lg">
+            <h3 id="sitelock-modal-title" className="mb-3 text-base font-semibold">
+              SiteLock 활성화 확인
+            </h3>
+            <p className="mb-4 text-sm text-gray-700">
+              SiteLock을 활성화하면 현재 IP 주소만 사이트에 접근할 수 있습니다.
+              IP가 변경되면 DB를 직접 수정해야만 잠금을 해제할 수 있습니다.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setSiteLockModalOpen(false)}
+                className="rounded-md border px-4 py-2 text-sm hover:bg-black/5"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSiteLockConfirmed(true);
+                  setSiteLockModalOpen(false);
+                }}
+                className="rounded-md bg-amber-600 px-4 py-2 text-sm text-white hover:opacity-90"
+              >
+                이해했습니다
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {formError ? (
         <p

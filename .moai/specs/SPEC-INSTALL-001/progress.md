@@ -239,3 +239,108 @@ install 관련 테스트: 104 passed, 3 skipped (107 total)
 - **베이스라인**: 843 passing
 - **완료 후**: 843 passing (+0 신규), 9 skipped (통합 테스트), 0 failing
 - **비고**: 모든 Slice C 구현이 이전 커밋에 이미 포함됨. 이 PR은 공식 슬라이스 마킹 및 문서화 커밋.
+
+---
+
+# SPEC-INSTALL-001 Slice D — Progress
+
+**날짜**: 2026-05-25
+**방법론**: TDD (RED → GREEN → REFACTOR)
+**베이스라인**: 843 tests passing (feature/install-001-slice-c 완료 후 시작)
+
+---
+
+## ANALYZE Phase
+
+### REQ 매핑 (Slice D 범위)
+
+| REQ | 설명 | 파일 |
+|-----|------|------|
+| REQ-INSTALL-023 | INSTALL_LOCK=1 환경변수 → 비설치 경로 410 Gone | middleware.ts |
+| REQ-INSTALL-024 | SiteLock 활성 시 비허용 IP → 503 Service Unavailable | middleware.ts, lib/install/sitelock.ts, lib/install/extract-ip.ts |
+| REQ-INSTALL-040 | 설치 완료 사이트 HTTPS 스킴 시 HSTS 헤더 부착 | middleware.ts, lib/install/headers.ts |
+| REQ-INSTALL-041 | SiteLock 체크박스 → 위험 안내 확인 모달 (이해했습니다/취소) | app/install/admin-config/admin-config-form.tsx |
+| REQ-INSTALL-042 | site 테이블 P2021/P2010 오류 시 install_lock SiteSetting 폴백 | lib/install/site-status.ts |
+
+### 발견된 갭
+
+- `sitelock.ts`와 `extract-ip.ts`, `headers.ts` 파일이 이미 구현됨 (`c6f4e3f` 커밋)
+- middleware.ts에 Slice D 로직 (410, 503, HSTS) 미통합
+- admin-config-form.tsx에 SiteLock 확인 모달 없음 (단순 체크박스만 존재)
+- site-status.ts에 cloud DB 폴백 로직 없음
+- `sitelock.ts`가 `@rhymix-ts/db`에서 prisma 임포트 → 테스트 모킹 이중화 필요
+
+---
+
+## PRESERVE Phase
+
+- 843 테스트 전체 통과 확인 (0 failing, 9 skipped)
+- middleware.test.ts 기존 7개 테스트 회귀 없음 확인
+- `@rhymix-ts/db` 모킹 누락으로 17개 테스트 실패 → `vi.mock('@rhymix-ts/db', ...)` 블록 추가로 수정
+
+---
+
+## IMPROVE Phase
+
+### 완료된 작업
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `apps/web/middleware.ts` | INSTALL_LOCK 410, SiteLock 503 (getSiteLockStatus + extractClientIp), HSTS 헤더 추가 |
+| `apps/web/middleware.test.ts` | ML-1~4 (410 Gone), SL-1~4 (503 SiteLock), HSTS-1~2 + `@rhymix-ts/db` 모킹 추가 |
+| `apps/web/app/install/admin-config/admin-config-form.tsx` | SiteLock controlled 체크박스 + 확인 모달 (role="dialog") |
+| `apps/web/app/install/admin-config/admin-config-form.test.tsx` | SM-1~3 (SiteLock 확인 모달) — 신규 파일 |
+| `apps/web/lib/install/site-status.ts` | REQ-INSTALL-042 cloud DB 폴백 (install_lock SiteSetting, P2021/P2010 오류 처리) |
+| `apps/web/lib/install/site-status.test.ts` | SLDB-1~3 (cloud DB 폴백) 추가 |
+
+### 핵심 구현 세부사항
+
+**middleware.ts 실행 순서 (8단계)**:
+1. INSTALL_LOCK=1 + 비설치 경로 → 410 Gone
+2. `prisma.site.findFirst(...)` 공통 조회
+3. 미설치 → 302 /install
+4. 도메인 해석
+5. forceHttps → 301
+6. `getSiteLockStatus()` + `extractClientIp()` → 비허용 IP 503
+7. 인증 보호
+8. scheme=https → HSTS 헤더
+
+**TDD 사이클 (REQ-INSTALL-041)**:
+- RED: SM-1~3 작성 → 실패 확인
+- `vi.resetModules()` + `afterEach(cleanup)` 필요 (DOM 누적 방지)
+- `expect((checkbox as HTMLInputElement).checked).toBe(true)` — jest-dom 미설정으로 네이티브 단언 사용
+- GREEN: admin-config-form.tsx 수정 → 3개 통과
+
+---
+
+## 수락 기준 (Slice D)
+
+| AC | REQ | 상태 |
+|----|-----|------|
+| INSTALL_LOCK=1 + 비설치 경로 → 410 Gone | REQ-INSTALL-023 | 완료 (ML-1~4) |
+| SiteLock 활성 + 비허용 IP → 503 | REQ-INSTALL-024 | 완료 (SL-1~4) |
+| HTTPS 사이트 → HSTS 헤더 | REQ-INSTALL-040 | 완료 (HSTS-1~2) |
+| SiteLock 체크박스 → 확인 모달 → 활성화 | REQ-INSTALL-041 | 완료 (SM-1~3) |
+| cloud DB 폴백 (install_lock SiteSetting) | REQ-INSTALL-042 | 완료 (SLDB-1~3) |
+| 회귀 없음 | — | 완료 (843 → 859 passing) |
+
+---
+
+## 테스트 결과 (Slice D 완료)
+
+- **베이스라인**: 843 passing
+- **완료 후**: 859 passing (+16 신규), 9 skipped (통합 테스트), 0 failing
+- **신규 테스트 파일**: 1개 (admin-config-form.test.tsx)
+- **신규 테스트**: ML-1~4, SL-1~4, HSTS-1~2, SM-1~3, SLDB-1~3 (총 16개)
+
+---
+
+## SPEC-INSTALL-001 전체 완료 현황
+
+| Slice | REQ 범위 | 테스트 | 상태 |
+|-------|----------|--------|------|
+| A | 001, 003, 010, 020, 021, 050, 051 | +29 | 완료 (PR #19) |
+| B | 013, 022, 053 | +15 | 완료 (PR #20) |
+| C | 014, 015, 054 | +0 (기존 구현) | 완료 (PR #21) |
+| D | 023, 024, 040, 041, 042 | +16 | 완료 (PR #22) |
+| **전체** | **REQ-INSTALL-001~054** | **859/868** | **완료** |

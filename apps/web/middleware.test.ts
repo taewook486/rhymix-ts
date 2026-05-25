@@ -6,8 +6,7 @@
  *
  * Slice B (B-1~B-4): Host 해석 + forceHttps 리다이렉트 검증.
  */
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import type { Mock } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks — NextAuth(config).auth 를 identity wrapper 로 모킹
@@ -29,6 +28,8 @@ vi.mock('@/lib/auth/config', () => ({
 
 const mockDomainFindFirst = vi.fn();
 const mockSiteFindFirst = vi.fn();
+const mockSiteSettingFindMany = vi.fn();
+const mockSiteSettingFindFirst = vi.fn();
 
 vi.mock('@/lib/db/prisma', () => ({
   prisma: {
@@ -37,6 +38,20 @@ vi.mock('@/lib/db/prisma', () => ({
     },
     site: {
       findFirst: (...args: unknown[]) => mockSiteFindFirst(...args),
+    },
+    siteSetting: {
+      findMany: (...args: unknown[]) => mockSiteSettingFindMany(...args),
+      findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+    },
+  },
+}));
+
+// sitelock.ts 는 @rhymix-ts/db 에서 직접 prisma 를 import 하므로 별도 모킹 필요.
+vi.mock('@rhymix-ts/db', () => ({
+  prisma: {
+    siteSetting: {
+      findMany: (...args: unknown[]) => mockSiteSettingFindMany(...args),
+      findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
     },
   },
 }));
@@ -70,6 +85,10 @@ describe('middleware', () => {
     // install gate 우회: 설치된 site 반환
     mockSiteFindFirst.mockResolvedValue(siteInstalledFixture);
     mockDomainFindFirst.mockResolvedValue(null);
+    // SiteLock 비활성화 기본값
+    mockSiteSettingFindMany.mockResolvedValue([]);
+    mockSiteSettingFindFirst.mockResolvedValue(null);
+    delete process.env.INSTALL_LOCK;
   });
 
   it('비인증 사용자가 /dashboard 접근 시 /login 으로 리다이렉트', async () => {
@@ -203,6 +222,9 @@ describe('middleware — Slice B (Host 해석 + forceHttps)', () => {
     mockDomainFindFirst.mockReset();
     // install gate 우회: 설치된 site 반환
     mockSiteFindFirst.mockResolvedValue(siteInstalledFixture);
+    mockSiteSettingFindMany.mockResolvedValue([]);
+    mockSiteSettingFindFirst.mockResolvedValue(null);
+    delete process.env.INSTALL_LOCK;
   });
 
   it('B-1: Host=example.com, scheme=https → x-site-id/x-domain-id/x-language 헤더 주입 (REQ-ADMIN-010)', async () => {
@@ -275,6 +297,9 @@ describe('middleware — Slice B (Host 해석 + forceHttps)', () => {
 describe('middleware — Slice A (Install gate)', () => {
   beforeEach(() => {
     mockDomainFindFirst.mockResolvedValue(null);
+    mockSiteSettingFindMany.mockResolvedValue([]);
+    mockSiteSettingFindFirst.mockResolvedValue(null);
+    delete process.env.INSTALL_LOCK;
   });
 
   it('MW-1: Site.installedAt IS NULL 상태에서 / 접근 시 302 → /install', async () => {
@@ -341,5 +366,197 @@ describe('middleware — Slice A (Install gate)', () => {
 
     const status = response?.status ?? 200;
     expect(status).not.toBe(302);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Slice D: INSTALL_LOCK 410 (REQ-INSTALL-023)
+// ---------------------------------------------------------------------------
+
+describe('middleware — Slice D (INSTALL_LOCK 410)', () => {
+  beforeEach(() => {
+    mockDomainFindFirst.mockResolvedValue(null);
+    mockSiteFindFirst.mockResolvedValue(siteInstalledFixture);
+    mockSiteSettingFindMany.mockResolvedValue([]);
+    mockSiteSettingFindFirst.mockResolvedValue(null);
+    process.env.INSTALL_LOCK = '1';
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete process.env.INSTALL_LOCK;
+  });
+
+  it('ML-1: INSTALL_LOCK=1 + /install → 410 Gone', async () => {
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/install', false);
+    const response = await handler(req);
+
+    expect(response).toBeDefined();
+    expect(response.status).toBe(410);
+  });
+
+  it('ML-2: INSTALL_LOCK=1 + /install/check-env → 410 Gone', async () => {
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/install/check-env', false);
+    const response = await handler(req);
+
+    expect(response).toBeDefined();
+    expect(response.status).toBe(410);
+  });
+
+  it('ML-3: INSTALL_LOCK=1 + /api/install/rewrite-test → 410 Gone', async () => {
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/api/install/rewrite-test', false);
+    const response = await handler(req);
+
+    expect(response).toBeDefined();
+    expect(response.status).toBe(410);
+  });
+
+  it('ML-4: INSTALL_LOCK=1 + / → NOT 410 (install 경로만 영향)', async () => {
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/', false);
+    const response = await handler(req);
+
+    const status = response?.status ?? 200;
+    expect(status).not.toBe(410);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Slice D: SiteLock 503 (REQ-INSTALL-024)
+// ---------------------------------------------------------------------------
+
+describe('middleware — Slice D (SiteLock 503)', () => {
+  beforeEach(() => {
+    mockDomainFindFirst.mockResolvedValue(null);
+    mockSiteFindFirst.mockResolvedValue(siteInstalledFixture);
+    mockSiteSettingFindFirst.mockResolvedValue(null);
+    delete process.env.INSTALL_LOCK;
+    vi.resetModules();
+  });
+
+  function createIpReq(pathname: string, ip: string) {
+    const nextUrl = new URL(`http://localhost:3000${pathname}`);
+    const headers = new Headers({
+      host: 'localhost:3000',
+      'x-forwarded-for': ip,
+    });
+    return { auth: null, nextUrl, headers };
+  }
+
+  it('SL-1: sitelock_enabled=true, IP not in allowlist, GET / → 503', async () => {
+    // sitelock_enabled=true, sitelock_allowlist=["192.168.1.0"]
+    mockSiteSettingFindMany.mockResolvedValue([
+      { key: 'sitelock_enabled', value: true },
+      { key: 'sitelock_allowlist', value: ['192.168.1.0'] },
+    ]);
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createIpReq('/', '10.0.0.1');
+    const response = await handler(req);
+
+    expect(response).toBeDefined();
+    expect(response.status).toBe(503);
+  });
+
+  it('SL-2: sitelock_enabled=true, IP IN allowlist → NOT 503', async () => {
+    mockSiteSettingFindMany.mockResolvedValue([
+      { key: 'sitelock_enabled', value: true },
+      { key: 'sitelock_allowlist', value: ['10.0.0.1'] },
+    ]);
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createIpReq('/', '10.0.0.1');
+    const response = await handler(req);
+
+    const status = response?.status ?? 200;
+    expect(status).not.toBe(503);
+  });
+
+  it('SL-3: sitelock_enabled=true, IP not in allowlist, /admin → NOT 503 (admin 경로 제외)', async () => {
+    mockSiteSettingFindMany.mockResolvedValue([
+      { key: 'sitelock_enabled', value: true },
+      { key: 'sitelock_allowlist', value: ['192.168.1.0'] },
+    ]);
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createIpReq('/admin', '10.0.0.1');
+    const response = await handler(req);
+
+    const status = response?.status ?? 200;
+    expect(status).not.toBe(503);
+  });
+
+  it('SL-4: sitelock_enabled=false → NOT 503', async () => {
+    mockSiteSettingFindMany.mockResolvedValue([
+      { key: 'sitelock_enabled', value: false },
+    ]);
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createIpReq('/', '10.0.0.1');
+    const response = await handler(req);
+
+    const status = response?.status ?? 200;
+    expect(status).not.toBe(503);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Slice D: HSTS 헤더 (REQ-INSTALL-040)
+// ---------------------------------------------------------------------------
+
+describe('middleware — Slice D (HSTS header)', () => {
+  beforeEach(() => {
+    mockDomainFindFirst.mockResolvedValue(null);
+    mockSiteSettingFindMany.mockResolvedValue([]);
+    mockSiteSettingFindFirst.mockResolvedValue(null);
+    delete process.env.INSTALL_LOCK;
+    vi.resetModules();
+  });
+
+  it('HSTS-1: site.scheme=https → response has Strict-Transport-Security header', async () => {
+    mockSiteFindFirst.mockResolvedValue({
+      id: 1,
+      installedAt: new Date('2026-01-01T00:00:00Z'),
+      scheme: 'https',
+    });
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/', false);
+    const response = await handler(req);
+
+    expect(response).toBeDefined();
+    expect(response.headers.get('strict-transport-security')).not.toBeNull();
+  });
+
+  it('HSTS-2: site.scheme=http → response does NOT have Strict-Transport-Security header', async () => {
+    mockSiteFindFirst.mockResolvedValue({
+      id: 1,
+      installedAt: new Date('2026-01-01T00:00:00Z'),
+      scheme: 'http',
+    });
+    const { default: middleware } = await import('./middleware');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handler = middleware as any;
+    const req = createReq('/', false);
+    const response = await handler(req);
+
+    expect(response).toBeDefined();
+    expect(response.headers.get('strict-transport-security')).toBeNull();
   });
 });
