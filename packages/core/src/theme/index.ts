@@ -8,3 +8,7 @@ export type { AssignmentEntry, AssignmentStore } from './assignment-store';
 export { resolveSkin } from './skin-resolver';
 export type { SkinResolution, ResolveSkinOptions } from './skin-resolver';
 export { generateCssVariables, generateDarkCssVariables, getTailwindThemeExtension } from './token-css';
+export { getDarkModeConfig, buildDarkMediaQuery } from './dark-mode';
+export type { DarkModeConfig } from './dark-mode';
+export { installTheme } from './installer';
+export type { InstallResult, InstalledTheme, InstallOptions } from './installer';
