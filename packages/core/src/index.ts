@@ -53,3 +53,7 @@ export type {
   EnvCheckStatus,
   EnvCheckCategory,
 } from './install/diagnostics';
+
+// SPEC-THEME-001: Theme manifest types and validation
+export { parseManifest } from './theme';
+export type { ThemeManifest, ThemeTokens, ManifestParseResult, LayoutProps, SkinProps } from './theme';
