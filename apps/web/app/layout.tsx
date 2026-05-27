@@ -4,6 +4,7 @@ import './globals.css';
 import { AutoLoginRefresher } from '@/components/auth/AutoLoginRefresher';
 import { SessionProviderWrapper } from '@/components/auth/SessionProviderWrapper';
 import { TRPCProvider } from '@/providers/TRPCProvider';
+import { GlobalHeader } from '@/components/layout/GlobalHeader';
 
 export const metadata: Metadata = {
   title: {
@@ -24,7 +25,8 @@ export default function RootLayout({
         <TRPCProvider>
           <SessionProviderWrapper>
             <AutoLoginRefresher />
-            {children}
+            <GlobalHeader />
+            <main>{children}</main>
           </SessionProviderWrapper>
         </TRPCProvider>
       </body>

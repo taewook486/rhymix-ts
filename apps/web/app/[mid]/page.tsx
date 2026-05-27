@@ -12,8 +12,11 @@
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
+import { renderModuleWithLayout } from '@rhymix-ts/core';
 import { prisma } from '@/lib/db/prisma';
 import { getModuleDefinition } from '@/lib/modules/registry';
+// 레이아웃 레지스트리 초기화 (정적 import — REQ-LAYOUT-009)
+import '@/lib/layout-init';
 
 interface MidPageProps {
   params: Promise<{ mid: string }>;
@@ -41,10 +44,18 @@ export default async function MidPage({ params, searchParams }: MidPageProps) {
     notFound();
   }
 
-  return def.routes.index({
+  const moduleOutput = await def.routes.index({
     instance,
     params: { mid },
     searchParams: resolvedSearchParams,
     prisma,
+  });
+
+  // REQ-LAYOUT-040: 모듈 출력을 레이아웃으로 감싸 반환
+  return renderModuleWithLayout({
+    instance,
+    moduleOutput,
+    prisma,
+    request: h,
   });
 }

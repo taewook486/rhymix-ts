@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./install/diagnostics": "./src/install/diagnostics.ts",
     "./modules": "./src/modules/index.ts",
-    "./widgets": "./src/widgets/index.ts"
+    "./widgets": "./src/widgets/index.ts",
+    "./widgets/builtin": "./src/widgets/builtin/index.ts"
   },
   "scripts": {
     "lint": "echo 'no lint'",
@@ -21,8 +22,21 @@
     "@rhymix-ts/db": "workspace:*",
     "zod": "^3.24.0"
   },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "^29.1.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.9.0"
   }

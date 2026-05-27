@@ -1,5 +1,5 @@
 /**
- * 위젯 시스템 타입 정의 — SPEC-ADMIN-001 Slice G
+ * 위젯 시스템 타입 정의 — SPEC-WIDGET-001
  *
  * React 의존성 없음 — ComponentType은 구조적 타입으로 정의한다.
  */
@@ -23,4 +23,39 @@ export interface WidgetDefinition<P = Record<string, unknown>> {
   Component: WidgetComponent<P>
   /** 기본 props 값 */
   defaultProps?: Partial<P>
+  /** 위젯 설명 (선택적) */
+  description?: string
+  /** 위젯 카테고리 (선택적) */
+  category?: string
+}
+
+/**
+ * 위젯 렌더링 컨텍스트 — 서버 사이드 렌더 파이프라인에서 주입된다.
+ * packages/core는 Next.js 의존성이 없으므로 타입만 정의하고
+ * 실제 auth() 호출은 apps/web 레이어에서 처리한다.
+ */
+// @MX:ANCHOR: [AUTO] WidgetRenderContext — 렌더 파이프라인 전체에서 fan_in >= 3
+// @MX:REASON: renderBodyWithWidgets, 빌트인 위젯, admin 페이지에서 공통 사용
+export interface WidgetRenderContext {
+  /** 관리자 여부 — 에러 메시지 노출 제어 */
+  isAdmin: boolean
+  /** 현재 인증된 사용자 (null이면 비로그인) */
+  user?: { id: number; nickname: string } | null
+  /** Prisma 클라이언트 인스턴스 */
+  prisma: import('@prisma/client').PrismaClient
+  /** 도메인 ID (선택적) */
+  domainId?: number
+}
+
+/**
+ * HTML 본문에서 파싱된 rx-widget 토큰 구조.
+ * data-* 속성은 camelCase로 변환하여 저장한다.
+ */
+export interface WidgetToken {
+  /** 위젯 이름 (name 속성 값) */
+  name: string
+  /** data-* 속성 → camelCase 변환된 props 맵 */
+  props: Record<string, string>
+  /** 원본 토큰 문자열 (치환 기준점으로 사용) */
+  raw: string
 }

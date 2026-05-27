@@ -13,7 +13,9 @@ const config: NextConfig = {
     '@rhymix-ts/board',
     '@rhymix-ts/core',
     '@rhymix-ts/db',
+    '@rhymix-ts/page',
     '@rhymix-ts/ui',
+    '@rhymix-ts/theme-default',
   ],
   // Native binding을 가진 모듈은 Turbopack이 번들링하지 말고
   // Node.js require로 직접 로드하도록 외부화 (pnpm isolated linker 호환).

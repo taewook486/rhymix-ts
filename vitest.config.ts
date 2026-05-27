@@ -15,6 +15,15 @@ export default defineConfig({
       '@/lib': path.join(__dirname, 'apps/web/lib'),
       '@/app': path.join(__dirname, 'apps/web/app'),
       '@/server': path.join(__dirname, 'apps/web/server'),
+      // SPEC-PAGE-001: packages/page 패키지 alias
+      '@rhymix-ts/page': path.join(__dirname, 'packages/page/src/index.ts'),
+      // pnpm isolated 환경에서 react를 직접 참조할 수 없는 packages에 대한 해석
+      'react': path.join(__dirname, 'node_modules/.pnpm/react@19.0.0/node_modules/react'),
+      'react/jsx-runtime': path.join(__dirname, 'node_modules/.pnpm/react@19.0.0/node_modules/react/jsx-runtime'),
+      'react/jsx-dev-runtime': path.join(__dirname, 'node_modules/.pnpm/react@19.0.0/node_modules/react/jsx-dev-runtime'),
+      'react-dom': path.join(__dirname, 'node_modules/.pnpm/react-dom@19.0.0_react@19.0.0/node_modules/react-dom'),
+      'react-dom/server': path.join(__dirname, 'node_modules/.pnpm/react-dom@19.0.0_react@19.0.0/node_modules/react-dom/server'),
+      'react-dom/client': path.join(__dirname, 'node_modules/.pnpm/react-dom@19.0.0_react@19.0.0/node_modules/react-dom/client'),
     },
   },
   test: {
@@ -22,6 +31,13 @@ export default defineConfig({
     environment: 'node',
     environmentMatchGlobs: [
       ['packages/board/src/components/**/*.test.tsx', 'jsdom'],
+      // SPEC-LAYOUT-001: themes DefaultLayout 렌더링 테스트
+      ['themes/**/*.test.tsx', 'jsdom'],
+      // SPEC-WIDGET-001: 위젯 컴포넌트 및 렌더 파이프라인 테스트
+      ['packages/core/src/widgets/**/*.test.tsx', 'jsdom'],
+      ['apps/web/lib/widgets/**/*.test.ts', 'jsdom'],
+      ['apps/web/lib/widgets/**/*.test.tsx', 'jsdom'],
+      ['apps/web/app/admin/widgets/**/*.test.tsx', 'jsdom'],
     ],
     env: {
       // DB 없는 환경에서 통합 테스트를 기본으로 skip한다.
@@ -40,6 +56,9 @@ export default defineConfig({
       'apps/**/app/**/*.test.tsx',
       'apps/**/server/**/*.test.ts',
       'apps/**/components/**/*.test.tsx',
+      // SPEC-LAYOUT-001: themes 디렉토리 테스트 (monorepo root)
+      'themes/**/*.test.ts',
+      'themes/**/*.test.tsx',
     ],
     coverage: {
       provider: 'v8',

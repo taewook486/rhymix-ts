@@ -72,8 +72,9 @@ model Domain {
   forceHttps            Boolean         @default(true)
   defaultLanguage       String?
   defaultTimezone       String?
-  defaultLayoutId       Int?
-  defaultMobileLayoutId Int?
+  // SPEC-LAYOUT-001 REQ-LAYOUT-003: layout ID를 String? (cuid)로 변경
+  defaultLayoutId       String?
+  defaultMobileLayoutId String?
   defaultMenuId         Int?
   // REQ-ADMIN-006: 이 도메인의 인덱스(홈) 모듈 인스턴스
   indexModuleInstanceId Int?
@@ -104,8 +105,9 @@ model ModuleInstance {
   name           String
   browserTitle   String?
   description    String?
-  layoutId       Int?
-  mobileLayoutId Int?
+  // SPEC-LAYOUT-001 REQ-LAYOUT-003: layout ID를 String? (cuid)로 변경
+  layoutId       String?
+  mobileLayoutId String?
   skin           String?
   mobileSkin     String?
   menuId         Int?
@@ -123,6 +125,9 @@ model ModuleInstance {
   domainsAsIndex Domain[]     @relation("IndexModule")
   // SPEC-CONTENT-001 Slice A: board 모듈 역참조 (1:1)
   board         Board?
+
+  // SPEC-PAGE-001 REQ-PAGE-001: 페이지 모듈 본문 컬럼 (additive, nullable)
+  mcontent      String?       @db.Text
 
   // 핵심: 전역 @unique 제거 + 사이트 범위 복합 유니크 (Q2 Pre-Flight 결정)
   @@unique([siteId, mid])

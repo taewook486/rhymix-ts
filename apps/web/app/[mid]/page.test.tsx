@@ -44,6 +44,17 @@ vi.mock('@/lib/db/prisma', () => ({
   prisma: {},
 }));
 
+// SPEC-LAYOUT-001: renderModuleWithLayout을 패스스루로 mock
+// 레이아웃 파이프라인은 layout/ 테스트에서 별도 검증됨
+vi.mock('@rhymix-ts/core', () => ({
+  renderModuleWithLayout: vi.fn(({ moduleOutput }: { moduleOutput: unknown }) =>
+    Promise.resolve(moduleOutput),
+  ),
+}));
+
+// layout-init import를 mock (DefaultLayout 등록 side-effect 방지)
+vi.mock('@/lib/layout-init', () => ({}));
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

@@ -24,7 +24,8 @@
     "db:generate": "pnpm --filter @rhymix-ts/db prisma:generate",
     "db:push": "pnpm --filter @rhymix-ts/db prisma:push",
     "db:migrate": "pnpm --filter @rhymix-ts/db prisma:migrate",
-    "db:studio": "pnpm --filter @rhymix-ts/db prisma:studio"
+    "db:studio": "pnpm --filter @rhymix-ts/db prisma:studio",
+    "seed:default-theme": "tsx themes/default/install.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

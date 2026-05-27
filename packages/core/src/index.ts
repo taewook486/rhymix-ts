@@ -57,3 +57,14 @@ export type {
 // SPEC-THEME-001: Theme manifest types and validation
 export { parseManifest } from './theme';
 export type { ThemeManifest, ThemeTokens, ManifestParseResult, LayoutProps, SkinProps } from './theme';
+
+// SPEC-LAYOUT-001: 레이아웃 시스템 — 타입, 컨텍스트, 레지스트리, 파이프라인
+export type { LayoutConfig, LayoutContextValue, ParsedExtraVars, ResolveResult } from './theme/layout/types';
+export { layoutExtraVarsSchema, parseLayoutExtraVars } from './theme/layout/extra-vars';
+export { loadLayoutById, loadLayoutByName } from './theme/layout/loader';
+export { resolveLayoutFromInstance } from './theme/layout/resolver-with-db';
+export { LayoutContext, LayoutProvider, useLayoutContext, useLayoutContextOptional } from './theme/layout/context';
+export type { LayoutComponentProps } from './theme/layout/registry';
+export { registerLayout, getLayout } from './theme/layout/registry';
+export { LayoutSlot } from './theme/layout/slot';
+export { renderModuleWithLayout } from './theme/layout/pipeline';

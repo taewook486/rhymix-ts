@@ -9,20 +9,31 @@
  * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-001
  */
 import { registerModule, DuplicateModuleError } from '@rhymix-ts/core/modules';
+import { registerBuiltinWidgets } from '@rhymix-ts/core/widgets/builtin';
 import { boardModule } from '@rhymix-ts/board';
+import { pageModuleDefinition } from '@rhymix-ts/page';
 
 let initialized = false;
 
 export function initModules(): void {
   if (initialized) return;
-  try {
-    registerModule(boardModule);
-  } catch (err) {
-    if (err instanceof DuplicateModuleError) {
-      // HMR reload — already registered. Safe to ignore.
-    } else {
-      throw err;
+
+  // 빌트인 위젯 등록 (멱등성 보장 — 내부적으로 _initialized 플래그로 한 번만 실행)
+  registerBuiltinWidgets();
+
+  const modules = [boardModule, pageModuleDefinition];
+
+  for (const mod of modules) {
+    try {
+      registerModule(mod);
+    } catch (err) {
+      if (err instanceof DuplicateModuleError) {
+        // HMR reload — 이미 등록된 모듈. 무시해도 안전.
+      } else {
+        throw err;
+      }
     }
   }
+
   initialized = true;
 }

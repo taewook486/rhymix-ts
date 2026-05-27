@@ -1,37 +1,133 @@
 /**
- * Admin 위젯 시스템 페이지 — SPEC-ADMIN-001 Slice G
+ * Admin 위젯 시스템 메인 페이지 — SPEC-WIDGET-001 Slice D
  *
- * 등록된 위젯 목록을 표시한다.
- * 실제 운영에서는 모듈 로딩 시 registerWidget이 호출됨.
+ * 등록된 위젯 정의 목록과 DB 인스턴스 목록을 표시한다.
+ * @MX:SPEC: SPEC-WIDGET-001 REQ-WIDGET-D-001
  */
+import Link from 'next/link'
 import { listWidgets } from '@rhymix-ts/core/widgets'
+import { listWidgetInstances } from '@rhymix-ts/core/widgets'
+import { prisma } from '@rhymix-ts/db'
 
-export default function AdminWidgetsPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function AdminWidgetsPage() {
+  // 등록된 위젯 정의 목록 (레지스트리)
   const widgets = listWidgets()
+  // DB 위젯 인스턴스 목록 (registered 여부 포함)
+  const instances = await listWidgetInstances(prisma)
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold">위젯 시스템</h1>
-      {widgets.length === 0 ? (
-        <p className="text-sm text-zinc-500">등록된 위젯이 없습니다.</p>
-      ) : (
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="bg-zinc-100">
-              <th className="text-left px-3 py-2 font-medium">이름</th>
-              <th className="text-left px-3 py-2 font-medium">표시명</th>
-            </tr>
-          </thead>
-          <tbody>
-            {widgets.map((w) => (
-              <tr key={w.name} className="border-t border-zinc-200">
-                <td className="px-3 py-2 font-mono text-xs">{w.name}</td>
-                <td className="px-3 py-2">{w.displayName}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+    <section className="space-y-8">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">위젯 시스템</h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            등록된 위젯 정의 및 인스턴스를 관리합니다.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/widgets/generator"
+            className="px-3 py-2 text-sm rounded-md bg-zinc-100 hover:bg-zinc-200 border border-zinc-300"
+          >
+            코드 생성기
+          </Link>
+          <Link
+            href="/admin/widgets/instances/new"
+            className="px-3 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+          >
+            인스턴스 추가
+          </Link>
+        </div>
+      </header>
+
+      {/* 등록된 위젯 정의 */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">등록된 위젯 정의</h2>
+        {widgets.length === 0 ? (
+          <p className="text-sm text-zinc-500 py-4 text-center border border-zinc-200 rounded-md">
+            등록된 위젯이 없습니다.
+          </p>
+        ) : (
+          <div className="border border-zinc-200 rounded-md overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 border-b border-zinc-200">
+                <tr>
+                  <th className="text-left px-4 py-2 font-medium">이름</th>
+                  <th className="text-left px-4 py-2 font-medium">표시명</th>
+                  <th className="text-left px-4 py-2 font-medium">카테고리</th>
+                  <th className="text-left px-4 py-2 font-medium">설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                {widgets.map((w) => (
+                  <tr key={w.name} className="border-t border-zinc-200 hover:bg-zinc-50">
+                    <td className="px-4 py-2 font-mono text-xs text-blue-700">{w.name}</td>
+                    <td className="px-4 py-2">{w.displayName}</td>
+                    <td className="px-4 py-2 text-zinc-500">{w.category ?? '—'}</td>
+                    <td className="px-4 py-2 text-zinc-500">{w.description ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 위젯 인스턴스 목록 */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">위젯 인스턴스</h2>
+        {instances.length === 0 ? (
+          <p className="text-sm text-zinc-500 py-4 text-center border border-zinc-200 rounded-md">
+            생성된 위젯 인스턴스가 없습니다.
+          </p>
+        ) : (
+          <div className="border border-zinc-200 rounded-md overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 border-b border-zinc-200">
+                <tr>
+                  <th className="text-left px-4 py-2 font-medium">ID</th>
+                  <th className="text-left px-4 py-2 font-medium">위젯</th>
+                  <th className="text-left px-4 py-2 font-medium">레이블</th>
+                  <th className="text-left px-4 py-2 font-medium">등록 상태</th>
+                  <th className="text-left px-4 py-2 font-medium">작업</th>
+                </tr>
+              </thead>
+              <tbody>
+                {instances.map((inst) => (
+                  <tr key={inst.id} className="border-t border-zinc-200 hover:bg-zinc-50">
+                    <td className="px-4 py-2 text-zinc-400 text-xs">{inst.id}</td>
+                    <td className="px-4 py-2 font-mono text-xs text-blue-700">
+                      {inst.widgetName}
+                    </td>
+                    <td className="px-4 py-2">{inst.label}</td>
+                    <td className="px-4 py-2">
+                      {inst.registered ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">
+                          등록됨
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700">
+                          미등록
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      <Link
+                        href={`/admin/widgets/instances/${inst.id}/edit`}
+                        className="text-blue-600 hover:underline text-xs mr-3"
+                      >
+                        수정
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
   )
 }

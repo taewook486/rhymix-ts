@@ -19,6 +19,7 @@
       "@/*": ["./*"],
       "@/app/*": ["./app/*"],
       "@/lib/*": ["./lib/*"],
+      "@rhymix-ts/page": ["../../packages/page/src/index.ts"],
       "@rhymix-ts/ui": ["../../packages/ui/src/index.ts"],
       "@rhymix-ts/ui/components": ["../../packages/ui/src/components/index.ts"]
     }
