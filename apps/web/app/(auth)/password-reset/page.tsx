@@ -11,11 +11,8 @@
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
 
-import {
-  requestPasswordResetAction,
-  initialAuthActionState,
-  type AuthActionState,
-} from '@/lib/auth/actions';
+import { requestPasswordResetAction } from '@/lib/auth/actions';
+import { initialAuthActionState, type AuthActionState } from '@/lib/auth/auth-state';
 
 export default function PasswordResetPage() {
   const [submitted, setSubmitted] = useState(false);

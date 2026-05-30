@@ -1,3 +1,4 @@
+/** @deprecated SPEC-LAYOUT-001: m.layouts 시스템 폐기됨. responsive-only로 전환. */
 export type MobileLayoutSrl = -1 | -2 | number; // -1=사이트 기본, -2=반응형, N=특정 레이아웃
 
 export type MobileLayoutResolution =

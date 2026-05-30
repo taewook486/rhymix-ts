@@ -1,3 +1,4 @@
+// @deprecated SPEC-LAYOUT-001: mobile-layout.ts 폐기됨. 테스트는 참조용으로만 유지.
 import { describe, it, expect } from 'vitest';
 import { resolveMobileLayout } from './mobile-layout';
 

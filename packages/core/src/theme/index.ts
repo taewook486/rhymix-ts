@@ -1,3 +1,16 @@
+// SPEC-LAYOUT-001 Slice A: layout 서브모듈 exports
+export type { LayoutConfig, LayoutContextValue, ParsedExtraVars, ResolveResult } from './layout/types';
+export { layoutExtraVarsSchema, parseLayoutExtraVars } from './layout/extra-vars';
+export { loadLayoutById, loadLayoutByName } from './layout/loader';
+export { resolveLayoutFromInstance } from './layout/resolver-with-db';
+
+// SPEC-LAYOUT-001 Slice B: 렌더 파이프라인 + LayoutContext exports
+export { LayoutContext, LayoutProvider, useLayoutContext, useLayoutContextOptional } from './layout/context';
+export type { LayoutComponentProps } from './layout/registry';
+export { registerLayout, getLayout } from './layout/registry';
+export { LayoutSlot } from './layout/slot';
+export { renderModuleWithLayout } from './layout/pipeline';
+
 export { parseManifest, type ManifestParseResult } from './manifest-validator';
 export { themeManifestSchema, themeTokensSchema, semverRegex } from './types';
 export type { ThemeManifest, ThemeTokens, LayoutProps, SkinProps } from './types';

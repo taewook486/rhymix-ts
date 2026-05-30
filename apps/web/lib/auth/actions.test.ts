@@ -100,8 +100,8 @@ import {
   verifyEmailAction,
   requestPasswordResetAction,
   confirmPasswordResetAction,
-  initialAuthActionState,
 } from './actions';
+import { initialAuthActionState } from './auth-state';
 
 beforeEach(() => {
   signupMock.mockReset();

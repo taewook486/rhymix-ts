@@ -1,0 +1,131 @@
+%% Rhymix-TS Master Plan 002 — Module Dependency Graph
+%% Generated: 2026-05-25
+%% Source: research.md Section 3 (verified from legacy module.xml eventHandlers + schemas)
+%%
+%% Legend:
+%%   solid arrow  →  hard dependency (cannot function without)
+%%   dotted arrow ⇢  soft/event dependency (cascading delete, hook trigger)
+%%   color classes:
+%%     done       — already implemented (SPEC-AUTH-001, SPEC-ADMIN-001 A~F, SPEC-INSTALL-001)
+%%     phase1     — Phase 1: Visible UI Foundation (P0)
+%%     phase2     — Phase 2: Content Domain (P0)
+%%     phase3     — Phase 3: Member Ecosystem (P1)
+%%     phase4     — Phase 4: Extension + Theme Polish (P1)
+%%     phase5     — Phase 5: Admin Completion (P2)
+
+graph TD
+    %% =========================================================
+    %% Foundation (DONE)
+    %% =========================================================
+    member["member<br/>(packages/auth)<br/><i>SPEC-AUTH-001 ✓</i>"]:::done
+    module["module<br/>(packages/core/modules)<br/><i>SPEC-ADMIN-001 A~F ✓</i>"]:::done
+    install["install wizard<br/>(apps/web/install)<br/><i>SPEC-INSTALL-001 ✓</i>"]:::done
+    menu["menu<br/>(in ADMIN-001)<br/><i>partial ✓, DnD pending</i>"]:::done
+
+    %% =========================================================
+    %% Phase 1: Visible UI Foundation (P0)
+    %% =========================================================
+    layout["layout<br/>(packages/core/theme + themes/default)<br/><b>SPEC-LAYOUT-001</b>"]:::phase1
+    page["page<br/>(packages/page NEW)<br/><b>SPEC-PAGE-001</b>"]:::phase1
+    widget["widget<br/>(packages/core/widgets + builtin)<br/><b>SPEC-WIDGET-001</b>"]:::phase1
+
+    %% =========================================================
+    %% Phase 2: Content Domain (P0)
+    %% =========================================================
+    document["document<br/>(packages/document NEW)<br/><b>SPEC-DOCUMENT-001</b>"]:::phase2
+    comment["comment<br/>(packages/comment NEW)<br/><b>SPEC-COMMENT-001</b>"]:::phase2
+    board["board<br/>(packages/board, refactored)<br/><b>SPEC-BOARD-CRUD-001</b>"]:::phase2
+
+    %% =========================================================
+    %% Phase 3: Member Ecosystem (P1)
+    %% =========================================================
+    file["file<br/>(packages/file NEW)<br/><b>SPEC-FILE-001</b>"]:::phase3
+    point["point<br/>(packages/point NEW)<br/><b>SPEC-POINT-001</b>"]:::phase3
+    mail["mail/SMTP<br/>(packages/auth/mail)<br/><b>SPEC-MAIL-001</b>"]:::phase3
+
+    %% =========================================================
+    %% Phase 4: Extension + Theme Polish (P1)
+    %% =========================================================
+    addon["addon<br/>(packages/core/addons NEW)<br/><b>SPEC-ADDON-001</b>"]:::phase4
+    themepolish["theme polish<br/>(admin/site/design + dark mode)<br/><b>SPEC-THEME-POLISH-001</b>"]:::phase4
+
+    %% =========================================================
+    %% Phase 5: Admin Completion (P2)
+    %% =========================================================
+    adminextras["admin extras<br/>(export/import + 잔여 REQ)<br/><b>SPEC-ADMIN-EXTRAS-001</b>"]:::phase5
+
+    %% =========================================================
+    %% Hard dependencies (solid arrows)
+    %% =========================================================
+    %% Foundation chain
+    install --> module
+    install --> member
+
+    %% Phase 1 chain
+    module --> layout
+    module --> page
+    module --> widget
+    member --> widget
+    menu --> layout
+    layout --> page
+    widget --> page
+
+    %% Phase 2 chain
+    module --> document
+    module --> comment
+    member --> document
+    member --> comment
+    document --> comment
+    document --> board
+    comment --> board
+    member --> board
+    layout --> board
+    widget --> board
+
+    %% Page uses widget which can show document data
+    document -.-> widget
+
+    %% Phase 3 chain
+    member --> file
+    member --> point
+    document --> file
+    comment --> file
+    document --> point
+    comment --> point
+    board --> point
+    member --> mail
+
+    %% Phase 4 chain
+    layout --> themepolish
+    widget --> themepolish
+    layout -.-> addon
+    page -.-> addon
+    document -.-> addon
+    comment -.-> addon
+
+    %% Phase 5
+    module --> adminextras
+    menu --> adminextras
+    widget --> adminextras
+
+    %% =========================================================
+    %% Soft/event dependencies (dotted arrows)
+    %% =========================================================
+    %% From legacy module.xml eventHandlers:
+    document -.-> file
+    comment -.-> file
+    document -.-> comment
+    module -.-> document
+    module -.-> comment
+    module -.-> file
+    board -.-> member
+
+    %% =========================================================
+    %% Style definitions
+    %% =========================================================
+    classDef done fill:#d4f4dd,stroke:#1b5e20,stroke-width:2px,color:#1b5e20
+    classDef phase1 fill:#bbdefb,stroke:#0d47a1,stroke-width:3px,color:#0d47a1
+    classDef phase2 fill:#c5cae9,stroke:#1a237e,stroke-width:2px,color:#1a237e
+    classDef phase3 fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#f57f17
+    classDef phase4 fill:#ffe0b2,stroke:#e65100,stroke-width:2px,color:#e65100
+    classDef phase5 fill:#f8bbd0,stroke:#880e4f,stroke-width:2px,color:#880e4f

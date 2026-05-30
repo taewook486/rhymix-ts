@@ -10,16 +10,16 @@
  *
  * @MX:NOTE: 로그인 폼 Client Component — loginAction Server Action 의 유일한 UI 진입점.
  */
-import { useActionState } from 'react';
+import { Suspense, useActionState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
-import {
-  loginAction,
-  initialAuthActionState,
-  type AuthActionState,
-} from '@/lib/auth/actions';
+import { loginAction } from '@/lib/auth/actions';
+import { initialAuthActionState, type AuthActionState } from '@/lib/auth/auth-state';
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') ?? '/';
   const [state, formAction, isPending] = useActionState(
     loginAction,
     initialAuthActionState,
@@ -36,6 +36,7 @@ export default function LoginPage() {
       )}
 
       <form action={formAction} className="space-y-4">
+        <input type="hidden" name="callbackUrl" value={callbackUrl} />
         <div>
           <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
             아이디 또는 이메일
@@ -102,5 +103,13 @@ export default function LoginPage() {
         </p>
       </div>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -12,11 +12,8 @@ import { Suspense, useActionState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import {
-  confirmPasswordResetAction,
-  initialAuthActionState,
-  type AuthActionState,
-} from '@/lib/auth/actions';
+import { confirmPasswordResetAction } from '@/lib/auth/actions';
+import { initialAuthActionState, type AuthActionState } from '@/lib/auth/auth-state';
 
 function PasswordResetConfirmInner() {
   const searchParams = useSearchParams();

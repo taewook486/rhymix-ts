@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "preserve",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "react": ["../apps/web/node_modules/react"],
+      "react/jsx-runtime": ["../apps/web/node_modules/react/jsx-runtime"],
+      "@prisma/client": ["../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_magicast@0.3.5_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client"]
+    }
+  },
+  "include": ["./**/*.ts", "./**/*.tsx"],
+  "exclude": ["node_modules"]
+}

@@ -11,11 +11,8 @@
 import { useActionState, useRef, useState } from 'react';
 import Link from 'next/link';
 
-import {
-  signupAction,
-  initialAuthActionState,
-  type AuthActionState,
-} from '@/lib/auth/actions';
+import { signupAction } from '@/lib/auth/actions';
+import { initialAuthActionState, type AuthActionState } from '@/lib/auth/auth-state';
 
 export default function SignupPage() {
   const [submitted, setSubmitted] = useState(false);

@@ -14,6 +14,7 @@
  * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-005, REQ-AUTH-006, REQ-AUTH-013, REQ-AUTH-051
  */
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import {
   signup,
@@ -31,21 +32,8 @@ import { prisma } from '@rhymix-ts/db';
 import { signIn, auth } from './config';
 import { cookies } from 'next/headers';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export type AuthActionState =
-  | { ok: true }
-  | {
-      ok: false;
-      formError?: string;
-      fieldErrors?: Record<string, string>;
-      /** 도메인 코드 (UI 토스트/알림에 직접 매핑할 수 있도록 노출). */
-      code?: SignupErrorCode | VerifyEmailErrorCode | 'INVALID_CREDENTIALS' | 'TOKEN_INVALID' | 'TOKEN_EXPIRED' | 'WEAK_PASSWORD';
-    };
-
-export const initialAuthActionState: AuthActionState = { ok: true };
+import type { AuthActionState } from './auth-state';
+export type { AuthActionState } from './auth-state';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -141,6 +129,7 @@ export async function loginAction(
   const identifier = String(formData.get('identifier') ?? '').trim();
   const rememberMe = String(formData.get('rememberMe') ?? '') === 'on';
   const password = String(formData.get('password') ?? '');
+  const callbackUrl = String(formData.get('callbackUrl') ?? '').trim() || '/';
   if (!identifier || !password) {
     return {
       ok: false,
@@ -159,36 +148,29 @@ export async function loginAction(
     if (rememberMe) {
       try {
         const session = await auth();
-        if (!session?.user?.id) {
-          return { ok: true };
+        if (session?.user?.id) {
+          const userId = Number.parseInt(session.user.id, 10);
+          if (Number.isFinite(userId) && userId > 0) {
+            const { ip, userAgent } = await readClientHints();
+            const result = await createAutoLogin(
+              { userId, ip, userAgent, deviceId: undefined },
+              { prisma },
+            );
+            const cookieStore = await cookies();
+            cookieStore.set('rx_autologin', result.securityKey, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              maxAge: 60 * 60 * 24 * 30,
+              path: '/',
+            });
+          }
         }
-        const userId = Number.parseInt(session.user.id, 10);
-        if (!Number.isFinite(userId) || userId <= 0) {
-          return { ok: true };
-        }
-        const { ip, userAgent } = await readClientHints();
-        const result = await createAutoLogin(
-          {
-            userId,
-            ip,
-            userAgent,
-            deviceId: undefined,
-          },
-          { prisma },
-        );
-        const cookieStore = await cookies();
-        cookieStore.set('rx_autologin', result.securityKey, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 30,
-          path: '/',
-        });
       } catch {
         // autologin 발급 실패 시에도 로그인 자체는 성공.
       }
     }
-    return { ok: true };
+    redirect(callbackUrl);
   } catch (err) {
     // CredentialsSignin 등 Auth.js 가 throw 하는 인증 실패를 일관 응답으로 변환.
     // REQ-AUTH-051: 어떤 단계에서 실패했는지 노출하지 않는다.
