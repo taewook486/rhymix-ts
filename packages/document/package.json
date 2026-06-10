@@ -1,33 +1,23 @@
 {
-  "name": "@rhymix-ts/board",
-  "version": "0.0.0",
+  "name": "@rhymix-ts/document",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts",
-    "./actions": "./src/actions/create-document.ts",
-    "./category": "./src/category.ts"
-  },
   "scripts": {
     "lint": "echo 'no lint'",
     "typecheck": "tsc --noEmit",
-    "clean": "rimraf dist .turbo"
+    "clean": "rimraf dist .turbo",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.700.0",
-    "@aws-sdk/s3-request-presigner": "^3.700.0",
     "@prisma/client": "*",
     "@rhymix-ts/core": "workspace:*",
     "@rhymix-ts/db": "workspace:*",
-    "@rhymix-ts/document": "workspace:*",
-    "@tiptap/extension-image": "^3.23.6",
-    "@tiptap/extension-link": "^3.23.6",
-    "@tiptap/react": "^3.23.6",
-    "@tiptap/starter-kit": "^3.23.6",
+    "@rhymix-ts/auth": "workspace:*",
     "isomorphic-dompurify": "^2.16.0",
-    "react": "^19.0.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
@@ -37,6 +27,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jsdom": "^29.1.1",
+    "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.9.0",

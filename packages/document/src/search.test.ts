@@ -121,7 +121,8 @@ describe('searchDocuments', () => {
   });
 
   it('S-7: cursor pagination — nextCursor 디코딩 후 다음 페이지 정확히 반환', async () => {
-    const { searchDocuments, encodeCursor } = await import('./search.js');
+    const { searchDocuments } = await import('./search.js');
+    const { encodeCursor } = await import('./document.js');
 
     const cursor = encodeCursor(BigInt(500), 10);
     let capturedSql = '';

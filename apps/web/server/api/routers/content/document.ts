@@ -25,7 +25,7 @@ import {
   DocumentOwnershipError,
   ExtraVarsRequiredError,
   ExtraVarsNotConfiguredError,
-} from '@rhymix-ts/board';
+} from '@rhymix-ts/document';
 
 /**
  * session.user 로부터 도메인 함수가 기대하는 actor 형태를 만든다.

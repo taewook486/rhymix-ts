@@ -13,14 +13,7 @@
  */
 import { z } from 'zod';
 import type { PrismaClient, Document } from '@prisma/client';
-import { decodeCursor as docDecodeCursor, encodeCursor as docEncodeCursor } from './document';
-
-// ---------------------------------------------------------------------------
-// cursor 인코딩/디코딩 — document.ts 유틸 재사용
-// ---------------------------------------------------------------------------
-
-export const encodeCursor = docEncodeCursor;
-export const decodeCursor = docDecodeCursor;
+import { decodeCursor, encodeCursor } from './document';
 
 // ---------------------------------------------------------------------------
 // searchDocuments

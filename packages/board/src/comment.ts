@@ -10,11 +10,11 @@ import { z } from 'zod';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _DOMPurify: any = null;
 import type { PrismaClient, Comment } from '@prisma/client';
-import { canPerformAction } from './permissions';
+import { canPerformAction } from '@rhymix-ts/document';
 import {
   BoardPermissionDeniedError,
   DocumentOwnershipError,
-} from './document';
+} from '@rhymix-ts/document';
 
 // ---------------------------------------------------------------------------
 // HTML sanitize

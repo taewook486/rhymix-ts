@@ -25,7 +25,7 @@ class DocumentOwnershipError extends Error {
   readonly code = 'DOCUMENT_OWNERSHIP';
 }
 
-vi.mock('@rhymix-ts/board', () => ({
+vi.mock('@rhymix-ts/document', () => ({
   listDocuments: (...args: unknown[]) => mockListDocuments(...args),
   getDocument: (...args: unknown[]) => mockGetDocument(...args),
   createDocument: (...args: unknown[]) => mockCreateDocument(...args),

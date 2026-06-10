@@ -15,6 +15,10 @@ import { onInstallBoard } from './on-install';
 import { BoardIndexPage } from './routes/index-page';
 import { BoardViewPage } from './routes/view-page';
 
+// re-export shim for backward compatibility (SPEC-DOCUMENT-001 REQ-DOC-126)
+// To be removed by SPEC-BOARD-CRUD-001.
+export * from '@rhymix-ts/document';
+
 export const boardModule: ModuleDefinition<BoardConfig> = {
   code: 'board',
   displayName: 'Board',
@@ -36,79 +40,13 @@ export const boardModule: ModuleDefinition<BoardConfig> = {
 export { BoardConfigSchema, defaultBoardConfig };
 export type { BoardConfig };
 
-// SPEC-CONTENT-001 Slice B — 도메인 함수 re-export (apps/web tRPC 라우터가 사용)
-export {
-  createDocument,
-  updateDocument,
-  deleteDocument,
-  listDocuments,
-  getDocument,
-  BoardPermissionDeniedError,
-  DocumentOwnershipError,
-  encodeCursor,
-  decodeCursor,
-} from './document';
-export type { DocumentListResult } from './document';
-
 export {
   createComment,
   listComments,
   deleteComment,
 } from './comment';
 
-export {
-  canPerformAction,
-} from './permissions';
-export type { BoardAction, PermissionContext } from './permissions';
-
-// SPEC-CONTENT-001 Slice C — Category CRUD + Search 도메인 함수
-export {
-  createCategory,
-  listCategoryTree,
-  updateCategory,
-  deleteCategory,
-  incrementDocumentCount,
-  buildCategoryTree,
-  CategoryHasChildrenError,
-} from './category';
-export type { CategoryNode } from './category';
-
-export {
-  searchDocuments,
-  searchTags,
-} from './search';
-export type { SearchDocumentsInput, SearchDocumentsResult } from './search';
-
-// SPEC-CONTENT-001 Slice D — Vote + Report + Trash + History
-export {
-  voteDocument,
-  getVoteCount,
-} from './vote';
-export type { VoteDocumentInput, VoteResult } from './vote';
-
-export {
-  reportDocument,
-  resolveReport,
-  listReports,
-  DuplicateReportError,
-} from './report';
-export type { ReportDocumentInput, AdminActor, ListReportsInput, ListReportsResult } from './report';
-
-export {
-  softDeleteDocument,
-  restoreDocument,
-  purgeDocument,
-  listTrash,
-  TrashNotFoundError,
-  TrashExpiredError,
-} from './trash';
-export type { SoftDeleteResult, TrashWithDocument, ListTrashResult } from './trash';
-
-export {
-  recordUpdate,
-  getUpdateHistory,
-} from './history';
-export type { RecordUpdateInput } from './history';
+// permissions, category: 이미 export * from '@rhymix-ts/document'로 re-export됨
 
 // SPEC-CONTENT-001 Slice E — File Attachments + Rate Limiting
 export {
@@ -125,14 +63,7 @@ export {
 } from './attachment';
 export type { RequestUploadInput, RequestUploadResult, CompleteUploadInput } from './attachment';
 
-export {
-  checkRateLimit,
-  recordAttempt,
-  resolveLimit,
-  RateLimitedError,
-  RATE_LIMITS,
-} from './rate-limit';
-export type { ContentEndpoint, RateLimitConfig } from './rate-limit';
+// rate-limit: 이미 export * from '@rhymix-ts/document'로 re-export됨
 
 export { NoopScanner, FakeMalwareScanner } from './storage/scanner';
 export { ClamAVScanner, ClamAVConnectionError } from './storage/clamav';
@@ -140,25 +71,3 @@ export type { ClamAVScannerOptions } from './storage/clamav';
 export { InMemoryStorage } from './storage/memory';
 export { S3Storage } from './storage/s3';
 export type { FileStorage, VirusScanner } from './storage/types';
-
-// SPEC-CONTENT-001 Slice F — Custom Fields
-export {
-  listExtraKeys,
-  createExtraKey,
-  updateExtraKey,
-  deleteExtraKey,
-  reorderExtraKeys,
-  ExtraKeyDuplicateNameError,
-  ExtraKeyOptionsRequiredError,
-} from './extra-keys';
-export type { ExtraKeyOptions, CreateExtraKeyInput, UpdateExtraKeyInput } from './extra-keys';
-
-export {
-  buildExtraVarsSchema,
-  evictExtraVarsSchemaCache,
-} from './extra-vars-schema';
-
-export {
-  ExtraVarsRequiredError,
-  ExtraVarsNotConfiguredError,
-} from './document';

@@ -10,7 +10,7 @@
 import React from 'react';
 import type { PrismaClient } from '@prisma/client';
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
-import { getDocument } from '../document';
+import { getDocument } from '@rhymix-ts/document';
 import { listComments } from '../comment';
 import { listAttachments } from '../attachment';
 
