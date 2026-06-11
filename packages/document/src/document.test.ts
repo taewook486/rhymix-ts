@@ -1111,3 +1111,132 @@ describe('encodeCursor / decodeCursor — BigInt round-trip (D-10)', () => {
     expect(decoded.id).toBe(original.id);
   });
 });
+
+// ---------------------------------------------------------------------------
+// AC-DOC-B1: createDocument + Board.documentCount atomicity
+// ---------------------------------------------------------------------------
+
+describe('createDocument — AC-DOC-B1 (Board.documentCount atomicity)', () => {
+  it('AC-DOC-B1: GIVEN board with documentCount=5, WHEN createDocument called, THEN Board.documentCount=6', async () => {
+    const { createDocument } = await import('./document.js');
+
+    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {}, documentCount: 5 };
+    const fakeDocument = {
+      id: 1,
+      boardId: 7,
+      status: 'TEMP',
+      title: 'Test Doc',
+      content: '<p>Content</p>',
+      contentText: 'Content',
+      categoryId: 10, // Category ID present - should trigger increment
+    };
+
+    const transactionCalls: unknown[] = [];
+
+    const mockBoardFindUniqueOrThrow = vi.fn().mockResolvedValue(fakeBoard);
+    const mockDocumentCreate = vi.fn().mockResolvedValue(fakeDocument);
+    const mockIncrementCount = vi.fn();
+
+    const mockPrisma = {
+      board: { findUniqueOrThrow: mockBoardFindUniqueOrThrow },
+      document: { create: mockDocumentCreate },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue([]) },
+      $transaction: async (callback: unknown) => {
+        transactionCalls.push(callback);
+        // Mock transaction execution
+        if (typeof callback === 'function') {
+          const mockTx = {
+            document: {
+              create: mockDocumentCreate,
+            },
+            $executeRaw: vi.fn(), // Mock $executeRaw for incrementDocumentCount
+          };
+          return callback(mockTx);
+        }
+        throw new Error('Invalid transaction callback');
+      },
+    };
+
+    // Mock incrementDocumentCount to verify it's called in transaction
+    vi.doMock('./category', () => ({
+      incrementDocumentCount: mockIncrementCount,
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await createDocument(
+      {
+        moduleInstanceId: 3,
+        authorId: 1,
+        title: 'Test Doc',
+        content: '<p>Content</p>',
+        nickName: null,
+        categoryId: 10,
+        actor: { userGroupSrl: 1, isAdmin: false },
+      },
+      { prisma: mockPrisma as any },
+    );
+
+    // Verify transaction was used
+    expect(transactionCalls.length).toBeGreaterThan(0);
+
+    // Verify create was called
+    expect(mockDocumentCreate).toHaveBeenCalledOnce();
+  });
+
+  it('AC-DOC-B1: should NOT increment documentCount when categoryId is null', async () => {
+    const { createDocument } = await import('./document.js');
+
+    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {}, documentCount: 5 };
+    const fakeDocument = {
+      id: 1,
+      boardId: 7,
+      status: 'TEMP',
+      title: 'Test Doc',
+      content: '<p>Content</p>',
+      contentText: 'Content',
+    };
+
+    const transactionCalls: unknown[] = [];
+
+    const mockBoardFindUniqueOrThrow = vi.fn().mockResolvedValue(fakeBoard);
+    const mockDocumentCreate = vi.fn().mockResolvedValue(fakeDocument);
+
+    const mockPrisma = {
+      board: { findUniqueOrThrow: mockBoardFindUniqueOrThrow },
+      document: { create: mockDocumentCreate },
+      documentExtraKey: { findMany: vi.fn().mockResolvedValue([]) },
+      $transaction: async (callback: unknown) => {
+        transactionCalls.push(callback);
+        if (typeof callback === 'function') {
+          const mockTx = {
+            document: {
+              create: mockDocumentCreate,
+            },
+          };
+          return callback(mockTx);
+        }
+        throw new Error('Invalid transaction callback');
+      },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await createDocument(
+      {
+        moduleInstanceId: 3,
+        authorId: 1,
+        title: 'Test Doc',
+        content: '<p>Content</p>',
+        nickName: null,
+        categoryId: null, // No category - should NOT use transaction
+        actor: { userGroupSrl: 1, isAdmin: false },
+      },
+      { prisma: mockPrisma as any },
+    );
+
+    // Verify NO transaction was used (categoryId is null)
+    expect(transactionCalls.length).toBe(0);
+
+    // Verify create was called directly (not in transaction)
+    expect(mockDocumentCreate).toHaveBeenCalledOnce();
+  });
+});

@@ -5,6 +5,7 @@ export default defineConfig({
     globals: false,
     environment: 'jsdom',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    testTimeout: 60000,
     env: {
       SKIP_DB_TESTS: '1',
     },

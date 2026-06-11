@@ -14,3 +14,8 @@ export * from './permissions';
 export * from './trash';
 export * from './vote';
 export * from './category';
+
+// Slice C: secret, draft, events
+export * from './secret';
+export * from './draft';
+export * from './events';
