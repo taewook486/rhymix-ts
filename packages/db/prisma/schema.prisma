@@ -696,6 +696,8 @@ model Comment {
   replies  Comment[]       @relation("CommentReplies")
   author   User?           @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   files    FileAttachment[] @relation("CommentFiles")
+  voteLogs CommentVoteLog[] @relation("CommentVoteLogs")
+  reports  CommentReport[]  @relation("CommentReports")
 
   @@index([documentId, listOrder])
   @@index([parentId])
@@ -975,4 +977,33 @@ model ThemeAssignment {
   @@unique([scope, refType, refId])
   @@index([refId])
   @@map("theme_assignments")
+}
+
+// 댓글 추천/비추천 로그 (REQ-COMMENT-004)
+model CommentVoteLog {
+  id        Int      @id @default(autoincrement())
+  commentId Int
+  memberId  Int
+  voteType  Int      // 1=추천, -1=비추천
+  regdate   DateTime @default(now()) @db.Timestamptz
+  comment   Comment  @relation("CommentVoteLogs", fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, memberId])
+  @@index([commentId])
+  @@map("comment_vote_logs")
+}
+
+// 댓글 신고 로그 (REQ-COMMENT-005)
+model CommentReport {
+  id         Int      @id @default(autoincrement())
+  commentId  Int
+  reporterId Int
+  reporterIp String?  @db.Citext
+  reason     String?  @db.Text
+  regdate    DateTime @default(now()) @db.Timestamptz
+  comment    Comment  @relation("CommentReports", fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, reporterId])
+  @@index([commentId])
+  @@map("comment_reports")
 }

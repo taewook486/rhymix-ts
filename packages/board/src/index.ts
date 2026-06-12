@@ -40,11 +40,8 @@ export const boardModule: ModuleDefinition<BoardConfig> = {
 export { BoardConfigSchema, defaultBoardConfig };
 export type { BoardConfig };
 
-export {
-  createComment,
-  listComments,
-  deleteComment,
-} from './comment';
+// re-export comment functions from @rhymix-ts/comment (SPEC-COMMENT-001)
+export * from '@rhymix-ts/comment';
 
 // permissions, category: 이미 export * from '@rhymix-ts/document'로 re-export됨
 

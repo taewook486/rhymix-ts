@@ -18,6 +18,7 @@
     "@prisma/client": "^6.0.0",
     "@rhymix-ts/auth": "workspace:*",
     "@rhymix-ts/board": "workspace:*",
+    "@rhymix-ts/comment": "workspace:*",
     "@rhymix-ts/core": "workspace:*",
     "@rhymix-ts/document": "workspace:*",
     "@rhymix-ts/db": "workspace:*",
