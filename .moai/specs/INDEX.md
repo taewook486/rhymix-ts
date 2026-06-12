@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-05-27 (MASTER-PLAN-002 분할 완료, 신규 9개 SPEC 추가)
+> 마지막 갱신: 2026-06-12 (SPEC-DOCUMENT-001 구현 완료)
 
 ## 기술 스택 (확정)
 
@@ -26,7 +26,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | Phase | 목표 | SPEC 수 | 완료 | 상태 |
 |---|---|---|---|---|
 | 1. VISIBLE UI | 클린 설치 직후 의미 있는 홈이 보인다 | 3 | 3/3 | 🟢 구현 완료 |
-| 2. CONTENT DOMAIN | 게시판/문서/댓글 CRUD 동작 | 3 | 0/3 | 🟡 SPEC 완료, 구현 대기 |
+| 2. CONTENT DOMAIN | 게시판/문서/댓글 CRUD 동작 | 3 | 1/3 | 🟡 DOCUMENT 완료, COMMENT·BOARD-CRUD 구현 대기 |
 | 3. MEMBER ECOSYSTEM | 회원 ecosystem + cross-cutting (file/point/mail) | 3 | 0/3 | 🟡 SPEC 완료, 구현 대기 |
 | 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 0/2 | 🟡 SPEC 완료, 구현 대기 |
 | 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 0/1 | 🟡 SPEC 완료, 구현 대기 |
@@ -57,7 +57,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 | ID | 제목 | 의존 | 상태 |
 |---|---|---|---|
-| [SPEC-DOCUMENT-001](./SPEC-DOCUMENT-001/spec.md) | 문서 도메인 packages/document 독립 분리 | AUTH, ADMIN, LAYOUT | 📝 SPEC 완료 (1,237줄) |
+| [SPEC-DOCUMENT-001](./SPEC-DOCUMENT-001/spec.md) | 문서 도메인 packages/document 독립 분리 | AUTH, ADMIN, LAYOUT | ✅ 구현 완료 (201 tests, a2c02f5) |
 | [SPEC-COMMENT-001](./SPEC-COMMENT-001/spec.md) | 댓글 도메인 packages/comment 신설 | AUTH, DOCUMENT | 📝 SPEC 완료 (1,271줄) |
 | [SPEC-BOARD-CRUD-001](./SPEC-BOARD-CRUD-001/spec.md) | board를 document+comment 의존 wrapper로 재정렬 + UI | AUTH, ADMIN, LAYOUT, DOCUMENT, COMMENT | 📝 SPEC 완료 (1,734줄) |
 
@@ -128,8 +128,8 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ### 즉시 가능
 
-1. **Phase 2 구현 시작** — `/clear` 후 `/moai run SPEC-DOCUMENT-001`
-   - DOCUMENT → COMMENT → BOARD-CRUD 순서 (의존성 강제)
+1. **Phase 2 계속** — `/moai run SPEC-COMMENT-001`
+   - DOCUMENT ✅ → **COMMENT** ← 현재 위치 → BOARD-CRUD 순서 (의존성 강제)
    - 각 SPEC 완료 후 `/moai sync` 권장
 2. **Phase 3 병렬 가능** — FILE/POINT/MAIL은 서로 독립적
 3. **Phase 4-5는 Phase 2-3 완료 후**
@@ -138,7 +138,7 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ```bash
 # Phase 2 (의존성 강제)
-/moai run SPEC-DOCUMENT-001    # 먼저
+/moai run SPEC-DOCUMENT-001    # ✅ 완료 (2026-06-12)
 /clear
 /moai run SPEC-COMMENT-001     # 다음
 /clear
