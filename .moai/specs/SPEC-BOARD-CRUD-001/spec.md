@@ -2,9 +2,9 @@
 id: SPEC-BOARD-CRUD-001
 title: 게시판 모듈 — 사용자 UI 및 권한 매트릭스
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-05-27
-updated: 2026-05-27
+updated: 2026-06-12
 author: MoAI manager-spec
 priority: P0
 phase: 2
@@ -483,3 +483,30 @@ Estimated Slice Count: 3 (A: dependency reorganization, B: user routes UI, C: ad
 Dependencies (upstream): SPEC-DOCUMENT-001 (Phase 2 병행), SPEC-COMMENT-001 (Phase 2 병행), SPEC-LAYOUT-001 ✅ (Phase 1), SPEC-AUTH-001 ✅, SPEC-ADMIN-001 ✅
 Soft dependency: SPEC-FILE-001 (Phase 3, 첨부 slot 활성화 시점), SPEC-POINT-001 (Phase 3, point 적립 활성화 시점)
 Blocks (downstream): Phase 3 SPEC-FILE-001 (board write 폼의 attachment 통합), Phase 5 SPEC-ADMIN-EXTRAS-001 (잔여 grant enforcement)
+
+---
+
+## Implementation Notes (2026-06-12)
+
+### 구현 완료 범위
+
+- **Slice A**: `packages/board/src/comment.ts` + `comment.test.ts` 삭제. `index.ts`가 `@rhymix-ts/document`와 `@rhymix-ts/comment`를 re-export. `package.json` exports 확장.
+- **Slice A+**: `packages/board/src/permissions.ts` — 7-grant `BoardAction` + `canPerformAction` (REQ-BOARD-073). 15개 단위 테스트 통과.
+- **Slice A DDD**: `packages/board/src/__tests__/characterization.test.ts` — board public API 스냅샷 3개 테스트.
+- **Slice B**: `packages/board/src/routes/edit-page.tsx` + `apps/web/app/[mid]/[id]/edit/page.tsx` (수정 라우트 완성).
+- **Slice B+**: `packages/board/src/actions/` — comment-create, comment-update, comment-delete, update-document Server Actions.
+- **Slice C**: `apps/web/app/admin/boards/[mid]/permissions/page.tsx` — 7-grant 권한 매트릭스 UI.
+- **Slice C**: `apps/web/app/admin/boards/[mid]/categories/page.tsx` — `DocumentCategory` 테이블 직접 CRUD (ModuleConfig.config 대신 정규화된 스키마 사용).
+- **Slice C**: `apps/web/app/admin/boards/[mid]/extra-keys/page.tsx` — `DocumentExtraKey` 테이블 CRUD.
+
+### 계획 대비 주요 차이점
+
+- `AC-BOARD-C5`의 acceptance criteria는 `ModuleConfig.config.board.categories`를 언급하나, 실제 구현은 `DocumentCategory` 모델을 직접 사용 — Prisma 스키마 정합성 향상.
+- `packages/core/src/modules/types.ts`의 `ModuleRouteMap`에 `edit?: ModuleRouteIndex` 추가 (계획 미포함이었으나 type-safe routing을 위해 필요).
+- `BoardAction` 충돌: `packages/document/src/permissions.ts`의 4-grant 버전이 `export *` shim을 통해 노출되는 문제를 `packages/board/src/index.ts`에서 명시적 named export로 해결.
+
+### 테스트 현황
+
+- `packages/board/src/permissions.test.ts`: 15개 통과
+- `packages/board/src/__tests__/characterization.test.ts`: 3개 통과
+- Total: 18개 단위 테스트

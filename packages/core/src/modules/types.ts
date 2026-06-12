@@ -59,6 +59,8 @@ export interface ModuleRouteMap {
   write?: ModuleRouteIndex;
   /** GET /[mid]/[id] — 문서 상세 보기 페이지 */
   view?: ModuleRouteIndex;
+  /** GET /[mid]/[id]/edit — 문서 수정 페이지 */
+  edit?: ModuleRouteIndex;
   /** GET /[mid]/[...slug] — 모듈 내부 라우트 */
   catchAll?: ModuleRouteIndex;
   /** Server Actions / api endpoints (Slice B+ 에서 별도 타입화) */

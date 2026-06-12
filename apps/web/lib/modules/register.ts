@@ -21,11 +21,11 @@ export function initModules(): void {
   // 빌트인 위젯 등록 (멱등성 보장 — 내부적으로 _initialized 플래그로 한 번만 실행)
   registerBuiltinWidgets();
 
-  const modules = [boardModule, pageModuleDefinition];
-
-  for (const mod of modules) {
+  // registerModule<TConfig>는 단일 제네릭 타입을 기대하므로 유니온 배열 순회 대신 개별 호출
+  for (const mod of [boardModule, pageModuleDefinition] as const) {
     try {
-      registerModule(mod);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      registerModule(mod as any);
     } catch (err) {
       if (err instanceof DuplicateModuleError) {
         // HMR reload — 이미 등록된 모듈. 무시해도 안전.

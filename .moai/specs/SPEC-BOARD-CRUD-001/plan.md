@@ -2,8 +2,9 @@
 id: SPEC-BOARD-CRUD-001-plan
 title: SPEC-BOARD-CRUD-001 구현 계획
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-05-27
+updated: 2026-06-12
 parent: SPEC-BOARD-CRUD-001
 language: ko
 ---

@@ -14,12 +14,11 @@ import {
   deleteComment,
   voteComment,
   reportComment,
-  BoardPermissionDeniedError,
-  DocumentOwnershipError,
   CommentDepthExceededError,
   SelfVoteNotAllowedError,
   CommentAlreadyReportedError,
 } from '@rhymix-ts/comment';
+import { BoardPermissionDeniedError, DocumentOwnershipError } from '@rhymix-ts/document';
 
 function buildActor(session: {
   user: { id: number; isAdmin: boolean; groups?: Array<{ id?: number; isAdmin?: boolean }> };

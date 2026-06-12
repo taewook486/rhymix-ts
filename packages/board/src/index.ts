@@ -14,6 +14,7 @@ import { BoardConfigSchema, defaultBoardConfig, type BoardConfig } from './confi
 import { onInstallBoard } from './on-install';
 import { BoardIndexPage } from './routes/index-page';
 import { BoardViewPage } from './routes/view-page';
+import { BoardEditPage } from './routes/edit-page';
 
 // re-export shim for backward compatibility (SPEC-DOCUMENT-001 REQ-DOC-126)
 // To be removed by SPEC-BOARD-CRUD-001.
@@ -30,6 +31,7 @@ export const boardModule: ModuleDefinition<BoardConfig> = {
   routes: {
     index: BoardIndexPage,
     view: BoardViewPage as unknown as import('@rhymix-ts/core/modules').ModuleRouteIndex,
+    edit: BoardEditPage as unknown as import('@rhymix-ts/core/modules').ModuleRouteIndex,
   },
   cacheTags: (instanceId) => [
     `board:${instanceId}`,
@@ -39,6 +41,14 @@ export const boardModule: ModuleDefinition<BoardConfig> = {
 
 export { BoardConfigSchema, defaultBoardConfig };
 export type { BoardConfig };
+
+// edit-page: apps/web 에서 직접 import 가능하도록 re-export
+export { BoardEditPage } from './routes/edit-page';
+export type { BoardEditPageProps } from './routes/edit-page';
+
+// @rhymix-ts/document 의 4-grant BoardAction 을 7-grant 버전으로 덮어씀 (SPEC-BOARD-CRUD-001 REQ-BOARD-073)
+export type { BoardAction, PermissionContext } from './permissions';
+export { canPerformAction } from './permissions';
 
 // re-export comment functions from @rhymix-ts/comment (SPEC-COMMENT-001)
 export * from '@rhymix-ts/comment';
