@@ -31,7 +31,7 @@ export default async function DraftsPage() {
     { prisma },
   );
 
-  const drafts = result.ok ? result.data : [];
+  const drafts = result.items;
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
@@ -54,7 +54,7 @@ export default async function DraftsPage() {
               <form
                 action={async () => {
                   'use server';
-                  await publishDraft({ documentId: draft.id });
+                  await publishDraft(draft.id);
                 }}
               >
                 <button

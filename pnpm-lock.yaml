@@ -50,6 +50,9 @@ importers:
       '@rhymix-ts/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@rhymix-ts/document':
+        specifier: workspace:*
+        version: link:../../packages/document
       '@rhymix-ts/ui':
         specifier: workspace:*
         version: link:../../packages/ui

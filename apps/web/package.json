@@ -19,6 +19,7 @@
     "@rhymix-ts/auth": "workspace:*",
     "@rhymix-ts/board": "workspace:*",
     "@rhymix-ts/core": "workspace:*",
+    "@rhymix-ts/document": "workspace:*",
     "@rhymix-ts/db": "workspace:*",
     "@rhymix-ts/ui": "workspace:*",
     "@tailwindcss/postcss": "^4.3.0",
