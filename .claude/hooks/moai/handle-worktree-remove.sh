@@ -11,23 +11,28 @@ trap 'rm -f "$temp_file"' EXIT
 cat > "$temp_file"
 
 # Try moai command in PATH
+# stdout 억제: moai가 출력하는 JSON을 Claude Code가 처리하지 않도록
 if command -v moai &> /dev/null; then
-	exec moai hook worktree-remove < "$temp_file" 2>/dev/null
+	moai hook worktree-remove < "$temp_file" > /dev/null 2>/dev/null
+	exit 0
 fi
 
 # Try detected Go bin path from initialization
 if [ -f "C:/Users/taewo/go/bin/moai" ]; then
-	exec "C:/Users/taewo/go/bin/moai" hook worktree-remove < "$temp_file" 2>/dev/null
+	"C:/Users/taewo/go/bin/moai" hook worktree-remove < "$temp_file" > /dev/null 2>/dev/null
+	exit 0
 fi
 
 # Try default ~/go/bin/moai
 if [ -f "$HOME/go/bin/moai" ]; then
-	exec "$HOME/go/bin/moai" hook worktree-remove < "$temp_file" 2>/dev/null
+	"$HOME/go/bin/moai" hook worktree-remove < "$temp_file" > /dev/null 2>/dev/null
+	exit 0
 fi
 
 # Try ~/.local/bin/moai (Linux install location)
 if [ -f "$HOME/.local/bin/moai" ]; then
-	exec "$HOME/.local/bin/moai" hook worktree-remove < "$temp_file" 2>/dev/null
+	"$HOME/.local/bin/moai" hook worktree-remove < "$temp_file" > /dev/null 2>/dev/null
+	exit 0
 fi
 
 # Not found - exit silently (Claude Code handles missing hooks gracefully)
