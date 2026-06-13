@@ -29,7 +29,12 @@ rhymix-ts/
 │   ├── db/                  Prisma schema + client
 │   ├── auth/                Auth.js v5 configuration
 │   ├── core/                Shared domain types + Zod schemas
-│   └── ui/                  Shared UI primitives (cn helper today, more later)
+│   ├── ui/                  Shared UI primitives (cn helper today, more later)
+│   ├── document/            Document domain package (@rhymix-ts/document)
+│   ├── comment/             Comment domain package (@rhymix-ts/comment)
+│   ├── board/               Board domain package (@rhymix-ts/board)
+│   ├── file/                File upload & storage package (@rhymix-ts/file)
+│   └── point/               Point system package (@rhymix-ts/point)
 ├── .moai/specs/             SPEC documents (EARS format) — see INDEX.md
 ├── package.json             Root workspace
 ├── pnpm-workspace.yaml
@@ -118,10 +123,11 @@ pnpm test:e2e
 | SPEC-ADMIN-001 | 완료 (Slice A–I) | 533 unit | 관리자 대시보드, 모듈 인스턴스 시스템, 멀티 도메인 |
 | SPEC-CONTENT-001 | 완료 (Slice A–F + UI) | 975 unit | 게시판/문서/댓글/첨부파일/FTS/View Page/ClamAV/Comment UI/Tiptap |
 | SPEC-THEME-001 | 완료 (Slice A–F) | 946 unit | 테마/레이아웃/스킨/토큰/다크모드/프리뷰/위젯 |
+| SPEC-POINT-001 | 완료 (Slice A+B) | 24 unit | 포인트 시스템 독립 패키지 + 크로스 모듈 트랜잭션 통합 + 관리자 UI |
 
 ## Next Step
 
-모든 SPEC 구현 완료. 다음 단계는 E2E 통합 테스트 및 프로덕션 빌드 검증:
+Phase 3 SPEC-POINT-001 구현 완료. 다음 단계는 SPEC-MAIL-001 구현 또는 E2E 통합 테스트:
 
 ```bash
 # E2E 테스트 실행

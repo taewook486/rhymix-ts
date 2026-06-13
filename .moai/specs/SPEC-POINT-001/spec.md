@@ -2,7 +2,7 @@
 id: SPEC-POINT-001
 title: 포인트 시스템 독립 패키지 + 크로스 모듈 통합 (Point System Standalone Package + Cross-Module Integration)
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-05-27
 updated: 2026-05-27
 author: MoAI manager-spec
@@ -467,9 +467,55 @@ const labels: Record<string, string> = {
 ---
 
 Version: 1.0.0
-Status: draft (awaiting plan-auditor + user approval)
+Status: completed
 Estimated Test Count: ~15 total (Slice A: ~12 unit/recompute/config tests, Slice B: ~3 hook unit tests + ~6 integration tests in apps/web ≈ 9, dedup new unique ≈ 15 per MP-002 target)
 Estimated Slice Count: 2 (A: Point service + schema, B: cross-module integration + admin UI)
 Dependencies (upstream): SPEC-AUTH-001 (Actor type, signup hook integration, argon2 dep 무관), SPEC-ADMIN-001 (ModuleConfig 백엔드, admin shell), SPEC-DOCUMENT-001 (document.create 트랜잭션 통합 + REQ-DOC-132 이벤트 버스 stub), SPEC-COMMENT-001 (comment.create 트랜잭션 통합)
 Soft dependency: SPEC-BOARD-CRUD-001 (Board admin UI에서 pointPer* 필드 통합 — 별도 진행 가능)
 Blocks (downstream): SPEC-ADDON-001 (addon hook system이 point.changed 이벤트 subscribe), SPEC-POINT-LEVEL-001 후속 (레벨 시스템), SPEC-FILE-001 (DOWNLOAD/FILE_UPLOAD sourceType 활성화)
+
+---
+
+## Implementation Notes
+
+### 구현 요약
+
+**SPEC-POINT-001 Slice A+B 전체 구현 완료** (2026-06-13, commit `8072dc0`).
+
+- **신규 파일 수**: 30개 (+1,843 LOC)
+- **테스트 통과**: 24/24 (service.test.ts, hooks.test.ts, config.test.ts, recompute.test.ts)
+- **신규 패키지**: `packages/point/` (`@rhymix-ts/point`)
+- **DB 마이그레이션**: 2개 (포인트 시스템 스키마, Board 포인트 컬럼)
+
+**Slice A 산출물** (Point Service + Schema):
+- `packages/point/src/service.ts` — PointService 클래스 (add/subtract/getBalance/getHistory/recompute/getLevel)
+- `packages/point/src/hooks.ts` — pointHooks (onDocumentCreated/onCommentCreated/onVoteCast/onMemberSignedUp)
+- `packages/point/src/config.ts` — getSitePointConfig/setSitePointConfig
+- `packages/point/src/errors.ts` — 4개 커스텀 에러 클래스
+- `packages/point/src/schemas.ts` — Zod 스키마 (PointSiteConfigSchema 외)
+- `packages/point/src/index.ts` — barrel export
+- DB 마이그레이션: Point 모델, SitePointConfig 모델, User.pointBalance, PointSourceType enum
+
+**Slice B 산출물** (Cross-Module Integration + Admin UI):
+- DB 마이그레이션: Board 포인트 정책 컬럼 6개 추가
+- `apps/web/app/admin/members/[id]/points/` — 회원별 포인트 이력 + 수동 조정 UI
+- `apps/web/app/admin/site/points/` — 사이트 포인트 설정 UI
+- `apps/web/app/admin/api/points/adjust/route.ts` — 수동 조정 API
+- `apps/web/app/admin/api/site/points/config/route.ts` — 사이트 설정 API
+- `packages/auth/src/signup.ts` 수정: pointHooks.onMemberSignedUp 통합
+- `packages/comment/src/service.ts` 수정: pointHooks.onCommentCreated 통합
+- `packages/document/src/document.ts` 수정: pointHooks.onDocumentCreated 통합
+
+### SPEC 다이버전스: SitePointConfig 저장 위치
+
+| 항목 | SPEC 계획 | 실제 구현 | 이유 |
+|---|---|---|---|
+| 사이트 포인트 설정 저장 | 기존 `ModuleConfig` 테이블 재사용 (`moduleInstanceId = NULL`로 사이트 전역 설정) | 신규 `SitePointConfig` 테이블 (singleton, id=1) | 실제 스키마에서 `moduleInstanceId`는 NOT NULL 제약이 있어 `NULL`로 사이트 전역 설정 저장 불가. `ModuleConfig` 재사용 방식이 스키마 수준에서 불가능함. |
+
+**결론**: `SitePointConfig` 독립 테이블 방식이 스키마 제약을 우회하는 유일한 방법이었으며, 설계 관점에서도 도메인 명확성(포인트 설정 전용 테이블)과 쿼리 단순성(id=1 singleton upsert)이 향상되었다. REQ-POINT-006의 의도(사이트 전역 포인트 설정 관리)는 완전히 충족된다.
+
+### 날짜 및 커밋 참조
+
+- 구현 완료: 2026-06-13
+- 주요 커밋: `8072dc0` (30 files, +1,843 LOC)
+- INDEX.md 갱신: `8dc9438`
