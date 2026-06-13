@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-13 (SPEC-FILE-001 Slice A+B 구현 완료)
+> 마지막 갱신: 2026-06-13 (SPEC-FILE-001 전체 구현 완료)
 
 ## 기술 스택 (확정)
 
@@ -27,7 +27,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 |---|---|---|---|---|
 | 1. VISIBLE UI | 클린 설치 직후 의미 있는 홈이 보인다 | 3 | 3/3 | 🟢 구현 완료 |
 | 2. CONTENT DOMAIN | 게시판/문서/댓글 CRUD 동작 | 3 | 3/3 | 🟢 구현 완료 |
-| 3. MEMBER ECOSYSTEM | 회원 ecosystem + cross-cutting (file/point/mail) | 3 | 0/3 | 🟡 FILE Slice A+B 완료, Slice C·POINT·MAIL 구현 대기 |
+| 3. MEMBER ECOSYSTEM | 회원 ecosystem + cross-cutting (file/point/mail) | 3 | 1/3 | 🟡 FILE 완료, POINT·MAIL 구현 대기 |
 | 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 0/2 | 🟡 SPEC 완료, 구현 대기 |
 | 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 0/1 | 🟡 SPEC 완료, 구현 대기 |
 
@@ -65,7 +65,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 | ID | 제목 | 의존 | 상태 |
 |---|---|---|---|
-| [SPEC-FILE-001](./SPEC-FILE-001/spec.md) | file 업로드 + sharp resize + cover image + cascade delete | AUTH, ADMIN, DOCUMENT, COMMENT | 🟡 Slice A+B 구현 완료 (73 tests, f579c05), Slice C(orphan) 대기 |
+| [SPEC-FILE-001](./SPEC-FILE-001/spec.md) | file 업로드 + sharp resize + cover image + cascade delete | AUTH, ADMIN, DOCUMENT, COMMENT | ✅ 구현 완료 (Slice A+B+C, 96 tests, 93a334e) |
 | [SPEC-POINT-001](./SPEC-POINT-001/spec.md) | point 시스템 + board/document/comment 트랜잭션 통합 | AUTH, ADMIN, DOCUMENT, COMMENT | 📝 SPEC 완료 (1,298줄) |
 | [SPEC-MAIL-001](./SPEC-MAIL-001/spec.md) | SmtpMailDispatcher + 3 templates + 재시도 정책 | AUTH, ADMIN | 📝 SPEC 완료 (2,081줄) |
 
