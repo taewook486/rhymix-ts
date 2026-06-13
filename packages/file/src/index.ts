@@ -12,3 +12,9 @@ export { processImage, isImageMimeType } from './image-pipeline.js';
 export type { ImageProcessResult } from './image-pipeline.js';
 export { registerFileEventSubscribers, cascadeDeleteByDocumentId, cascadeDeleteByCommentId } from './events.js';
 export type { FileEventSubscriberContext, FileEventEmitters } from './events.js';
+
+// Server layer exports
+export { createFileRouter } from './server/router.js';
+
+// NOTE: Server Actions ('use server' files) are NOT exported from the main barrel for browser bundle safety
+// Import directly from '@rhymix-ts/file/server/actions' for Server Actions usage

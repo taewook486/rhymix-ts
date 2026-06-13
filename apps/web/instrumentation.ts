@@ -12,5 +12,9 @@ export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { initModules } = await import('./lib/modules/register');
     initModules();
+
+    // File 패키지 이벤트 구독 등록
+    const { registerFileEvents } = await import('./lib/file-init');
+    registerFileEvents();
   }
 }

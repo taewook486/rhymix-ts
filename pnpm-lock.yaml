@@ -444,6 +444,9 @@ importers:
       '@rhymix-ts/db':
         specifier: workspace:*
         version: link:../db
+      '@trpc/server':
+        specifier: ^11.0.0
+        version: 11.17.0(typescript@5.9.3)
       clamscan:
         specifier: ^2.4.0
         version: 2.4.0
