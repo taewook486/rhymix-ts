@@ -18,7 +18,8 @@ export type MailTemplate =
   | 'signup-verify'
   | 'password-reset'
   | 'email-change'
-  | 'security-alert';
+  | 'security-alert'
+  | 'welcome';
 
 export interface MailMessage {
   to: string;

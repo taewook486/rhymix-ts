@@ -21,13 +21,13 @@ import {
   type SignupErrorCode,
   verifyEmail,
   type VerifyEmailErrorCode,
-  NoopMailDispatcher,
   requestPasswordReset,
   confirmPasswordReset,
   type ConfirmResetResult,
   createAutoLogin,
 } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
+import { mailDispatcher } from '@/lib/mail/dispatcher';
 
 import { signIn, auth } from './config';
 import { cookies } from 'next/headers';
@@ -59,7 +59,7 @@ async function readClientHints(): Promise<{ ip: string; userAgent: string }> {
  * 회원가입 Server Action.
  *
  * `signup()` 의 실패 코드를 그대로 노출하되, 사용자에게 보여줄 메시지로 매핑.
- * 메일 디스패처는 NoopMailDispatcher — 실제 SMTP 는 SPEC-INFRA-001 도입 시 교체.
+ * 메일은 `mailDispatcher` 싱글톤을 통해 발송 — SMTP_HOST 설정 시 SmtpMailDispatcher (SPEC-MAIL-001).
  */
 export async function signupAction(
   _prev: AuthActionState,
@@ -77,7 +77,7 @@ export async function signupAction(
     },
     {
       prisma,
-      mail: new NoopMailDispatcher(),
+      mail: mailDispatcher,
       config: {
         enableConfirm: true,
         signupTokenTtlHours: 24,
@@ -218,6 +218,31 @@ export async function verifyEmailAction(
       formError: verifyEmailMessage(result.code),
     };
   }
+
+  // 인증 완료 후 환영 메일 발송 (fire-and-forget) — REQ-MAIL-072
+  void (async () => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: result.userId },
+        select: { emailAddress: true, nickName: true },
+      });
+      if (!user) return;
+
+      await mailDispatcher.dispatch({
+        template: 'welcome',
+        to: user.emailAddress,
+        subject: '가입을 환영합니다!',
+        vars: {
+          userName: user.nickName ?? user.emailAddress,
+          siteUrl: process.env.NEXTAUTH_URL ?? 'https://example.com',
+          loginUrl: `${process.env.NEXTAUTH_URL ?? 'https://example.com'}/login`,
+        },
+      });
+    } catch (err) {
+      console.error('[mail] welcome mail failed:', err);
+    }
+  })();
+
   return { ok: true };
 }
 
@@ -238,7 +263,7 @@ function verifyEmailMessage(code: VerifyEmailErrorCode): string {
  * 비밀번호 재설정 요청 Server Action.
  *
  * REQ-AUTH-051: 식별자 존재 여부를 노출하지 않으므로 항상 ok:true 를 반환.
- * 메일 디스패처는 NoopMailDispatcher — 실제 SMTP 는 SPEC-INFRA-001 도입 시 교체.
+ * 메일은 `mailDispatcher` 싱글톤을 통해 발송 — SMTP_HOST 설정 시 SmtpMailDispatcher (SPEC-MAIL-001).
  */
 export async function requestPasswordResetAction(
   _prev: AuthActionState,
@@ -248,7 +273,7 @@ export async function requestPasswordResetAction(
 
   await requestPasswordReset(
     { identifier },
-    { prisma, mail: new NoopMailDispatcher() },
+    { prisma, mail: mailDispatcher },
   );
 
   // REQ-AUTH-051: 항상 ok:true (사용자 존재 여부 미노출).
