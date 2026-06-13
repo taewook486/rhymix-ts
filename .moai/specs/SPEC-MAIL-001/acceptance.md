@@ -149,10 +149,10 @@ language: ko
 
 **THEN**:
 - `transporter.sendMail`이 정확히 **1회**만 호출됨 (재시도 없음)
-- `prisma.auditLog.create`가 호출됨 (with `diff.errorCode === '550'`, `diff.attempts === 1` — 또는 3으로 spec에서 결정 — REQ-MAIL-042의 attempts 의미 명확화: 시도된 횟수가 정확. 본 acceptance는 attempts=1로 검증)
+- `prisma.auditLog.create`가 호출됨 with `diff.errorCode === '550'`, `diff.attempts === 1` — permanent 에러로 즉시 실패했으므로 실제 시도 횟수는 1이다 (REQ-MAIL-042: `attempts`는 실제 시도된 횟수를 기록).
 - `dispatch()`는 `MailDeliveryError` throw
 
-(주의: REQ-MAIL-042의 `attempts: 3` 하드코딩은 "정책 명시" 의미. 실제 시도 횟수가 정확하다면 `attempts: actualAttempts`로 수정 권고 — Slice A 구현 시 expert-backend가 결정. 본 acceptance test는 두 해석 모두 수용 — 단, attempts 필드가 존재함을 검증.)
+(REQ-MAIL-042 명확화: `diff.attempts`는 상수가 아니라 실제 시도된 횟수다. transient 에러 3회 소진 시 `attempts === 3`(Scenario A3.1), permanent 에러 즉시 실패 시 `attempts === 1`(본 시나리오). 재시도 상한은 `max_attempts`(기본 3) 설정값을 따른다.)
 
 ### Scenario A3.3: 1회 실패 후 2회 성공 → retry 동작 + no audit log
 
@@ -418,6 +418,71 @@ language: ko
 
 ---
 
+## 6b. Additional Coverage ACs (un-covered REQ 보강)
+
+Section 1~6에서 직접 다루지 않은 주요 REQ에 대한 추가 acceptance criteria. governance/integration 성격이라 단위 테스트 또는 정적 검증으로 확인한다.
+
+### AC-COV-1: Barrel export (REQ-MAIL-004)
+
+**GIVEN**: `packages/auth/src/index.ts` (barrel)
+
+**WHEN**: `import { SmtpMailDispatcher, createMailDispatcher } from '@rhymix-ts/auth'`를 `apps/web`에서 시도
+
+**THEN**:
+- 두 심볼 모두 정상 import됨 (`tsc --noEmit` 0 error)
+- `SmtpMailDispatcher`는 클래스, `createMailDispatcher`는 함수로 resolve됨
+
+### AC-COV-2: Retry policy in-class, no external lib (REQ-MAIL-044)
+
+**GIVEN**: `packages/auth/package.json` dependencies
+
+**WHEN**: 재시도 로직 구현을 검사
+
+**THEN**:
+- `p-retry` 등 외부 재시도 라이브러리가 dependencies에 추가되지 않음
+- 재시도 루프 + 백오프가 `SmtpMailDispatcher` 내부에 구현됨 (Scenario A3.1, A3.3가 동작으로 검증)
+
+### AC-COV-3: 메일 본문/토큰/PII 로깅 금지 (REQ-MAIL-005, Unwanted)
+
+**GIVEN**: `SmtpMailDispatcher`가 console.* spy와 함께 mock transporter로 구성됨
+
+**WHEN**: 성공 및 실패 경로의 `dispatch(...)` 호출 중 발생한 모든 로그 출력을 수집
+
+**THEN**:
+- 어떤 로그 레벨에서도 메일 본문(html/text), 수신자 이름(`userName`), `verifyUrl`/`resetUrl`의 토큰 부분이 출력되지 않음
+- 허용된 디버그 로그는 `to`, `template`, `messageId`만 포함
+
+### AC-COV-4: cc/bcc/attachment/replyTo 미지원 (REQ-MAIL-027, Unwanted)
+
+**GIVEN**: `dispatch(message)` 호출
+
+**WHEN**: 성공 경로에서 mock `transporter.sendMail` 인자를 검사
+
+**THEN**:
+- sendMail 인자에 `cc`, `bcc`, `attachments`, `replyTo` 키가 포함되지 않음 (또는 undefined)
+
+### AC-COV-5: env 미설정 시 .env.example 안내 (REQ-MAIL-073)
+
+**GIVEN**: `apps/web/.env.example`
+
+**WHEN**: 파일 내용을 정적 검사
+
+**THEN**:
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `SMTP_SECURE` 6개 변수 키가 모두 존재
+- SMTP_HOST 미설정 시 Noop 모드임을 설명하는 주석 라인 존재
+
+### AC-COV-6: packages/auth → apps/web 역의존 금지 (REQ-MAIL-075, Unwanted)
+
+**GIVEN**: `packages/auth/src/mail/**`의 import graph
+
+**WHEN**: 정적 import 분석
+
+**THEN**:
+- `apps/web`, `next/*`, 또는 Next.js 전용 API에 대한 import가 존재하지 않음
+- AuditLog 기록은 ctx로 주입된 Prisma client를 통해서만 수행됨
+
+---
+
 ## 7. Definition of Done
 
 본 SPEC이 "완료(complete)"로 marking되기 위한 정량적/정성적 기준.
@@ -485,7 +550,16 @@ language: ko
 | AC-MAIL-A5 | A5.1~A5.6 | REQ-MAIL-026, 051~054 | smtp-dispatcher.test.ts + manual | 2 |
 | EC-1 | EC-1.1~EC-1.4 | REQ-MAIL-013, 014, 015 | factory.test.ts | 2 |
 | EC-2 | EC-2.1 | REQ-MAIL-025 | smtp-dispatcher.test.ts | (포함됨) |
-| **Total** | | | | **~12** |
+| EC-3 | EC-3.1 | REQ-MAIL-024 | smtp-dispatcher.test.ts | (포함됨) |
+| EC-4 | EC-4.1 | REQ-MAIL-023 | smtp-dispatcher.test.ts | (포함됨) |
+| EC-5 | EC-5.1 | REQ-MAIL-006 | dispatcher.test.ts | (포함됨) |
+| AC-COV-1 | barrel export | REQ-MAIL-004 | index export check | (정적) |
+| AC-COV-2 | retry in-class | REQ-MAIL-044 | smtp-dispatcher.test.ts + dep check | (포함됨) |
+| AC-COV-3 | no PII/token logging | REQ-MAIL-005 | smtp-dispatcher.test.ts | (포함됨) |
+| AC-COV-4 | no cc/bcc/attachment | REQ-MAIL-027 | smtp-dispatcher.test.ts | (포함됨) |
+| AC-COV-5 | .env.example 안내 | REQ-MAIL-073 | static file check | (정적) |
+| AC-COV-6 | no apps/web 역의존 | REQ-MAIL-075 | import graph check | (정적) |
+| **Total** | | | | **~12 (+ 정적/보강 검증)** |
 
 (MP-002 target: 12 — exact match.)
 

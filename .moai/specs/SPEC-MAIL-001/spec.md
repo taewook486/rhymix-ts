@@ -3,10 +3,11 @@ id: SPEC-MAIL-001
 title: SMTP 메일 디스패처 (SmtpMailDispatcher Replacing NoopMailDispatcher)
 version: 1.0.0
 status: draft
-created: 2026-05-27
-updated: 2026-05-27
+created_at: 2026-05-27
+updated_at: 2026-05-27
 author: MoAI manager-spec
 priority: P1
+labels: [mail, smtp, phase3]
 phase: 3
 parent: MASTER-PLAN-002
 depends-on: [SPEC-AUTH-001, SPEC-ADMIN-001]
@@ -30,7 +31,7 @@ language: ko
 **`NoopMailDispatcher`를 실제 SMTP 발송이 가능한 `SmtpMailDispatcher`로 대체하여, 회원 인증 흐름(가입 인증 / 비밀번호 재설정 / 가입 환영)이 production 환경에서 완결되도록 한다.** 구체적으로:
 
 - `packages/auth/src/mail.ts`의 `MailDispatcher` 인터페이스를 **유지**한다(breaking change 금지) — 인증 흐름의 호출 측(`signup.ts`, `password-reset.ts`) 변경 없음.
-- 신규 `SmtpMailDispatcher`(nodemailer 4.x 기반)를 `packages/auth/src/mail/smtp-dispatcher.ts`로 추가한다.
+- 신규 `SmtpMailDispatcher`(nodemailer ^6.9.0 기반)를 `packages/auth/src/mail/smtp-dispatcher.ts`로 추가한다.
 - `packages/auth/src/mail/factory.ts` 신규 — `createMailDispatcher(env)` factory가 환경변수에 따라 SMTP 또는 Noop을 선택한다.
 - `apps/web/lib/auth/actions.ts`의 `new NoopMailDispatcher()` 두 곳을 모듈 스코프 싱글톤(`mailDispatcher = createMailDispatcher(process.env)`)으로 교체한다.
 - 이메일 템플릿 3개를 `packages/auth/src/mail/templates/`에 추가하며, 한국어/영어 두 언어를 namespace로 분리(`mail.ko.ts`, `mail.en.ts`)한다. HTML + plaintext fallback 둘 다 지원.
@@ -66,7 +67,9 @@ language: ko
 
 ## 2. Requirements (EARS Format)
 
-본 SPEC은 모든 요구사항을 EARS(Easy Approach to Requirements Syntax) 형식으로 기술한다. 7개 카테고리(Interface, Dispatcher Selection, SMTP Transport, Templates, Retry & Audit, Admin UI, Quality)로 그룹화.
+본 SPEC은 모든 요구사항을 EARS(Easy Approach to Requirements Syntax) 형식으로 기술한다. 8개 카테고리(Interface, Dispatcher Selection, SMTP Transport, Templates, Retry & Audit, Admin UI, Quality, Integration)로 그룹화.
+
+> **REQ Numbering Convention (블록 번호 규약)**: 본 SPEC의 REQ는 카테고리별로 10단위 블록을 예약하는 방식을 따른다. 각 카테고리는 `REQ-MAIL-XX0 ~ XX9` 범위(10개 번호)를 점유하며, 카테고리 내부에서 실제 정의된 REQ 이후의 미사용 번호(예: 007~009, 018~019, 028~029, 038~039, 046~049, 056~059, 066~069)는 **향후 동일 카테고리 확장을 위해 의도적으로 비워둔 예약 번호**다. 이 gap들은 누락이 아니며, 섹션 헤더가 표기한 상한 번호(예: `REQ-MAIL-001 ~ 009`)는 해당 카테고리 블록의 예약 범위를 나타낸다. REQ 번호는 정의된 모든 항목에서 중복 없이 유일하며 3자리 zero-padding을 일관되게 적용한다.
 
 ### 2.1 Interface 보존 계층 (REQ-MAIL-001 ~ 009)
 
@@ -86,7 +89,7 @@ language: ko
 
 **REQ-MAIL-010 (Event-Driven)**: WHEN `SMTP_HOST` environment variable is set (non-empty string), the Mail system SHALL instantiate `SmtpMailDispatcher` and return it from `createMailDispatcher(env)`. (MASTER-PLAN-002 Section 5.9 line 335 — Acceptance headline 1)
 
-**REQ-MAIL-011 (Event-Driven)**: WHERE `SMTP_HOST` is not set or is empty, the Mail system SHALL fall back to `NoopMailDispatcher` AND SHALL emit exactly one `console.warn` per process startup: `'[mail] SMTP_HOST not configured — using NoopMailDispatcher. Emails will NOT be delivered.'`. (MASTER-PLAN-002 Section 5.9 line 336 — Acceptance headline 2)
+**REQ-MAIL-011 (State-Driven)**: WHERE `SMTP_HOST` is not set or is empty, the Mail system SHALL fall back to `NoopMailDispatcher` AND SHALL emit exactly one `console.warn` per process startup: `'[mail] SMTP_HOST not configured — using NoopMailDispatcher. Emails will NOT be delivered.'`. (MASTER-PLAN-002 Section 5.9 line 336 — Acceptance headline 2)
 
 **REQ-MAIL-012 (Ubiquitous)**: The `createMailDispatcher(env)` factory SHALL read the following environment variables:
   - `SMTP_HOST` (required for SMTP mode) — string
@@ -171,7 +174,7 @@ language: ko
   - `action = 'MAIL_DELIVERY_FAILED'`
   - `actorId = null` (시스템 발신)
   - `target = message.to` (수신자 이메일)
-  - `diff = { template: message.template, errorCode: <SMTP code or 'NETWORK'>, attempts: 3 }` (JSON)
+  - `diff = { template: message.template, errorCode: <SMTP code or 'NETWORK'>, attempts: <actual attempt count> }` (JSON) — `attempts`는 실제 시도된 횟수를 기록한다(상수 아님). transient 에러로 3회 모두 소진된 경우 `attempts === 3`, permanent 에러로 즉시 실패한 경우 `attempts === 1`. 재시도 상한은 `max_attempts`(기본 3) 설정값을 따른다.
   - `regdate = now()`
   
   AuditLog 작성 실패 자체는 캐치하여 로그(`console.error`)만 남기고 swallow — 메일 실패가 또 다른 캐스케이드를 일으키지 않게.
@@ -196,7 +199,7 @@ language: ko
 
 **REQ-MAIL-052 (Event-Driven)**: WHEN the admin clicks "테스트 메일 발송" 버튼 with a target email input, the page SHALL call `sendTestMailAction({ to })` which dispatches a `signup-verify` template with dummy vars (`verifyUrl='https://example.com/test', userName='Test'`). 실제 메일이 도착해야 운영 점검 가능.
 
-**REQ-MAIL-053 (Event-Driven)**: WHILE the active dispatcher is `NoopMailDispatcher` (SMTP_HOST 미설정), the admin page SHALL show a yellow warning banner: `'⚠ 메일 발송이 비활성화되어 있습니다. .env 에 SMTP_HOST 를 설정하세요.'`. 
+**REQ-MAIL-053 (State-Driven)**: WHILE the active dispatcher is `NoopMailDispatcher` (SMTP_HOST 미설정), the admin page SHALL show a yellow warning banner: `'⚠ 메일 발송이 비활성화되어 있습니다. .env 에 SMTP_HOST 를 설정하세요.'`. 
 
 **REQ-MAIL-054 (Ubiquitous)**: AdminMailSettings page SHALL require `actor.isAdmin === true` — non-admin user는 `/login` redirect 또는 403. 권한 체크는 `apps/web` middleware 또는 page 내부에서 `auth()` 호출 검증.
 
@@ -277,26 +280,26 @@ language: ko
 
 ---
 
-## 4. Acceptance Criteria (요약)
+## 4. Acceptance Criteria (EARS Format)
 
-본 SPEC의 핵심 acceptance는 MASTER-PLAN-002 Section 5.9의 3개 headline을 충족한다. Given-When-Then 형식 핵심 5개:
+본 SPEC의 핵심 acceptance는 MASTER-PLAN-002 Section 5.9의 3개 headline을 충족한다. 본 절의 acceptance criteria는 EARS 형식으로 기술하며, 각 AC에 대응하는 실행 가능한 Given-When-Then 시나리오는 `acceptance.md`에 상세 기술한다.
 
-1. **AC-MAIL-A1 (Dispatcher Selection — SMTP_HOST set, REQ-MAIL-010, MP-002 line 335)**:
-   GIVEN process env에 `SMTP_HOST='smtp.example.com'`, `SMTP_PORT='587'`, `SMTP_FROM='Rhymix <no@example.com>'`이 설정된 상태에서, WHEN `createMailDispatcher(env)`를 호출, THEN 반환값은 `SmtpMailDispatcher` 인스턴스이며 `dispatcher instanceof SmtpMailDispatcher === true`.
+**AC-MAIL-A1 (Dispatcher Selection — SMTP_HOST set, REQ-MAIL-010, MP-002 line 335)**:
+WHEN `createMailDispatcher(env)` is called with `SMTP_HOST='smtp.example.com'`, `SMTP_PORT='587'`, AND `SMTP_FROM='Rhymix <no@example.com>'` set in env, the Mail system SHALL return a `SmtpMailDispatcher` instance (`dispatcher instanceof SmtpMailDispatcher === true`).
 
-2. **AC-MAIL-A2 (Dispatcher Selection — SMTP_HOST absent, REQ-MAIL-011, MP-002 line 336)**:
-   GIVEN process env에 `SMTP_HOST`가 없는 상태에서, WHEN `createMailDispatcher(env)`를 호출, THEN (a) 반환값은 `NoopMailDispatcher` 인스턴스이고, (b) `console.warn`이 정확히 1회 호출되었으며 메시지가 `'[mail] SMTP_HOST not configured'`로 시작.
+**AC-MAIL-A2 (Dispatcher Selection — SMTP_HOST absent, REQ-MAIL-011, MP-002 line 336)**:
+WHERE `SMTP_HOST` is absent from env, WHEN `createMailDispatcher(env)` is called, the Mail system SHALL return a `NoopMailDispatcher` instance AND SHALL emit exactly one `console.warn` whose message begins with `'[mail] SMTP_HOST not configured'`.
 
-3. **AC-MAIL-A3 (Retry & Audit on Failure, REQ-MAIL-040~042, MP-002 line 337)**:
-   GIVEN `SmtpMailDispatcher`가 mock nodemailer transporter(매번 transient `ECONNRESET` reject)와 mocked Prisma client로 구성된 상태에서, WHEN `dispatcher.dispatch({ to:'a@b.com', subject:'X', template:'signup-verify', vars:{verifyUrl:'https://...',userName:'A'} })`를 호출, THEN (a) `transporter.sendMail`이 정확히 3회 호출되었고 (b) 호출 간격이 ≈1s, ≈2s (백오프) 이며 (c) `prisma.auditLog.create`가 `action='MAIL_DELIVERY_FAILED', target='a@b.com', diff.template='signup-verify', diff.attempts=3`로 호출되었고 (d) `dispatch()`는 `MailDeliveryError`를 throw.
+**AC-MAIL-A3 (Retry & Audit on Failure, REQ-MAIL-040~042, MP-002 line 337)**:
+WHEN `dispatch({ to:'a@b.com', subject:'X', template:'signup-verify', vars:{verifyUrl:'https://...',userName:'A'} })` is called on a `SmtpMailDispatcher` whose transporter rejects every send with a transient `ECONNRESET` error, the Mail system SHALL invoke `transporter.sendMail` exactly 3 times with backoff intervals of ≈1s and ≈2s, SHALL create one `AuditLog` row (`action='MAIL_DELIVERY_FAILED', target='a@b.com', diff.template='signup-verify', diff.attempts=3`), AND `dispatch()` SHALL throw `MailDeliveryError`.
 
-4. **AC-MAIL-A4 (Template Rendering i18n + Escape, REQ-MAIL-031~033)**:
-   GIVEN `renderTemplate('signup-verify', { verifyUrl:'https://x.com/v/abc', userName:'<script>X</script>', locale:'en' })` 호출, WHEN 반환값을 검사, THEN (a) `subject`는 영문 문자열, (b) `html`은 `verifyUrl`을 `<a href="https://x.com/v/abc">`로 포함하고 `userName`은 `&lt;script&gt;X&lt;/script&gt;`로 escape되었으며 (c) `text`는 escape 없는 plain text. AND WHEN locale을 `'ko'`로 변경하면 `subject`가 한글 문자열로 변경됨.
+**AC-MAIL-A4 (Template Rendering i18n + Escape, REQ-MAIL-031~033)**:
+WHEN `renderTemplate('signup-verify', { verifyUrl:'https://x.com/v/abc', userName:'<script>X</script>', locale:'en' })` is called, the renderer SHALL return a result whose `subject` is an English string, whose `html` contains `<a href="https://x.com/v/abc">` AND escapes `userName` to `&lt;script&gt;X&lt;/script&gt;`, AND whose `text` is plain text without HTML escaping. WHEN `locale` is changed to `'ko'`, the renderer SHALL return a `subject` in Korean.
 
-5. **AC-MAIL-A5 (Admin Test Connection, REQ-MAIL-051, REQ-MAIL-026)**:
-   GIVEN admin user가 `/admin/site/mail` 페이지에 접근한 상태에서, WHEN "연결 테스트" 버튼 클릭, THEN (a) Server Action `testMailConnectionAction()`이 호출되고 (b) 내부적으로 `mailDispatcher.verify()`가 호출되며 (c) 반환값은 `{ ok: true }` 또는 `{ ok: false, error: string }`이고 (d) UI는 toast로 결과 표시.
+**AC-MAIL-A5 (Admin Test Connection, REQ-MAIL-051, REQ-MAIL-026)**:
+WHEN an admin clicks "연결 테스트" on the `/admin/site/mail` page, the system SHALL invoke the Server Action `testMailConnectionAction()`, which SHALL call `mailDispatcher.verify()` AND SHALL return `{ ok: true }` or `{ ok: false, error: string }`; the UI SHALL display the result as a toast.
 
-상세 Given-When-Then scenarios + edge cases는 `acceptance.md` 참조.
+상세 Given-When-Then scenarios + edge cases는 `acceptance.md` 참조 (acceptance.md는 실행 가능한 테스트 시나리오 문서로서 Given-When-Then 형식을 사용한다).
 
 ---
 
