@@ -66,7 +66,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | ID | 제목 | 의존 | 상태 |
 |---|---|---|---|
 | [SPEC-FILE-001](./SPEC-FILE-001/spec.md) | file 업로드 + sharp resize + cover image + cascade delete | AUTH, ADMIN, DOCUMENT, COMMENT | ✅ 구현 완료 (Slice A+B+C, 96 tests, 93a334e) |
-| [SPEC-POINT-001](./SPEC-POINT-001/spec.md) | point 시스템 + board/document/comment 트랜잭션 통합 | AUTH, ADMIN, DOCUMENT, COMMENT | 📝 SPEC 완료 (1,298줄) |
+| [SPEC-POINT-001](./SPEC-POINT-001/spec.md) | point 시스템 + board/document/comment 트랜잭션 통합 | AUTH, ADMIN, DOCUMENT, COMMENT | ✅ 구현 완료 (Slice A+B, 24 tests, 8072dc0) |
 | [SPEC-MAIL-001](./SPEC-MAIL-001/spec.md) | SmtpMailDispatcher + 3 templates + 재시도 정책 | AUTH, ADMIN | 📝 SPEC 완료 (2,081줄) |
 
 ### Phase 4: EXTENSION INFRASTRUCTURE + THEME POLISH (P1, 구현 대기)
