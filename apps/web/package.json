@@ -23,6 +23,7 @@
     "@rhymix-ts/document": "workspace:*",
     "@rhymix-ts/file": "workspace:*",
     "@rhymix-ts/db": "workspace:*",
+    "@rhymix-ts/point": "workspace:*",
     "@rhymix-ts/ui": "workspace:*",
     "@tailwindcss/postcss": "^4.3.0",
     "@tanstack/react-query": "^5.62.0",

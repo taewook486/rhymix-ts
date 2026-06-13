@@ -1,17 +1,17 @@
-export * from './attachment.js';
-export * from './storage/types.js';
-export { InMemoryStorage } from './storage/memory.js';
-export { S3Storage } from './storage/s3.js';
-export { LocalDiskStorage } from './storage/local-disk.js';
-export { getStorage, getScanner, _resetStorageInstances } from './storage/factory.js';
-export { NoopScanner } from './storage/scanner.js';
-export { ClamAVScanner } from './storage/clamav.js';
-export { assertMimeAllowed, assertSizeAllowed, UnsupportedMimeTypeError, FileTooLargeError } from './storage/mime.js';
-export { signUploadToken, verifyUploadToken, InvalidUploadTokenError } from './storage/upload-token.js';
-export { processImage, isImageMimeType } from './image-pipeline.js';
-export type { ImageProcessResult } from './image-pipeline.js';
-export { registerFileEventSubscribers, cascadeDeleteByDocumentId, cascadeDeleteByCommentId } from './events.js';
-export type { FileEventSubscriberContext, FileEventEmitters } from './events.js';
+export * from './attachment';
+export * from './storage/types';
+export { InMemoryStorage } from './storage/memory';
+export { S3Storage } from './storage/s3';
+export { LocalDiskStorage } from './storage/local-disk';
+export { getStorage, getScanner, _resetStorageInstances } from './storage/factory';
+export { NoopScanner } from './storage/scanner';
+export { ClamAVScanner } from './storage/clamav';
+export { assertMimeAllowed, assertSizeAllowed, UnsupportedMimeTypeError, FileTooLargeError } from './storage/mime';
+export { signUploadToken, verifyUploadToken, InvalidUploadTokenError } from './storage/upload-token';
+export { processImage, isImageMimeType } from './image-pipeline';
+export type { ImageProcessResult } from './image-pipeline';
+export { registerFileEventSubscribers, cascadeDeleteByDocumentId, cascadeDeleteByCommentId } from './events';
+export type { FileEventSubscriberContext, FileEventEmitters } from './events';
 
 // Admin functions
 export {
@@ -23,11 +23,11 @@ export {
   cascadeRebuild,
   orphanCleanupTask,
   migrateStorage,
-} from './admin.js';
-export type { MigrateStorageOptions } from './admin.js';
+} from './admin';
+export type { MigrateStorageOptions } from './admin';
 
 // Server layer exports
-export { createFileRouter } from './server/router.js';
+export { createFileRouter } from './server/router';
 
 // NOTE: Server Actions ('use server' files) are NOT exported from the main barrel for browser bundle safety
 // Import directly from '@rhymix-ts/file/server/actions' for Server Actions usage

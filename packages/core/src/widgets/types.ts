@@ -3,7 +3,7 @@
  *
  * React 의존성 없음 — ComponentType은 구조적 타입으로 정의한다.
  */
-import type { ZodSchema } from 'zod'
+import type { ZodType, ZodTypeDef } from 'zod'
 
 /**
  * 위젯 컴포넌트 타입 (React.ComponentType 호환, React import 없이 정의).
@@ -18,7 +18,7 @@ export interface WidgetDefinition<P = Record<string, unknown>> {
   /** 관리자 UI에 표시되는 이름 */
   displayName: string
   /** props 런타임 검증 스키마 */
-  propsSchema: ZodSchema<P>
+  propsSchema: ZodType<P, ZodTypeDef, unknown>
   /** React 컴포넌트 (RSC 호환) */
   Component: WidgetComponent<P>
   /** 기본 props 값 */

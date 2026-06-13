@@ -19,7 +19,7 @@ import {
   type DeleteCommentInput,
   type VoteCommentInput,
   type ReportCommentInput,
-} from './service.js';
+} from './service';
 
 // tRPC 컨텍스트 타입 — prisma 인젝션
 type Context = { prisma: PrismaClient };

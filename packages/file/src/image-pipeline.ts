@@ -4,8 +4,14 @@
  * @MX:NOTE [AUTO]: 이미지 업로드 시 thumbnail/variant 자동 생성.
  * @MX:SPEC: SPEC-FILE-001 REQ-FILE-030~037
  */
-import sharp from 'sharp';
-import type { FileStorage } from './storage/types.js';
+import type sharp from 'sharp';
+import type { FileStorage } from './storage/types';
+
+// sharp is a native binary; loaded lazily so Turbopack/webpack don't bundle it.
+async function getSharp(): Promise<typeof sharp> {
+  const m = await import('sharp');
+  return m.default as typeof sharp;
+}
 
 export interface ImageProcessResult {
   width: number;
@@ -29,6 +35,7 @@ export async function processImage(input: {
   const { storage, storageKey, originalBuffer, mimeType } = input;
 
   try {
+    const sharp = await getSharp();
     const sharpInstance = sharp(originalBuffer, { animated: mimeType === 'image/gif' });
     const metadata = await sharpInstance.metadata();
     const { width = 0, height = 0, format, pages } = metadata;

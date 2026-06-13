@@ -10,7 +10,7 @@ import Link from 'next/link'
 import {
   updateWidgetInstanceAction,
   deleteWidgetInstanceAction,
-} from '../../../actions'
+} from '../../../../actions'
 
 interface Props {
   id: number

@@ -26,7 +26,7 @@ import {
   type RequestUploadInput,
   type CompleteUploadInput,
   type DeleteAttachmentInput,
-} from '../attachment.js';
+} from '../attachment';
 
 // ---------------------------------------------------------------------------
 // ActionResult 타입

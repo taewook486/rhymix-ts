@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { PrismaClient } from '@prisma/client';
-import { registerFileEventSubscribers, cascadeDeleteByDocumentId, cascadeDeleteByCommentId } from './events.js';
+import { registerFileEventSubscribers, cascadeDeleteByDocumentId, cascadeDeleteByCommentId } from './events';
 
 function makePrisma() {
   return {

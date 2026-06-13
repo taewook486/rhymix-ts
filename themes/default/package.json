@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@rhymix-ts/core": "workspace:*"
+  },
   "peerDependencies": {
     "react": "^19.0.0",
     "@prisma/client": "*"

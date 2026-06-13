@@ -18,7 +18,7 @@ interface PageBodyProps {
  * 페이지 본문 렌더러.
  * mcontent 가 null 이거나 빈 문자열이면 빈 플레이스홀더를 반환한다.
  */
-export function PageBody({ mcontent }: PageBodyProps): React.ReactElement {
+export async function PageBody({ mcontent }: PageBodyProps): Promise<React.ReactElement> {
   // 빈 콘텐츠 처리
   if (!mcontent) {
     return (
@@ -31,7 +31,7 @@ export function PageBody({ mcontent }: PageBodyProps): React.ReactElement {
   }
 
   // XSS 필터링 후 HTML 삽입
-  const sanitized = sanitizePageBody(mcontent)
+  const sanitized = await sanitizePageBody(mcontent)
 
   return (
     <div

@@ -4,8 +4,8 @@
  * commentEvents 이벤트 버스 및 emitCommentDeleted 헬퍼 검증.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { commentEvents, emitCommentDeleted } from '../events.js';
-import type { CommentDeletedEvent } from '../events.js';
+import { commentEvents, emitCommentDeleted } from '../events';
+import type { CommentDeletedEvent } from '../events';
 
 describe('commentEvents EventBus', () => {
   beforeEach(() => {

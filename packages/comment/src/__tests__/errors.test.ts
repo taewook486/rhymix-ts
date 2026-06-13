@@ -12,7 +12,7 @@ import {
   CommentAlreadyVotedError,
   SelfVoteNotAllowedError,
   CommentAlreadyReportedError,
-} from '../errors.js';
+} from '../errors';
 
 // ---------------------------------------------------------------------------
 // Error Classes

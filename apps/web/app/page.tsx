@@ -44,17 +44,7 @@ export default async function RootPage() {
     select: {
       defaultLayoutId: true,
       indexModuleInstance: {
-        select: {
-          id: true,
-          siteId: true,
-          moduleCode: true,
-          mid: true,
-          name: true,
-          layoutId: true,
-          mobileLayoutId: true,
-          skin: true,
-          mobileSkin: true,
-        },
+        include: { config: true },
       },
     },
   });

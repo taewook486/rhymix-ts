@@ -6,8 +6,8 @@
  * REQ-COMMENT-040~043: 신고 카운터 원자성, 중복 신고 차단 검증.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { reportComment } from '../service.js';
-import { CommentAlreadyReportedError } from '../errors.js';
+import { reportComment } from '../service';
+import { CommentAlreadyReportedError } from '../errors';
 
 // ---------------------------------------------------------------------------
 // reportComment

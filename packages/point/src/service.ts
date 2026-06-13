@@ -2,9 +2,9 @@
 // @MX:ANCHOR (fan_in: 4) — add, subtract, getBalance, recompute 모두 이 클래스를 호출
 
 import type { PrismaClient, Prisma } from '@prisma/client';
-import { PointAmountInvalidError, PointMemberNotFoundError } from './errors.js';
-import type { PointAddInput, PointHistoryQuery } from './schemas.js';
-import { getSitePointConfig } from './config.js';
+import { PointAmountInvalidError, PointMemberNotFoundError } from './errors';
+import type { PointAddInput, PointHistoryQuery } from './schemas';
+import { getSitePointConfig } from './config';
 
 function encodeCursor(createdAt: Date, id: number): string {
   return Buffer.from(JSON.stringify({ createdAt: createdAt.toISOString(), id })).toString('base64url');

@@ -4,7 +4,7 @@
  * WidgetInstance DB 레코드에 대한 서비스 레이어.
  * props는 저장 전 반드시 Zod 스키마로 검증한다.
  */
-import type { PrismaClient, WidgetInstance } from '@prisma/client'
+import type { PrismaClient, WidgetInstance, Prisma } from '@prisma/client'
 import { getWidget } from './registry'
 import { validateWidgetProps } from './validate'
 
@@ -68,7 +68,7 @@ export async function createWidgetInstance(
     data: {
       widgetName: input.widgetName,
       label: input.label,
-      props: validation.props as Record<string, unknown>,
+      props: validation.props as Prisma.InputJsonValue,
     },
   })
 }
@@ -113,7 +113,7 @@ export async function updateWidgetInstance(
         `위젯 '${existing.widgetName}' props 검증 실패: ${validation.error.message}`,
       )
     }
-    updateData.props = validation.props as Record<string, unknown>
+    updateData.props = validation.props as Prisma.InputJsonValue
   }
 
   return prisma.widgetInstance.update({

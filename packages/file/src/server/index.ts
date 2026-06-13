@@ -7,6 +7,6 @@
  * @MX:REASON: Browser bundle 안전성 — Server Actions은 직접 import해야 함.
  */
 
-export { createFileRouter } from './router.js';
+export { createFileRouter } from './router';
 
 // NOTE: Do NOT re-export actions.ts here — 'use server' files should be imported directly

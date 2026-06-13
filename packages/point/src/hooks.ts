@@ -3,7 +3,7 @@
 
 import type { Prisma } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
-import { PointService } from './service.js';
+import { PointService } from './service';
 
 interface DocumentCreatedEvent {
   documentId: number;

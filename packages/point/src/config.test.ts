@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getSitePointConfig, setSitePointConfig } from './config.js';
+import { getSitePointConfig, setSitePointConfig } from './config';
 
 // Mock helpers
 function makePrisma(overrides = {}) {

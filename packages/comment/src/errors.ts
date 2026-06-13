@@ -6,7 +6,7 @@
  * REQ-COMMENT-061: CommentDepthExceededError.
  * 추가: CommentAlreadyVotedError, CommentAlreadyReportedError.
  */
-import { MAX_COMMENT_DEPTH } from './constants.js';
+import { MAX_COMMENT_DEPTH } from './constants';
 
 /**
  * 댓글 depth 제한 초과 에러.

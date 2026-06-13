@@ -10,7 +10,7 @@
 import { createReadStream, createWriteStream } from 'node:fs';
 import { mkdir, unlink, stat } from 'node:fs/promises';
 import { join, resolve, normalize, sep } from 'node:path';
-import type { FileStorage } from './types.js';
+import type { FileStorage } from './types';
 
 export class LocalDiskStorage implements FileStorage {
   private readonly root: string;

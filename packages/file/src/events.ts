@@ -8,7 +8,7 @@
  * @MX:SPEC: SPEC-FILE-001 REQ-FILE-040~049
  */
 import type { PrismaClient } from '@prisma/client';
-import type { FileStorage } from './storage/types.js';
+import type { FileStorage } from './storage/types';
 
 // 이벤트 타입 인라인 정의 — packages/file이 document/comment에 의존하지 않도록 구조적 타이핑 사용
 type DocumentDeletedEvent = { documentId: number; boardId: number; deletedById: number; timestamp: Date };
@@ -25,8 +25,10 @@ export interface FileEventSubscriberContext {
  * @MX:NOTE [AUTO]: EventEmitter 기반의 on/off API.
  */
 export interface EventBus {
-  on<T>(event: string, handler: (data: T) => void | Promise<void>): this;
-  off<T>(event: string, handler: (data: T) => void | Promise<void>): this;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on(event: string, handler: (...args: any[]) => void | Promise<void>): unknown;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  off(event: string, handler: (...args: any[]) => void | Promise<void>): unknown;
 }
 
 export interface FileEventEmitters {

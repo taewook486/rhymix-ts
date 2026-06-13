@@ -6,8 +6,8 @@
  * REQ-COMMENT-050~063: 비밀 댓글 가시성, depth 제한, 삭제 시 vote 카운터 정리.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { createComment, listComments, deleteComment } from '../service.js';
-import { CommentDepthExceededError } from '../errors.js';
+import { createComment, listComments, deleteComment } from '../service';
+import { CommentDepthExceededError } from '../errors';
 import type { Comment } from '@prisma/client';
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /**
- * GET /api/files/by-key/[...key]/download
+ * GET /api/files/by-key/[key]/download
  * LocalDiskStorage가 발급한 URL (/api/files/by-key/{encoded-key}/download) 처리
  *
  * @MX:NOTE [AUTO]: SPEC-FILE-001 REQ-FILE-052 — local backend download URL
@@ -9,10 +9,10 @@ import { getStorage } from '@rhymix-ts/file';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ key: string[] }> },
+  { params }: { params: Promise<{ key: string }> },
 ): Promise<NextResponse> {
   const { key } = await params;
-  const storageKey = decodeURIComponent(key.join('/'));
+  const storageKey = decodeURIComponent(key);
 
   const storage = getStorage();
   if (!storage.streamRead) {

@@ -4,12 +4,12 @@
  * @MX:NOTE [AUTO]: STORAGE_BACKEND / VIRUS_SCAN_BACKEND 환경변수로 backend 선택.
  * @MX:SPEC: SPEC-FILE-001 REQ-FILE-019, REQ-FILE-060
  */
-import type { FileStorage, VirusScanner } from './types.js';
-import { InMemoryStorage } from './memory.js';
-import { S3Storage } from './s3.js';
-import { LocalDiskStorage } from './local-disk.js';
-import { NoopScanner } from './scanner.js';
-import { ClamAVScanner } from './clamav.js';
+import type { FileStorage, VirusScanner } from './types';
+import { InMemoryStorage } from './memory';
+import { S3Storage } from './s3';
+import { LocalDiskStorage } from './local-disk';
+import { NoopScanner } from './scanner';
+import { ClamAVScanner } from './clamav';
 
 let storageInstance: FileStorage | null = null;
 let scannerInstance: VirusScanner | null = null;

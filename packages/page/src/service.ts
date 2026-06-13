@@ -8,8 +8,18 @@
  * @MX:REASON: ALLOWED_TAGS / ALLOWED_ATTR 변경이 XSS 취약점을 유발할 수 있음.
  */
 import type { PrismaClient } from '@prisma/client'
-import DOMPurify from 'isomorphic-dompurify'
+import type DOMPurifyType from 'isomorphic-dompurify'
 import type { PageContent, PageType } from './types'
+
+// isomorphic-dompurify는 jsdom을 로드하므로 lazy import — 빌드 시점에 불러오지 않음
+let _DOMPurify: typeof DOMPurifyType | undefined
+async function getDOMPurify(): Promise<typeof DOMPurifyType> {
+  if (!_DOMPurify) {
+    const m = await import('isomorphic-dompurify')
+    _DOMPurify = m.default as typeof DOMPurifyType
+  }
+  return _DOMPurify
+}
 import { pageConfigSchema } from './config'
 
 /**
@@ -116,7 +126,8 @@ const RX_WIDGET_RE = /<rx-widget\s[^>]*?\/>|<rx-widget\s[^>]*?><\/rx-widget>/g
  * @MX:REASON: XSS 방어의 단일 게이트웨이. 호출 경로가 3개 이상.
  * @MX:SPEC: SPEC-PAGE-001 REQ-PAGE-007, REQ-PAGE-008
  */
-export function sanitizePageBody(raw: string): string {
+export async function sanitizePageBody(raw: string): Promise<string> {
+  const DOMPurify = await getDOMPurify()
   // 1단계: rx-widget 토큰 추출 후 플레이스홀더로 교체
   const tokens: string[] = []
   const withPlaceholders = raw.replace(RX_WIDGET_RE, (match) => {

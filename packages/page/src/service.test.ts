@@ -154,54 +154,54 @@ describe('savePageContent', () => {
 // ---------- sanitizePageBody ----------
 
 describe('sanitizePageBody', () => {
-  it('SVC-8: script 태그 제거', () => {
+  it('SVC-8: script 태그 제거', async () => {
     // Arrange
     const raw = '<p>텍스트</p><script>alert(1)</script>'
     // Act
-    const result = sanitizePageBody(raw)
+    const result = await sanitizePageBody(raw)
     // Assert
     expect(result).not.toContain('<script>')
     expect(result).not.toContain('alert(1)')
     expect(result).toContain('<p>텍스트</p>')
   })
 
-  it('SVC-9: onclick 이벤트 핸들러 제거', () => {
+  it('SVC-9: onclick 이벤트 핸들러 제거', async () => {
     // Arrange
     const raw = '<div onclick="evil()">클릭</div>'
     // Act
-    const result = sanitizePageBody(raw)
+    const result = await sanitizePageBody(raw)
     // Assert
     expect(result).not.toContain('onclick')
     expect(result).not.toContain('evil()')
     expect(result).toContain('클릭')
   })
 
-  it('SVC-10: <rx-widget name="login_info" /> 보존 (REQ-PAGE-008)', () => {
+  it('SVC-10: <rx-widget name="login_info" /> 보존 (REQ-PAGE-008)', async () => {
     // Arrange
     const raw = '<p>위젯:</p><rx-widget name="login_info" />'
     // Act
-    const result = sanitizePageBody(raw)
+    const result = await sanitizePageBody(raw)
     // Assert
     expect(result).toContain('rx-widget')
     expect(result).toContain('name="login_info"')
   })
 
-  it('SVC-11: <rx-widget name="content" data-list-count="5" /> 보존 (REQ-PAGE-008)', () => {
+  it('SVC-11: <rx-widget name="content" data-list-count="5" /> 보존 (REQ-PAGE-008)', async () => {
     // Arrange
     const raw = '<rx-widget name="content" data-list-count="5" />'
     // Act
-    const result = sanitizePageBody(raw)
+    const result = await sanitizePageBody(raw)
     // Assert
     expect(result).toContain('rx-widget')
     expect(result).toContain('name="content"')
     expect(result).toContain('data-list-count')
   })
 
-  it('SVC-12: 표준 HTML 태그 보존', () => {
+  it('SVC-12: 표준 HTML 태그 보존', async () => {
     // Arrange
     const raw = '<h1>제목</h1><p>단락</p><strong>강조</strong>'
     // Act
-    const result = sanitizePageBody(raw)
+    const result = await sanitizePageBody(raw)
     // Assert
     expect(result).toContain('<h1>제목</h1>')
     expect(result).toContain('<p>단락</p>')

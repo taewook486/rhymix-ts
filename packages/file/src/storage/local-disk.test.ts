@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rmdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { LocalDiskStorage } from './local-disk.js';
+import { LocalDiskStorage } from './local-disk';
 
 describe('LocalDiskStorage', () => {
   let tmpDir: string;

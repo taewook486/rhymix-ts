@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import sharp from 'sharp';
-import { processImage, isImageMimeType } from './image-pipeline.js';
-import type { FileStorage } from './storage/types.js';
+import { processImage, isImageMimeType } from './image-pipeline';
+import type { FileStorage } from './storage/types';
 
 // 테스트용 100x100 JPEG 이미지 생성
 async function makeTestJpeg(width = 100, height = 100): Promise<Buffer> {

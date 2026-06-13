@@ -31,7 +31,7 @@ import {
   type RequestUploadResult,
   type CompleteUploadInput,
   type DeleteAttachmentInput,
-} from '../attachment.js';
+} from '../attachment';
 import {
   setCoverImage as setCoverImageDomain,
   clearCoverImage as clearCoverImageDomain,
@@ -39,8 +39,8 @@ import {
   listOrphans as listOrphansDomain,
   purgeOrphans as purgeOrphansDomain,
   cascadeRebuild as cascadeRebuildDomain,
-} from '../admin.js';
-import { getStorage } from '../storage/factory.js';
+} from '../admin';
+import { getStorage } from '../storage/factory';
 
 // Prisma 확장 타입 (FileAttachment 모델)
 interface PrismaWithFileAttachment {

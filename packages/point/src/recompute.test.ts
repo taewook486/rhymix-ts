@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PointService } from './service.js';
+import { PointService } from './service';
 
 // Mock helpers
 function makeUser(overrides = {}) {

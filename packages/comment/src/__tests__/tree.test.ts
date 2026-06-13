@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Comment } from '@prisma/client';
-import { buildCommentTree, getCommentDepth } from '../tree.js';
+import { buildCommentTree, getCommentDepth } from '../tree';
 
 // ---------------------------------------------------------------------------
 // buildCommentTree

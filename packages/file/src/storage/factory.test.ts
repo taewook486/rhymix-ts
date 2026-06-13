@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { _resetStorageInstances } from './factory.js';
-import { InMemoryStorage } from './memory.js';
-import { LocalDiskStorage } from './local-disk.js';
-import { NoopScanner } from './scanner.js';
+import { _resetStorageInstances } from './factory';
+import { InMemoryStorage } from './memory';
+import { LocalDiskStorage } from './local-disk';
+import { NoopScanner } from './scanner';
 
 describe('StorageFactory', () => {
   afterEach(() => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PointService } from './service.js';
-import { PointAmountInvalidError, PointMemberNotFoundError, PointInsufficientError, PointDuplicateSourceError } from './errors.js';
+import { PointService } from './service';
+import { PointAmountInvalidError, PointMemberNotFoundError, PointInsufficientError, PointDuplicateSourceError } from './errors';
 
 // Mock helpers
 function makeUser(overrides = {}) {

@@ -16,16 +16,16 @@ import {
   BoardPermissionDeniedError,
   DocumentOwnershipError,
 } from '@rhymix-ts/document';
-import { getCommentDepth } from './tree.js';
-import { MAX_COMMENT_DEPTH } from './constants.js';
-import { CommentStatus } from './types.js';
+import { getCommentDepth } from './tree';
+import { MAX_COMMENT_DEPTH } from './constants';
+import { CommentStatus } from './types';
 import {
   CommentDepthExceededError,
   CommentAlreadyVotedError,
   SelfVoteNotAllowedError,
   CommentAlreadyReportedError,
-} from './errors.js';
-import { emitCommentDeleted } from './events.js';
+} from './errors';
+import { emitCommentDeleted } from './events';
 // SPEC-POINT-001 REQ-POINT-042: 포인트 훅 연동
 import { pointHooks } from '@rhymix-ts/point';
 

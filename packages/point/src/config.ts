@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import { PointSiteConfigSchema, type PointSiteConfig } from './schemas.js';
+import { PointSiteConfigSchema, type PointSiteConfig } from './schemas';
 
 // 항상 id=1인 단일 행을 upsert
 export async function getSitePointConfig(prisma: PrismaClient): Promise<PointSiteConfig> {

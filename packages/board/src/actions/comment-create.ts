@@ -11,7 +11,7 @@
 import { z } from 'zod';
 import type { PrismaClient } from '@prisma/client';
 import { createComment } from '@rhymix-ts/comment';
-import { canPerformAction } from '../permissions.js';
+import { canPerformAction } from '../permissions';
 
 // ---------------------------------------------------------------------------
 // 입력 스키마
