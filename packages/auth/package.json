@@ -17,6 +17,7 @@
   "dependencies": {
     "@rhymix-ts/core": "workspace:*",
     "@rhymix-ts/db": "workspace:*",
+    "@rhymix-ts/point": "workspace:*",
     "hash-wasm": "^4.12.0",
     "next-auth": "^5.0.0-beta.25",
     "zod": "^3.24.0"

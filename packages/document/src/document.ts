@@ -36,6 +36,8 @@ import { softDeleteDocument } from './trash';
 import { recordUpdate } from './history';
 import { buildExtraVarsSchema } from './extra-vars-schema';
 import { emitDocumentDeleted } from './events';
+// SPEC-POINT-001 REQ-POINT-041: 포인트 훅 연동
+import { pointHooks } from '@rhymix-ts/point';
 
 // ---------------------------------------------------------------------------
 // Slice F: extraVars 관련 에러 클래스
@@ -246,22 +248,46 @@ export async function createDocument(
 
       await incrementDocumentCount(parsed.categoryId!, 1, tx as unknown as PrismaClient);
 
+      // SPEC-POINT-001 REQ-POINT-041: 게시글 작성 포인트 지급
+      if (parsed.authorId != null && board.pointPerDocument !== 0) {
+        await pointHooks.onDocumentCreated(ctx.prisma, {
+          documentId: doc.id,
+          authorId: parsed.authorId,
+          boardId: board.id,
+          pointPerDocument: board.pointPerDocument ?? 0,
+        }, tx as Prisma.TransactionClient);
+      }
+
       return doc;
     });
   }
 
-  return ctx.prisma.document.create({
-    data: {
-      boardId: board.id,
-      authorId: parsed.authorId,
-      nickName: parsed.nickName,
-      title: parsed.title,
-      content: safeContent,
-      contentText: safeContentText,
-      status: parsed.status,
-      tags: parsed.tags,
-      extraVars: validatedExtraVars as Prisma.InputJsonValue | undefined,
-    },
+  return ctx.prisma.$transaction(async (tx) => {
+    const doc = await tx.document.create({
+      data: {
+        boardId: board.id,
+        authorId: parsed.authorId,
+        nickName: parsed.nickName,
+        title: parsed.title,
+        content: safeContent,
+        contentText: safeContentText,
+        status: parsed.status,
+        tags: parsed.tags,
+        extraVars: validatedExtraVars as Prisma.InputJsonValue | undefined,
+      },
+    });
+
+    // SPEC-POINT-001 REQ-POINT-041: 게시글 작성 포인트 지급
+    if (parsed.authorId != null && board.pointPerDocument !== 0) {
+      await pointHooks.onDocumentCreated(ctx.prisma, {
+        documentId: doc.id,
+        authorId: parsed.authorId,
+        boardId: board.id,
+        pointPerDocument: board.pointPerDocument ?? 0,
+      }, tx as Prisma.TransactionClient);
+    }
+
+    return doc;
   });
 }
 

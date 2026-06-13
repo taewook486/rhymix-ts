@@ -26,6 +26,8 @@ import {
   CommentAlreadyReportedError,
 } from './errors.js';
 import { emitCommentDeleted } from './events.js';
+// SPEC-POINT-001 REQ-POINT-042: 포인트 훅 연동
+import { pointHooks } from '@rhymix-ts/point';
 
 // ---------------------------------------------------------------------------
 // HTML sanitize
@@ -113,6 +115,16 @@ export async function createComment(
       where: { id: parsed.documentId },
       data: { commentCount: { increment: 1 } },
     });
+
+    // SPEC-POINT-001 REQ-POINT-042: 댓글 작성 포인트 지급
+    if (parsed.authorId != null && doc.board.pointPerComment !== 0) {
+      await pointHooks.onCommentCreated(ctx.prisma, {
+        commentId: comment.id,
+        authorId: parsed.authorId,
+        boardId: doc.boardId,
+        pointPerComment: doc.board.pointPerComment ?? 0,
+      }, tx as unknown as import('@prisma/client').Prisma.TransactionClient);
+    }
 
     return comment;
   });

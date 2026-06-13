@@ -6,6 +6,7 @@
 //   - SPEC-CONTENT-001 (Document, Comment, FileAttachment — DEFERRED)
 //   - SPEC-ADMIN-001   (Domain, ModuleInstance, Menu, Widget — partial)
 //   - SPEC-THEME-001   (Theme, Layout, Skin, ThemeAssignment — DEFERRED)
+//   - SPEC-POINT-001  (Point system — Slice A: packages/point/ + schema)
 
 generator client {
   provider        = "prisma-client-js"
@@ -318,6 +319,9 @@ model User {
   commentsAuthored  Comment[]           @relation("CommentAuthor")
   documentUpdates   DocumentUpdateLog[]
   trashDeleted      Trash[]
+  // SPEC-POINT-001 REQ-POINT-001: 포인트 시스템
+  pointBalance      Int                @default(0)
+  points            Point[]            @relation("UserPoints")
 
   @@index([status])
   @@index([emailAddress])
@@ -523,6 +527,42 @@ model SessionRevocation {
 }
 
 // =====================================================================
+// SPEC-POINT-001: Point system (Slice A — Foundation)
+// =====================================================================
+
+// SPEC-POINT-001 REQ-POINT-001: 포인트 내역
+model Point {
+  id         Int             @id @default(autoincrement())
+  memberId   Int
+  amount     Int
+  reason     String          @db.VarChar(200)
+  sourceType PointSourceType
+  sourceId   Int?
+  boardId    Int?
+  createdAt  DateTime        @default(now()) @db.Timestamptz
+
+  member User @relation("UserPoints", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceType, sourceId])
+  @@index([memberId, createdAt(sort: Desc)])
+  @@index([memberId])
+  @@index([sourceType, sourceId])
+  @@index([createdAt])
+  @@map("points")
+}
+
+// SPEC-POINT-001 REQ-POINT-006: 사이트 포인트 설정 (단일 행)
+model SitePointConfig {
+  id                   Int     @id @default(1) // 항상 1개 행
+  signupBonus          Int     @default(0)
+  clampToZero          Boolean @default(true)
+  allowNegativeBalance Boolean @default(false)
+  defaultLevel         Int     @default(1)
+
+  @@map("site_point_config")
+}
+
+// =====================================================================
 // SPEC-ADMIN-001 Slice I: WidgetInstance DB 프리셋 (REQ-ADMIN-043)
 // =====================================================================
 
@@ -568,6 +608,20 @@ enum VoteType {
   BLAME
 }
 
+// SPEC-POINT-001 REQ-POINT-001: 포인트 출처 유형
+enum PointSourceType {
+  DOCUMENT
+  COMMENT
+  VOTE
+  DOWNLOAD
+  FILE_UPLOAD
+  SIGNUP
+  MANUAL
+  SYSTEM
+  PURCHASE
+  REFERRAL
+}
+
 // 게시판 설정 테이블 (Board별 별도 정형 컬럼; ModuleConfig JSON 과 공존)
 // SPEC-CONTENT-001 REQ-CONTENT-001: 1 ModuleInstance ─ 1 Board (1:1)
 model Board {
@@ -604,6 +658,13 @@ model Board {
   documents      Document[]
   categories     DocumentCategory[]
   extraKeys      DocumentExtraKey[]
+  // SPEC-POINT-001 REQ-POINT-002: 게시판별 포인트 정책
+  pointPerDocument     Int            @default(0)
+  pointPerComment      Int            @default(0)
+  pointPerVoteUp       Int            @default(0)
+  pointPerVoteDown     Int            @default(0)
+  pointPerDownload     Int            @default(0)
+  pointPerFileUpload   Int            @default(0)
 
   @@index([moduleSrl])
   @@map("boards")

@@ -28,6 +28,8 @@ import { z } from 'zod';
 import { hashPassword } from './password';
 import type { MailDispatcher } from './mail';
 import { generateToken } from './tokens';
+// SPEC-POINT-001 REQ-POINT-070: 회원가입 보너스 포인트 지급
+import { pointHooks } from '@rhymix-ts/point';
 
 // ---------------------------------------------------------------------------
 // Input schema
@@ -65,6 +67,8 @@ export interface SignupConfig {
   signupTokenTtlHours: number;
   /** REQ-AUTH-041: only 'normal' is enforced in Slice B. */
   passwordPolicy: 'normal' | 'strong' | 'very_strong';
+  /** SPEC-POINT-001 REQ-POINT-070: 회원가입 보너스 포인트 (0 = 비활성화) */
+  signupBonus?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -235,6 +239,18 @@ export async function signup(
       });
     } catch {
       // REQ-AUTH-055: 실패 사유 로깅 금지 (logger 미사용).
+    }
+  }
+
+  // 7.5) Signup bonus (REQ-POINT-070) — post-commit, fire-and-forget
+  if (ctx.config.signupBonus && ctx.config.signupBonus > 0) {
+    try {
+      await pointHooks.onMemberSignedUp(ctx.prisma, {
+        memberId: createdUserId,
+        signupBonus: ctx.config.signupBonus,
+      });
+    } catch {
+      // 실패해도 가입 성공 유지 (idempotent on retry via unique constraint)
     }
   }
 
