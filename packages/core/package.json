@@ -10,7 +10,8 @@
     "./install/diagnostics": "./src/install/diagnostics.ts",
     "./modules": "./src/modules/index.ts",
     "./widgets": "./src/widgets/index.ts",
-    "./widgets/builtin": "./src/widgets/builtin/index.ts"
+    "./widgets/builtin": "./src/widgets/builtin/index.ts",
+    "./addons": "./src/addons/index.ts"
   },
   "scripts": {
     "lint": "echo 'no lint'",

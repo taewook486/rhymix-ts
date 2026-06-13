@@ -13,6 +13,7 @@
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { renderModuleWithLayout } from '@rhymix-ts/core';
+import { runPageView } from '@rhymix-ts/core/addons';
 import { prisma } from '@/lib/db/prisma';
 import { getModuleDefinition } from '@/lib/modules/registry';
 // 레이아웃 레지스트리 초기화 (정적 import — REQ-LAYOUT-009)
@@ -73,10 +74,20 @@ export default async function RootPage() {
   });
 
   // REQ-LAYOUT-041: renderModuleWithLayout으로 레이아웃 감싸기
-  return renderModuleWithLayout({
+  const rendered = renderModuleWithLayout({
     instance,
     moduleOutput,
     prisma,
     request: h,
   });
+
+  // SPEC-ADDON-001 REQ-ADDON-063: 인덱스 모듈 페이지 뷰 후크 실행 (fire-and-forget)
+  const controller = new AbortController();
+  void runPageView(instance.mid, {
+    prisma,
+    request: { mid: instance.mid },
+    domain: null
+  }, controller.signal);
+
+  return rendered;
 }

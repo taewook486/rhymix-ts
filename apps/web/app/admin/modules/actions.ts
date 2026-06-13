@@ -15,6 +15,8 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { getServerCaller } from '@/lib/trpc/server'
 import { getCurrentSiteId } from '@/lib/admin/site-context'
+import { runAdminAction } from '@rhymix-ts/core/addons'
+import { prisma } from '@/lib/db/prisma'
 
 const CreateSchema = z.object({
   moduleCode: z.string().min(1, '모듈 코드를 입력하세요'),
@@ -46,6 +48,13 @@ export async function createModuleAction(
   try {
     const caller = await getServerCaller()
     await caller.admin.module.create({ siteId, ...parsed.data })
+
+    // SPEC-ADDON-001 REQ-ADDON-064: 모듈 생성 후 admin action hook 실행
+    await runAdminAction('module.create', { siteId, ...parsed.data }, {
+      prisma,
+      request: { mid: parsed.data.mid },
+      domain: null
+    })
   } catch (err) {
     if (err instanceof TRPCError) {
       return { error: err.message }
@@ -62,6 +71,14 @@ export async function deleteModuleAction(
   try {
     const caller = await getServerCaller()
     await caller.admin.module.delete({ instanceId })
+
+    // SPEC-ADDON-001 REQ-ADDON-064: 모듈 삭제 후 admin action hook 실행
+    await runAdminAction('module.delete', { instanceId }, {
+      prisma,
+      request: {},
+      domain: null
+    })
+
     revalidatePath('/admin/modules')
     return { ok: true }
   } catch (err) {

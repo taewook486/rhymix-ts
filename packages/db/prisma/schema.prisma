@@ -1040,6 +1040,23 @@ model ThemeAssignment {
   @@map("theme_assignments")
 }
 
+// =====================================================================
+// SPEC-ADDON-001: 애드온 시스템 (Slice A — Foundation)
+// =====================================================================
+
+// REQ-ADDON-020: 애드온 설정 테이블 (전역 단일 행)
+model AddonConfig {
+  name               String    @id
+  enabled            Boolean   @default(true)
+  priority           Int       @default(0)
+  lastDisabledAt     DateTime?
+  lastDisabledReason String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@map("addon_configs")
+}
+
 // 댓글 추천/비추천 로그 (REQ-COMMENT-004)
 model CommentVoteLog {
   id        Int      @id @default(autoincrement())

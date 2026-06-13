@@ -13,6 +13,7 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 import { renderModuleWithLayout } from '@rhymix-ts/core';
+import { runPageView } from '@rhymix-ts/core/addons';
 import { prisma } from '@/lib/db/prisma';
 import { getModuleDefinition } from '@/lib/modules/registry';
 // 레이아웃 레지스트리 초기화 (정적 import — REQ-LAYOUT-009)
@@ -52,10 +53,21 @@ export default async function MidPage({ params, searchParams }: MidPageProps) {
   });
 
   // REQ-LAYOUT-040: 모듈 출력을 레이아웃으로 감싸 반환
-  return renderModuleWithLayout({
+  const rendered = renderModuleWithLayout({
     instance,
     moduleOutput,
     prisma,
     request: h,
   });
+
+  // SPEC-ADDON-001 REQ-ADDON-063: 페이지 뷰 후크 실행 (fire-and-forget)
+  // AbortSignal을 전달하여 요청 취소 시 중단
+  const controller = new AbortController();
+  void runPageView(mid, {
+    prisma,
+    request: { mid },
+    domain: null
+  }, controller.signal);
+
+  return rendered;
 }
