@@ -2,9 +2,9 @@
 id: SPEC-ADMIN-EXTRAS-001
 title: Admin Extras — Export/Import + 잔여 ADMIN REQ 마감
 version: 1.0.0
-status: draft
+status: in-progress
 created: 2026-05-30
-updated: 2026-05-30
+updated: 2026-06-14
 author: MoAI manager-spec
 priority: P2
 phase: 5
@@ -512,8 +512,55 @@ else: pass
 
 ---
 
+---
+
+## 8. Implementation Notes (2026-06-14)
+
+### 구현된 항목 (Slice A + B)
+
+**Slice A: Export/Import + AdminFavorites**
+- `packages/admin/src/export/` — bundle-schema (Zod), serializer (민감정보 redaction 포함)
+- `packages/admin/src/import/` — deserializer (dryRun + conflict report), apply (단일 Prisma 트랜잭션)
+- `packages/admin/src/favorites/` — addFavorite, removeFavorite, reorderFavorites (href 검증 포함)
+- `packages/admin/src/security/two-factor-gate.ts` — getSiteAdminTwoFactorPolicy, checkAdmin2FA
+- tRPC: `admin.export.create`, `admin.import.dryRun`, `admin.import.apply`, `admin.favorite.*`
+- UI: `apps/web/app/admin/settings/export/` — ExportForm + page
+- UI: `apps/web/components/admin/AdminSidebar.tsx` — 즐겨찾기 섹션 + DnD 정렬
+- UI: `apps/web/components/admin/AddToFavoritesButton.tsx`
+
+**Slice B: 잔여 REQ**
+- `apps/web/app/admin/2fa/enroll/` — TwoFactorEnrollForm + page (SPEC-AUTH-001 흐름 재사용)
+- `apps/web/app/admin/2fa/verify/` — TwoFactorVerifyForm + page
+- `apps/web/app/admin/layout.tsx` — 서버사이드 2FA 리다이렉트 강화
+- `apps/web/server/api/trpc.ts` — requireAdmin2FAIfEnabled 미들웨어 (lazy import)
+- `apps/web/server/api/routers/admin/log.ts` — IP/CIDR 필터 (앱 레벨 + DB contains fallback)
+- `apps/web/server/api/routers/admin/module.ts` — bulk(enable/disable/delete) + Domain 인덱스 보호
+- `apps/web/server/api/routers/admin/menu.ts` — items.reorder (cross-level DnD)
+- `apps/web/components/admin/MenuItemDnDTree.tsx` — DnD 확장
+- `packages/ui/src/components/` — Checkbox, Textarea, Label 컴포넌트 추가
+- `vitest.config.ts` — testTimeout 15000ms 상향
+
+### 구현 방식 차이 (계획 대비)
+
+- **two-factor 함수 위치**: 계획은 `admin-middleware.ts` 추가였으나, 기존 `apps/web/lib/auth/two-factor.ts` (SPEC-ADMIN-001 Slice I에서 생성됨)를 재사용. `admin-middleware.ts`는 re-export 형태로 연결.
+- **menu/modules 로직 위치**: 계획은 `packages/admin/src/menu/reorder.ts`, `packages/admin/src/modules/bulk.ts` 신규였으나, tRPC 라우터에 직접 포함 (단순성 우선).
+- **UI 컴포넌트 위치**: `app/admin/_components/` 대신 기존 `components/admin/` 디렉토리에 배치 (프로젝트 기존 구조 준수).
+
+### 미구현 항목 (Deferred)
+
+다음 항목은 본 SPEC의 범위 내에 있으나 이번 구현에서 제외되었으며, 후속 SPEC 또는 별도 이슈로 처리된다:
+
+| 항목 | SPEC REQ | 이유 |
+|---|---|---|
+| `packages/admin/src/import/round-trip.test.ts` | REQ-091 | round-trip 통합 테스트 누락 — 별도 이슈로 추가 필요 |
+| `packages/admin/src/widgets/preset.ts` | REQ-060~065 | WidgetInstance preset 라이브러리 — SPEC-WIDGET-001과 조율 필요 |
+| `apps/web/app/admin/settings/import/page.tsx` | REQ-015 | Import UI 페이지 미구현 — dryRun/apply tRPC는 구현됨 |
+| E2E 테스트 2개 | REQ-092 (일부) | admin-2fa-enforcement.spec.ts, admin-export-import.spec.ts |
+
+---
+
 Version: 1.0.0
-Status: draft (awaiting plan-auditor + user approval)
+Status: in-progress
 Estimated Test Count: 35+ (Slice A: 21+, Slice B: 14+)
 Estimated Slice Count: 2 (A: Export/Import + AdminFavorites, B: 잔여 REQ — 2FA/DnD/Preset/IP 필터/일괄 작업)
 Dependencies (upstream): SPEC-ADMIN-001 ✅ (completed), SPEC-AUTH-001 ✅, SPEC-WIDGET-001 (preset 확장 대상), SPEC-DOCUMENT-001 (선택적 export 대상), SPEC-COMMENT-001 (선택적 export 대상)

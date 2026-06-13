@@ -2,9 +2,9 @@
 id: SPEC-ADMIN-EXTRAS-001-plan
 title: Admin Extras — Implementation Plan
 version: 1.0.0
-status: draft
+status: in-progress
 created: 2026-05-30
-updated: 2026-05-30
+updated: 2026-06-14
 author: MoAI manager-spec
 parent: SPEC-ADMIN-EXTRAS-001
 language: ko
@@ -223,5 +223,54 @@ Slice B 추가:
 
 ---
 
+---
+
+## 8. Implementation Result (2026-06-14)
+
+커밋: `1e6ce2a feat(admin): SPEC-ADMIN-EXTRAS-001 Export/Import/2FA/DnD/IP필터/모듈벌크 구현`
+
+### Slice A 결과
+
+| 계획 파일 | 결과 | 비고 |
+|---|---|---|
+| `packages/admin/src/export/bundle-schema.ts` | 구현 | |
+| `packages/admin/src/export/serializer.ts` | 구현 | |
+| `packages/admin/src/import/deserializer.ts` | 구현 | |
+| `packages/admin/src/import/apply.ts` | 구현 | |
+| `packages/admin/src/import/round-trip.test.ts` | Deferred | 후속 이슈 필요 |
+| `packages/admin/src/favorites/actions.ts` | 구현 | |
+| tRPC export/import/favorite 라우터 | 구현 | |
+| `apps/web/app/admin/settings/export/page.tsx` | 구현 | |
+| `apps/web/app/admin/settings/import/page.tsx` | Deferred | tRPC는 구현됨 |
+| `apps/web/components/admin/AdminSidebar.tsx` (확장) | 구현 | 위치: `components/admin/` |
+| `apps/web/components/admin/AddToFavoritesButton.tsx` | 구현 | 위치: `components/admin/` |
+| E2E: admin-export-import.spec.ts | Deferred | |
+
+### Slice B 결과
+
+| 계획 파일 | 결과 | 비고 |
+|---|---|---|
+| `packages/admin/src/security/two-factor-gate.ts` | 구현 | |
+| `apps/web/app/admin/layout.tsx` 강화 | 구현 | |
+| `apps/web/app/admin/2fa/enroll/page.tsx` | 구현 | |
+| `apps/web/app/admin/2fa/verify/page.tsx` | 구현 | |
+| E2E: admin-2fa-enforcement.spec.ts | Deferred | |
+| `packages/admin/src/menu/reorder.ts` | 대안 구현 | 로직이 admin/menu.ts에 포함 |
+| `apps/web/app/admin/menu/page.tsx` DnD 확장 | 구현 | MenuItemDnDTree.tsx 확장 |
+| `packages/admin/src/logs/ip-filter.ts` | 구현 | |
+| `apps/web/app/admin/logs/page.tsx` IP 필터 | 구현 | |
+| `packages/admin/src/modules/bulk.ts` | 대안 구현 | 로직이 admin/module.ts에 포함 |
+| `apps/web/app/admin/modules/page.tsx` | 구현 | |
+| `packages/admin/src/widgets/preset.ts` | Deferred | SPEC-WIDGET-001 조율 필요 |
+| `apps/web/app/admin/widgets/page.tsx` 프리셋 | Deferred | preset.ts 미구현으로 인해 |
+
+### 테스트 결과
+
+- packages/admin: 36/36 통과
+- apps/web admin 라우터: 83/83 통과
+- `pnpm tsc --noEmit`: 신규 파일 기준 0 오류
+
+---
+
 Version: 1.0.0
-Status: draft (awaiting plan-auditor + user approval)
+Status: in-progress
