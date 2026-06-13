@@ -127,4 +127,70 @@ export const adminModuleRouter = router({
         throw err;
       }
     }),
+
+  /**
+   * 모듈 인스턴스 일괄 작업 — SPEC-ADMIN-EXTRAS-001 Slice B.
+   *
+   * enable/disable/delete 일괄 처리.
+   * delete 시 indexModuleInstanceId 체크.
+   *
+   * @MX:SPEC: SPEC-ADMIN-EXTRAS-001 REQ-MODULE-001~003
+   */
+  bulk: protectedAdminProcedure
+    .input(
+      z.object({
+        action: z.enum(['enable', 'disable', 'delete']),
+        instanceIds: z.array(z.number().int().positive()).min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // delete 전 체크: 도메인의 인덱스 모듈로 사용 중인 경우 reject
+      if (input.action === 'delete') {
+        const domain = await ctx.prisma.domain.findFirst({
+          where: {
+            indexModuleInstanceId: { in: input.instanceIds },
+          },
+          select: { id: true, hostname: true, indexModuleInstanceId: true },
+        });
+
+        if (domain) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `Cannot delete index module instance ${domain.indexModuleInstanceId} (used by domain "${domain.hostname}")`,
+          });
+        }
+      }
+
+      // 단일 트랜잭션: 모든 인스턴스에 action 적용
+      await ctx.prisma.$transaction(
+        input.instanceIds.map((instanceId) => {
+          if (input.action === 'delete') {
+            return ctx.prisma.moduleInstance.delete({
+              where: { id: instanceId },
+            });
+          }
+          // enable/disable: rssEnabled 토글
+          return ctx.prisma.moduleInstance.update({
+            where: { id: instanceId },
+            data: {
+              rssEnabled: input.action === 'enable',
+            },
+          });
+        }),
+      );
+
+      // AdminLog 기록 (action: module.bulk.{action})
+      await ctx.prisma.adminLog.create({
+        data: {
+          actorId: ctx.session.user.id,
+          action: `module.bulk.${input.action}`,
+          target: `instances:${input.instanceIds.length}`,
+          diff: { instanceIds: input.instanceIds },
+          ip: ctx.ip ?? null,
+          userAgent: ctx.userAgent ?? null,
+        },
+      });
+
+      return { updated: input.instanceIds.length };
+    }),
 });

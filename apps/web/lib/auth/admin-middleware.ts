@@ -1,5 +1,5 @@
 /**
- * Admin authorization helper — SPEC-AUTH-001 Slice D2.
+ * Admin authorization helper — SPEC-AUTH-001 Slice D2 + SPEC-ADMIN-EXTRAS-001 Slice B.
  *
  * Server Action / Route Handler 안에서 호출 가능한 순수 헬퍼. NextAuth 미들웨어
  * 라우트 파일(`apps/web/middleware.ts`)은 D2 범위 외이며, 실제 admin UI 라우트가
@@ -19,6 +19,8 @@ export interface AdminSessionUser {
 export interface AdminSession {
   user: AdminSessionUser;
 }
+
+import type { PrismaClient } from '@prisma/client';
 
 /**
  * 세션이 effective admin 인지 판정 (REQ-AUTH-034).
@@ -60,4 +62,21 @@ export function isAdminSession(
   return groups.some(
     (g) => g !== null && typeof g === 'object' && (g as { isAdmin?: unknown }).isAdmin === true,
   );
+}
+
+/**
+ * 사이트의 관리자 2FA 정책 확인 (SPEC-ADMIN-EXTRAS-001 REQ-2FA-001).
+ * 기본 siteId=1 사용.
+ */
+export async function isAdminTwoFactorRequired(prisma: PrismaClient): Promise<boolean> {
+  const { getSiteAdminTwoFactorPolicy } = await import('@rhymix-ts/admin/security');
+  return getSiteAdminTwoFactorPolicy(prisma, 1);
+}
+
+/**
+ * 세션에 2FA 인증이 완료됐는지 확인 (SPEC-ADMIN-EXTRAS-001 REQ-2FA-002).
+ */
+export function isSessionTwoFactorVerified(session: AdminSession): boolean {
+  const user = session.user as AdminSessionUser & { twoFactorVerified?: boolean };
+  return user.twoFactorVerified === true;
 }

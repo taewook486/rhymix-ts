@@ -28,9 +28,10 @@ vi.mock('@/lib/db/prisma', () => ({
 // Prisma mock
 // ---------------------------------------------------------------------------
 
-const mockAdminFavoriteFindMany = vi.fn();
+const mockAdminFavoriteFindMany = vi.fn().mockResolvedValue([]);
 const mockAdminFavoriteCreate = vi.fn();
 const mockAdminFavoriteDelete = vi.fn();
+const mockAdminFavoriteCount = vi.fn().mockResolvedValue(0);
 const mockTransaction = vi.fn().mockImplementation(async (ops: unknown[]) => Promise.all(ops));
 const mockSiteSettingFindFirst = vi.fn();
 
@@ -43,6 +44,7 @@ const mockPrisma = {
     create: (...args: unknown[]) => mockAdminFavoriteCreate(...args),
     delete: (...args: unknown[]) => mockAdminFavoriteDelete(...args),
     update: vi.fn().mockResolvedValue({}),
+    count: (...args: unknown[]) => mockAdminFavoriteCount(...args),
   },
   adminLog: { create: vi.fn().mockResolvedValue({ id: BigInt(1) }) },
   $transaction: (...args: unknown[]) => mockTransaction(...args),

@@ -1,0 +1,33 @@
+{
+  "name": "@rhymix-ts/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./export": "./src/export/index.ts",
+    "./import": "./src/import/index.ts",
+    "./security": "./src/security/index.ts",
+    "./logs": "./src/logs/index.ts",
+    "./favorites": "./src/favorites/index.ts"
+  },
+  "scripts": {
+    "lint": "echo 'no lint'",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist .turbo",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@prisma/client": "*",
+    "ipaddr.js": "^2.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.8",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.0",
+    "vitest": "^2.1.8"
+  }
+}

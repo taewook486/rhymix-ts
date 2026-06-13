@@ -81,4 +81,148 @@ export const adminMenuRouter = router({
     .mutation(({ ctx, input }) =>
       ctx.prisma.menu.delete({ where: { id: input.id } }),
     ),
+
+  /**
+   * 메뉴 항목 재정렬 — SPEC-ADMIN-EXTRAS-001 Slice B.
+   *
+   * cycle detection O(depth), depth violation check.
+   * menuMaxDepth = 6.
+   *
+   * @MX:SPEC: SPEC-ADMIN-EXTRAS-001 REQ-MENU-001~004
+   */
+  'items.reorder': protectedAdminProcedure
+    .input(
+      z.object({
+        menuId: z.number().int().positive(),
+        ops: z.array(
+          z.object({
+            itemId: z.number().int().positive(),
+            newParentId: z.number().int().positive().nullable(),
+            newListOrder: z.number().int().min(0),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const menuMaxDepth = 6;
+
+      // 1. 전체 메뉴 트리 로드 (순환 탐지용)
+      const allItems = await ctx.prisma.menuItem.findMany({
+        where: { menuId: input.menuId },
+        select: { id: true, parentId: true },
+      });
+
+      // 자식 → 부분 맵 빌드 (순회용)
+      const childrenMap = new Map<number, number[]>();
+      for (const item of allItems) {
+        if (!childrenMap.has(item.parentId ?? 0)) {
+          childrenMap.set(item.parentId ?? 0, []);
+        }
+        childrenMap.get(item.parentId ?? 0)!.push(item.id);
+      }
+
+      // 깊이 계산 함수
+      const getDepth = (itemId: number, visited = new Set<number>()): number => {
+        if (visited.has(itemId)) {
+          return Infinity; // cycle detected
+        }
+        visited.add(itemId);
+
+        const parent = allItems.find((i) => i.id === itemId);
+        if (!parent || parent.parentId === null) {
+          return 0;
+        }
+        return 1 + getDepth(parent.parentId, visited);
+      };
+
+      // 서브트리 깊이 계산 함수
+      const getSubtreeDepth = (itemId: number): number => {
+        let maxChildDepth = 0;
+        const children = childrenMap.get(itemId) ?? [];
+        for (const childId of children) {
+          const childDepth = getSubtreeDepth(childId);
+          if (childDepth === Infinity) {
+            return Infinity; // cycle in subtree
+          }
+          maxChildDepth = Math.max(maxChildDepth, childDepth);
+        }
+        return maxChildDepth + 1;
+      };
+
+      // 2. 각 op 검증
+      for (const op of input.ops) {
+        const item = allItems.find((i) => i.id === op.itemId);
+        if (!item) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `MenuItem ${op.itemId} not found`,
+          });
+        }
+
+        // 순환 탐지: newParentId가 itemId의 자손이면 안 됨
+        if (op.newParentId !== null) {
+          const isDescendant = (parentId: number, targetId: number): boolean => {
+            if (parentId === targetId) {
+              return true;
+            }
+            const children = childrenMap.get(parentId) ?? [];
+            for (const childId of children) {
+              if (isDescendant(childId, targetId)) {
+                return true;
+              }
+            }
+            return false;
+          };
+
+          if (isDescendant(op.itemId, op.newParentId)) {
+            throw new TRPCError({
+              code: 'UNPROCESSABLE_CONTENT',
+              message: `Cycle detected: ${op.newParentId} is a descendant of ${op.itemId}`,
+            });
+          }
+
+          // newParentId 깊이 계산
+          const newParentDepth = getDepth(op.newParentId);
+          const subtreeDepth = getSubtreeDepth(op.itemId);
+
+          // depth violation check
+          if (newParentDepth + subtreeDepth > menuMaxDepth) {
+            throw new TRPCError({
+              code: 'UNPROCESSABLE_CONTENT',
+              message: `Depth violation: would exceed max depth of ${menuMaxDepth}`,
+            });
+          }
+        }
+      }
+
+      // 3. 단일 트랜잭션: 모든 itemId 업데이트
+      await ctx.prisma.$transaction(
+        input.ops.map((op) =>
+          ctx.prisma.menuItem.update({
+            where: { id: op.itemId },
+            data: {
+              parentId: op.newParentId,
+              listOrder: op.newListOrder,
+            },
+          }),
+        ),
+      );
+
+      // 4. 캐시 무효화 (menu:{menuId})
+      // TODO: cache tag invalidation 구현
+
+      // 5. AdminLog 기록 (action: menu.reorder)
+      await ctx.prisma.adminLog.create({
+        data: {
+          actorId: ctx.session.user.id,
+          action: 'menu.reorder',
+          target: `menu:${input.menuId}`,
+          diff: { ops: input.ops },
+          ip: ctx.ip ?? null,
+          userAgent: ctx.userAgent ?? null,
+        },
+      });
+
+      return { updated: input.ops.length };
+    }),
 });

@@ -1,13 +1,15 @@
 'use client'
 /**
- * AdminLog 필터 UI — SPEC-ADMIN-001 Slice D.
+ * AdminLog 필터 UI — SPEC-ADMIN-001 Slice D + SPEC-ADMIN-EXTRAS-001 Slice B.
  *
  * URL 쿼리 파라미터 동기화 (router.push).
- * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-072
+ * SPEC-ADMIN-EXTRAS-001 Slice B: IP 필터 추가.
+ * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-072, SPEC-ADMIN-EXTRAS-001 REQ-LOG-IP-001~002
  */
 import { useRouter, usePathname } from 'next/navigation'
-import { useTransition } from 'react'
+import { useTransition, useState } from 'react'
 import { Button, Input, Label } from '@rhymix-ts/ui/components'
+import { toast } from 'sonner'
 
 interface AdminLogFiltersProps {
   initial: {
@@ -17,6 +19,7 @@ interface AdminLogFiltersProps {
     from?: string
     to?: string
     page?: string
+    ip?: string
   }
 }
 
@@ -24,11 +27,26 @@ export function AdminLogFilters({ initial }: AdminLogFiltersProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [pending, startTransition] = useTransition()
+  const [ipError, setIpError] = useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
     const params = new URLSearchParams()
+
+    // IP 필터 유효성 검사
+    const ipValue = fd.get('ip') as string | null
+    if (ipValue && ipValue.trim()) {
+      // 간단한 IP 형식 검사 (CIDR 허용)
+      const ipPattern = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$|^[\d:]+(\/\d{1,2})?$/
+      if (!ipPattern.test(ipValue.trim())) {
+        setIpError('올바른 IP 주소 또는 CIDR 표기를 입력하세요 (예: 192.168.1.1 또는 10.0.0.0/24)')
+        toast.error('IP 주소 형식이 올바르지 않습니다')
+        return
+      }
+      setIpError(null)
+    }
+
     for (const [key, value] of fd.entries()) {
       if (value && typeof value === 'string' && value.trim()) {
         params.set(key, value.trim())
@@ -42,6 +60,7 @@ export function AdminLogFilters({ initial }: AdminLogFiltersProps) {
   }
 
   function handleReset() {
+    setIpError(null)
     startTransition(() => {
       router.push(pathname)
     })
@@ -79,6 +98,21 @@ export function AdminLogFilters({ initial }: AdminLogFiltersProps) {
           placeholder="menu:1"
           className="w-32 h-8 text-sm"
         />
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="filter-ip">IP</Label>
+        <Input
+          id="filter-ip"
+          name="ip"
+          type="text"
+          defaultValue={initial.ip}
+          placeholder="192.168.1.1 또는 10.0.0.0/24"
+          className="w-48 h-8 text-sm"
+          onChange={() => setIpError(null)}
+        />
+        {ipError && (
+          <p className="text-xs text-red-600 mt-1">{ipError}</p>
+        )}
       </div>
       <div className="space-y-1">
         <Label htmlFor="filter-from">시작일</Label>

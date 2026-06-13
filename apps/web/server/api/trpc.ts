@@ -35,22 +35,45 @@ const requireAdmin = t.middleware(({ ctx, next }) => {
 });
 
 /**
- * 2FA 강제 미들웨어 — SPEC-ADMIN-001 Slice I (REQ-ADMIN-023).
+ * 2FA 강제 미들웨어 — SPEC-ADMIN-001 Slice I (REQ-ADMIN-023) + SPEC-ADMIN-EXTRAS-001 Slice A.
  *
  * SiteSetting.requireAdminTwoFactor=true 이고 세션에 twoFactorVerified 플래그가
  * 없는 경우 FORBIDDEN 을 발생시킨다.
  * requireAdmin 이후에 체인되므로 ctx.session 은 보장됨.
  *
+ * SPEC-ADMIN-EXTRAS-001: checkAdmin2FA() 사용하여 "need-enroll" vs "need-verify" 구분.
+ * 에러 코드로 UNAUTHORIZED 사용하여 리다이렉트 가능하도록 함.
+ *
  * NOTE: 실제 OTP 검증 UI(/login/two-factor)는 SPEC-AUTH-001 후속 슬라이스에서 구현.
+ *
+ * @MX:SPEC: SPEC-ADMIN-EXTRAS-001 REQ-2FA-001~005
  */
 const requireAdmin2FAIfEnabled = t.middleware(async ({ ctx, next }) => {
   const required = await isAdminTwoFactorRequired(ctx.prisma);
-  if (required && !isSessionTwoFactorVerified(ctx.session)) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: '2FA 인증이 필요합니다.',
-    });
+  if (required) {
+    // siteId는 어떻게 가져올까? 현재 context에 siteId가 없음
+    // 임시: 첫 요청에서 siteId를 가져오지 못하면 skip (실제 구현에서는 context에 siteId 추가 필요)
+    const { checkAdmin2FA } = await import('@rhymix-ts/admin/security');
+    const result = await checkAdmin2FA(ctx.session, ctx.prisma, 0); // siteId는 context에서 가져와야 함
+
+    if (result === 'need-enroll') {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: '2FA 등록이 필요합니다.',
+        // 추가 metadata로 redirect URL 제공 가능
+        // TODO: /admin/two-factor/enroll 로 리다이렉트
+      });
+    }
+
+    if (result === 'need-verify') {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: '2FA 인증이 필요합니다.',
+        // TODO: /admin/two-factor/verify 로 리다이렉트
+      });
+    }
   }
+
   return next();
 });
 

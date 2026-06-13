@@ -10,6 +10,7 @@
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-090~093
  */
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { router, protectedAdminProcedure } from '../../trpc';
 
 export const adminFavoriteRouter = router({
@@ -25,6 +26,11 @@ export const adminFavoriteRouter = router({
 
   /**
    * 즐겨찾기 추가 (REQ-ADMIN-091).
+   *
+   * SPEC-ADMIN-EXTRAS-001 Slice B: href validation (/admin/ prefix only),
+   * favoriteMaxCount = 50 guard.
+   *
+   * @MX:SPEC: SPEC-ADMIN-EXTRAS-001 REQ-FAV-001~002
    */
   add: protectedAdminProcedure
     .input(
@@ -35,6 +41,30 @@ export const adminFavoriteRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // href validation
+      const { validateFavoriteHref, FAVORITE_MAX_COUNT } = await import(
+        '@rhymix-ts/admin/favorites'
+      );
+
+      if (!validateFavoriteHref(input.href)) {
+        throw new TRPCError({
+          code: 'UNPROCESSABLE_CONTENT',
+          message: 'href must start with /admin/ and be path-only (no protocol/host)',
+        });
+      }
+
+      // favoriteMaxCount guard
+      const currentCount = await ctx.prisma.adminFavorite.count({
+        where: { memberId: ctx.session.user.id },
+      });
+
+      if (currentCount >= FAVORITE_MAX_COUNT) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: `Maximum ${FAVORITE_MAX_COUNT} favorites allowed`,
+        });
+      }
+
       // 현재 최대 listOrder + 1 로 추가
       const last = await ctx.prisma.adminFavorite.findMany({
         where: { memberId: ctx.session.user.id },
