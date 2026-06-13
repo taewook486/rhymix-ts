@@ -13,6 +13,19 @@ export type { ImageProcessResult } from './image-pipeline.js';
 export { registerFileEventSubscribers, cascadeDeleteByDocumentId, cascadeDeleteByCommentId } from './events.js';
 export type { FileEventSubscriberContext, FileEventEmitters } from './events.js';
 
+// Admin functions
+export {
+  setCoverImage,
+  clearCoverImage,
+  listMyAttachments,
+  listOrphans,
+  purgeOrphans,
+  cascadeRebuild,
+  orphanCleanupTask,
+  migrateStorage,
+} from './admin.js';
+export type { MigrateStorageOptions } from './admin.js';
+
 // Server layer exports
 export { createFileRouter } from './server/router.js';
 

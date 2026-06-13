@@ -32,6 +32,15 @@ import {
   type CompleteUploadInput,
   type DeleteAttachmentInput,
 } from '../attachment.js';
+import {
+  setCoverImage as setCoverImageDomain,
+  clearCoverImage as clearCoverImageDomain,
+  listMyAttachments as listMyAttachmentsDomain,
+  listOrphans as listOrphansDomain,
+  purgeOrphans as purgeOrphansDomain,
+  cascadeRebuild as cascadeRebuildDomain,
+} from '../admin.js';
+import { getStorage } from '../storage/factory.js';
 
 // Prisma 확장 타입 (FileAttachment 모델)
 interface PrismaWithFileAttachment {
@@ -336,8 +345,17 @@ export function createFileRouter<
       )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mutation(async ({ ctx, input }: { ctx: ProCtx; input: any }) => {
-        // TODO: Slice C backend - setCoverImage 구현 필요
-        throw new Error('setCoverImage not implemented yet - Slice C');
+        try {
+          return await setCoverImageDomain(
+            input,
+            {
+              prisma: ctx.prisma,
+              actor: { id: ctx.session.user.id.toString(), isAdmin: ctx.session.user.isAdmin },
+            },
+          );
+        } catch (err) {
+          mapDomainError(err);
+        }
       }),
 
     /**
@@ -355,8 +373,17 @@ export function createFileRouter<
       )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .mutation(async ({ ctx, input }: { ctx: ProCtx; input: any }) => {
-        // TODO: Slice C backend - clearCoverImage 구현 필요
-        throw new Error('clearCoverImage not implemented yet - Slice C');
+        try {
+          return await clearCoverImageDomain(
+            input,
+            {
+              prisma: ctx.prisma,
+              actor: { id: ctx.session.user.id.toString(), isAdmin: ctx.session.user.isAdmin },
+            },
+          );
+        } catch (err) {
+          mapDomainError(err);
+        }
       }),
 
     /**
@@ -374,8 +401,10 @@ export function createFileRouter<
       )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .query(async ({ ctx, input }: { ctx: ProCtx; input: any }) => {
-        // TODO: Slice C backend - listMyAttachments 구현 필요
-        throw new Error('listMyAttachments not implemented yet - Slice C');
+        return await listMyAttachmentsDomain(
+          { memberId: ctx.session.user.id.toString(), ...input },
+          { prisma: ctx.prisma },
+        );
       }),
 
     /**
@@ -398,8 +427,7 @@ export function createFileRouter<
         )
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .query(async ({ ctx, input }: { ctx: ProCtx; input: any }) => {
-          // TODO: Slice C backend - listOrphans 구현 필요
-          throw new Error('listOrphans not implemented yet - Slice C');
+          return await listOrphansDomain(input, { prisma: ctx.prisma });
         }),
 
       /**
@@ -412,8 +440,7 @@ export function createFileRouter<
         .input(z.object({ olderThanDays: z.number().int().min(0) }))
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .mutation(async ({ ctx, input }: { ctx: ProCtx; input: any }) => {
-          // TODO: Slice C backend - purgeOrphans 구현 필요
-          throw new Error('purgeOrphans not implemented yet - Slice C');
+          return await purgeOrphansDomain(input, { prisma: ctx.prisma, storage: getStorage() });
         }),
 
       /**
@@ -432,8 +459,7 @@ export function createFileRouter<
         )
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .mutation(async ({ ctx, input }: { ctx: ProCtx; input: any }) => {
-          // TODO: Slice C backend - cascadeRebuild 구현 필요
-          throw new Error('cascadeRebuild not implemented yet - Slice C');
+          return await cascadeRebuildDomain(input, { prisma: ctx.prisma });
         }),
     }),
   });
