@@ -12,7 +12,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
 import { getDocument } from '@rhymix-ts/document';
 import { listComments } from '@rhymix-ts/comment';
-import { listAttachments } from '../attachment';
+import { listAttachments } from '@rhymix-ts/file';
 
 // ---------------------------------------------------------------------------
 // Props

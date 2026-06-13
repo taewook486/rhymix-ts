@@ -56,25 +56,6 @@ export * from '@rhymix-ts/comment';
 // permissions, category: 이미 export * from '@rhymix-ts/document'로 re-export됨
 
 // SPEC-CONTENT-001 Slice E — File Attachments + Rate Limiting
-export {
-  requestUpload,
-  completeUpload,
-  deleteAttachment,
-  listAttachments,
-  UnsupportedMimeTypeError,
-  FileTooLargeError,
-  InvalidUploadTokenError,
-  UploadHeadMismatchError,
-  VirusDetectedError,
-  AttachmentOwnershipError,
-} from './attachment';
-export type { RequestUploadInput, RequestUploadResult, CompleteUploadInput } from './attachment';
+// Moved to @rhymix-ts/file package (SPEC-FILE-001 Slice A)
 
 // rate-limit: 이미 export * from '@rhymix-ts/document'로 re-export됨
-
-export { NoopScanner, FakeMalwareScanner } from './storage/scanner';
-export { ClamAVScanner, ClamAVConnectionError } from './storage/clamav';
-export type { ClamAVScannerOptions } from './storage/clamav';
-export { InMemoryStorage } from './storage/memory';
-export { S3Storage } from './storage/s3';
-export type { FileStorage, VirusScanner } from './storage/types';

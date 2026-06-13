@@ -25,6 +25,7 @@ import {
   SelfVoteNotAllowedError,
   CommentAlreadyReportedError,
 } from './errors.js';
+import { emitCommentDeleted } from './events.js';
 
 // ---------------------------------------------------------------------------
 // HTML sanitize
@@ -254,7 +255,7 @@ export async function deleteComment(
     throw new DocumentOwnershipError(parsed.id);
   }
 
-  return ctx.prisma.$transaction(async (tx) => {
+  const updated = await ctx.prisma.$transaction(async (tx) => {
     const updated = await tx.comment.update({
       where: { id: parsed.id },
       data: { deletedAt: new Date() },
@@ -267,6 +268,16 @@ export async function deleteComment(
 
     return updated;
   });
+
+  // 이벤트 발행: 파일 cascade delete 트리거
+  emitCommentDeleted({
+    commentId: updated.id,
+    documentId: updated.documentId,
+    boardId: updated.boardId,
+    deletedById: parsed.actor.userId,
+  });
+
+  return updated;
 }
 
 // ---------------------------------------------------------------------------

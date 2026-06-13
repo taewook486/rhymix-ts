@@ -283,9 +283,11 @@ interface PrismaWithFileAttachment {
     findUniqueOrThrow(args: { where: { id: number } }): Promise<FileAttachment & { memberId: string | null; storageKey: string }>;
     findMany(args: { where: Record<string, unknown>; orderBy?: Record<string, string> }): Promise<FileAttachment[]>;
     delete(args: { where: { id: number } }): Promise<FileAttachment>;
+    updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
   };
   document: {
     update(args: { where: { id: number }; data: Record<string, unknown> }): Promise<unknown>;
   };
   $transaction<T>(fn: (tx: PrismaWithFileAttachment) => Promise<T>): Promise<T>;
 }
+

@@ -14,16 +14,20 @@ import {
   completeUpload,
   deleteAttachment,
   listAttachments,
+} from '@rhymix-ts/file';
+import {
   checkRateLimit,
   recordAttempt,
   RateLimitedError,
+} from '@rhymix-ts/board';
+import {
   UnsupportedMimeTypeError,
   FileTooLargeError,
   InvalidUploadTokenError,
   UploadHeadMismatchError,
   VirusDetectedError,
   AttachmentOwnershipError,
-} from '@rhymix-ts/board';
+} from '@rhymix-ts/file';
 
 /**
  * Attachment 도메인 예외를 TRPCError 로 변환.

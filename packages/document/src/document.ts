@@ -35,6 +35,7 @@ import { incrementDocumentCount } from './category';
 import { softDeleteDocument } from './trash';
 import { recordUpdate } from './history';
 import { buildExtraVarsSchema } from './extra-vars-schema';
+import { emitDocumentDeleted } from './events';
 
 // ---------------------------------------------------------------------------
 // Slice F: extraVars 관련 에러 클래스
@@ -394,6 +395,13 @@ export async function deleteDocument(
     },
     ctx,
   );
+
+  // 이벤트 발행: 파일 cascade delete 트리거
+  emitDocumentDeleted({
+    documentId: document.id,
+    boardId: document.boardId,
+    deletedById: parsed.actor.userId,
+  });
 
   return document;
 }

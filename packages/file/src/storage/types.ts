@@ -44,6 +44,22 @@ export interface FileStorage {
    * 메타데이터 조회 — completeUpload 시 실제 사이즈/Content-Type 검증용.
    */
   head(key: string): Promise<{ size: number; contentType: string } | null>;
+
+  /**
+   * 직접 쓰기 — local disk backend 전용. S3는 presigned URL 사용.
+   * @MX:NOTE [AUTO]: upload route에서 STORAGE_BACKEND=local일 때만 호출.
+   */
+  write?(input: { key: string; body: Buffer | Uint8Array; contentType: string }): Promise<void>;
+
+  /**
+   * 직접 읽기 — local disk backend 전용 (sharp pipeline, download stream 용).
+   */
+  read?(key: string): Promise<Buffer | null>;
+
+  /**
+   * 스트리밍 읽기 — download route에서 response body로 직접 파이프.
+   */
+  streamRead?(key: string): import('node:fs').ReadStream | null;
 }
 
 /**

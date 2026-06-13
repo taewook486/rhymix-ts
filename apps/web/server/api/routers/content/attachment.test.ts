@@ -150,7 +150,7 @@ describe('content.attachment tRPC router (Slice E)', () => {
   it('C-4: requestUpload MIME 위반 → BAD_REQUEST', async () => {
     const { createCallerFactory } = await import('../../trpc');
     const { contentAttachmentRouter } = await import('./attachment');
-    const { UnsupportedMimeTypeError } = await import('@rhymix-ts/board');
+    const { UnsupportedMimeTypeError } = await import('@rhymix-ts/file');
 
     mockRequestUpload.mockRejectedValue(
       new UnsupportedMimeTypeError('application/x-msdownload', ['image/png']),
@@ -184,7 +184,7 @@ describe('content.attachment tRPC router (Slice E)', () => {
   it('C-6: complete 위변조 token → UNAUTHORIZED', async () => {
     const { createCallerFactory } = await import('../../trpc');
     const { contentAttachmentRouter } = await import('./attachment');
-    const { InvalidUploadTokenError } = await import('@rhymix-ts/board');
+    const { InvalidUploadTokenError } = await import('@rhymix-ts/file');
 
     mockCompleteUpload.mockRejectedValue(new InvalidUploadTokenError('서명 불일치'));
 

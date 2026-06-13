@@ -17,8 +17,8 @@
 import { auth } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
 import type { AdminSession } from '@/lib/auth/admin-middleware';
-import type { FileStorage, VirusScanner } from '@rhymix-ts/board';
-import { NoopScanner, InMemoryStorage } from '@rhymix-ts/board';
+import type { FileStorage, VirusScanner } from '@rhymix-ts/file';
+import { NoopScanner, InMemoryStorage } from '@rhymix-ts/file';
 
 // 앱 수준 singleton — 모듈 로드 시 한 번만 생성
 let _storage: FileStorage | null = null;
@@ -35,7 +35,7 @@ function getStorage(): FileStorage {
       // S3Storage 는 동적 import (AWS SDK 의존성 분리)
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-        const { S3Storage } = require('@rhymix-ts/board') as typeof import('@rhymix-ts/board');
+        const { S3Storage } = require('@rhymix-ts/file') as typeof import('@rhymix-ts/file');
         _storage = new S3Storage({
           bucket,
           region,

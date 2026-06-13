@@ -29,6 +29,8 @@ export interface ClamAVScannerOptions {
   port?: number;
   /** 소켓 타임아웃 ms (기본값: 10000) */
   timeout?: number;
+  /** 스캔 실패 시 fail-open (true=clean 반환, false=error throw) */
+  failOpen?: boolean;
 }
 
 /**
@@ -41,11 +43,13 @@ export class ClamAVScanner implements VirusScanner {
   private readonly host: string;
   private readonly port: number;
   private readonly timeout: number;
+  private readonly failOpen: boolean;
 
   constructor(opts: ClamAVScannerOptions = {}) {
     this.host = opts.host ?? 'localhost';
     this.port = opts.port ?? 3310;
     this.timeout = opts.timeout ?? 10_000;
+    this.failOpen = opts.failOpen ?? false;
   }
 
   async scan(input: {
@@ -59,11 +63,19 @@ export class ClamAVScanner implements VirusScanner {
       return { clean: true, scannedAt: new Date() };
     }
 
-    // presigned GET URL 로 파일 다운로드
-    const downloadUrl = await input.storage.getDownloadUrl({ key: input.storageKey });
-    const fileBuffer = await this.downloadBuffer(downloadUrl);
-
-    return this.scanBuffer(fileBuffer);
+    try {
+      // presigned GET URL 로 파일 다운로드
+      const downloadUrl = await input.storage.getDownloadUrl({ key: input.storageKey });
+      const fileBuffer = await this.downloadBuffer(downloadUrl);
+      return await this.scanBuffer(fileBuffer);
+    } catch (error) {
+      // fail-open 모드: 스캔 실패 시 clean 반환 (운영 안정성 우선)
+      if (this.failOpen) {
+        return { clean: true, scannedAt: new Date() };
+      }
+      // fail-closed 모드: 스캔 실패 시 error throw (보안 우선)
+      throw error;
+    }
   }
 
   /**
