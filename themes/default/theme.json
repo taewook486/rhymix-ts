@@ -5,7 +5,7 @@
   "layouts": ["default"],
   "skins": {},
   "widgetStyles": [],
-  "supportsDarkMode": false,
+  "supportsDarkMode": true,
   "tokensSchema": {
     "colors": {
       "primary": "#000000",
@@ -25,6 +25,14 @@
       "sm": "0.25rem",
       "md": "0.375rem",
       "lg": "0.5rem"
+    },
+    "dark": {
+      "colors": {
+        "primary": "#60A5FA",
+        "background": "#0F172A",
+        "foreground": "#F8FAFC",
+        "accent": "#34D399"
+      }
     }
   }
 }

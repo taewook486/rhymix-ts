@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
+import { DarkModeToggle } from '@/components/theme/DarkModeToggle';
 
 export async function GlobalHeader() {
   const h = await headers();
@@ -45,7 +46,8 @@ export async function GlobalHeader() {
             ))}
           </ul>
         </nav>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
+          <DarkModeToggle />
           <Link href="/login" className="text-sm text-gray-500 hover:text-blue-600">
             로그인
           </Link>

@@ -29,6 +29,14 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
+    setupFiles: ['./apps/web/vitest.setup.ts'],
+    environmentOptions: {
+      jsdom: {
+        // jsdom 환경에서는 globals 활성화
+        globals: true,
+      },
+    },
+    setupFiles: ['./apps/web/vitest.setup.ts'],
     environmentMatchGlobs: [
       ['packages/board/src/components/**/*.test.tsx', 'jsdom'],
       // SPEC-LAYOUT-001: themes DefaultLayout 렌더링 테스트
@@ -38,6 +46,15 @@ export default defineConfig({
       ['apps/web/lib/widgets/**/*.test.ts', 'jsdom'],
       ['apps/web/lib/widgets/**/*.test.tsx', 'jsdom'],
       ['apps/web/app/admin/widgets/**/*.test.tsx', 'jsdom'],
+      // SPEC-THEME-POLISH-001: 다크모드 및 admin site design 컴포넌트 테스트
+      ['apps/web/components/theme/**/*.test.tsx', 'jsdom'],
+      ['apps/web/components/admin/site-design/**/*.test.tsx', 'jsdom'],
+      ['packages/core/src/widgets/**/*.test.tsx', 'jsdom'],
+      ['apps/web/lib/widgets/**/*.test.ts', 'jsdom'],
+      ['apps/web/lib/widgets/**/*.test.tsx', 'jsdom'],
+      ['apps/web/app/admin/widgets/**/*.test.tsx', 'jsdom'],
+      // SPEC-THEME-POLISH-001: 다크모드 컴포넌트 테스트
+      ['apps/web/components/theme/**/*.test.tsx', 'jsdom'],
     ],
     env: {
       // DB 없는 환경에서 통합 테스트를 기본으로 skip한다.
