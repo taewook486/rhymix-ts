@@ -9,14 +9,18 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { PrismaClient } from '@prisma/client'
 
-// service 목 처리 (DOMPurify 의존성 격리)
-vi.mock('./service.js', async () => {
-  const actual = await vi.importActual<typeof import('./service')>('./service.js')
-  return {
-    ...actual,
-    // sanitizePageBody 는 테스트에서 실제 구현 사용 (isomorphic-dompurify)
-  }
-})
+// PageBody를 동기 컴포넌트로 mock — async PageBody는 renderToStaticMarkup에서 suspend
+vi.mock('./components/PageBody.js', () => ({
+  PageBody: ({ mcontent }: { mcontent: string | null }) => {
+    if (!mcontent) {
+      return React.createElement('div', { 'data-page-body': 'true', 'data-page-empty': 'true' })
+    }
+    return React.createElement('div', {
+      'data-page-body': 'true',
+      dangerouslySetInnerHTML: { __html: mcontent },
+    })
+  },
+}))
 
 /** 목 prisma 팩토리 */
 function makePrisma(mcontent: string | null) {
