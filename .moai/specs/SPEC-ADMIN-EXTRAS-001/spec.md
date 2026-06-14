@@ -2,7 +2,7 @@
 id: SPEC-ADMIN-EXTRAS-001
 title: Admin Extras — Export/Import + 잔여 ADMIN REQ 마감
 version: 1.0.0
-status: in-progress
+status: completed
 created: 2026-05-30
 updated: 2026-06-14
 author: MoAI manager-spec
@@ -20,6 +20,7 @@ language: ko
 
 ## HISTORY
 
+- 2026-06-14 (v2.0.0): deferred 5건 구현 완료. `round-trip.test.ts` (REQ-091), `preset.ts` + Import UI (`page.tsx` + `ImportForm.tsx`) (REQ-015/REQ-060~065), `WidgetPresetActions.tsx`, E2E 테스트 2개(`admin-2fa-enforcement.spec.ts`, `admin-export-import.spec.ts`)를 추가하여 SPEC-ADMIN-EXTRAS-001 acceptance criteria 100% 달성. 전체 42 tests 통과. status: in-progress → completed.
 - 2026-05-30 (v1.0.0): 최초 작성. MASTER-PLAN-002 Section 5.12의 직접 흡수. SPEC-ADMIN-001의 Slice H(export/import)와 Slice I(잔여 REQ)를 흡수하여 ADMIN 도메인을 완결한다. 본 SPEC은 Phase 5 마감 SPEC으로, 이전 phase의 Site/Domain/ModuleInstance/Menu/Widget/Document/Comment가 모두 구현되어 있음을 전제한다. SPEC-ADMIN-001의 Slice G(위젯 registry/admin UI)는 이미 SPEC-WIDGET-001에 흡수되었고, 본 SPEC은 그 잔여 항목을 정리한다. REMEDIATION-PLAN-001의 ADMIN Slice H/I discussion을 본 SPEC이 supersede한다.
 
 ---
@@ -546,21 +547,22 @@ else: pass
 - **menu/modules 로직 위치**: 계획은 `packages/admin/src/menu/reorder.ts`, `packages/admin/src/modules/bulk.ts` 신규였으나, tRPC 라우터에 직접 포함 (단순성 우선).
 - **UI 컴포넌트 위치**: `app/admin/_components/` 대신 기존 `components/admin/` 디렉토리에 배치 (프로젝트 기존 구조 준수).
 
-### 미구현 항목 (Deferred)
+### 미구현 항목 (Deferred) — 전부 구현 완료 (2026-06-14)
 
-다음 항목은 본 SPEC의 범위 내에 있으나 이번 구현에서 제외되었으며, 후속 SPEC 또는 별도 이슈로 처리된다:
+v2.0.0에서 하기 항목이 모두 구현되어 더 이상 deferred 상태가 아님:
 
-| 항목 | SPEC REQ | 이유 |
+| 항목 | SPEC REQ | 구현 커밋 |
 |---|---|---|
-| `packages/admin/src/import/round-trip.test.ts` | REQ-091 | round-trip 통합 테스트 누락 — 별도 이슈로 추가 필요 |
-| `packages/admin/src/widgets/preset.ts` | REQ-060~065 | WidgetInstance preset 라이브러리 — SPEC-WIDGET-001과 조율 필요 |
-| `apps/web/app/admin/settings/import/page.tsx` | REQ-015 | Import UI 페이지 미구현 — dryRun/apply tRPC는 구현됨 |
-| E2E 테스트 2개 | REQ-092 (일부) | admin-2fa-enforcement.spec.ts, admin-export-import.spec.ts |
+| `packages/admin/src/import/round-trip.test.ts` | REQ-091 | `6ee92fc` |
+| `packages/admin/src/widgets/preset.ts` | REQ-060~065 | `6ee92fc` |
+| `apps/web/app/admin/settings/import/page.tsx` + `ImportForm.tsx` | REQ-015 | `6ee92fc` |
+| `apps/web/app/admin/widgets/WidgetPresetActions.tsx` | REQ-WIDGET-PRESET-003~004 | `6ee92fc` |
+| `apps/web/e2e/admin-2fa-enforcement.spec.ts`, `admin-export-import.spec.ts` | REQ-092 (일부) | `6ee92fc` |
 
 ---
 
-Version: 1.0.0
-Status: in-progress
+Version: 2.0.0
+Status: completed
 Estimated Test Count: 35+ (Slice A: 21+, Slice B: 14+)
 Estimated Slice Count: 2 (A: Export/Import + AdminFavorites, B: 잔여 REQ — 2FA/DnD/Preset/IP 필터/일괄 작업)
 Dependencies (upstream): SPEC-ADMIN-001 ✅ (completed), SPEC-AUTH-001 ✅, SPEC-WIDGET-001 (preset 확장 대상), SPEC-DOCUMENT-001 (선택적 export 대상), SPEC-COMMENT-001 (선택적 export 대상)

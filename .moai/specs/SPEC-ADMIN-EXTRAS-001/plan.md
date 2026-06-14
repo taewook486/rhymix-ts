@@ -1,8 +1,8 @@
 ---
 id: SPEC-ADMIN-EXTRAS-001-plan
 title: Admin Extras — Implementation Plan
-version: 1.0.0
-status: in-progress
+version: 2.0.0
+status: completed
 created: 2026-05-30
 updated: 2026-06-14
 author: MoAI manager-spec
@@ -244,7 +244,7 @@ Slice B 추가:
 | `apps/web/app/admin/settings/import/page.tsx` | Deferred | tRPC는 구현됨 |
 | `apps/web/components/admin/AdminSidebar.tsx` (확장) | 구현 | 위치: `components/admin/` |
 | `apps/web/components/admin/AddToFavoritesButton.tsx` | 구현 | 위치: `components/admin/` |
-| E2E: admin-export-import.spec.ts | Deferred | |
+| E2E: admin-export-import.spec.ts | 구현 완료 (v2.0.0) | `6ee92fc` |
 
 ### Slice B 결과
 
@@ -254,23 +254,35 @@ Slice B 추가:
 | `apps/web/app/admin/layout.tsx` 강화 | 구현 | |
 | `apps/web/app/admin/2fa/enroll/page.tsx` | 구현 | |
 | `apps/web/app/admin/2fa/verify/page.tsx` | 구현 | |
-| E2E: admin-2fa-enforcement.spec.ts | Deferred | |
+| E2E: admin-2fa-enforcement.spec.ts | 구현 완료 (v2.0.0) | `6ee92fc` |
 | `packages/admin/src/menu/reorder.ts` | 대안 구현 | 로직이 admin/menu.ts에 포함 |
 | `apps/web/app/admin/menu/page.tsx` DnD 확장 | 구현 | MenuItemDnDTree.tsx 확장 |
 | `packages/admin/src/logs/ip-filter.ts` | 구현 | |
 | `apps/web/app/admin/logs/page.tsx` IP 필터 | 구현 | |
 | `packages/admin/src/modules/bulk.ts` | 대안 구현 | 로직이 admin/module.ts에 포함 |
 | `apps/web/app/admin/modules/page.tsx` | 구현 | |
-| `packages/admin/src/widgets/preset.ts` | Deferred | SPEC-WIDGET-001 조율 필요 |
-| `apps/web/app/admin/widgets/page.tsx` 프리셋 | Deferred | preset.ts 미구현으로 인해 |
+| `packages/admin/src/widgets/preset.ts` | 구현 완료 (v2.0.0) | `6ee92fc` |
+| `apps/web/app/admin/widgets/page.tsx` 프리셋 | 구현 완료 (v2.0.0) | `6ee92fc` |
 
-### 테스트 결과
+### Deferred 항목 추가 구현 결과 (v2.0.0, 2026-06-14)
 
-- packages/admin: 36/36 통과
+| 항목 | 커밋 |
+|---|---|
+| `packages/admin/src/import/round-trip.test.ts` | `6ee92fc` |
+| `packages/admin/src/widgets/preset.ts` + `index.ts` 재-export | `6ee92fc` |
+| `apps/web/app/admin/settings/import/page.tsx` (Server Component) | `6ee92fc` |
+| `apps/web/app/admin/settings/import/ImportForm.tsx` (Client Component) | `6ee92fc` |
+| `apps/web/app/admin/widgets/WidgetPresetActions.tsx` (Client Component) | `6ee92fc` |
+| `apps/web/e2e/admin-2fa-enforcement.spec.ts` | `6ee92fc` |
+| `apps/web/e2e/admin-export-import.spec.ts` | `6ee92fc` |
+
+### 최종 테스트 결과
+
+- packages/admin: 42/42 통과 (v2.0.0 기준)
 - apps/web admin 라우터: 83/83 통과
-- `pnpm tsc --noEmit`: 신규 파일 기준 0 오류
+- `pnpm tsc --noEmit`: 0 오류
 
 ---
 
-Version: 1.0.0
-Status: in-progress
+Version: 2.0.0
+Status: completed
