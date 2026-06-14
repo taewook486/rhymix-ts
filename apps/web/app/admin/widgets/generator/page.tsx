@@ -165,14 +165,29 @@ export default function WidgetGeneratorPage() {
               <span className="text-zinc-500 italic">위젯을 선택하면 토큰이 생성됩니다.</span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={handleCopy}
-            disabled={!token}
-            className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {copied ? '복사됨!' : '클립보드 복사'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleCopy}
+              disabled={!token}
+              className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {copied ? '복사됨!' : '클립보드 복사'}
+            </button>
+            {selectedWidget && (
+              <button
+                type="button"
+                onClick={() => {
+                  // TODO: 프리셋 저장 다이얼로그 오픈
+                  // label 입력 + icon picker
+                  console.log('프리셋 저장:', { widgetName: selectedName, props: propValues })
+                }}
+                className="px-4 py-2 text-sm rounded-md bg-zinc-200 hover:bg-zinc-300 transition-colors"
+              >
+                프리셋 저장
+              </button>
+            )}
+          </div>
 
           {selectedWidget && (
             <div className="border border-zinc-200 rounded-md p-3 bg-white text-xs space-y-1">
