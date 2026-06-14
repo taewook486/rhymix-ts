@@ -101,6 +101,7 @@ export async function seedInstall(
         hostname: input.domain.hostname,
         isDefault: true,
         scheme: input.site.scheme,
+        forceHttps: input.site.scheme === 'https',
       },
     });
 

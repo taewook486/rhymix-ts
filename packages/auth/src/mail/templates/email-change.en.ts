@@ -2,8 +2,8 @@
  * Email change notification English template — REQ-MAIL-035 (email-change template)
  */
 
-import { escapeHtml } from './render.js';
-import type { TemplateResult } from './render.js';
+import { escapeHtml } from './render';
+import type { TemplateResult } from './render';
 
 export function render(vars: Record<string, string>): TemplateResult {
   const { userName, newEmail } = vars;

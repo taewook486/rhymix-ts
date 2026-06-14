@@ -113,7 +113,7 @@ export function ImportForm({ siteId }: ImportFormProps) {
     },
   })
 
-  const applyMutation = trpc.admin.import.apply.useMutation({
+  const applyMutation = trpc.admin.import.applyImport.useMutation({
     onSuccess: (data) => {
       const result = data as unknown as ApplyResult
       setApplyResult(result)

@@ -2,8 +2,8 @@
  * 보안 경고 한국어 템플릿 — REQ-MAIL-036 (security-alert 템플릿)
  */
 
-import { escapeHtml } from './render.js';
-import type { TemplateResult } from './render.js';
+import { escapeHtml } from './render';
+import type { TemplateResult } from './render';
 
 export function render(vars: Record<string, string>): TemplateResult {
   const { userName, alertType, details } = vars;

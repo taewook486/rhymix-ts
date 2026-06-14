@@ -252,12 +252,13 @@ export async function performInstall(
     const rhymixTsVersion = process.env.npm_package_version ?? '0.0.0';
 
     try {
+      const sslEnabled = admin.useSsl === 'always';
       await seedInstall(
         {
           site: {
             defaultLanguage: session.language ?? 'en',
             timeZone: admin.timeZone,
-            scheme: admin.useSsl === 'always' ? 'https' : 'http',
+            scheme: sslEnabled ? 'https' : 'http',
             rhymixTsVersion,
             // databaseSchemaVersion은 본 슬라이스에서는 'init' 고정.
             // _prisma_migrations 테이블에서 읽어오는 개선은 추후 슬라이스로 이전.
@@ -282,6 +283,12 @@ export async function performInstall(
         },
         prisma,
       );
+      // Domain.forceHttps는 Prisma schema default=true이므로 SSL 설정과 일치시킴.
+      // packages/db seed.ts는 Turbopack이 hot-reload하지 않으므로 여기서 보정.
+      await prisma.domain.updateMany({
+        where: { hostname },
+        data: { forceHttps: sslEnabled },
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return {

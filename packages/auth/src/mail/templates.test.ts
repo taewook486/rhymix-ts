@@ -4,8 +4,8 @@
  * 템플릿 렌더링의 i18n, HTML 이스케이프, URL 검증, 필수 변수 검증을 테스트한다.
  */
 import { describe, expect, it } from 'vitest';
-import { renderTemplate } from './templates/render.js';
-import { MailTemplateError } from './errors.js';
+import { renderTemplate } from './templates/render';
+import { MailTemplateError } from './errors';
 
 describe('renderTemplate', () => {
   it('signup-verify en locale: subject in English, HTML escapes userName, URL preserved (AC-MAIL-A4)', () => {

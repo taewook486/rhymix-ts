@@ -2,9 +2,9 @@
  * Welcome English template — REQ-MAIL-031 (welcome template)
  */
 
-import { MailTemplateError } from '../errors.js';
-import { escapeHtml } from './render.js';
-import type { TemplateResult } from './render.js';
+import { MailTemplateError } from '../errors';
+import { escapeHtml } from './render';
+import type { TemplateResult } from './render';
 
 export function render(vars: Record<string, string>): TemplateResult {
   const { userName, siteUrl, loginUrl } = vars;

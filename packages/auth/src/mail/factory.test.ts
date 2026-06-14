@@ -4,10 +4,10 @@
  * 환경변수에 따른 디스패처 선택, Noop 폴백, 설정 검증을 테스트한다.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMailDispatcher } from './factory.js';
-import { NoopMailDispatcher } from '../mail.js';
-import { SmtpMailDispatcher } from './smtp-dispatcher.js';
-import { MailConfigError } from './errors.js';
+import { createMailDispatcher } from './factory';
+import { NoopMailDispatcher } from '../mail';
+import { SmtpMailDispatcher } from './smtp-dispatcher';
+import { MailConfigError } from './errors';
 
 // nodemailer mock — REQ-MAIL-062
 vi.mock('nodemailer', () => ({

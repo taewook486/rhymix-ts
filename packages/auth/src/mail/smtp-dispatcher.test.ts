@@ -4,8 +4,8 @@
  * SMTP 발송 성공/실패, 재시도 로직, 영구적 에러 처리, AuditLog 기록을 테스트한다.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SmtpMailDispatcher } from './smtp-dispatcher.js';
-import { MailValidationError, MailDeliveryError } from './errors.js';
+import { SmtpMailDispatcher } from './smtp-dispatcher';
+import { MailValidationError, MailDeliveryError } from './errors';
 
 // PrismaClient mock storage
 const mockAuditLogs: Array<{ action: string; metadata: Record<string, unknown> }> = [];

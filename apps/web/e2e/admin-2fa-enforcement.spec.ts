@@ -131,11 +131,13 @@ test('2FA 강제 설정 없으면 admin 접근 허용됨', async ({ page }) => {
   // 2. 2FA 강제 정책 미설정 상태 확인 (기본값 false)
   // (resetDb 후 site_settings에 requireAdminTwoFactor 행이 없으므로 별도 조작 불필요)
 
-  // 3. /admin 링크 클릭 또는 직접 이동 → 2FA 없이 바로 접근 가능해야 함
-  await page.getByRole('link', { name: '관리자 대시보드로 이동' }).click();
+  // 3. 로그인 (설치 후 세션 없음)
+  await loginAsAdmin(page);
+  await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
 
   // 4. /admin 에 정상 접근됨 — 2FA enroll 페이지로 redirect 되면 안 됨
-  await expect(page).toHaveURL(/\/admin(?!\/2fa)/);
+  await page.goto('/admin');
+  await expect(page).toHaveURL(/\/admin/, { timeout: 10_000 });
   await expect(page).not.toHaveURL(/\/admin\/2fa/);
 });
 
@@ -146,10 +148,12 @@ test('2FA 강제 설정 시 미등록 admin은 enroll 페이지로 redirect됨',
   // 2. DB에 2FA 강제 정책 설정 (siteId=1)
   await setTwoFactorEnforced(1, true);
 
-  // 3. /admin 에 직접 접근 시도
-  await page.goto('/admin');
+  // 3. 로그인 (설치 후 세션 없음)
+  await loginAsAdmin(page);
+  await expect(page).not.toHaveURL(/\/login/, { timeout: 15_000 });
 
-  // 4. 2FA 미등록 상태이므로 /admin/2fa/enroll 로 redirect 되어야 함
+  // 4. /admin 접근 → 2FA 미등록 상태이므로 /admin/2fa/enroll 로 redirect 되어야 함
+  await page.goto('/admin');
   await expect(page).toHaveURL(/\/admin\/2fa\/enroll/, { timeout: 10_000 });
 
   // 5. enroll 페이지 UI 확인

@@ -5,10 +5,10 @@
  * SmtpMailDispatcher)를 생성하여 반환한다.
  */
 
-import type { MailDispatcher } from '../mail.js';
-import { NoopMailDispatcher } from '../mail.js';
-import { SmtpMailDispatcher } from './smtp-dispatcher.js';
-import { MailConfigError } from './errors.js';
+import type { MailDispatcher } from '../mail';
+import { NoopMailDispatcher } from '../mail';
+import { SmtpMailDispatcher } from './smtp-dispatcher';
+import { MailConfigError } from './errors';
 
 /**
  * 환경변수 파싱 및 디스패터 선택 — REQ-MAIL-010~017

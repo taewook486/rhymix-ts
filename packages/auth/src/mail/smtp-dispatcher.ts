@@ -8,10 +8,10 @@
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
 import { prisma } from '@rhymix-ts/db';
-import type { MailDispatcher, MailMessage } from '../mail.js';
-import { MailValidationError, MailDeliveryError } from './errors.js';
-import { renderTemplate } from './templates/render.js';
-import { writeMailFailureAudit } from './audit.js';
+import type { MailDispatcher, MailMessage } from '../mail';
+import { MailValidationError, MailDeliveryError } from './errors';
+import { renderTemplate } from './templates/render';
+import { writeMailFailureAudit } from './audit';
 
 const EMAIL_RE = z.string().email();
 

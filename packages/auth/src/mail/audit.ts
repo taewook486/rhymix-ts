@@ -5,7 +5,7 @@
  */
 
 import { PrismaClient } from '@rhymix-ts/db';
-import type { MailMessage } from '../mail.js';
+import type { MailMessage } from '../mail';
 
 /**
  * 메일 발송 실패 감사 로그 기록

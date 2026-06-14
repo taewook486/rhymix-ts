@@ -2,8 +2,8 @@
  * Security alert English template — REQ-MAIL-036 (security-alert template)
  */
 
-import { escapeHtml } from './render.js';
-import type { TemplateResult } from './render.js';
+import { escapeHtml } from './render';
+import type { TemplateResult } from './render';
 
 export function render(vars: Record<string, string>): TemplateResult {
   const { userName, alertType, details } = vars;

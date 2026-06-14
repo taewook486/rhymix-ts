@@ -70,9 +70,14 @@ async function setupInstalledAdminSession(page: import('@playwright/test').Page)
   // 완료 화면 대기
   await expect(page).toHaveURL(/\/install\/complete/, { timeout: 60_000 });
 
-  // /admin 진입 — 세션이 install 과정에서 설정됨
+  // /admin 진입 — 설치 후 세션 없으므로 /login 으로 리다이렉트됨
   await page.getByRole('link', { name: '관리자 대시보드로 이동' }).click();
-  await expect(page).toHaveURL(/\/admin/);
+  await expect(page).toHaveURL(/\/login/);
+  // callbackUrl=%2Fadmin 보존 상태로 로그인 (로그인 후 /admin 으로 자동 이동)
+  await page.locator('input[name="identifier"]').fill('admin');
+  await page.locator('input[name="password"]').fill('e2e-password-1234');
+  await page.getByRole('button', { name: '로그인' }).click();
+  await expect(page).toHaveURL(/\/admin/, { timeout: 15_000 });
 }
 
 /**
@@ -181,11 +186,11 @@ test('import 페이지 dryRun — 유효한 bundle 업로드 시 plan 표시됨'
     // 7. dryRun 결과 — "가져오기 미리 보기 결과" 헤딩 노출 확인
     await expect(page.getByText('가져오기 미리 보기 결과')).toBeVisible({ timeout: 15_000 });
 
-    // 8. 요약 카드 4개(생성/업데이트/건너뜀/오류)가 렌더됨
-    await expect(page.getByText('생성')).toBeVisible();
-    await expect(page.getByText('업데이트')).toBeVisible();
-    await expect(page.getByText('건너뜀')).toBeVisible();
-    await expect(page.getByText('오류')).toBeVisible();
+    // 8. 요약 카드 4개(생성/업데이트/건너뜀/오류)가 렌더됨 (exact 매칭으로 설명 텍스트와 분리)
+    await expect(page.getByText('생성', { exact: true })).toBeVisible();
+    await expect(page.getByText('업데이트', { exact: true })).toBeVisible();
+    await expect(page.getByText('건너뜀', { exact: true })).toBeVisible();
+    await expect(page.getByText('오류', { exact: true })).toBeVisible();
   } finally {
     await fs.unlink(tmpFile).catch(() => {});
   }

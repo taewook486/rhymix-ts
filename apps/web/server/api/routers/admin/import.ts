@@ -63,9 +63,9 @@ export const adminImportRouter = router({
     }),
 
   /**
-   * apply — import 적용 (REQ-IMPORT-007).
+   * applyImport — import 적용 (REQ-IMPORT-007).
    */
-  apply: protectedAdminProcedure
+  applyImport: protectedAdminProcedure
     .input(
       bundleInputSchema.extend({
         decisions: decisionsSchema,

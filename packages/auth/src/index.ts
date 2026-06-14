@@ -28,14 +28,14 @@ export {
 export type { MailDispatcher, MailMessage, MailTemplate } from './mail';
 
 // SPEC-MAIL-001 — SmtpMailDispatcher, createMailDispatcher, error types
-export { SmtpMailDispatcher } from './mail/smtp-dispatcher.js';
-export { createMailDispatcher } from './mail/factory.js';
+export { SmtpMailDispatcher } from './mail/smtp-dispatcher';
+export { createMailDispatcher } from './mail/factory';
 export {
   MailConfigError,
   MailValidationError,
   MailTemplateError,
   MailDeliveryError,
-} from './mail/errors.js';
+} from './mail/errors';
 
 // SPEC-AUTH-001 Slice B — signup pipeline (REQ-AUTH-005/006/010/011/051/052).
 export { signup, SignupInput } from './signup';

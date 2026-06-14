@@ -102,9 +102,9 @@ const documentSchema = z.object({
   title: z.string().min(1),
   content: z.string(),
   published: z.boolean(),
-  publishedAt: z.date().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  publishedAt: z.coerce.date().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
   exportKey: z.string(), // "document:{mid}:{id}" 형식
 });
 
@@ -121,8 +121,8 @@ const commentSchema = z.object({
   authorName: z.string().nullable(),
   authorEmail: z.string().email().nullable(),
   isSecret: z.boolean().default(false),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
   exportKey: z.string(), // "comment:{mid}:{id}" 형식
   documentExportKey: z.string(), // 참조하는 문서의 exportKey
 });
@@ -146,7 +146,7 @@ const siteSettingsSchema = z.object({
  */
 const metadataSchema = z.object({
   version: z.string(),
-  exportedAt: z.date(),
+  exportedAt: z.coerce.date(),
   exportedBy: z.object({
     actorId: z.number().int().positive(),
     nickname: z.string(),

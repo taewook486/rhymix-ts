@@ -2,9 +2,9 @@
  * 비밀번호 재설정 한국어 템플릿 — REQ-MAIL-032
  */
 
-import { MailTemplateError } from '../errors.js';
-import { escapeHtml } from './render.js';
-import type { TemplateResult } from './render.js';
+import { MailTemplateError } from '../errors';
+import { escapeHtml } from './render';
+import type { TemplateResult } from './render';
 
 export function render(vars: Record<string, string>): TemplateResult {
   const { resetUrl, userName, expiresInHours } = vars;

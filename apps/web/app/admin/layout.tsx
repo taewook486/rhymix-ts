@@ -13,6 +13,7 @@
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-020, REQ-ADMIN-021, REQ-ADMIN-023
  */
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { auth } from '@/lib/auth/config'
 import { isAdminSession, isAdminTwoFactorRequired, isSessionTwoFactorVerified } from '@/lib/auth/admin-middleware'
 import { prisma } from '@rhymix-ts/db'
@@ -39,12 +40,15 @@ export default async function AdminLayout({
   }
 
   // 2FA 강제 게이트 (REQ-ADMIN-023)
-  // SPEC-ADMIN-EXTRAS-001 Slice B: /admin/2fa/* 경로로 이동
-  // NOTE: 현재 URL 파악을 위해 middleware에서 x-pathname 헤더를 설정하거나
-  //       각 페이지 컴포넌트에서 metadata를 통해 전달해야 함
-  //       현재는 간단히 pathname 체크 없이 항상 2FA 게이트를 적용
+  // proxy.ts가 x-pathname 요청 헤더를 주입하므로 여기서 현재 경로를 읽을 수 있다.
+  const headersList = await headers()
+  const currentPathname = headersList.get('x-pathname') ?? ''
   const twoFactorRequired = await isAdminTwoFactorRequired(prisma)
-  if (twoFactorRequired && !isSessionTwoFactorVerified(session)) {
+  if (
+    twoFactorRequired &&
+    !isSessionTwoFactorVerified(session) &&
+    !TWO_FACTOR_EXCEPT_PATHS.has(currentPathname)
+  ) {
     // TODO: 사용자가 TOTP 등록했는지 확인하여 enroll/verify 분기
     // 현재는 enroll로 기본 이동 (등록 후 verify로 변경 필요)
     redirect('/admin/2fa/enroll?callbackUrl=/admin')

@@ -5,18 +5,18 @@
  * 중앙에서 처리하여 XSS 와 URL 인젝션을 방지한다.
  */
 
-import type { MailTemplate } from '../../mail.js';
-import { MailTemplateError } from '../errors.js';
-import { render as signupVerifyKo } from './signup-verify.ko.js';
-import { render as signupVerifyEn } from './signup-verify.en.js';
-import { render as passwordResetKo } from './password-reset.ko.js';
-import { render as passwordResetEn } from './password-reset.en.js';
-import { render as welcomeKo } from './welcome.ko.js';
-import { render as welcomeEn } from './welcome.en.js';
-import { render as emailChangeKo } from './email-change.ko.js';
-import { render as emailChangeEn } from './email-change.en.js';
-import { render as securityAlertKo } from './security-alert.ko.js';
-import { render as securityAlertEn } from './security-alert.en.js';
+import type { MailTemplate } from '../../mail';
+import { MailTemplateError } from '../errors';
+import { render as signupVerifyKo } from './signup-verify.ko';
+import { render as signupVerifyEn } from './signup-verify.en';
+import { render as passwordResetKo } from './password-reset.ko';
+import { render as passwordResetEn } from './password-reset.en';
+import { render as welcomeKo } from './welcome.ko';
+import { render as welcomeEn } from './welcome.en';
+import { render as emailChangeKo } from './email-change.ko';
+import { render as emailChangeEn } from './email-change.en';
+import { render as securityAlertKo } from './security-alert.ko';
+import { render as securityAlertEn } from './security-alert.en';
 
 export interface TemplateResult {
   subject: string;

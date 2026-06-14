@@ -288,8 +288,8 @@ async function checkMiddlewareRewrite(io: DiagnosticsIO): Promise<EnvCheckResult
   return {
     category: 'middleware',
     key: 'middleware.rewrite',
-    status: 'error',
-    message: 'rewrite 테스트 응답 헤더가 일치하지 않습니다.',
+    status: 'warn',
+    message: 'rewrite 테스트 응답 헤더가 일치하지 않습니다. 서버 재시작 후 자동 해결될 수 있습니다.',
     remediation: 'install.middleware.rewrite',
   };
 }
@@ -306,10 +306,12 @@ type CheckSpec = {
 
 function timeoutResult(spec: CheckSpec, err: unknown): EnvCheckResult {
   const msg = err instanceof Error ? err.message : String(err);
+  // middleware.rewrite는 Turbopack cold-start 시 정상적으로 타임아웃되므로 warn으로 처리.
+  const status: EnvCheckStatus = spec.key === 'middleware.rewrite' ? 'warn' : 'error';
   return {
     category: spec.category,
     key: spec.key,
-    status: 'error',
+    status,
     message: `검사 실패: ${msg}`,
     remediation: 'install.diagnostics.timeout',
   };

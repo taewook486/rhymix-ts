@@ -193,8 +193,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   // ---------------------------------------------------------------------------
   // (8) 도메인 헤더 주입 (REQ-ADMIN-010/011) + HSTS (REQ-INSTALL-040).
+  //     x-pathname은 Server Component(AdminLayout)에서 현재 경로를 읽을 수 있도록
+  //     request 헤더로 전달한다 (response 헤더는 Server Component에서 읽기 불가).
   // ---------------------------------------------------------------------------
-  const response = NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', pathname);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
 
   if (domain) {
     response.headers.set('x-site-id', String(domain.siteId));
