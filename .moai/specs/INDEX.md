@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-14 (Phase 4 구현 완료, Phase 5 진행 중)
+> 마지막 갱신: 2026-06-14 (Phase 4 + Phase 5 구현 완료 — 전체 5-Phase 완료)
 
 ## 기술 스택 (확정)
 
@@ -29,7 +29,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 2. CONTENT DOMAIN | 게시판/문서/댓글 CRUD 동작 | 3 | 3/3 | 🟢 구현 완료 |
 | 3. MEMBER ECOSYSTEM | 회원 ecosystem + cross-cutting (file/point/mail) | 3 | 3/3 | 🟢 구현 완료 |
 | 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 2/2 | 🟢 구현 완료 |
-| 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 0/1 | 🟡 진행 중 (deferred 5건) |
+| 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 1/1 | 🟢 구현 완료 |
 
 ---
 
@@ -80,7 +80,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 | ID | 제목 | 의존 | 상태 |
 |---|---|---|---|
-| [SPEC-ADMIN-EXTRAS-001](./SPEC-ADMIN-EXTRAS-001/spec.md) | export/import + 2FA enforce + DnD + WidgetPreset + IP filter + bulk ops | ADMIN, AUTH, WIDGET, DOCUMENT, COMMENT | 🟡 진행 중 (`1e6ce2a`) — deferred 5건 |
+| [SPEC-ADMIN-EXTRAS-001](./SPEC-ADMIN-EXTRAS-001/spec.md) | export/import + 2FA enforce + DnD + WidgetPreset + IP filter + bulk ops | ADMIN, AUTH, WIDGET, DOCUMENT, COMMENT | ✅ 구현 완료 (`6ee92fc`) |
 
 ### Meta-Plan 문서 (참조)
 
@@ -128,13 +128,8 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ### 즉시 가능
 
-1. **SPEC-ADMIN-EXTRAS-001 deferred 마감** — 남은 5건 처리
-   - `packages/admin/src/import/round-trip.test.ts` (REQ-091 통합 테스트)
-   - `packages/admin/src/widgets/preset.ts` (WidgetPreset 라이브러리 + DB 연동)
-   - Import UI page
-   - E2E: `admin-2fa-enforcement.spec.ts`
-   - E2E: `admin-export-import.spec.ts`
-2. **Phase 5 완료 후 `/moai sync SPEC-ADMIN-EXTRAS-001`** — 문서 동기화
+1. **`/moai sync SPEC-ADMIN-EXTRAS-001`** — 문서 동기화 (Phase 5 완료)
+2. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증
 
 ### 완료된 전체 워크플로우
 
