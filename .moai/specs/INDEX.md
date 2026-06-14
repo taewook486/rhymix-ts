@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-13 (SPEC-MAIL-001 구현 완료)
+> 마지막 갱신: 2026-06-14 (Phase 4 구현 완료, Phase 5 진행 중)
 
 ## 기술 스택 (확정)
 
@@ -28,8 +28,8 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 1. VISIBLE UI | 클린 설치 직후 의미 있는 홈이 보인다 | 3 | 3/3 | 🟢 구현 완료 |
 | 2. CONTENT DOMAIN | 게시판/문서/댓글 CRUD 동작 | 3 | 3/3 | 🟢 구현 완료 |
 | 3. MEMBER ECOSYSTEM | 회원 ecosystem + cross-cutting (file/point/mail) | 3 | 3/3 | 🟢 구현 완료 |
-| 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 0/2 | 🟡 SPEC 완료, 구현 대기 |
-| 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 0/1 | 🟡 SPEC 완료, 구현 대기 |
+| 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 2/2 | 🟢 구현 완료 |
+| 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 0/1 | 🟡 진행 중 (deferred 5건) |
 
 ---
 
@@ -69,18 +69,18 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | [SPEC-POINT-001](./SPEC-POINT-001/spec.md) | point 시스템 + board/document/comment 트랜잭션 통합 | AUTH, ADMIN, DOCUMENT, COMMENT | ✅ 구현 완료 (Slice A+B, 24 tests, 8072dc0) |
 | [SPEC-MAIL-001](./SPEC-MAIL-001/spec.md) | SmtpMailDispatcher + 3 templates + 재시도 정책 | AUTH, ADMIN | ✅ 구현 완료 (30 tests, 24bca93) |
 
-### Phase 4: EXTENSION INFRASTRUCTURE + THEME POLISH (P1, 구현 대기)
+### Phase 4: EXTENSION INFRASTRUCTURE + THEME POLISH (P1, 구현 완료)
 
 | ID | 제목 | 의존 | 상태 |
 |---|---|---|---|
-| [SPEC-ADDON-001](./SPEC-ADDON-001/spec.md) | 선언적 hook system (onContentTransform / onPageView 등 4개) | PAGE, DOCUMENT, COMMENT, ADMIN | 📝 SPEC 완료 |
-| [SPEC-THEME-POLISH-001](./SPEC-THEME-POLISH-001/spec.md) | admin/site/design 3-pane editor + dark mode toggle | LAYOUT, ADMIN | 📝 SPEC 완료 |
+| [SPEC-ADDON-001](./SPEC-ADDON-001/spec.md) | 선언적 hook system (onContentTransform / onPageView 등 4개) | PAGE, DOCUMENT, COMMENT, ADMIN | ✅ 구현 완료 (`ba0a36b`) |
+| [SPEC-THEME-POLISH-001](./SPEC-THEME-POLISH-001/spec.md) | admin/site/design 3-pane editor + dark mode toggle | LAYOUT, ADMIN | ✅ 구현 완료 (`0739f05`) |
 
-### Phase 5: ADMIN COMPLETION (P2, 구현 대기)
+### Phase 5: ADMIN COMPLETION (P2, 진행 중)
 
 | ID | 제목 | 의존 | 상태 |
 |---|---|---|---|
-| [SPEC-ADMIN-EXTRAS-001](./SPEC-ADMIN-EXTRAS-001/spec.md) | export/import + 2FA enforce + DnD + WidgetPreset + IP filter + bulk ops | ADMIN, AUTH, WIDGET, DOCUMENT, COMMENT | 📝 SPEC 완료 |
+| [SPEC-ADMIN-EXTRAS-001](./SPEC-ADMIN-EXTRAS-001/spec.md) | export/import + 2FA enforce + DnD + WidgetPreset + IP filter + bulk ops | ADMIN, AUTH, WIDGET, DOCUMENT, COMMENT | 🟡 진행 중 (`1e6ce2a`) — deferred 5건 |
 
 ### Meta-Plan 문서 (참조)
 
@@ -128,31 +128,33 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ### 즉시 가능
 
-1. **Phase 2 계속** — `/moai run SPEC-COMMENT-001`
-   - DOCUMENT ✅ → **COMMENT** ← 현재 위치 → BOARD-CRUD 순서 (의존성 강제)
-   - 각 SPEC 완료 후 `/moai sync` 권장
-2. **Phase 3 병렬 가능** — FILE/POINT/MAIL은 서로 독립적
-3. **Phase 4-5는 Phase 2-3 완료 후**
+1. **SPEC-ADMIN-EXTRAS-001 deferred 마감** — 남은 5건 처리
+   - `packages/admin/src/import/round-trip.test.ts` (REQ-091 통합 테스트)
+   - `packages/admin/src/widgets/preset.ts` (WidgetPreset 라이브러리 + DB 연동)
+   - Import UI page
+   - E2E: `admin-2fa-enforcement.spec.ts`
+   - E2E: `admin-export-import.spec.ts`
+2. **Phase 5 완료 후 `/moai sync SPEC-ADMIN-EXTRAS-001`** — 문서 동기화
 
-### 권장 워크플로우
+### 완료된 전체 워크플로우
 
 ```bash
-# Phase 2 (의존성 강제)
-/moai run SPEC-DOCUMENT-001    # ✅ 완료 (2026-06-12)
-/clear
-/moai run SPEC-COMMENT-001     # 다음
-/clear
-/moai run SPEC-BOARD-CRUD-001  # 마지막
+# Phase 2 ✅
+/moai run SPEC-DOCUMENT-001    # ✅ 완료 (a2c02f5)
+/moai run SPEC-COMMENT-001     # ✅ 완료 (5744dd6)
+/moai run SPEC-BOARD-CRUD-001  # ✅ 완료 (719438b)
 
-# Phase 3 (병렬 가능)
-/moai run SPEC-FILE-001
-/moai run SPEC-POINT-001
-/moai run SPEC-MAIL-001
+# Phase 3 ✅
+/moai run SPEC-FILE-001        # ✅ 완료 (93a334e)
+/moai run SPEC-POINT-001       # ✅ 완료 (8072dc0)
+/moai run SPEC-MAIL-001        # ✅ 완료 (24bca93)
 
-# Phase 4-5
-/moai run SPEC-ADDON-001
-/moai run SPEC-THEME-POLISH-001
-/moai run SPEC-ADMIN-EXTRAS-001
+# Phase 4 ✅
+/moai run SPEC-ADDON-001       # ✅ 완료 (ba0a36b)
+/moai run SPEC-THEME-POLISH-001 # ✅ 완료 (0739f05)
+
+# Phase 5 🟡
+/moai run SPEC-ADMIN-EXTRAS-001 # 🟡 진행 중 (1e6ce2a) — deferred 5건 잔여
 ```
 
 ---
