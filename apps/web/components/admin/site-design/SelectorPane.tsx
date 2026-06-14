@@ -13,7 +13,7 @@ import { Check } from 'lucide-react';
 import { Prisma } from '@rhymix-ts/db';
 import { AssignScopeDialog } from './AssignScopeDialog';
 import { assignTheme, assignLayout, assignSkin } from '@/app/admin/site/design/actions';
-import { getLayoutsForTheme, getSkinsForLayout } from '@/lib/theme/admin-helpers';
+import { getLayoutsForTheme, getSkinsForLayout } from '@/lib/theme/admin-actions';
 
 interface SelectorPaneProps {
   themes: Prisma.ThemeGetPayload<Record<string, never>>[];

@@ -22,12 +22,11 @@ import {
   type AdminConfig,
   type DbConfig,
 } from '@rhymix-ts/core';
+import { acquireInstallLock, seedInstall } from '@rhymix-ts/db';
 import {
-  acquireInstallLock,
-  seedInstall,
   validateDbConnection,
   type DbValidationCode,
-} from '@rhymix-ts/db';
+} from '@rhymix-ts/db/install';
 import {
   hashPassword,
   isDisposableEmail,

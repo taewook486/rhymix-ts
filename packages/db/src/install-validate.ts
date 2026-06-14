@@ -14,6 +14,7 @@
  * @MX:REASON: 이 검증을 통과하지 못한 DB 설정으로는 procInstall이 실행되지 않는다.
  * @MX:SPEC: SPEC-INSTALL-001 REQ-INSTALL-013, REQ-INSTALL-050
  */
+import 'server-only';
 import pg from 'pg';
 
 /** DB 접속 설정 — @rhymix-ts/core의 DbConfig와 동일한 구조 (순환 의존성 방지). */

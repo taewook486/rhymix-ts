@@ -6,7 +6,7 @@
  *
  * SPEC-THEME-POLISH-001 Slice A — admin design page 데이터 소스.
  */
-
+import 'server-only';
 import { prisma, Prisma } from '@rhymix-ts/db';
 
 /**
