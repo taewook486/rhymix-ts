@@ -3,13 +3,13 @@
   "mcpServers": {
     "context7": {
       "$comment": "Up-to-date documentation and code examples via Context7",
-      "command": "cmd.exe",
-      "args": ["/c", "npx -y @upstash/context7-mcp@latest"]
+      "command": "/home/taewook/.nvm/versions/node/v22.22.3/bin/npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
     },
     "sequential-thinking": {
       "$comment": "Step-by-step reasoning for complex problems",
-      "command": "cmd.exe",
-      "args": ["/c", "npx -y @modelcontextprotocol/server-sequential-thinking"]
+      "command": "/home/taewook/.nvm/versions/node/v22.22.3/bin/npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
     },
     "moai-lsp": {
       "$comment": "LSP code intelligence via moai binary (goto definition, find references, hover, diagnostics, rename)",
@@ -17,19 +17,19 @@
       "args": ["mcp", "lsp"],
       "timeout": 30
     },
-     "playwright": {
+    "playwright": {
       "type": "stdio",
-      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "command": "/home/taewook/.nvm/versions/node/v22.22.3/bin/node",
       "args": [
-        "C:\\Users\\taewo\\AppData\\Roaming\\npm\\node_modules\\@playwright\\mcp\\cli.js"
+        "/home/taewook/.nvm/versions/node/v22.22.3/lib/node_modules/@playwright/mcp/cli.js"
       ],
       "env": {}
     },
     "hwp-mcp": {
       "type": "stdio",
-      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "command": "/home/taewook/.nvm/versions/node/v22.22.3/bin/node",
       "args": [
-        "C:\\Users\\taewo\\AppData\\Roaming\\npm\\node_modules\\hwp-mcp\\dist\\server.js"
+        "/home/taewook/.nvm/versions/node/v22.22.3/lib/node_modules/hwp-mcp/dist/server.js"
       ],
       "env": {}
     }
