@@ -16,6 +16,27 @@ vi.mock('next/link', () => ({
     React.createElement('a', { href }, children),
 }))
 
+// next/navigation mock — useSearchParams 포함
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}))
+
+// tRPC mock — admin.widget.listPresets, savePreset
+vi.mock('@/providers/TRPCProvider', () => ({
+  trpc: {
+    admin: {
+      widget: {
+        listPresets: { useQuery: vi.fn().mockReturnValue({ data: undefined }) },
+        savePreset: { useMutation: vi.fn().mockReturnValue({ mutate: vi.fn(), isPending: false }) },
+      },
+    },
+  },
+}))
+
+// sonner toast mock
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
+
 // listWidgets mock
 vi.mock('@rhymix-ts/core/widgets', () => ({
   listWidgets: vi.fn().mockReturnValue([

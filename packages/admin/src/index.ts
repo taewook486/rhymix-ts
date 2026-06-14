@@ -22,3 +22,6 @@ export { parseIpFilter, matchesIpFilter, parseIpFilterForQuery, type ParsedIpFil
 
 // Favorites
 export { FAVORITE_MAX_COUNT, validateFavoriteHref } from './favorites/actions';
+
+// Widgets
+export { validatePresetProps } from './widgets/preset';

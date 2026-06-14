@@ -3,12 +3,14 @@
  *
  * 등록된 위젯 정의 목록과 DB 인스턴스 목록을 표시한다.
  * SPEC-ADMIN-EXTRAS-001 Slice B: 위젯 프리셋 라이브러리 섹션 추가.
+ * 액션 버튼(적용/삭제)은 WidgetPresetActions Client Component로 분리됨.
  * @MX:SPEC: SPEC-WIDGET-001 REQ-WIDGET-D-001, SPEC-ADMIN-EXTRAS-001 REQ-WIDGET-PRESET-001~004
  */
 import Link from 'next/link'
 import { listWidgets } from '@rhymix-ts/core/widgets'
 import { listWidgetInstances } from '@rhymix-ts/core/widgets'
 import { prisma } from '@rhymix-ts/db'
+import { WidgetPresetActions } from './WidgetPresetActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,15 +61,12 @@ export default async function AdminWidgetsPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">위젯 프리셋 라이브러리</h2>
-          <button
+          <Link
+            href="/admin/widgets/generator"
             className="text-sm text-blue-600 hover:underline"
-            onClick={() => {
-              // TODO: 프리셋 생성 다이얼로그 오픈
-              console.log('프리셋 생성')
-            }}
           >
             + 프리셋 저장
-          </button>
+          </Link>
         </div>
         {Object.keys(presetsByWidget).length === 0 ? (
           <p className="text-sm text-zinc-500 py-4 text-center border border-zinc-200 rounded-md">
@@ -107,30 +106,13 @@ export default async function AdminWidgetsPage() {
                               )}
                             </td>
                             <td className="px-4 py-2">
-                              <button
-                                className="text-blue-600 hover:underline text-xs mr-3"
-                                onClick={() => {
-                                  // TODO: 프리셋 선택으로 생성기 폼 프리필
-                                  console.log('프리셋 선택:', inst.id)
-                                }}
-                              >
-                                적용
-                              </button>
+                              <WidgetPresetActions presetId={inst.id} />
                               <Link
                                 href={`/admin/widgets/instances/${inst.id}/edit`}
-                                className="text-blue-600 hover:underline text-xs mr-3"
+                                className="text-blue-600 hover:underline text-xs mx-3"
                               >
                                 수정
                               </Link>
-                              <button
-                                className="text-red-600 hover:underline text-xs"
-                                onClick={() => {
-                                  // TODO: 프리셋 삭제
-                                  console.log('프리셋 삭제:', inst.id)
-                                }}
-                              >
-                                삭제
-                              </button>
                             </td>
                           </tr>
                         ))}

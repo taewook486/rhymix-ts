@@ -15,7 +15,23 @@ vi.mock('next/link', () => ({
 }))
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
-vi.mock('next/navigation', () => ({ redirect: vi.fn() }))
+vi.mock('next/navigation', () => ({
+  redirect: vi.fn(),
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}))
+
+vi.mock('@/providers/TRPCProvider', () => ({
+  trpc: {
+    admin: {
+      widget: {
+        deletePreset: { useMutation: vi.fn().mockReturnValue({ mutate: vi.fn(), isPending: false }) },
+      },
+    },
+  },
+}))
+
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
 // @rhymix-ts/db mock
 vi.mock('@rhymix-ts/db', () => ({ prisma: {} }))

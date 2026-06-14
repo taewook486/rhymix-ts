@@ -3,13 +3,21 @@
  *
  * 등록된 위젯 중 하나를 선택하면 propsSchema에서 폼 필드를 파생하여
  * <rx-widget name="X" data-key="val" /> 토큰을 생성한다.
- * @MX:SPEC: SPEC-WIDGET-001 REQ-WIDGET-D-003
+ *
+ * SPEC-ADMIN-EXTRAS-001 REQ-064 추가:
+ * - URL ?preset={id} 파라미터로 프리셋 로드 + 폼 프리필.
+ * - "프리셋 저장" 버튼: label 입력 인라인 폼 → admin.widget.savePreset mutation.
+ *
+ * @MX:SPEC: SPEC-WIDGET-001 REQ-WIDGET-D-003, SPEC-ADMIN-EXTRAS-001 REQ-064
  */
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { listWidgets } from '@rhymix-ts/core/widgets'
 import Link from 'next/link'
+import { trpc } from '@/providers/TRPCProvider'
+import { toast } from 'sonner'
 
 /**
  * camelCase 문자열을 kebab-case로 변환한다.
@@ -51,9 +59,73 @@ export function generateToken(widgetName: string, props: Record<string, string>)
 
 export default function WidgetGeneratorPage() {
   const widgets = listWidgets()
+  const searchParams = useSearchParams()
   const [selectedName, setSelectedName] = useState<string>('')
   const [propValues, setPropValues] = useState<Record<string, string>>({})
   const [copied, setCopied] = useState(false)
+
+  // 프리셋 저장 인라인 폼 상태
+  const [showSaveForm, setShowSaveForm] = useState(false)
+  const [presetLabel, setPresetLabel] = useState('')
+  // 프리셋 로드 경고 (props 스키마 불일치)
+  const [presetWarning, setPresetWarning] = useState<string | null>(null)
+
+  // URL ?preset={id} 파라미터로 프리셋 자동 로드 (REQ-064)
+  const presetIdParam = searchParams.get('preset')
+  const presetId = presetIdParam ? parseInt(presetIdParam, 10) : null
+
+  // 프리셋 목록 조회 (preset id가 있을 때만)
+  const { data: presetsData } = trpc.admin.widget.listPresets.useQuery(
+    {},
+    { enabled: presetId !== null },
+  )
+
+  // 프리셋 데이터가 로드되면 폼 프리필
+  useEffect(() => {
+    if (!presetId || !presetsData) return
+    const preset = presetsData.find((p) => p.id === presetId)
+    if (!preset) {
+      setPresetWarning(`프리셋 ID ${presetId}를 찾을 수 없습니다.`)
+      return
+    }
+    // 위젯 선택
+    setSelectedName(preset.widgetName)
+    // props 프리필 — string 값으로 변환
+    const propsObj = (preset.props ?? {}) as Record<string, unknown>
+    const stringProps: Record<string, string> = {}
+    for (const [k, v] of Object.entries(propsObj)) {
+      stringProps[k] = String(v ?? '')
+    }
+    setPropValues(stringProps)
+    setCopied(false)
+    setPresetWarning(null)
+
+    // 위젯 레지스트리에 해당 위젯이 있는지 확인 (REQ-062)
+    const widgetDef = widgets.find((w) => w.name === preset.widgetName)
+    if (!widgetDef) {
+      setPresetWarning(`위젯 '${preset.widgetName}'이 현재 레지스트리에 등록되어 있지 않습니다.`)
+      return
+    }
+    // propsSchema 검증 (Zod)
+    const parseResult = widgetDef.propsSchema.safeParse(propsObj)
+    if (!parseResult.success) {
+      setPresetWarning(
+        `프리셋 props가 현재 위젯 스키마와 일치하지 않습니다: ${parseResult.error.errors.map((e) => e.message).join(', ')}`,
+      )
+    }
+  }, [presetId, presetsData, widgets])
+
+  // 프리셋 저장 mutation
+  const savePresetMutation = trpc.admin.widget.savePreset.useMutation({
+    onSuccess: () => {
+      toast.success('프리셋이 저장되었습니다.')
+      setShowSaveForm(false)
+      setPresetLabel('')
+    },
+    onError: (error) => {
+      toast.error('프리셋 저장 실패', { description: error.message })
+    },
+  })
 
   // 선택된 위젯 정의
   const selectedWidget = widgets.find((w) => w.name === selectedName)
@@ -63,6 +135,8 @@ export default function WidgetGeneratorPage() {
     setSelectedName(name)
     setPropValues({})
     setCopied(false)
+    setShowSaveForm(false)
+    setPresetWarning(null)
   }, [])
 
   // prop 값 변경
@@ -80,6 +154,16 @@ export default function WidgetGeneratorPage() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [token])
+
+  // 프리셋 저장 제출
+  const handleSavePreset = () => {
+    if (!selectedName || !presetLabel.trim()) return
+    savePresetMutation.mutate({
+      widgetName: selectedName,
+      label: presetLabel.trim(),
+      props: propValues,
+    })
+  }
 
   // propsSchema에서 필드 이름 목록 추출 (Zod ZodObject 기준)
   type ZodObjectShape = { shape: Record<string, unknown> }
@@ -103,6 +187,14 @@ export default function WidgetGeneratorPage() {
           위젯을 선택하고 속성을 입력하면 삽입 가능한 토큰 코드를 생성합니다.
         </p>
       </div>
+
+      {/* 프리셋 스키마 불일치 경고 (REQ-062) */}
+      {presetWarning && (
+        <div className="flex items-start gap-2 p-3 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          <span className="shrink-0">⚠</span>
+          <span>{presetWarning}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* 위젯 선택 */}
@@ -174,20 +266,48 @@ export default function WidgetGeneratorPage() {
             >
               {copied ? '복사됨!' : '클립보드 복사'}
             </button>
-            {selectedWidget && (
+            {selectedWidget && !showSaveForm && (
               <button
                 type="button"
-                onClick={() => {
-                  // TODO: 프리셋 저장 다이얼로그 오픈
-                  // label 입력 + icon picker
-                  console.log('프리셋 저장:', { widgetName: selectedName, props: propValues })
-                }}
+                onClick={() => setShowSaveForm(true)}
                 className="px-4 py-2 text-sm rounded-md bg-zinc-200 hover:bg-zinc-300 transition-colors"
               >
                 프리셋 저장
               </button>
             )}
           </div>
+
+          {/* 프리셋 저장 인라인 폼 */}
+          {showSaveForm && (
+            <div className="border border-zinc-200 rounded-md p-4 bg-zinc-50 space-y-3">
+              <p className="text-xs font-semibold text-zinc-700">프리셋 레이블 입력</p>
+              <input
+                type="text"
+                value={presetLabel}
+                onChange={(e) => setPresetLabel(e.target.value)}
+                placeholder="예: 공지사항 최신 5건"
+                className="w-full border border-zinc-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSavePreset}
+                  disabled={!presetLabel.trim() || savePresetMutation.isPending}
+                  className="px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {savePresetMutation.isPending ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowSaveForm(false); setPresetLabel('') }}
+                  className="px-3 py-1.5 text-sm rounded-md bg-zinc-200 hover:bg-zinc-300 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
 
           {selectedWidget && (
             <div className="border border-zinc-200 rounded-md p-3 bg-white text-xs space-y-1">
