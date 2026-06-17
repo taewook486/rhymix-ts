@@ -28,6 +28,12 @@ import {
   GripVertical,
   X,
   Star,
+  FileText,
+  MessageSquare,
+  Bell,
+  ShieldCheck,
+  UserPlus,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { trpc } from '@/providers/TRPCProvider'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -69,8 +75,9 @@ const NAV: ReadonlyArray<NavSection> = [
     items: [
       { href: '/admin/modules', label: '게시판(모듈)', icon: Package },
       { href: '/admin/widgets', label: '위젯 시스템', icon: Puzzle },
-      { href: '/admin/content/pages', label: '페이지', disabled: true },
-      { href: '/admin/content/documents', label: '문서', disabled: true },
+      { href: '/admin/pages', label: '페이지', icon: FileText },
+      { href: '/admin/documents', label: '전체 문서 관리', icon: FileText },
+      { href: '/admin/comments', label: '전체 댓글 관리', icon: MessageSquare },
     ],
   },
   {
@@ -79,6 +86,8 @@ const NAV: ReadonlyArray<NavSection> = [
       { href: '/admin/settings/site', label: '일반 설정', icon: Settings },
       { href: '/admin/menu', label: '메뉴 편집', icon: Menu },
       { href: '/admin/site/design', label: '디자인', icon: Palette },
+      { href: '/admin/settings/notification', label: '알림 설정', icon: Bell },
+      { href: '/admin/settings/security', label: '보안 설정', icon: ShieldCheck },
       { href: '/admin/settings/export', label: '내보내기', icon: Download },
       { href: '/admin/settings/import', label: '가져오기', icon: Upload },
     ],
@@ -87,7 +96,9 @@ const NAV: ReadonlyArray<NavSection> = [
     section: '회원',
     items: [
       { href: '/admin/members', label: '회원 관리', icon: Users },
-      { href: '/admin/members/groups', label: '회원 그룹', disabled: true },
+      { href: '/admin/members/groups', label: '회원 그룹', icon: Users },
+      { href: '/admin/members/new', label: '회원 등록', icon: UserPlus },
+      { href: '/admin/members/settings', label: '회원 설정', icon: SlidersHorizontal },
     ],
   },
   {

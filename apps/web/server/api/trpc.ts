@@ -86,9 +86,29 @@ const requireAdmin2FAIfEnabled = t.middleware(async ({ ctx, next }) => {
  * @MX:WARN: [AUTO] AdminLog.create 실패 시 silent console.error 처리 — 감사 로그 손실 가능.
  * @MX:REASON: AdminLog 기록 실패를 mutation 실패로 전파하면 사용자 경험이 무관한 사유로 깨짐.
  *             Slice E 에서 (a) error sink (Sentry 등), (b) 실패율 메트릭 도입 필요.
- * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-070, REQ-ADMIN-071
- * @MX:TODO: diff.input 의 민감 키(secret/key/token/password 패턴) 마스킹 — Slice E.
+ * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-070, REQ-ADMIN-071, SPEC-ADMIN-002 REQ-ADMIN2-045
  */
+const SENSITIVE_KEY_PATTERN = /password|secret|token|key/i;
+
+/**
+ * diff.input 에서 비밀번호 등 민감 키를 재귀적으로 마스킹한다 (REQ-ADMIN2-045).
+ * AdminLog는 누가 무엇을 바꿨는지 추적하는 용도이며 평문 자격증명을 보관해서는 안 된다.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function redactSensitive(value: any): any {
+  if (Array.isArray(value)) {
+    return value.map(redactSensitive);
+  }
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      out[k] = SENSITIVE_KEY_PATTERN.test(k) ? '[REDACTED]' : redactSensitive(v);
+    }
+    return out;
+  }
+  return value;
+}
+
 const auditLogger = t.middleware(async ({ ctx, type, path, input, next }) => {
   const result = await next();
   // type === 'mutation' 이고 성공한 경우에만 기록 (REQ-ADMIN-070)
@@ -102,7 +122,7 @@ const auditLogger = t.middleware(async ({ ctx, type, path, input, next }) => {
             action: path,             // "admin.module.create", "admin.menu.delete" 등
             target: '',               // Slice E 에서 result 로부터 추출 (REQ-ADMIN-071 정련)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            diff: { input: input ?? null, output: (result as any).data ?? null },
+            diff: { input: redactSensitive(input ?? null), output: redactSensitive((result as any).data ?? null) },
             ip: ctx.ip ?? null,
             userAgent: ctx.userAgent ?? null,
           },

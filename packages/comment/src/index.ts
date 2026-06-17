@@ -6,3 +6,4 @@ export * from './tree';
 export * from './router';
 export { commentEvents, emitCommentDeleted } from './events';
 export type { CommentDeletedEvent } from './events';
+export * from './admin';

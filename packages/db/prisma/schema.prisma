@@ -41,6 +41,7 @@ model Site {
   domains         Domain[]
   menus           Menu[]
   moduleInstances ModuleInstance[]
+  dailyVisits     DailyVisit[]
 
   @@map("sites")
 }
@@ -334,6 +335,7 @@ model MemberGroup {
   siteId    Int?
   title     String
   isDefault Boolean  @default(false)
+  description String?  @db.Text
   isAdmin   Boolean  @default(false)
   imageMark String?
   listOrder Int      @default(0)
@@ -1084,4 +1086,25 @@ model CommentReport {
   @@unique([commentId, reporterId])
   @@index([commentId])
   @@map("comment_reports")
+}
+
+// =====================================================================
+// SPEC-ADMIN-002: 방문자 통계 (REQ-ADMIN2-001, REQ-ADMIN2-140)
+// =====================================================================
+
+// 일별 방문자 집계 테이블 — Phase 1에서는 최소 기능, Phase 2에서 확장
+model DailyVisit {
+  id             Int      @id @default(autoincrement())
+  siteId         Int
+  date           DateTime @db.Date
+  uniqueVisitors Int      @default(0)
+  pageViews      Int      @default(0)
+  createdAt      DateTime @default(now()) @db.Timestamptz
+  updatedAt      DateTime @updatedAt @db.Timestamptz
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, date])
+  @@index([date])
+  @@map("daily_visits")
 }

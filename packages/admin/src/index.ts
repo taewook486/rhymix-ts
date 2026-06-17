@@ -23,5 +23,8 @@ export { parseIpFilter, matchesIpFilter, parseIpFilterForQuery, type ParsedIpFil
 // Favorites
 export { FAVORITE_MAX_COUNT, validateFavoriteHref } from './favorites/actions';
 
+// Settings (SPEC-ADMIN-002 Slice 1F)
+export * from './settings';
+
 // Widgets
 export { validatePresetProps } from './widgets/preset';

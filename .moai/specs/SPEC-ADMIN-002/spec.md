@@ -1,0 +1,467 @@
+---
+id: SPEC-ADMIN-002
+title: 관리자 패널 미구현 기능 완성 (레거시 분석 기반)
+version: 1.1.0
+status: planned
+created: 2026-06-14
+updated: 2026-06-18
+author: MoAI manager-spec
+priority: P1
+phase: 6
+parent: MASTER-PLAN-002
+depends-on: [SPEC-ADMIN-001, SPEC-ADMIN-EXTRAS-001, SPEC-AUTH-001, SPEC-CONTENT-001, SPEC-DOCUMENT-001, SPEC-COMMENT-001, SPEC-FILE-001, SPEC-POINT-001, SPEC-MAIL-001, SPEC-LAYOUT-001, SPEC-PAGE-001, SPEC-WIDGET-001, SPEC-THEME-001, SPEC-THEME-POLISH-001]
+issue_number: TBD
+related-research: SPEC-ADMIN-002/research.md
+language: ko
+---
+
+# SPEC-ADMIN-002 — 관리자 패널 미구현 기능 완성 (Phase 6 / P1)
+
+## HISTORY
+
+- 2026-06-18 (v1.1.0): Playwright 실사 기반 `research.md` 추가 후 갱신. 레거시 admin(http://localhost:8080, Rhymix 2.1.33)을 7개 카테고리(대시보드/사이트 제작·편집/회원/콘텐츠/즐겨찾기/설정/고급) 순서로 실제 화면 단위 재조사하고 rhymix-ts 코드와 직접 대조. 신규 REQ-ADMIN2-150~156(7건) 추가 — 관리자 메뉴 초기화(150), 세션 정리(151), 회원 목록 상태 필터 탭(152), 문서 "임시" 상태 필터 보강(153), 비동기 작업 설정(154), 사이트 잠금 런타임 UI(155), 태그 구분 방법 설정(156). REQ-ADMIN2-053(회원 디자인 설정)을 P3→P2로 상향(레거시 사이트 디자인 설정의 1차 탭). "쉬운 설치"(원격 마켓플레이스, 13개 카테고리) 영구 제외 확정. 정정: `/admin/trash`는 이미 구현되어 있음(1차 탐색의 "휴지통 누락" 보고는 오류). 기존 REQ-ADMIN2-001~149는 재번호 없이 그대로 유지.
+- 2026-06-14 (v1.0.0): 최초 작성. 사용자가 브라우저에서 rhymix-ts 관리자 패널을 열었을 때 다수의 메뉴가 "준비중"으로 표시되는 문제를 해결하기 위한 마스터 플랜. 레거시 Rhymix PHP 관리자(http://localhost:8080/)의 전체 admin 디스패치 함수(disp*) 인벤토리와 현재 rhymix-ts `apps/web/app/admin/` 구현을 1:1 대조한 gap 분석 기반. SPEC-ADMIN-001(기반 관리자 기능)과 SPEC-ADMIN-EXTRAS-001(export/import + 잔여 REQ)이 모두 구현 완료된 상태를 전제하며, 그 위에 레거시 대비 누락된 관리자 기능을 6개 섹션으로 구조화하여 완성한다.
+
+---
+
+## 1. Overview
+
+### 1.1 목적
+
+본 SPEC은 **레거시 Rhymix PHP 관리자 패널과 동등한 수준의 기능 완결성**을 rhymix-ts 관리자 패널에 부여한다. 현재 `apps/web/app/admin/`은 기반 골격(대시보드, 게시판, 회원 목록/상세, 메뉴, 모듈, 사이트 설정, export/import, 캐시, 휴지통, 위젯)은 구현되어 있으나, 레거시의 다수 관리 화면(회원 그룹·가입/로그인/약관 설정, 전체 문서/댓글 관리, 파일 관리, 설문, 알림·보안·SEO·스팸필터 설정, 통계·쪽지·서버환경 등)이 미구현 상태이거나 "준비중"으로 표시된다.
+
+이 SPEC은 레거시 admin의 전체 디스패치 함수(`dispAdmin*`, `dispMemberAdmin*`, `dispBoardAdmin*`, `dispDocumentAdmin*`, `dispCommentAdmin*`, `dispFileAdmin*`, `dispLayoutAdmin*`, `dispModuleAdmin*`, `dispPageAdmin*`, `dispPointAdmin*`, `dispMenuAdmin*`, `dispPollAdmin*`, `dispSpamfilterAdmin*`, `dispCommunicationAdmin*`, `dispCounterAdmin*`, `dispAutoinstallAdmin*`, `dispTagAdmin*`)를 현재 구현과 대조한 gap 분석을 단일 마스터 플래닝 문서로 통합한다.
+
+### 1.2 범위 요약
+
+| 섹션 | 도메인 | 레거시 대응 모듈 | 우선순위 |
+|---|---|---|---|
+| 섹션 1 | 대시보드 개선 | admin, counter, document, comment, autoinstall | P1 |
+| 섹션 2 | 사이트 제작/편집 완성 | layout, page, menu | P2 |
+| 섹션 3 | 회원 설정 완성 | member | P1 |
+| 섹션 4 | 콘텐츠 관리 완성 | document, comment, file, poll, tag | P1/P2/P3 |
+| 섹션 5 | 사이트 설정 완성 | admin(config), spamfilter, communication | P1/P2 |
+| 섹션 6 | 고급 기능 | counter, communication, admin(serverenv/cleanup), module | P2/P3 |
+
+### 1.3 대상 (Audience)
+
+- expert-backend agent — tRPC 라우터·Server Action·Prisma 쿼리·도메인 서비스 구현 (회원 설정 직렬화, 문서/댓글 일괄 처리, 파일 GC, 통계 집계, 스팸필터 매칭)
+- expert-frontend agent — 관리자 화면 UI 구현 (설정 탭, 목록/필터/일괄선택 테이블, 통계 차트, 폼)
+- expert-security agent — 보안 설정(비밀번호 정책·IP 차단·세션), 스팸필터, 약관 처리에 대한 검토 추천
+- 운영자 — "준비중" 표시 없이 모든 좌측 메뉴가 동작하는 관리자 패널을 검증하는 최종 사용자
+
+---
+
+## 2. Scope Exclusions (이미 구현된 범위)
+
+[HARD] 다음 항목은 **이미 구현되었으므로 본 SPEC의 범위에서 제외**한다. 중복 구현을 금지한다.
+
+### 2.1 SPEC-ADMIN-001 (기반 관리자 기능, status: completed)
+
+- 관리자 인증 가드 (`requireAdmin`), AdminLog 미들웨어
+- 사이트(Site)/도메인(Domain) 기본 관리
+- 모듈 인스턴스(ModuleInstance) CRUD 기본 골격 — `/admin/modules`
+- 메뉴 트리 편집 기본 — `/admin/menu`, `/admin/menu/[id]`, `/admin/menu/new`
+- 사이트 기본 정보 설정 — `/admin/settings/site` (레거시 `dispAdminConfigGeneral`)
+- 관리자 로그 조회 — `/admin/logs`
+- 캐시 관리 — `/admin/system/cache`
+
+### 2.2 SPEC-ADMIN-EXTRAS-001 (export/import + 잔여 REQ, status: completed)
+
+- 운영 데이터 JSON export/import — `/admin/settings/export`, `/admin/settings/import`
+- admin 그룹 2FA enforcement gate — `/admin/2fa/*` (레거시에는 없던 신규 보안 기능)
+- cross-level 메뉴 DnD, WidgetInstance 프리셋, AdminLog IP/CIDR 필터, 모듈 일괄 작업 UI
+- 관리자별 즐겨찾기(AdminFavorite) 사이드바
+- 사이트잠금(Sitelock, 레거시 `dispAdminConfigSitelock`)
+
+### 2.3 기타 Phase 1~5 완료 SPEC
+
+- 게시판 관리 (목록/카테고리/추가변수/권한) — SPEC-BOARD-CRUD-001 / `/admin/boards/[mid]/*` (레거시 `dispBoardAdmin*`)
+- 휴지통 — SPEC-DOCUMENT-001 / `/admin/trash` (레거시 `dispDocumentAdminTrashList`)
+- 회원 목록/상세, 회원 포인트 — SPEC-AUTH-001 + SPEC-POINT-001 / `/admin/members`, `/admin/members/[id]`, `/admin/members/[id]/points`
+- 포인트 설정 — SPEC-POINT-001 / `/admin/site/points` (레거시 `dispPointAdminConfig`/`dispPointAdminActConfig`)
+- 메일 설정 — SPEC-MAIL-001 / `/admin/site/mail`
+- 테마/레이아웃/스킨 3-pane 디자인 에디터 — SPEC-THEME-POLISH-001 / `/admin/site/design`
+- 위젯 관리 — SPEC-WIDGET-001 / `/admin/widgets/*` (레거시 `dispWidgetAdmin*`)
+- 애드온/패키지 마켓 — SPEC-ADDON-001 + addons / `/admin/addons` (레거시 `dispAutoinstallAdminIndex`)
+- FTP 설정 — **영구 제외**. 컨테이너/서버리스 배포 모델에서 무의미 (레거시 `dispAdminConfigFtp`)
+- 쉬운 설치(원격 마켓플레이스 모듈/애드온/위젯/스킨 다운로드·설치, 13개 카테고리) — **영구 제외**. Next.js/npm 패키지 아키텍처에서는 PHP의 런타임 파일 설치 모델이 성립하지 않음 (레거시: `dispAutoinstallAdminIndex`). 로컬에 선언된 애드온의 활성/비활성 토글은 `/admin/addons`(SPEC-ADDON-001)에서 이미 제공됨.
+
+전체 Out-of-Scope은 본 SPEC 마지막의 `## Exclusions (What NOT to Build)` 절 참조.
+
+---
+
+## 3. Requirements (EARS Format)
+
+본 SPEC은 모든 요구사항을 EARS(Easy Approach to Requirements Syntax) 형식으로 기술한다. REQ ID는 `REQ-ADMIN2-XXX`이며, 각 요구사항에는 우선순위(P1/P2/P3)와 전달 단계(Phase 1/2/3)를 명시한다. 레거시 대응 디스패치 함수는 `(legacy: dispXxx)` 형태로 표기한다.
+
+> 우선순위 정의:
+> - **P1 (Phase 1, Critical)** — 사용자가 즉시 누락을 인지하는 핵심 기능. "준비중" 제거 1순위.
+> - **P2 (Phase 2, Important)** — 운영에 중요하나 즉시 차단되지 않는 기능.
+> - **P3 (Phase 3, Nice-to-have)** — 보조 기능. 레거시 호환을 위해 후순위로 완결.
+
+---
+
+### 섹션 1: 대시보드 개선 (REQ-ADMIN2-001 ~ 010)
+
+**REQ-ADMIN2-001** (Ubiquitous) — *P1 / Phase 1*: The admin dashboard at `/admin` SHALL display a 방문자 통계 위젯 showing daily and monthly visit counts for the current site, rendered as a line/bar chart. (legacy: `dispCounterAdminIndex` 요약본)
+
+**REQ-ADMIN2-002** (Event-Driven) — *P1 / Phase 1*: WHEN the dashboard loads, the system SHALL fetch the 10 most recent documents across all board module instances and render them as a "최근 문서" 위젯 with title, author nickname, board name, and relative timestamp, each linking to the document.
+
+**REQ-ADMIN2-003** (Event-Driven) — *P1 / Phase 1*: WHEN the dashboard loads, the system SHALL fetch the 10 most recent comments and render them as a "최근 댓글" 위젯 with excerpt, author, parent document title, and timestamp.
+
+**REQ-ADMIN2-004** (Ubiquitous) — *P2 / Phase 2*: The dashboard SHALL display a 업데이트 알림 위젯 indicating whether a newer rhymix-ts core version or any installed addon/module update is available, comparing the current version against a configured update manifest source. (legacy: 코어/모듈 업데이트 알림)
+
+**REQ-ADMIN2-005** (State-Driven) — *P2 / Phase 2*: WHILE no update is available, the 업데이트 알림 위젯 SHALL render a "최신 버전" status WITHOUT making the administrator believe an action is required.
+
+**REQ-ADMIN2-006** (Ubiquitous) — *P2 / Phase 2*: The dashboard SHALL display a 요약 카운터 strip showing total member count, total document count, total comment count, and total file count for the current site.
+
+**REQ-ADMIN2-007** (Event-Driven) — *P1 / Phase 1*: WHEN dashboard widget data fetch fails for any single widget, the system SHALL render that widget in an error state WITHOUT blocking the rendering of other widgets (graceful degradation per widget).
+
+**REQ-ADMIN2-008** (Ubiquitous) — *P3 / Phase 3*: The dashboard SHALL allow the administrator to toggle visibility of individual widgets, persisting the preference per admin account.
+
+**REQ-ADMIN2-009** (Ubiquitous) — *P2 / Phase 2*: The 방문자 통계 위젯 SHALL be backed by aggregated daily counters (not per-request scans) to keep dashboard load within acceptable latency on large sites.
+
+**REQ-ADMIN2-010** (Unwanted) — *P1 / Phase 1*: The dashboard SHALL NOT execute unbounded full-table scans on the document or comment tables; recent-item queries SHALL be bounded by index-backed `ORDER BY ... LIMIT` clauses.
+
+#### 1.A admin 전역 유틸리티 (레거시 footer 대응, v1.1.0 추가)
+
+**REQ-ADMIN2-150** (Event-Driven) — *P2 / Phase 2*: WHEN an administrator triggers "관리자 메뉴 초기화" from the admin layout global footer, the system SHALL invalidate the cached admin menu/navigation structure and rebuild it on the next request, recording the action in AdminLog. (legacy: 관리자 메뉴 초기화)
+
+**REQ-ADMIN2-151** (Event-Driven) — *P2 / Phase 2*: WHEN an administrator triggers "세션 정리" from the admin layout global footer, the system SHALL purge expired sessions in a bounded batch operation and report the number of removed sessions WITHOUT terminating the current administrator's active session. (legacy: 세션 정리)
+
+---
+
+### 섹션 2: 사이트 제작/편집 완성 (REQ-ADMIN2-020 ~ 039)
+
+#### 2.A 레이아웃 관리 UI
+
+**REQ-ADMIN2-020** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 레이아웃 관리 page at `/admin/site/layouts` listing installed layouts with name, type (PC/mobile), and the number of module instances using each. (legacy: `dispLayoutAdminInstalledList`)
+
+**REQ-ADMIN2-021** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL list layout instances (configured copies of a layout with assigned variables) and allow creating a new instance from an installed layout. (legacy: `dispLayoutAdminInstanceList`, `dispLayoutAdminInsert`)
+
+**REQ-ADMIN2-022** (Event-Driven) — *P2 / Phase 2*: WHEN an administrator edits a layout instance, the system SHALL present an editor for the layout's declared variables (logo, menu binding, colors) and persist them to the `ThemeAssignment`/layout config store defined in SPEC-LAYOUT-001. (legacy: `dispLayoutAdminEdit`, `dispLayoutAdminModify`)
+
+**REQ-ADMIN2-023** (Optional) — *P3 / Phase 3*: Where a layout supports preview, the admin SHALL provide a 미리보기 rendering the layout with sample content WITHOUT persisting changes. (legacy: `dispLayoutAdminPreview`)
+
+**REQ-ADMIN2-024** (Optional) — *P3 / Phase 3*: Where an administrator requests duplication, the system SHALL copy a layout instance including its variable values under a new name. (legacy: `dispLayoutAdminCopyLayout`)
+
+#### 2.B 페이지 모듈 완성
+
+**REQ-ADMIN2-025** (Ubiquitous) — *P1 / Phase 1*: The 페이지 관리 page at `/admin/pages` SHALL list page module instances WITHOUT showing a "준비중" placeholder, replacing the current stub. (legacy: `dispPageAdminContent`)
+
+**REQ-ADMIN2-026** (Event-Driven) — *P1 / Phase 1*: WHEN an administrator edits a page at `/admin/pages/[instanceId]/edit`, the system SHALL provide a content editor for the page's `mcontent` (widget-tokenized HTML) per SPEC-PAGE-001, with save and revert. (legacy: `dispPageAdminContentModify`)
+
+**REQ-ADMIN2-027** (Ubiquitous) — *P2 / Phase 2*: The page editor SHALL expose basic page settings: title, browser title, layout binding, and permission (grant) settings. (legacy: `dispPageAdminInfo`, `dispPageAdminSkinInfo`, `dispPageAdminGrantInfo`)
+
+**REQ-ADMIN2-028** (Optional) — *P3 / Phase 3*: Where a page has a distinct mobile variant, the admin SHALL allow editing mobile page content separately. (legacy: `dispPageAdminMobileContent`)
+
+**REQ-ADMIN2-029** (Event-Driven) — *P2 / Phase 2*: WHEN an administrator deletes a page instance, the system SHALL confirm and remove the instance and its content, recording the action in AdminLog. (legacy: `dispPageAdminDelete`)
+
+#### 2.C 사이트맵 편집기 개선
+
+**REQ-ADMIN2-030** (Ubiquitous) — *P2 / Phase 2*: The 메뉴/사이트맵 editor at `/admin/menu` SHALL support drag-and-drop reordering and nesting of menu items, building on the cross-level DnD delivered in SPEC-ADMIN-EXTRAS-001. (legacy: `dispMenuAdminSiteMap`)
+
+**REQ-ADMIN2-031** (Optional) — *P3 / Phase 3*: Where the site design entry exists, the admin SHALL surface a 사이트 디자인 shortcut linking menu structure to layout/theme assignment. (legacy: `dispMenuAdminSiteDesign`)
+
+---
+
+### 섹션 3: 회원 설정 완성 (REQ-ADMIN2-040 ~ 069)
+
+#### 3.A 회원 그룹 관리
+
+**REQ-ADMIN2-040** (Ubiquitous) — *P1 / Phase 1*: The admin SHALL provide a 회원 그룹 관리 page at `/admin/members/groups` listing all member groups with title, member count, and default-group flag, replacing any "준비중" placeholder. (legacy: `dispMemberAdminGroupList`)
+
+**REQ-ADMIN2-041** (Event-Driven) — *P1 / Phase 1*: WHEN an administrator creates or edits a member group, the system SHALL persist title, description, and the "신규 가입자 자동 배정" flag, ensuring exactly one default group exists at all times.
+
+**REQ-ADMIN2-042** (Event-Driven) — *P1 / Phase 1*: WHEN an administrator deletes a member group that has assigned members, the system SHALL reassign those members to the default group before deletion and record the operation in AdminLog.
+
+**REQ-ADMIN2-043** (Event-Driven) — *P1 / Phase 1*: WHEN an administrator changes a member's group from the member detail page, the system SHALL update the assignment and reflect it in permission checks on next request.
+
+#### 3.B 회원 직접 등록
+
+**REQ-ADMIN2-044** (Event-Driven) — *P1 / Phase 1*: WHEN an administrator submits the 회원 등록 form at `/admin/members/new`, the system SHALL create a member with email, password (hashed via the SPEC-AUTH-001 hasher), nickname, and group, bypassing the public sign-up email verification flow. (legacy: `dispMemberAdminInsert`)
+
+**REQ-ADMIN2-045** (Unwanted) — *P1 / Phase 1*: Admin-created member registration SHALL NOT store the password in plaintext nor log it; the password SHALL only appear in the request body and be discarded after hashing.
+
+#### 3.C 회원 설정 탭 (가입/로그인/약관/기능/디자인)
+
+**REQ-ADMIN2-046** (Ubiquitous) — *P1 / Phase 1*: The admin SHALL provide a 회원 설정 page at `/admin/members/settings` with tabbed sections: 일반 / 가입 / 로그인 / 약관 / 기능 / 디자인. (legacy: `dispMemberAdminConfig` and its sub-screens)
+
+**REQ-ADMIN2-047** (Ubiquitous) — *P1 / Phase 1*: The 가입 설정 tab SHALL persist: 가입 허용 여부, 이메일 인증 필수 여부, 관리자 승인 필요 여부, 가입 시 기본 그룹, 중복 닉네임 허용 여부. (legacy: `dispMemberAdminSignUpConfig`)
+
+**REQ-ADMIN2-048** (Ubiquitous) — *P1 / Phase 1*: The 로그인 설정 tab SHALL persist: 자동 로그인 허용 및 유지 기간, 로그인 실패 잠금 임계값, 로그인 후 리디렉션 정책. (legacy: `dispMemberAdminLoginConfig`)
+
+**REQ-ADMIN2-049** (Optional) — *P3 / Phase 3*: Where social login is configured, the 로그인 설정 tab SHALL allow enabling/disabling configured social providers WITHOUT requiring credentials to be re-entered in plaintext.
+
+**REQ-ADMIN2-050** (Ubiquitous) — *P1 / Phase 1*: The 약관 설정 tab SHALL persist editable 이용약관 and 개인정보처리방침 documents (markdown/HTML), shown during sign-up, with required-consent flags. (legacy: `dispMemberAdminAgreementsConfig`)
+
+**REQ-ADMIN2-051** (Event-Driven) — *P2 / Phase 2*: WHEN the 약관 content changes, the system SHALL record a version/timestamp so consent records can reference the agreement version in effect at sign-up time.
+
+**REQ-ADMIN2-052** (Ubiquitous) — *P2 / Phase 2*: The 기능 설정 tab SHALL persist member feature toggles (프로필 이미지 허용, 서명 허용, 회원 검색 노출 등). (legacy: `dispMemberAdminFeaturesConfig`)
+
+**REQ-ADMIN2-053** (Ubiquitous) — *P2 / Phase 2*: The 디자인 설정 tab SHALL persist member-area skin/template selections. (legacy: `dispMemberAdminDesignConfig`) [v1.1.0: P3→P2 — 레거시에서 "준비중"이 아니라 사이트 디자인 설정의 1차 탭(회원 스킨 슬롯)으로 노출되므로 우선순위 상향.]
+
+#### 3.D 가입 양식 커스터마이징
+
+**REQ-ADMIN2-054** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 가입 양식 editor at `/admin/members/joinform` allowing administrators to add, reorder, mark required/optional, and remove sign-up form fields backed by `member.extra_vars` (JSONB) per SPEC-AUTH-001. (legacy: `dispMemberAdminInsertJoinForm`)
+
+**REQ-ADMIN2-055** (Unwanted) — *P2 / Phase 2*: The 가입 양식 editor SHALL NOT permit removal or renaming of the system-reserved fields (email, password, nickname) in a way that breaks authentication.
+
+#### 3.E 닉네임 변경 이력
+
+**REQ-ADMIN2-056** (Ubiquitous) — *P3 / Phase 3*: The admin SHALL provide a 닉네임 변경 이력 view at `/admin/members/nickname-log` listing past nickname changes with member, old/new nickname, and timestamp. (legacy: `dispMemberAdminNickNameLog`)
+
+**REQ-ADMIN2-057** (Event-Driven) — *P3 / Phase 3*: WHEN a member's nickname changes (by the member or an admin), the system SHALL append a row to the nickname change log.
+
+#### 3.F 회원 목록 상태 필터 (v1.1.0 추가)
+
+**REQ-ADMIN2-152** (Ubiquitous) — *P2 / Phase 2*: The 회원 목록 page at `/admin/members` SHALL provide status filter tabs (전체 / 최고 관리자 / 승인 / 거부 / 미인증) that scope the listed members to the selected registration/approval state, building on the existing member list. (legacy: 회원 목록 상단 필터 탭)
+
+---
+
+### 섹션 4: 콘텐츠 관리 완성 (REQ-ADMIN2-070 ~ 109)
+
+#### 4.A 전체 문서 관리
+
+**REQ-ADMIN2-070** (Ubiquitous) — *P1 / Phase 1*: The admin SHALL provide a 전체 문서 관리 page at `/admin/documents` listing documents across all board instances with filters for module instance (mid), author, status, and full-text search on title/content. The status filter SHALL include 전체 / 공개 / 비밀 / 임시(완료되지 않은 자동저장본) / 신고. (legacy: `dispDocumentAdminList`)
+
+**REQ-ADMIN2-153** (State-Driven) — *P2 / Phase 2*: WHILE the 전체 문서 관리 status filter is set to "임시", the system SHALL list only temporary/auto-saved draft documents (`document.status = TEMP` 등), allowing the administrator to delete or recover them, so abandoned drafts do not accumulate undetected. (legacy: 문서 목록 상태 필터 "임시")
+
+**REQ-ADMIN2-071** (Event-Driven) — *P1 / Phase 1*: WHEN an administrator selects multiple documents and chooses a bulk action (삭제 / 휴지통 이동 / 이동(다른 게시판) / 상태 변경), the system SHALL apply the action in a transaction and record it in AdminLog.
+
+**REQ-ADMIN2-072** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 신고 문서 관리 view at `/admin/documents/declared` listing reported documents with report count and reporter, allowing dismiss or delete. (legacy: `dispDocumentAdminDeclared`)
+
+**REQ-ADMIN2-073** (Optional) — *P3 / Phase 3*: Where document aliases are used, the admin SHALL list and manage 문서 별칭 (URL aliases). (legacy: `dispDocumentAdminAlias`)
+
+**REQ-ADMIN2-074** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 문서 설정 page persisting global document defaults (정렬 기준, 페이지당 개수, 비회원 작성 허용 등). (legacy: `dispDocumentAdminConfig`)
+
+#### 4.B 전체 댓글 관리
+
+**REQ-ADMIN2-075** (Ubiquitous) — *P1 / Phase 1*: The admin SHALL provide a 전체 댓글 관리 page at `/admin/comments` listing comments across all instances with filters for module instance, author, and content search. (legacy: `dispCommentAdminList`)
+
+**REQ-ADMIN2-076** (Event-Driven) — *P1 / Phase 1*: WHEN an administrator selects multiple comments and chooses bulk delete, the system SHALL delete them and their replies (cascade) in a transaction and record it in AdminLog.
+
+**REQ-ADMIN2-077** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 신고 댓글 관리 view at `/admin/comments/declared` listing reported comments with dismiss/delete actions. (legacy: `dispCommentAdminDeclared`)
+
+#### 4.C 파일 관리
+
+**REQ-ADMIN2-078** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 파일 관리 page at `/admin/files` listing uploaded files with name, size, uploader, attached document, and download count, with filters and search. (legacy: `dispFileAdminList`)
+
+**REQ-ADMIN2-079** (Event-Driven) — *P2 / Phase 2*: WHEN an administrator triggers 고아 파일 정리, the system SHALL identify files no longer referenced by any document/comment (per SPEC-FILE-001 cascade rules) and offer them for deletion with a dry-run preview before applying.
+
+**REQ-ADMIN2-080** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide 파일 업로드 설정 persisting allowed extensions, max file size, max attachments per post, and image auto-resize dimensions. (legacy: `dispFileAdminUploadConfig`)
+
+**REQ-ADMIN2-081** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide 파일 다운로드 설정 persisting download permission policy (회원만 / 포인트 차감 / 무제한) and hotlink protection toggle. (legacy: `dispFileAdminDownloadConfig`)
+
+**REQ-ADMIN2-082** (Optional) — *P3 / Phase 3*: Where additional file options exist, the admin SHALL expose 기타 설정 (썸네일 생성 방식, 저장 경로 전략). (legacy: `dispFileAdminOtherConfig`)
+
+#### 4.D 설문 (Poll)
+
+**REQ-ADMIN2-083** (Ubiquitous) — *P3 / Phase 3*: The admin SHALL provide a 설문 목록 page at `/admin/polls` listing polls with title, status, vote count, and period. (legacy: `dispPollAdminList`)
+
+**REQ-ADMIN2-084** (Event-Driven) — *P3 / Phase 3*: WHEN an administrator creates or edits a poll, the system SHALL persist question(s), options, multiple-choice flag, and voting period. (legacy: poll create/edit)
+
+**REQ-ADMIN2-085** (Ubiquitous) — *P3 / Phase 3*: The admin SHALL display 설문 결과 with per-option vote counts and percentages. (legacy: `dispPollAdminResult`)
+
+**REQ-ADMIN2-086** (Ubiquitous) — *P3 / Phase 3*: The admin SHALL provide 설문 설정 for global poll defaults (비회원 투표 허용, 중복 투표 방지 방식). (legacy: `dispPollAdminConfig`)
+
+#### 4.E 태그
+
+**REQ-ADMIN2-087** (Ubiquitous) — *P3 / Phase 3*: The admin SHALL provide 태그 설정 persisting tag display options (태그 클라우드 노출 개수, 정렬 기준). (legacy: `dispTagAdminConfig`)
+
+**REQ-ADMIN2-156** (Ubiquitous) — *P3 / Phase 3*: The 태그 설정 SHALL persist the 태그 구분 방법 (쉼표 / 해시(#) / 공백, multiple selectable) used to parse tag input when documents are saved. (legacy: 태그 구분 방법 설정)
+
+---
+
+### 섹션 5: 사이트 설정 완성 (REQ-ADMIN2-110 ~ 139)
+
+#### 5.A 알림 설정
+
+**REQ-ADMIN2-110** (Ubiquitous) — *P1 / Phase 1*: The admin SHALL provide 알림 설정 at `/admin/settings/notification` persisting default email sender name/address and SMTP connection settings, integrating with the SmtpMailDispatcher from SPEC-MAIL-001. (legacy: `dispAdminConfigNotification`)
+
+**REQ-ADMIN2-111** (Event-Driven) — *P2 / Phase 2*: WHEN an administrator clicks "테스트 메일 발송", the system SHALL send a test email to the administrator's address and report success/failure WITHOUT persisting partial settings on failure.
+
+**REQ-ADMIN2-112** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide 이메일 큐 설정 persisting queue mode (즉시 발송 / 큐 적재) and batch size. (legacy: `dispAdminConfigQueue`)
+
+#### 5.B 보안 설정
+
+**REQ-ADMIN2-113** (Ubiquitous) — *P1 / Phase 1*: The admin SHALL provide 보안 설정 at `/admin/settings/security` persisting password policy (최소 길이, 복잡도 요구), session lifetime, and login attempt lockout settings. (legacy: `dispAdminConfigSecurity`)
+
+**REQ-ADMIN2-114** (Unwanted) — *P1 / Phase 1*: Security settings SHALL NOT allow disabling password hashing or setting a session lifetime that bypasses authentication entirely; out-of-range values SHALL be rejected with validation errors.
+
+**REQ-ADMIN2-115** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide an IP 접근 제어 view persisting allow/deny IP and CIDR rules for the admin area, reusing the IP/CIDR matcher from SPEC-ADMIN-EXTRAS-001.
+
+#### 5.C 고급 설정
+
+**REQ-ADMIN2-116** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide 고급 설정 at `/admin/settings/advanced` persisting site timezone, default language, and cache driver selection. (legacy: `dispAdminConfigAdvanced`)
+
+**REQ-ADMIN2-117** (Optional) — *P3 / Phase 3*: Where debug tooling is enabled, the admin SHALL provide 디버그 설정 persisting debug display level and target audience (관리자만 / 비활성). (legacy: `dispAdminConfigDebug`)
+
+#### 5.D SEO 설정
+
+**REQ-ADMIN2-118** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide SEO 설정 at `/admin/settings/seo` persisting default meta title/description, Open Graph defaults, and canonical URL policy. (legacy: `dispAdminConfigSEO`)
+
+**REQ-ADMIN2-119** (Event-Driven) — *P2 / Phase 2*: WHEN SEO settings are saved with sitemap generation enabled, the system SHALL expose a `sitemap.xml` reflecting public documents and pages.
+
+#### 5.E 스팸 필터
+
+**REQ-ADMIN2-120** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 차단 IP 관리 view at `/admin/settings/spamfilter/ip` listing denied IPs/CIDRs with add/remove. (legacy: `dispSpamfilterAdminDeniedIPList`)
+
+**REQ-ADMIN2-121** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 금지어 관리 view listing denied words used to reject document/comment submissions. (legacy: `dispSpamfilterAdminDeniedWordList`)
+
+**REQ-ADMIN2-122** (Event-Driven) — *P2 / Phase 2*: WHEN a document or comment submission contains a denied word OR originates from a denied IP, the system SHALL reject the submission with a spam-filtered error WITHOUT persisting the content.
+
+**REQ-ADMIN2-123** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide 차단 설정 persisting per-action submission rate limits (도배 방지: 동일 사용자 N초당 M회). (legacy: `dispSpamfilterAdminConfigBlock`)
+
+**REQ-ADMIN2-124** (Optional) — *P3 / Phase 3*: Where captcha is enabled, the admin SHALL provide 캡챠 설정 persisting captcha provider and trigger conditions. (legacy: `dispSpamfilterAdminConfigCaptcha`)
+
+#### 5.F 도메인 관리
+
+**REQ-ADMIN2-125** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 도메인 관리 view listing configured domains (multisite) with default-domain flag and per-domain default module, building on the Domain table from SPEC-ADMIN-001.
+
+#### 5.G 비동기 작업 (v1.1.0 추가)
+
+**REQ-ADMIN2-154** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 비동기 작업 page at `/admin/settings/async` displaying the async/background task queue status (대기 / 처리중 / 실패 건수) and a control to trigger immediate processing of pending tasks. (legacy: 시스템 설정 > 비동기 작업 탭)
+
+#### 5.H 사이트 잠금 런타임 UI (v1.1.0 추가)
+
+**REQ-ADMIN2-155** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a runtime 사이트 잠금 page at `/admin/settings/sitelock` allowing the administrator to toggle maintenance mode and manage the allowed-IP list during operation, not only at install time. This extends the install-time sitelock configuration (`app/install/admin-config/`) and the Sitelock asset delivered in SPEC-ADMIN-EXTRAS-001 with a runtime admin surface. (legacy: 시스템 설정 > 사이트 잠금 탭, `dispAdminConfigSitelock`)
+
+> 참고: SPEC-ADMIN-EXTRAS-001이 사이트잠금 *기능*(미들웨어 차단 + 허용 IP)을 제공하나, 운영 중 토글 가능한 admin UI는 없었다. 본 REQ는 그 런타임 UI 갭만 채운다(기능 재구현 아님).
+
+---
+
+### 섹션 6: 고급 기능 (REQ-ADMIN2-140 ~ 169)
+
+#### 6.A 방문자 통계 (Counter)
+
+**REQ-ADMIN2-140** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 방문자 통계 page at `/admin/stats` with daily/monthly visit charts, unique vs total visitors, and referrer breakdown. (legacy: `dispCounterAdminIndex`)
+
+**REQ-ADMIN2-141** (Event-Driven) — *P2 / Phase 2*: WHEN a public page is requested, the system SHALL increment visit counters via a low-overhead aggregation path that does not block page rendering.
+
+**REQ-ADMIN2-142** (Unwanted) — *P2 / Phase 2*: Visit counting SHALL NOT store personally identifying raw IP addresses beyond what is required for unique-visitor de-duplication within a day; raw IPs SHALL be hashed or truncated per privacy policy.
+
+#### 6.B 쪽지 (Communication)
+
+**REQ-ADMIN2-143** (Ubiquitous) — *P3 / Phase 3*: The admin SHALL provide 쪽지 설정 at `/admin/settings/communication` persisting whether private messaging is enabled and per-member inbox limits. (legacy: `dispCommunicationAdminConfig`)
+
+#### 6.C 서버 환경
+
+**REQ-ADMIN2-144** (Ubiquitous) — *P3 / Phase 3*: The admin SHALL provide a 서버 환경 view at `/admin/system/server-env` displaying read-only runtime info (Node version, Next.js version, database version, environment flags). (legacy: `dispAdminViewServerEnv`)
+
+**REQ-ADMIN2-145** (Unwanted) — *P3 / Phase 3*: The 서버 환경 view SHALL NOT expose secrets (DB password, API keys, session secret) in any form; environment variables containing secret material SHALL be masked.
+
+#### 6.D 모듈 상세 관리
+
+**REQ-ADMIN2-146** (Ubiquitous) — *P2 / Phase 2*: The 모듈 관리 area SHALL provide a module detail/info view per module instance showing its config, grant settings, and category assignment, extending the existing `/admin/modules` skeleton. (legacy: `dispModuleAdminInfo`, `dispModuleAdminSetup`, `dispModuleAdminGrantSetup`)
+
+**REQ-ADMIN2-147** (Optional) — *P3 / Phase 3*: Where module categories are used, the admin SHALL manage 모듈 카테고리 for grouping module instances. (legacy: `dispModuleAdminCategory`)
+
+**REQ-ADMIN2-148** (Optional) — *P3 / Phase 3*: Where language code overrides are supported, the admin SHALL provide 언어코드 editing for module-scoped translations. (legacy: `dispModuleAdminLangcode`)
+
+#### 6.E 코어 파일 정리
+
+**REQ-ADMIN2-149** (Optional) — *P3 / Phase 3*: Where stale generated/cache files accumulate, the admin SHALL provide a 코어파일 정리 action listing removable generated artifacts with a dry-run preview before deletion. (legacy: `dispAdminCleanupList`)
+
+---
+
+## 4. Implementation Priority Summary
+
+| Priority | 의미 | REQ 개수(대표) | 대표 기능 |
+|---|---|---|---|
+| **P1 (Phase 1)** | 즉시 누락 인지, "준비중" 제거 1순위 | ~22 | 대시보드 위젯, 페이지 편집, 회원 그룹, 회원 직접 등록, 회원 설정 탭(가입/로그인/약관), 전체 문서/댓글 관리, 알림 설정, 보안 설정 |
+| **P2 (Phase 2)** | 운영 중요, 비차단 | ~31 | 레이아웃 관리, 가입 양식, 파일 관리, 신고 관리, SEO, 스팸필터, 통계, 도메인 관리, 모듈 상세, 회원 디자인 설정(053, P3→P2), admin 전역 유틸(메뉴 초기화·세션 정리), 회원 목록 상태 필터, 문서 "임시" 필터, 비동기 작업, 사이트 잠금 런타임 UI |
+| **P3 (Phase 3)** | 보조/레거시 호환 | ~15 | 설문, 태그(구분 방법 포함), 닉네임 이력, 디버그/캡챠/언어코드, 쪽지, 서버환경, 코어파일 정리 |
+
+> [HARD] 시간 추정(일/주)은 사용하지 않는다. 우선순위 라벨과 Phase 순서로만 진행 순서를 정의한다.
+>
+> v1.1.0 신규 REQ 배치: REQ-ADMIN2-150/151(P2, 섹션 1.A) → Slice 1A에 인접한 운영 유틸로 Phase 2 신설 슬라이스, 152(P2)·153(P2)·156(P3)은 각 도메인 슬라이스에 병합, 154/155(P2)는 Slice 2D에 병합.
+
+---
+
+## 5. Phased Delivery Plan
+
+본 SPEC은 규모가 크므로 슬라이스 단위 분할 구현을 권장한다. 각 Phase는 독립적으로 사용자 가치를 제공한다.
+
+### Phase 1 — Critical Visibility (P1)
+
+목표: 사용자가 가장 먼저 마주치는 "준비중" 화면을 제거하고 핵심 운영 기능을 완성한다.
+
+1. **Slice 1A — 대시보드 위젯**: REQ-ADMIN2-001~003, 007, 010 (방문자 통계 요약, 최근 문서/댓글, graceful degradation)
+2. **Slice 1B — 페이지 모듈 완성**: REQ-ADMIN2-025, 026 (페이지 목록 + 편집기, "준비중" stub 교체)
+3. **Slice 1C — 회원 그룹 + 직접 등록**: REQ-ADMIN2-040~045
+4. **Slice 1D — 회원 설정 탭(핵심)**: REQ-ADMIN2-046~048, 050 (일반/가입/로그인/약관)
+5. **Slice 1E — 전체 문서/댓글 관리**: REQ-ADMIN2-070, 071, 075, 076
+6. **Slice 1F — 알림 + 보안 설정**: REQ-ADMIN2-110, 113, 114
+
+### Phase 2 — Operational Completeness (P2)
+
+목표: 운영자가 사이트를 본격 운영하는 데 필요한 설정·관리 기능을 채운다.
+
+1. **Slice 2A — 레이아웃/페이지 설정 확장**: REQ-ADMIN2-020~022, 027, 029, 030
+2. **Slice 2B — 파일 관리**: REQ-ADMIN2-078~081
+3. **Slice 2C — 신고 관리 + 문서/회원 설정**: REQ-ADMIN2-072, 074, 077, 051, 052, 053, 054, 055, 152, 153 *(053 P3→P2 회원 디자인 설정, 152 회원 목록 상태 필터, 153 문서 "임시" 필터 추가)*
+4. **Slice 2D — SEO + 고급 설정 + 큐 + 비동기/사이트잠금**: REQ-ADMIN2-112, 116, 118, 119, 154, 155 *(154 비동기 작업, 155 사이트 잠금 런타임 UI 병합)*
+5. **Slice 2E — 스팸필터**: REQ-ADMIN2-120~123
+6. **Slice 2F — 통계 + 도메인 + 모듈 상세**: REQ-ADMIN2-006, 009, 140~142, 125, 146
+7. **Slice 2G — 보안 IP 제어 + 테스트 메일**: REQ-ADMIN2-111, 115
+8. **Slice 2H — admin 전역 유틸리티**: REQ-ADMIN2-150, 151 *(관리자 메뉴 초기화, 세션 정리 — admin 레이아웃 footer)*
+
+### Phase 3 — Nice-to-have & Legacy Parity (P3)
+
+목표: 레거시 호환을 위한 보조 기능을 완결하여 "준비중"을 완전히 제거한다.
+
+1. **Slice 3A — 설문(Poll)**: REQ-ADMIN2-083~086
+2. **Slice 3B — 태그 + 문서 별칭 + 닉네임 이력**: REQ-ADMIN2-087, 156, 073, 056, 057 *(156 태그 구분 방법 설정 추가)*
+3. **Slice 3C — 회원 부가 설정**: REQ-ADMIN2-049, 028 *(053은 P2로 상향되어 Slice 2C로 이동)*
+4. **Slice 3D — 레이아웃 미리보기/복사**: REQ-ADMIN2-023, 024, 031
+5. **Slice 3E — 디버그/캡챠/기타 파일 설정**: REQ-ADMIN2-117, 124, 082, 008
+6. **Slice 3F — 쪽지 + 서버환경 + 모듈 카테고리/언어코드 + 코어정리**: REQ-ADMIN2-143~149
+
+### Phase 진입 조건
+
+- Phase 2는 Phase 1의 모든 P1 REQ가 acceptance를 통과한 후 시작한다.
+- Phase 3은 Phase 2의 P2 REQ가 acceptance를 통과한 후 시작한다.
+- 각 Slice는 독립 PR로 분리하며, 좌측 메뉴에서 해당 항목의 "준비중" 표기를 제거하는 것을 완료 신호로 삼는다.
+
+---
+
+## 6. Expert Consultation Recommendations
+
+본 SPEC은 다음 도메인 전문가 검토를 권장한다 (구현 단계에서 MoAI 오케스트레이터가 필요 시 호출):
+
+- **expert-security** — 섹션 5.B 보안 설정(비밀번호 정책·세션·IP 차단), 섹션 5.E 스팸필터, 섹션 3.C 약관/개인정보 처리, REQ-ADMIN2-142/145 PII·시크릿 마스킹
+- **expert-backend** — 섹션 4 일괄 처리 트랜잭션·파일 GC, 섹션 6.A 통계 집계 경로, 회원 설정 직렬화
+- **expert-frontend** — 대시보드 차트, 설정 탭 UI, 필터·일괄선택 테이블, 사이트맵 DnD
+- **expert-performance** — REQ-ADMIN2-009/010/141 대시보드·통계의 인덱스 기반 쿼리 및 비차단 카운팅
+
+---
+
+## Exclusions (What NOT to Build)
+
+[HARD] 본 SPEC은 다음을 **구현하지 않는다**. 범위 확장(scope creep)을 방지한다.
+
+1. **FTP 설정** (legacy `dispAdminConfigFtp`) — 컨테이너/서버리스 배포 모델에서 무의미. 영구 제외.
+2. **이미 구현된 기능 재작성** — SPEC-ADMIN-001 / SPEC-ADMIN-EXTRAS-001 / Phase 1~5 완료 SPEC이 제공한 export/import, 2FA, 게시판 CRUD, 휴지통, 회원 목록/상세, 포인트 설정, 메일 설정, 테마 디자인, 위젯, 애드온, 캐시, 사이트잠금은 재구현하지 않는다 (섹션 2 참조).
+3. **회원/그룹/차단 목록 export-import** — PII 위험으로 별도 정책 SPEC에서 다룸 (SPEC-ADMIN-EXTRAS-001 Non-Goals 계승).
+4. **자동 스케줄 백업 / 시점 복원(PITR) / DB 레벨 백업** — DBA·인프라 책임 영역. 본 SPEC은 application-layer만.
+5. **SSO / OIDC 연동** — 백로그. REQ-ADMIN2-049는 *기존에 구성된* 소셜 프로바이더 토글만 다루며 신규 연동 구현은 제외.
+6. **Admin UI 다국어(i18n)** — SPEC-ADMIN-001 Open Question 3 계승, 백로그.
+7. **모듈 간 콘텐츠 마이그레이션 도구**(게시판→위키 변환 등) — 백로그.
+8. **패키지 마켓 신규 패키지 설치/배포 파이프라인** — SPEC-ADDON-001 범위. 본 SPEC은 패키지 마켓 화면을 재구현하지 않는다.
+9. **레거시 PHP 스킨/레이아웃 파일 포맷 그대로의 호환 로딩** — rhymix-ts는 React 기반 레이아웃(SPEC-LAYOUT-001)을 사용. 레거시 `.html` 스킨 파서는 제외.
+10. **감사 로그 보존/파티셔닝 정책** — SPEC-ADMIN-001 Open Question 2 계승, 백로그.
+11. **실시간 통계(WebSocket 라이브 카운터)** — 본 SPEC의 통계는 일/월 집계 기반. 실시간 스트리밍 제외.
+12. **쉬운 설치 — 원격 마켓플레이스(13개 카테고리)** (legacy `dispAutoinstallAdminIndex`) — **영구 제외** (v1.1.0 사용자 확정). 레거시의 "쉬운 설치"는 원격 서버에서 모듈/애드온/위젯/스킨 등 13개 카테고리의 PHP 파일을 런타임에 다운로드·설치하는 모델로, Next.js/npm 패키지 아키텍처(빌드 타임 의존성, 코드 선언 기반)와 근본적으로 양립하지 않는다. FTP 설정과 동일한 사유로 직접 포팅하지 않는다. 로컬에 선언된 애드온의 활성/비활성·우선순위 토글은 `/admin/addons`(SPEC-ADDON-001)에서 이미 제공된다.
+
+> 정정(v1.1.0): 1차 탐색 보고서의 "휴지통 누락"은 오류였다. `/admin/trash`(SPEC-DOCUMENT-001)는 이미 구현되어 있으며 섹션 2.3 "이미 구현된 기능"에 명시되어 있다. 본 SPEC에는 휴지통 관련 갭 REQ가 없으며, 이는 의도된 정확한 상태다.
+
+---
+
+## Open Questions
+
+- Q1. 통계(Counter) 데이터의 보존 기간 및 집계 단위(일별 영구 보관 vs N개월 후 월별 롤업) 정책 — 운영 정책 결정 필요.
+- Q2. 약관 버전 관리(REQ-ADMIN2-051)에서 기존 동의 회원에 대한 재동의 요구 트리거 정책 — 법무/운영 판단 필요.
+- Q3. 스팸필터 rate-limit(REQ-ADMIN2-123)의 저장소(메모리 vs Redis vs DB) 선택 — 배포 환경에 따라 결정.
+- Q4. 파일 고아 GC(REQ-ADMIN2-079)의 안전 마진(업로드 직후 미연결 파일을 즉시 삭제 대상으로 볼지, grace period를 둘지).

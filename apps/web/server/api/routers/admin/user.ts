@@ -1,7 +1,8 @@
 /**
  * admin.user tRPC 라우터 — SPEC-ADMIN-001 Slice E-5.
+ *                     SPEC-ADMIN-002 Slice 1C (REQ-ADMIN2-044, REQ-ADMIN2-045).
  *
- * 회원 관리: list / get / update / bulk / deniedList.*.
+ * 회원 관리: list / get / update / bulk / create(직접 등록) / deniedList.*.
  *
  * @MX:ANCHOR: [AUTO] admin.user.update — changeUserStatus 위임 단일 진입점.
  * @MX:REASON: 권한 검증 + status 변경 + 세션 무효화 + AuditLog 가 packages/auth 의
@@ -12,6 +13,7 @@
 import { z } from 'zod';
 import { router, protectedAdminProcedure } from '../../trpc';
 import { changeUserStatus, softDeleteUser } from '@rhymix-ts/auth';
+import { hashPassword } from '@rhymix-ts/auth';
 
 // UserStatus enum — Prisma schema 와 동기화
 const UserStatusEnum = z.enum(['APPROVED', 'UNAUTHED', 'SUSPENDED', 'DENIED', 'DELETED']);
@@ -74,6 +76,71 @@ export const adminUserRouter = router({
     .query(({ ctx, input }) =>
       ctx.prisma.user.findUnique({ where: { id: input.userId } }),
     ),
+
+  /**
+   * 회원 직접 등록 (REQ-ADMIN2-044).
+   * 이메일 인증 우회, 비밀번호 해싱, 그룹 배정.
+   * 비밀번호는 평문으로 저장되거나 로깅되지 않음 (REQ-ADMIN2-045).
+   */
+  create: protectedAdminProcedure
+    .input(
+      z.object({
+        userId: z.string().min(1).max(80),
+        emailAddress: z.string().email(),
+        password: z.string().min(8).max(100),
+        nickName: z.string().min(1).max(40),
+        groupId: z.number().int().positive().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 비밀번호 해싱 (REQ-ADMIN2-045: 평문 비밀번호는 로그하지 않음)
+      const passwordHash = await hashPassword(input.password);
+
+      // 그룹 지정 없으면 기본 그룹 찾기
+      let targetGroupId = input.groupId;
+      if (!targetGroupId) {
+        const defaultGroup = await ctx.prisma.memberGroup.findFirst({
+          where: { isDefault: true },
+        });
+        targetGroupId = defaultGroup?.id;
+      }
+
+      // 회원 생성 (status: 'APPROVED'로 이메일 인증 절차를 우회한다 — User 모델에는
+      // 별도의 emailVerifiedAt 컬럼이 없다)
+      const user = await ctx.prisma.user.create({
+        data: {
+          userId: input.userId,
+          emailAddress: input.emailAddress,
+          passwordHash,
+          nickName: input.nickName,
+          status: 'APPROVED', // 관리자 직접 등록은 즉시 승인
+        },
+      });
+
+      // 그룹 배정
+      if (targetGroupId) {
+        await ctx.prisma.memberGroupMember.create({
+          data: {
+            groupId: targetGroupId,
+            userId: user.id,
+          },
+        });
+      }
+
+      // AdminLog는 auditLogger 미들웨어(트랜스포트 trpc.ts)가 자동으로 기록하며
+      // 민감 키(password 등)는 거기서 일괄 마스킹한다 (REQ-ADMIN2-045) — 여기서 중복 기록하지 않는다.
+
+      return {
+        user: {
+          id: user.id,
+          userId: user.userId,
+          emailAddress: user.emailAddress,
+          nickName: user.nickName,
+          status: user.status,
+        },
+        groupId: targetGroupId,
+      };
+    }),
 
   /**
    * 회원 상태 변경 (US-7, REQ-AUTH-020).

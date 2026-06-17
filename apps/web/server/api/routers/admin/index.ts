@@ -4,6 +4,7 @@
  *                     + Slice D (trash, moderation 추가)
  *                     + Slice F (contentExtraKey CRUD 추가).
  *                     SPEC-ADMIN-EXTRAS-001 Slice A + Slice B (export/import, bulk ops, IP filter, favorites validation).
+ *                     SPEC-ADMIN-002 Slice 1A (dashboard widgets).
  *
  * Slice D 에서 menu / menuItem / log 라우터 추가됨.
  * Slice E 에서 site / user 라우터 추가됨.
@@ -15,6 +16,8 @@
  * SPEC-CONTENT-001 Slice D 에서 trash, moderation 라우터 추가됨.
  * SPEC-CONTENT-001 Slice F 에서 contentExtraKey 라우터 추가됨 (REQ-CONTENT-120).
  * SPEC-ADMIN-EXTRAS-001 Slice A + B 에서 export / import 라우터 추가됨.
+ * SPEC-ADMIN-002 Slice 1A 에서 dashboard 라우터 추가됨 (REQ-ADMIN2-001~003, 007, 010).
+ * SPEC-ADMIN-002 Slice 1C 에서 group 라우터 추가됨 (REQ-ADMIN2-040~042).
  */
 import { router } from '../../trpc';
 import { adminModuleRouter } from './module';
@@ -34,6 +37,11 @@ import { adminModerationRouter } from './moderation';
 import { adminContentExtraKeyRouter } from './content-extra-key';
 import { adminExportRouter } from './export';
 import { adminImportRouter } from './import';
+import { adminDashboardRouter } from './dashboard';
+import { adminDocumentRouter } from './document';
+import { adminCommentRouter } from './comment';
+import { adminGroupRouter } from './group';
+import { adminSettingsRouter } from './settings';
 
 export const adminRouter = router({
   module:          adminModuleRouter,
@@ -53,4 +61,9 @@ export const adminRouter = router({
   contentExtraKey: adminContentExtraKeyRouter,
   export:          adminExportRouter,
   import:          adminImportRouter,
+  dashboard:       adminDashboardRouter,
+  document:        adminDocumentRouter,
+  comment:         adminCommentRouter,
+  group:           adminGroupRouter,
+  settings:        adminSettingsRouter,
 });
