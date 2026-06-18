@@ -261,7 +261,7 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     expect(mockSiteSettingUpsert).toHaveBeenCalledTimes(5);
 
     // Check that termsVersion was updated (2nd call - immediately after terms)
-    const termsVersionCall = mockSiteSettingUpsert.mock.calls[1];
+    const termsVersionCall = mockSiteSettingUpsert.mock.calls[1]!;
     expect(termsVersionCall[0]).toMatchObject({
       where: { siteId_key: { siteId: 1, key: 'member.agreement.termsVersion' } },
       create: expect.objectContaining({
@@ -299,7 +299,7 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     expect(mockSiteSettingUpsert).toHaveBeenCalledTimes(5);
 
     // Check that privacyVersion was updated (3rd call - immediately after privacy)
-    const privacyVersionCall = mockSiteSettingUpsert.mock.calls[2];
+    const privacyVersionCall = mockSiteSettingUpsert.mock.calls[2]!;
     expect(privacyVersionCall[0]).toMatchObject({
       where: { siteId_key: { siteId: 1, key: 'member.agreement.privacyVersion' } },
       create: expect.objectContaining({
