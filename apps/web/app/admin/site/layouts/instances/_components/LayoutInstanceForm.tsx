@@ -12,13 +12,14 @@
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@rhymix-ts/ui/components';
-import { getServerCaller } from '@/lib/trpc/server';
+import { createLayoutInstanceAction } from '../actions';
 
 interface Layout {
   id: string;
   name: string;
   title: string;
   layoutType: string;
+  themeId: string;
 }
 
 interface LayoutInstanceFormProps {
@@ -36,13 +37,12 @@ export function LayoutInstanceForm({ layouts }: LayoutInstanceFormProps): React.
     const formData = new FormData(form);
 
     startTransition(async () => {
-      const caller = await getServerCaller();
-      await caller.admin.layout.createInstance({
-        themeId: String(formData.get('themeId')),
-        scope: 'SITE',
-        refId: String(formData.get('refId')),
-        layoutName: String(formData.get('layoutName')),
-      });
+      await createLayoutInstanceAction(
+        String(formData.get('themeId')),
+        'SITE',
+        String(formData.get('refId')),
+        String(formData.get('layoutName')),
+      );
       router.refresh();
     });
   }

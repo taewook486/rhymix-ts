@@ -9,6 +9,7 @@
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { Prisma } from '@prisma/client';
 import { router, protectedAdminProcedure } from '../../trpc';
 
 export const adminLayoutRouter = router({
@@ -52,6 +53,21 @@ export const adminLayoutRouter = router({
   }),
 
   /**
+   * Layout 인스턴스(ThemeAssignment) 단건 조회 (REQ-ADMIN2-022).
+   */
+  getInstance: protectedAdminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const instance = await ctx.prisma.themeAssignment.findUnique({
+        where: { id: input.id },
+      });
+      if (!instance) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Layout instance not found' });
+      }
+      return instance;
+    }),
+
+  /**
    * 새 Layout 인스턴스 생성 (REQ-ADMIN2-021).
    * ThemeAssignment 레코드를 생성한다.
    */
@@ -91,7 +107,7 @@ export const adminLayoutRouter = router({
       const { id, tokensOverride } = input;
       return ctx.prisma.themeAssignment.update({
         where: { id },
-        data: { tokensOverride },
+        data: { tokensOverride: tokensOverride as Prisma.InputJsonValue },
       });
     }),
 });

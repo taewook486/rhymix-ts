@@ -113,7 +113,7 @@ describe('admin.layout tRPC router (Slice 2A)', () => {
     expect(mockThemeAssignmentCount).toHaveBeenCalledWith({
       where: { layoutName: 'default' },
     });
-    expect(result[0].instanceCount).toBe(10);
+    expect(result[0]?.instanceCount).toBe(10);
   });
 
   it('LAYOUT-003: admin 세션 + layout.listInstances → ThemeAssignment 목록 반환', async () => {

@@ -21,9 +21,7 @@ export default async function LayoutEditPage({ params }: LayoutEditPageProps) {
   const caller = await getServerCaller();
 
   // 인스턴스 조회
-  const instance = await caller.prisma.themeAssignment.findUnique({
-    where: { id },
-  });
+  const instance = await caller.admin.layout.getInstance({ id }).catch(() => null);
 
   if (!instance) {
     notFound();
