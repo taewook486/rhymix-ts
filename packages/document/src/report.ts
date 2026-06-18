@@ -118,6 +118,7 @@ export async function resolveReport(
 
 export interface ListReportsInput {
   resolved?: boolean;
+  targetType?: 'document' | 'comment';
   page?: number;
   limit?: number;
   actor: AdminActor;
@@ -147,6 +148,11 @@ export async function listReports(
   if (input.resolved !== undefined) {
     where.resolved = input.resolved;
   }
+  if (input.targetType === 'document') {
+    where.documentId = { not: null } as unknown;
+  } else if (input.targetType === 'comment') {
+    where.commentId = { not: null } as unknown;
+  }
 
   const [items, total] = await Promise.all([
     ctx.prisma.documentReport.findMany({
@@ -154,6 +160,15 @@ export async function listReports(
       skip,
       take: limit,
       orderBy: { regdate: 'desc' },
+      include: {
+        document: {
+          select: {
+            id: true,
+            title: true,
+            boardId: true,
+          },
+        },
+      },
     }),
     ctx.prisma.documentReport.count({ where }),
   ]);
