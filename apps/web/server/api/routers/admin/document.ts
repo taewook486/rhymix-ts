@@ -1,12 +1,17 @@
 /**
  * admin.document tRPC 라우터 — SPEC-ADMIN-002 Slice 1E
  *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-153)
+ *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-074)
  *
  * Cross-board document management:
  * - listAcrossAllBoards: 전체 문서 목록 조회
  * - bulkUpdate: 일괄 처리 (삭제/휴지통 이동/이동/상태 변경)
  * - recoverTemp: 임시 문서 복구
  * - deleteTemp: 임시 문서 영구 삭제
+ * - getConfig: 문서 설정 조회
+ * - updateConfig: 문서 설정 업데이트
+ *
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-074
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
@@ -18,6 +23,94 @@ import {
   restoreDocument,
   purgeDocument,
 } from '@rhymix-ts/document';
+
+// ---------------------------------------------------------------------------
+// Helper functions (local, copied from settings.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * ctx.siteId가 없을 때(hostname→domain 재해석 실패 등) 첫 번째 Site로 대체 해석한다.
+ * packages/admin/src/settings.ts의 동일 패턴과 일치시킨다.
+ */
+async function resolveSiteId(ctx: { prisma: any; siteId?: number }): Promise<number> {
+  if (ctx.siteId !== undefined) {
+    return ctx.siteId;
+  }
+  const site = await ctx.prisma.site.findFirst({ orderBy: { id: 'asc' } });
+  if (!site) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Site not found',
+    });
+  }
+  return site.id;
+}
+
+/**
+ * SiteSetting에서 값을 가져옴. 없으면 기본값 반환.
+ */
+async function getSiteSetting(
+  ctx: { prisma: any; siteId?: number },
+  key: string,
+  defaultValue: any = null,
+): Promise<any> {
+  const siteId = await resolveSiteId(ctx);
+  const setting = await ctx.prisma.siteSetting.findUnique({
+    where: {
+      siteId_key: {
+        siteId,
+        key,
+      },
+    },
+  });
+
+  return setting ? setting.value : defaultValue;
+}
+
+/**
+ * SiteSetting에 값을 저장. AdminLog 기록.
+ *
+ * `ctx.prisma`로 Prisma 트랜잭션 클라이언트(tx)를 전달하면 호출자가 여러 키를
+ * 하나의 트랜잭션으로 묶어 원자적으로 적용할 수 있다 (REQ-ADMIN2-110/113/114).
+ */
+async function setSiteSetting(
+  ctx: { prisma: any; siteId?: number; ip?: string; userAgent?: string },
+  key: string,
+  value: any,
+  actorId: number,
+): Promise<void> {
+  const siteId = await resolveSiteId(ctx);
+  const before = await getSiteSetting(ctx, key);
+
+  await ctx.prisma.siteSetting.upsert({
+    where: {
+      siteId_key: {
+        siteId,
+        key,
+      },
+    },
+    create: {
+      siteId,
+      key,
+      value,
+    },
+    update: {
+      value,
+    },
+  });
+
+  // AdminLog 기록
+  await ctx.prisma.adminLog.create({
+    data: {
+      actorId,
+      action: 'configure',
+      target: `site_setting:${key}`,
+      diff: { before, after: value },
+      ip: ctx.ip ?? null,
+      userAgent: ctx.userAgent ?? null,
+    },
+  });
+}
 
 function buildAdminActor(session: {
   user: { id: number; isAdmin: boolean; groups?: Array<{ id?: number; isAdmin?: boolean }> };
@@ -32,6 +125,16 @@ function buildAdminActor(session: {
     isAdmin: session.user.isAdmin,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Document Configuration Schema (REQ-ADMIN2-074)
+// ---------------------------------------------------------------------------
+
+const DocumentConfigSchema = z.object({
+  sortOrder: z.enum(['latest', 'popular', 'comment_count']).default('latest'),
+  pageSize: z.number().int().min(1).max(100).default(20),
+  allowGuestWrite: z.boolean().default(false),
+});
 
 export const adminDocumentRouter = router({
   /**
@@ -186,5 +289,45 @@ export const adminDocumentRouter = router({
           cause: err,
         });
       }
+    }),
+
+  // ==========================================================================
+  // Document Configuration (REQ-ADMIN2-074)
+  // ==========================================================================
+
+  /**
+   * 문서 설정 조회 (REQ-ADMIN2-074).
+   */
+  getConfig: protectedAdminProcedure
+    .input(z.object({}).optional())
+    .query(async ({ ctx }) => {
+      const settings = {
+        sortOrder: await getSiteSetting(ctx, 'document.config.sortOrder', 'latest'),
+        pageSize: await getSiteSetting(ctx, 'document.config.pageSize', 20),
+        allowGuestWrite: await getSiteSetting(ctx, 'document.config.allowGuestWrite', false),
+      };
+
+      return DocumentConfigSchema.parse(settings);
+    }),
+
+  /**
+   * 문서 설정 업데이트 (REQ-ADMIN2-074).
+   *
+   * 여러 SiteSetting 키를 하나의 트랜잭션으로 묶어 원자적으로 적용한다.
+   */
+  updateConfig: protectedAdminProcedure
+    .input(DocumentConfigSchema)
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        await setSiteSetting(txCtx, 'document.config.sortOrder', input.sortOrder, actorId);
+        await setSiteSetting(txCtx, 'document.config.pageSize', input.pageSize, actorId);
+        await setSiteSetting(txCtx, 'document.config.allowGuestWrite', input.allowGuestWrite, actorId);
+      });
+
+      return { success: true };
     }),
 });

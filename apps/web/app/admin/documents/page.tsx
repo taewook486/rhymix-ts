@@ -1,12 +1,12 @@
 /**
  * 전체 문서 관리 페이지 — SPEC-ADMIN-002 Slice 1E (REQ-ADMIN2-070, REQ-ADMIN2-071)
- *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-153)
+ *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-153, REQ-ADMIN2-074)
  *
  * Cross-board document list with filters and bulk actions.
  *
  * @MX:NOTE [AUTO]: TEMP 문서의 복구/삭제 버튼은 Server Actions 연동 필요.
  *                 admin.document.recoverTemp / deleteTemp 프로시저를 호출하도록 구현해야 함.
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-070, REQ-ADMIN2-071, REQ-ADMIN2-153
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-070, REQ-ADMIN2-071, REQ-ADMIN2-153, REQ-ADMIN2-074
  */
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
@@ -44,7 +44,12 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps) {
 
   return (
     <section>
-      <h1 className="text-2xl font-bold mb-4">전체 문서 관리</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">전체 문서 관리</h1>
+        <Link href="/admin/documents/config" className="text-sm text-blue-600 hover:underline">
+          문서 설정 →
+        </Link>
+      </div>
 
       {/* Filters */}
       <div className="mb-4 p-4 border rounded bg-white">
