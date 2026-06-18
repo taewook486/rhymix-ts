@@ -24,7 +24,7 @@ interface PrismaWithFileAttachment {
   fileAttachment: {
     findUnique(args: { where: { id: number } }): Promise<FileAttachment | null>;
     findUniqueOrThrow(args: { where: { id: number } }): Promise<FileAttachment>;
-    findMany(args: { where: Record<string, unknown>; orderBy?: Record<string, 'asc' | 'desc'>; take?: number; cursor?: Record<string, unknown> }): Promise<FileAttachment[]>;
+    findMany(args: { where: Record<string, unknown>; orderBy?: Record<string, 'asc' | 'desc'>; take?: number; cursor?: Record<string, unknown>; include?: Record<string, boolean | Record<string, boolean> > }): Promise<FileAttachment[]>;
     update(args: { where: { id: number }; data: Record<string, unknown> }): Promise<FileAttachment>;
     updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
     delete(args: { where: { id: number } }): Promise<FileAttachment>;
@@ -367,4 +367,60 @@ export async function migrateStorage(
   _input: { from: string; to: string; options?: MigrateStorageOptions },
 ): Promise<never> {
   throw new Error('migrateStorage not implemented yet - SPEC-FILE-057');
+}
+
+/**
+ * 관리자용 파일 목록 조회.
+ *
+ * REQ-ADMIN2-078: 이름, 크기, 업로더, 첨부 문서, 다운로드 수 포함.
+ * uploader(Member) + document(Document) join.
+ *
+ * @MX:NOTE [AUTO]: 필터/검색 기능은 tRPC 라우터 레벨에서 구현 (Prisma where 조건).
+ */
+export async function listFiles(
+  input: { cursor?: string; limit?: number; where?: Record<string, unknown> },
+  ctx: { prisma: PrismaClient },
+): Promise<{ items: (FileAttachment & { uploader?: { id: string; nickname: string }; document?: { id: number; title: string } })[]; nextCursor: string | null; totalCount: number }> {
+  const prisma = ctx.prisma as unknown as PrismaWithFileAttachment;
+  const limit = input.limit ?? 20;
+
+  // cursor 디코딩
+  let cursorId: number | undefined;
+  if (input.cursor) {
+    const buffer = Buffer.from(input.cursor, 'base64');
+    cursorId = parseInt(buffer.toString('utf-8'), 10);
+  }
+
+  // 조회 조건 (isvalid=true만)
+  const where: Record<string, unknown> = {
+    isvalid: true,
+    ...input.where,
+  };
+
+  // totalCount 조회 (pagination 메타데이터용)
+  const totalCount = await prisma.fileAttachment.count({ where });
+
+  // cursor pagination + uploader + document join
+  const items = await (prisma.fileAttachment.findMany as any)({
+    where,
+    orderBy: { regdate: 'desc' },
+    take: limit + 1, // nextCursor 확인용 +1
+    include: {
+      uploader: { select: { id: true, nickname: true } },
+      document: { select: { id: true, title: true } },
+    },
+    ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
+  }) as (FileAttachment & { uploader?: { id: string; nickname: string }; document?: { id: number; title: string } })[];
+
+  // nextCursor 계산
+  let nextCursor: string | null = null;
+  if (items.length > limit) {
+    const nextItem = items[limit]; // 마지막 아이템
+    if (nextItem) {
+      items.pop(); // limit 개만 반환
+      nextCursor = Buffer.from(nextItem.id.toString()).toString('base64');
+    }
+  }
+
+  return { items, nextCursor, totalCount };
 }

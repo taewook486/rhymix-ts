@@ -10,6 +10,10 @@ import {
   updateNotificationSettings,
   getSecuritySettings,
   updateSecuritySettings,
+  getFileUploadSettings,
+  updateFileUploadSettings,
+  getFileDownloadSettings,
+  updateFileDownloadSettings,
   SiteNotFoundError,
 } from './settings';
 import type { PrismaClient } from '@prisma/client';
@@ -167,6 +171,119 @@ describe('updateSecuritySettings', () => {
           sessionLifetime: 3600,
           loginMaxAttempts: 5,
           loginLockoutTime: 1800,
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// File Upload Settings — REQ-ADMIN2-080
+// ---------------------------------------------------------------------------
+
+describe('getFileUploadSettings — REQ-ADMIN2-080', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default upload settings', async () => {
+    const result = await getFileUploadSettings({ prisma: mockPrisma });
+
+    expect(result.allowedExtensions).toEqual(['jpg', 'png', 'gif', 'jpeg', 'webp']);
+    expect(result.maxFileSize).toBe(10485760); // 10MB
+    expect(result.maxAttachmentsPerPost).toBe(10);
+    expect(result.imageAutoResize).toEqual({ width: 1920, height: 1080 });
+  });
+});
+
+describe('updateFileUploadSettings — REQ-ADMIN2-080', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update upload settings', async () => {
+    const result = await updateFileUploadSettings(
+      {
+        allowedExtensions: ['jpg', 'png', 'gif', 'webp'],
+        maxFileSize: 20971520, // 20MB
+        maxAttachmentsPerPost: 20,
+        imageAutoResize: { width: 2560, height: 1440 },
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.allowedExtensions).toEqual(['jpg', 'png', 'gif', 'webp']);
+    expect(result.maxFileSize).toBe(20971520);
+  });
+
+  it('should reject maxFileSize > 1GB via Zod validation', async () => {
+    await expect(
+      updateFileUploadSettings(
+        {
+          allowedExtensions: ['jpg'],
+          maxFileSize: 2 * 1024 * 1024 * 1024, // 2GB - invalid
+          maxAttachmentsPerPost: 10,
+          imageAutoResize: { width: 1920, height: 1080 },
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// File Download Settings — REQ-ADMIN2-081
+// ---------------------------------------------------------------------------
+
+describe('getFileDownloadSettings — REQ-ADMIN2-081', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default download settings', async () => {
+    const result = await getFileDownloadSettings({ prisma: mockPrisma });
+
+    expect(result.downloadPermission).toBe('unlimited'); // 무제한
+    expect(result.hotlinkProtection).toBe(false);
+  });
+});
+
+describe('updateFileDownloadSettings — REQ-ADMIN2-081', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update download settings', async () => {
+    const result = await updateFileDownloadSettings(
+      {
+        downloadPermission: 'member_only',
+        pointDeduction: 10,
+        hotlinkProtection: true,
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.downloadPermission).toBe('member_only');
+    expect(result.pointDeduction).toBe(10);
+    expect(result.hotlinkProtection).toBe(true);
+  });
+
+  it('should reject invalid downloadPermission via Zod validation', async () => {
+    await expect(
+      updateFileDownloadSettings(
+        {
+          downloadPermission: 'invalid_permission',
+          pointDeduction: 0,
+          hotlinkProtection: true,
         },
         { prisma: mockPrisma },
       ),

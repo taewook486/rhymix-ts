@@ -18,6 +18,7 @@ import {
   cascadeRebuild,
   orphanCleanupTask,
   migrateStorage,
+  listFiles,
 } from './admin';
 
 // ---------------------------------------------------------------------------
@@ -583,6 +584,70 @@ describe('admin.ts — REQ-FILE-092', () => {
       await expect(
         migrateStorage({ from: 's3', to: 'gcs' }),
       ).rejects.toThrow('migrateStorage not implemented yet - SPEC-FILE-057');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // listFiles — REQ-ADMIN2-078
+  // ---------------------------------------------------------------------------
+
+  describe('listFiles — REQ-ADMIN2-078', () => {
+    it('파일 목록을 조회한다 (uploader + document join)', async () => {
+      const mockFiles = [
+        {
+          id: 1,
+          filename: 'test.jpg',
+          filesize: BigInt(1024),
+          downloadCount: 5,
+          memberId: 'member1',
+          documentId: 100,
+          regdate: new Date('2024-01-01'),
+          isvalid: true,
+          uploader: { id: 'member1', nickname: '테스터' },
+          document: { id: 100, title: '테스트 문서' },
+        } as FileAttachment & { uploader?: { id: string; nickname: string }; document?: { id: number; title: string } },
+      ];
+
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findMany: vi.fn().mockResolvedValue(mockFiles),
+          count: vi.fn().mockResolvedValue(1),
+        },
+      });
+
+      const result = await listFiles({ limit: 20, cursor: undefined }, { prisma: mockPrisma as never });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].filename).toBe('test.jpg');
+      expect(result.items[0].uploader?.nickname).toBe('테스터');
+      expect(result.items[0].document?.title).toBe('테스트 문서');
+      expect(result.totalCount).toBe(1);
+    });
+
+    it('cursor pagination을 지원한다', async () => {
+      const mockFiles = Array.from({ length: 21 }, (_, i) => ({
+        id: i + 1,
+        filename: `file${i}.jpg`,
+        filesize: BigInt(1024),
+        downloadCount: 0,
+        memberId: 'member1',
+        documentId: null,
+        regdate: new Date('2024-01-01'),
+        isvalid: true,
+      })) as (FileAttachment & { uploader?: { id: string; nickname: string }; document?: { id: number; title: string } })[];
+
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findMany: vi.fn().mockResolvedValue(mockFiles), // 21개 반환 (limit 20 + 1)
+          count: vi.fn().mockResolvedValue(25),
+        },
+      });
+
+      const result = await listFiles({ limit: 20, cursor: undefined }, { prisma: mockPrisma as never });
+
+      expect(result.items).toHaveLength(20); // 21개 중 1개 제거되어 20개 반환
+      expect(result.nextCursor).toBeTruthy();
+      expect(result.totalCount).toBe(25);
     });
   });
 });
