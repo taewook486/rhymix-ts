@@ -18,6 +18,7 @@ export {
   setCoverImage,
   clearCoverImage,
   listMyAttachments,
+  listFiles,
   listOrphans,
   purgeOrphans,
   cascadeRebuild,

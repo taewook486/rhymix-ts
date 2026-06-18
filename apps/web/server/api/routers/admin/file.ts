@@ -12,22 +12,13 @@
  */
 import { z } from 'zod';
 import { router, protectedAdminProcedure } from '../../trpc';
-import type { FileAttachment, Member, Document } from '@prisma/client';
-
-// Import domain functions with type assertions for monorepo
-const adminFunctions = await import('../../../../packages/file/src/admin');
-const listFiles = adminFunctions.listFiles;
-const listOrphans = adminFunctions.listOrphans;
-const purgeOrphans = adminFunctions.purgeOrphans;
-
-const settingsFunctions = await import('../../../../packages/admin/src/settings');
-const getFileUploadSettings = settingsFunctions.getFileUploadSettings;
-const updateFileUploadSettings = settingsFunctions.updateFileUploadSettings;
-const getFileDownloadSettings = settingsFunctions.getFileDownloadSettings;
-const updateFileDownloadSettings = settingsFunctions.updateFileDownloadSettings;
-
-const storageFunctions = await import('../../../../packages/file/src/storage/memory');
-const InMemoryStorage = storageFunctions.InMemoryStorage;
+import { listFiles, listOrphans, purgeOrphans, InMemoryStorage } from '@rhymix-ts/file';
+import {
+  getFileUploadSettings,
+  updateFileUploadSettings,
+  getFileDownloadSettings,
+  updateFileDownloadSettings,
+} from '@rhymix-ts/admin';
 
 export const adminFileRouter = router({
   /**
@@ -97,7 +88,7 @@ export const adminFileRouter = router({
         );
         return {
           deletedCount: 0,
-          preview: orphans.items.map((f) => ({ id: f.id, filename: f.sourceFilename, size: f.fileSize })),
+          preview: orphans.items.map((f: { id: number; sourceFilename: string; fileSize: bigint }) => ({ id: f.id, filename: f.sourceFilename, size: f.fileSize })),
         };
       }
 

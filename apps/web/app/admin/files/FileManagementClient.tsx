@@ -5,29 +5,33 @@
  * 파일 목록 + 고아 파일 정리 기능.
  */
 import { useState } from 'react';
-import { api } from '@/lib/trpc/client';
+import { trpc } from '@/providers/TRPCProvider';
+
+interface FileItem {
+  id: number;
+  sourceFilename: string;
+  fileSize: bigint;
+  downloadCount: number;
+  uploader?: { id: string; nickname: string } | null;
+  document?: { id: number; title: string } | null;
+  regdate: Date;
+}
+
+interface OrphanItem {
+  id: number;
+  sourceFilename: string;
+  fileSize: bigint;
+  regdate: Date;
+}
 
 interface FileManagementClientProps {
   initialFiles: {
-    items: Array<{
-      id: number;
-      filename: string;
-      filesize: bigint;
-      downloadCount: number;
-      uploader?: { id: string; nickname: string } | null;
-      document?: { id: number; title: string } | null;
-      regdate: Date;
-    }>;
+    items: FileItem[];
     nextCursor: string | null;
     totalCount: number;
   };
   initialOrphans: {
-    items: Array<{
-      id: number;
-      filename: string;
-      filesize: bigint;
-      regdate: Date;
-    }>;
+    items: OrphanItem[];
     nextCursor: string | null;
   };
 }
@@ -37,9 +41,9 @@ export function FileManagementClient({ initialFiles, initialOrphans }: FileManag
   const [orphanPreview, setOrphanPreview] = useState<Array<{ id: number; filename: string; size: bigint }>>([]);
   const [isPurging, setIsPurging] = useState(false);
 
-  const listFiles = api.admin.file.list.useQuery({ limit: 20 });
-  const listOrphans = api.admin.file.listOrphans.useQuery({ limit: 10 });
-  const purgeOrphans = api.admin.file.purgeOrphans.useMutation();
+  const listFiles = trpc.admin.file.list.useQuery({ limit: 20 });
+  const listOrphans = trpc.admin.file.listOrphans.useQuery({ limit: 10 });
+  const purgeOrphans = trpc.admin.file.purgeOrphans.useMutation();
 
   const files = listFiles.data || initialFiles;
   const orphans = listOrphans.data || initialOrphans;
@@ -149,9 +153,9 @@ export function FileManagementClient({ initialFiles, initialOrphans }: FileManag
             <tbody className="divide-y">
               {files.items.map((file) => (
                 <tr key={file.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{file.filename}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">{file.sourceFilename}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {(Number(file.filesize) / 1024).toFixed(1)} KB
+                    {(Number(file.fileSize) / 1024).toFixed(1)} KB
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {file.uploader?.nickname || '알 수 없음'}
@@ -176,14 +180,8 @@ export function FileManagementClient({ initialFiles, initialOrphans }: FileManag
         </div>
 
         {files.nextCursor && (
-          <div className="p-4 border-t">
-            <button
-              onClick={() => listFiles.fetchNextPage()}
-              disabled={listFiles.isFetchingNextPage}
-              className="px-4 py-2 border rounded hover:bg-gray-50 disabled:opacity-50"
-            >
-              {listFiles.isFetchingNextPage ? '로딩 중...' : '더 보기'}
-            </button>
+          <div className="p-4 border-t text-sm text-gray-500">
+            추가 파일이 더 있습니다. 검색/필터로 범위를 좁혀주세요.
           </div>
         )}
       </div>
