@@ -14,6 +14,8 @@ import {
   updateNotificationSettings,
   getSecuritySettings,
   updateSecuritySettings,
+  getDesignSettings,
+  updateDesignSettings,
   SiteNotFoundError,
 } from '@rhymix-ts/admin';
 
@@ -420,4 +422,29 @@ export const adminSettingsRouter = router({
         throw err;
       }
     }),
+
+  // ==========================================================================
+  // Design Settings (REQ-ADMIN2-053)
+  // ==========================================================================
+
+  /**
+   * 디자인 설정 조회.
+   */
+  getDesign: protectedAdminProcedure.query(async ({ ctx }) =>
+    getDesignSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 디자인 설정 업데이트.
+   */
+  updateDesign: protectedAdminProcedure
+    .input(
+      z.object({
+        memberSkinId: z.string().optional(),
+        memberTemplateId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) =>
+      updateDesignSettings(input, { prisma: ctx.prisma }),
+    ),
 });

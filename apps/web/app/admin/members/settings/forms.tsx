@@ -10,6 +10,7 @@ import {
   updateSignupSettingsAction,
   updateLoginSettingsAction,
   updateAgreementSettingsAction,
+  updateDesignSettingsAction,
   type ActionState,
 } from './actions';
 
@@ -261,6 +262,78 @@ export function AgreementSettingsForm({
           className="w-full border border-zinc-300 rounded px-3 py-2 font-mono text-sm"
           placeholder="개인정보처리방침 내용을 입력하세요 (Markdown/HTML 지원)"
         />
+      </div>
+
+      <div className="pt-4">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="px-4 py-2 text-sm bg-zinc-800 text-white rounded hover:bg-zinc-700 disabled:opacity-50"
+        >
+          {isPending ? '저장 중...' : '저장'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export function DesignSettingsForm({
+  initial,
+}: {
+  initial: {
+    memberSkinId: string;
+    memberTemplateId: string;
+  };
+}) {
+  const [state, formAction, isPending] = useActionState(
+    updateDesignSettingsAction,
+    initialActionState,
+  );
+
+  return (
+    <form action={formAction} className="max-w-2xl space-y-4">
+      {state.error && (
+        <p className="text-sm text-red-600" role="alert">
+          {state.error}
+        </p>
+      )}
+
+      <div>
+        <label className="block text-sm font-medium mb-1" htmlFor="memberSkinId">
+          회원 영역 스킨
+        </label>
+        <select
+          id="memberSkinId"
+          name="memberSkinId"
+          defaultValue={initial.memberSkinId}
+          className="w-full border border-zinc-300 rounded px-3 py-2 max-w-xs"
+        >
+          <option value="">기본 스킨</option>
+          {/* TODO: 실제 스킨 목록을 API로 가져와서 렌더링 */}
+          <option value="default">기본 스킨</option>
+        </select>
+        <p className="text-xs text-zinc-500 mt-1">
+          회원 영역(프로필, 가입 페이지 등)에 사용할 스킨을 선택합니다.
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1" htmlFor="memberTemplateId">
+          회원 영역 템플릿
+        </label>
+        <select
+          id="memberTemplateId"
+          name="memberTemplateId"
+          defaultValue={initial.memberTemplateId}
+          className="w-full border border-zinc-300 rounded px-3 py-2 max-w-xs"
+        >
+          <option value="">기본 템플릿</option>
+          {/* TODO: 실제 템플릿 목록을 API로 가져와서 렌더링 */}
+          <option value="default">기본 템플릿</option>
+        </select>
+        <p className="text-xs text-zinc-500 mt-1">
+          회원 영역의 레이아웃 템플릿을 선택합니다.
+        </p>
       </div>
 
       <div className="pt-4">

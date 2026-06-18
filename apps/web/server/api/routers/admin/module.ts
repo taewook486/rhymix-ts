@@ -104,6 +104,46 @@ export const adminModuleRouter = router({
     ),
 
   /**
+   * 모듈 인스턴스 수정 — 페이지 설정 (REQ-ADMIN2-027).
+   *
+   * title, browserTitle, layoutId, grant 등의 기본 설정을 수정한다.
+   * config 필드에 추가 JSON 데이터를 저장할 수 있다.
+   */
+  update: protectedAdminProcedure
+    .input(
+      z.object({
+        instanceId: z.number().int().positive(),
+        title: z.string().min(1).optional(),
+        browserTitle: z.string().optional(),
+        layoutId: z.string().nullable().optional(),
+        mobileLayoutId: z.string().nullable().optional(),
+        skin: z.string().nullable().optional(),
+        mobileSkin: z.string().nullable().optional(),
+        menuId: z.number().int().positive().nullable().optional(),
+        grant: z.unknown().optional(), // { permission, groupIds }
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { instanceId, grant, ...patch } = input;
+
+      // grant 정보는 config 필드에 병합 저장
+      const data: Record<string, unknown> = { ...patch };
+      if (grant !== undefined) {
+        const existing = await ctx.prisma.moduleInstance.findUnique({
+          where: { id: instanceId },
+          select: { config: true },
+        });
+        const currentConfig = (existing?.config as Record<string, unknown>) || {};
+        data.config = { ...currentConfig, grant };
+      }
+
+      return ctx.prisma.moduleInstance.update({
+        where: { id: instanceId },
+        data,
+      });
+    }),
+
+  /**
    * 모듈 인스턴스 삭제 (REQ-ADMIN-020, REQ-ADMIN-006 라우터 표면).
    */
   delete: protectedAdminProcedure

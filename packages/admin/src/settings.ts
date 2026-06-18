@@ -250,3 +250,156 @@ export async function updateSecuritySettings(
 
   return validated;
 }
+
+// ---------------------------------------------------------------------------
+// 파일 업로드 설정 (File Upload Settings) — REQ-ADMIN2-080
+// ---------------------------------------------------------------------------
+
+const FileUploadSettingsSchema = z.object({
+  allowedExtensions: z.array(z.string()).min(1), // 최소 1개 이상의 확장자
+  maxFileSize: z.number().int().min(1024).max(1073741824), // 1KB ~ 1GB (바이트)
+  maxAttachmentsPerPost: z.number().int().min(1).max(100), // 1~100개
+  imageAutoResize: z.object({
+    width: z.number().int().min(100).max(4096),
+    height: z.number().int().min(100).max(4096),
+  }),
+});
+
+export interface FileUploadSettings {
+  allowedExtensions: string[];
+  maxFileSize: number;
+  maxAttachmentsPerPost: number;
+  imageAutoResize: { width: number; height: number };
+}
+
+/**
+ * 파일 업로드 설정을 조회한다.
+ *
+ * REQ-ADMIN2-080: 허용 확장자, 최대 파일 크기, 게시물당 최대 첨부 수, 이미지 자동 리사이즈 치수.
+ */
+export async function getFileUploadSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<FileUploadSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'fileUpload');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    allowedExtensions: (value.allowedExtensions as string[]) || ['jpg', 'png', 'gif', 'jpeg', 'webp'],
+    maxFileSize: (value.maxFileSize as number) || 10485760, // 10MB
+    maxAttachmentsPerPost: (value.maxAttachmentsPerPost as number) || 10,
+    imageAutoResize: (value.imageAutoResize as { width: number; height: number }) || { width: 1920, height: 1080 },
+  };
+}
+
+/**
+ * 파일 업로드 설정을 업데이트한다.
+ */
+export async function updateFileUploadSettings(
+  input: FileUploadSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<FileUploadSettings> {
+  // Zod 검증
+  const validated = FileUploadSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'fileUpload', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 파일 다운로드 설정 (File Download Settings) — REQ-ADMIN2-081
+// ---------------------------------------------------------------------------
+
+const FileDownloadSettingsSchema = z.object({
+  downloadPermission: z.enum(['unlimited', 'member_only', 'point_deduction']),
+  pointDeduction: z.number().int().min(0).max(1000).optional(), // 0~1000포인트
+  hotlinkProtection: z.boolean(),
+});
+
+export interface FileDownloadSettings {
+  downloadPermission: 'unlimited' | 'member_only' | 'point_deduction';
+  pointDeduction?: number;
+  hotlinkProtection: boolean;
+}
+
+/**
+ * 파일 다운로드 설정을 조회한다.
+ *
+ * REQ-ADMIN2-081: 다운로드 권한 정책 (회원만/포인트차감/무제한), 핫링크 보안 토글.
+ */
+export async function getFileDownloadSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<FileDownloadSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'fileDownload');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    downloadPermission: (value.downloadPermission as FileDownloadSettings['downloadPermission']) || 'unlimited',
+    pointDeduction: (value.pointDeduction as number | undefined),
+    hotlinkProtection: (value.hotlinkProtection as boolean) || false,
+  };
+}
+
+/**
+ * 파일 다운로드 설정을 업데이트한다.
+ */
+export async function updateFileDownloadSettings(
+  input: FileDownloadSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<FileDownloadSettings> {
+  // Zod 검증
+  const validated = FileDownloadSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'fileDownload', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 디자인 설정 (Design Settings) — REQ-ADMIN2-053
+// ---------------------------------------------------------------------------
+
+const DesignSettingsSchema = z.object({
+  memberSkinId: z.string().optional(),
+  memberTemplateId: z.string().optional(),
+});
+
+export interface DesignSettings {
+  memberSkinId: string;
+  memberTemplateId: string;
+}
+
+/**
+ * 디자인 설정을 조회한다.
+ *
+ * REQ-ADMIN2-053: 회원 영역 스킨/템플릿 선택.
+ */
+export async function getDesignSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<DesignSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'member.design');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    memberSkinId: (value.memberSkinId as string) || '',
+    memberTemplateId: (value.memberTemplateId as string) || '',
+  };
+}
+
+/**
+ * 디자인 설정을 업데이트한다.
+ */
+export async function updateDesignSettings(
+  input: DesignSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<DesignSettings> {
+  // Zod 검증
+  const validated = DesignSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'member.design', validated);
+
+  return validated;
+}

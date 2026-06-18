@@ -132,3 +132,37 @@ export async function updateAgreementSettingsAction(
   revalidatePath('/admin/members/settings')
   return {}
 }
+
+// ---------------------------------------------------------------------------
+// Design Settings Actions
+// ---------------------------------------------------------------------------
+
+const UpdateDesignSettingsSchema = z.object({
+  memberSkinId: z.string().optional(),
+  memberTemplateId: z.string().optional(),
+})
+
+export async function updateDesignSettingsAction(
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = UpdateDesignSettingsSchema.safeParse({
+    memberSkinId: formData.get('memberSkinId') || undefined,
+    memberTemplateId: formData.get('memberTemplateId') || undefined,
+  })
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors }
+  }
+
+  try {
+    const caller = await getServerCaller()
+    await caller.admin.settings.updateDesign(parsed.data)
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message }
+    }
+    return { error: '디자인 설정 저장 중 오류가 발생했습니다.' }
+  }
+  revalidatePath('/admin/members/settings')
+  return {}
+}

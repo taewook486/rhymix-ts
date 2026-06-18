@@ -8,17 +8,18 @@
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-046~048, REQ-ADMIN2-050
  */
 import { getServerCaller } from '@/lib/trpc/server';
-import { SignupSettingsForm, LoginSettingsForm, AgreementSettingsForm } from './forms';
+import { SignupSettingsForm, LoginSettingsForm, AgreementSettingsForm, DesignSettingsForm } from './forms';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminMemberSettingsPage() {
   const caller = await getServerCaller();
 
-  const [signupSettings, loginSettings, agreementSettings] = await Promise.all([
+  const [signupSettings, loginSettings, agreementSettings, designSettings] = await Promise.all([
     caller.admin.settings.getSignup(),
     caller.admin.settings.getLogin(),
     caller.admin.settings.getAgreement(),
+    caller.admin.settings.getDesign(),
   ]);
 
   return (
@@ -45,6 +46,12 @@ export default async function AdminMemberSettingsPage() {
             className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-900"
           >
             약관 설정
+          </a>
+          <a
+            href="#design"
+            className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-900"
+          >
+            디자인 설정
           </a>
         </nav>
       </div>
@@ -73,6 +80,18 @@ export default async function AdminMemberSettingsPage() {
             privacy: agreementSettings.privacy ?? '',
             termsRequired: agreementSettings.termsRequired,
             privacyRequired: agreementSettings.privacyRequired,
+          }}
+        />
+      </section>
+
+      {/* 디자인 설정 탭 */}
+      <section id="design" className="mb-8">
+        <h2 className="text-lg font-medium mb-4">디자인 설정</h2>
+
+        <DesignSettingsForm
+          initial={{
+            memberSkinId: designSettings.memberSkinId ?? '',
+            memberTemplateId: designSettings.memberTemplateId ?? '',
           }}
         />
       </section>

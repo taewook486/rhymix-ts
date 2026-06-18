@@ -48,7 +48,11 @@ export default async function PageEditPage({ params }: PageEditPageProps) {
           {instance.name} ({instance.mid})
         </p>
       </header>
-      <PageEditForm instanceId={instanceId} initialContent={currentContent} />
+      <PageEditForm
+        instanceId={instanceId}
+        initialContent={currentContent}
+        instance={instance}
+      />
     </section>
   );
 }

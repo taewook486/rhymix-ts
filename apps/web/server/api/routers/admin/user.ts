@@ -1,6 +1,7 @@
 /**
  * admin.user tRPC 라우터 — SPEC-ADMIN-001 Slice E-5.
  *                     SPEC-ADMIN-002 Slice 1C (REQ-ADMIN2-044, REQ-ADMIN2-045).
+ *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-152).
  *
  * 회원 관리: list / get / update / bulk / create(직접 등록) / deniedList.*.
  *
@@ -8,7 +9,7 @@
  * @MX:REASON: 권한 검증 + status 변경 + 세션 무효화 + AuditLog 가 packages/auth 의
  *             changeUserStatus 한 곳에서 처리된다. 우회 경로 방지를 위해 반드시
  *             이 프로시저를 거쳐야 한다.
- * @MX:SPEC: SPEC-ADMIN-001 US-7, REQ-AUTH-020
+ * @MX:SPEC: SPEC-ADMIN-001 US-7, REQ-AUTH-020, SPEC-ADMIN-002 REQ-ADMIN2-152
  */
 import { z } from 'zod';
 import { router, protectedAdminProcedure } from '../../trpc';
@@ -21,12 +22,15 @@ const UserStatusEnum = z.enum(['APPROVED', 'UNAUTHED', 'SUSPENDED', 'DENIED', 'D
 export const adminUserRouter = router({
   /**
    * 회원 목록 + 총 count (US-7, 페이지네이션).
+   *
+   * REQ-ADMIN2-152: filterAdmin 파라미터로 최고관리자 필터링 지원.
    */
   list: protectedAdminProcedure
     .input(
       z.object({
         q: z.string().optional(),
         status: UserStatusEnum.optional(),
+        filterAdmin: z.boolean().optional(),
         page: z.number().int().positive().default(1),
         pageSize: z.number().int().positive().max(100).default(50),
       }),
@@ -34,6 +38,7 @@ export const adminUserRouter = router({
     .query(async ({ ctx, input }) => {
       const where = {
         ...(input.status ? { status: input.status } : {}),
+        ...(input.filterAdmin ? { isAdmin: true } : {}),
         ...(input.q
           ? {
               OR: [

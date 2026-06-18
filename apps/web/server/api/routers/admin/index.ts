@@ -18,12 +18,14 @@
  * SPEC-ADMIN-EXTRAS-001 Slice A + B 에서 export / import 라우터 추가됨.
  * SPEC-ADMIN-002 Slice 1A 에서 dashboard 라우터 추가됨 (REQ-ADMIN2-001~003, 007, 010).
  * SPEC-ADMIN-002 Slice 1C 에서 group 라우터 추가됨 (REQ-ADMIN2-040~042).
+ * SPEC-ADMIN-002 Slice 2A 에서 layout 라우터 추가됨 (REQ-ADMIN2-020~022).
  */
 import { router } from '../../trpc';
 import { adminModuleRouter } from './module';
 import { adminMenuRouter } from './menu';
 import { adminMenuItemRouter } from './menu-item';
 import { adminLogRouter } from './log';
+import { adminLayoutRouter } from './layout';
 import { adminSiteRouter } from './site';
 import { adminUserRouter } from './user';
 import { adminSystemRouter } from './system';
@@ -42,12 +44,14 @@ import { adminDocumentRouter } from './document';
 import { adminCommentRouter } from './comment';
 import { adminGroupRouter } from './group';
 import { adminSettingsRouter } from './settings';
+import { adminFileRouter } from './file';
 
 export const adminRouter = router({
   module:          adminModuleRouter,
   menu:            adminMenuRouter,
   menuItem:        adminMenuItemRouter,
   log:             adminLogRouter,
+  layout:          adminLayoutRouter,
   site:            adminSiteRouter,
   user:            adminUserRouter,
   system:          adminSystemRouter,
@@ -66,4 +70,5 @@ export const adminRouter = router({
   comment:         adminCommentRouter,
   group:           adminGroupRouter,
   settings:        adminSettingsRouter,
+  file:            adminFileRouter,
 });

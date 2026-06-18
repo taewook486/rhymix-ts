@@ -1,26 +1,44 @@
 /**
  * 전체 문서 관리 페이지 — SPEC-ADMIN-002 Slice 1E (REQ-ADMIN2-070, REQ-ADMIN2-071)
+ *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-153)
  *
  * Cross-board document list with filters and bulk actions.
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-070, REQ-ADMIN2-071
+ *
+ * @MX:NOTE [AUTO]: TEMP 문서의 복구/삭제 버튼은 Server Actions 연동 필요.
+ *                 admin.document.recoverTemp / deleteTemp 프로시저를 호출하도록 구현해야 함.
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-070, REQ-ADMIN2-071, REQ-ADMIN2-153
  */
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
 import { isAdminSession } from '@/lib/auth/admin-middleware';
 import { getServerCaller } from '@/lib/trpc/server';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDocumentsPage() {
+interface PageProps {
+  searchParams: Promise<{
+    status?: string
+    search?: string
+    cursor?: string
+  }>
+}
+
+export default async function AdminDocumentsPage({ searchParams }: PageProps) {
   const session = await auth();
 
   if (!isAdminSession(session)) {
     redirect('/');
   }
 
-  // Initial data fetch - list documents with default filters
+  const sp = await searchParams;
   const caller = await getServerCaller();
+
+  // status=TEMP 필터 적용 (REQ-ADMIN2-153)
   const documents = await caller.admin.document.listAcrossAllBoards({
+    status: sp.status as 'PUBLIC' | 'SECRET' | 'TEMP' | 'DECLARED' | undefined,
+    search: sp.search,
+    cursor: sp.cursor,
     limit: 50,
   });
 
@@ -94,6 +112,7 @@ export default async function AdminDocumentsPage() {
               <th className="px-4 py-2 text-left">작성자</th>
               <th className="px-4 py-2 text-left">상태</th>
               <th className="px-4 py-2 text-left">작성일</th>
+              <th className="px-4 py-2 text-left">작업</th>
             </tr>
           </thead>
           <tbody>
@@ -116,6 +135,26 @@ export default async function AdminDocumentsPage() {
                 <td className="px-4 py-2">{doc.status}</td>
                 <td className="px-4 py-2">
                   {new Date(doc.regdate).toLocaleDateString('ko-KR')}
+                </td>
+                <td className="px-4 py-2">
+                  {doc.status === 'TEMP' ? (
+                    <div className="flex gap-2">
+                      <button
+                        className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                        // TODO: Server Action 연동 필요
+                      >
+                        복구
+                      </button>
+                      <button
+                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                        // TODO: Server Action 연동 필요
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">—</span>
+                  )}
                 </td>
               </tr>
             ))}

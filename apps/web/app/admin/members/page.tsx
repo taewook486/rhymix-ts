@@ -1,14 +1,16 @@
 /**
  * 회원 관리 페이지 — SPEC-ADMIN-001 Slice E-5.
+ *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-152).
  *
  * Server Component. admin.user.list 로 회원 목록 조회.
  * 검색, 상태 필터, 페이지네이션 지원.
  *
  * @MX:NOTE: [AUTO] 회원 상태 변경(suspend/deny/approve)은 클라이언트 컴포넌트에서
  *           admin.user.update tRPC mutation 으로 처리한다 (US-7).
- * @MX:SPEC: SPEC-ADMIN-001 US-7
+ * @MX:SPEC: SPEC-ADMIN-001 US-7, SPEC-ADMIN-002 REQ-ADMIN2-152
  */
 import { getServerCaller } from '@/lib/trpc/server'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +18,7 @@ interface PageProps {
   searchParams: Promise<{
     q?: string
     status?: string
+    filter?: string
     page?: string
   }>
 }
@@ -28,15 +31,29 @@ const STATUS_LABELS: Record<string, string> = {
   DELETED: '삭제',
 }
 
+const FILTER_TABS = [
+  { value: '', label: '전체' },
+  { value: 'admin', label: '최고관리자' },
+  { value: 'APPROVED', label: '승인' },
+  { value: 'DENIED', label: '거부' },
+  { value: 'UNAUTHED', label: '미인증' },
+] as const
+
 export default async function AdminMembersPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const page = sp.page ? Number(sp.page) : 1
   const caller = await getServerCaller()
 
+  // 필터 탭 로직
+  const activeFilter = sp.filter ?? ''
+  const isFilterAdmin = activeFilter === 'admin'
+  const statusFromFilter = activeFilter && activeFilter !== 'admin' ? activeFilter : sp.status
+
   const data = await caller.admin.user.list({
     q: sp.q ?? undefined,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    status: (sp.status as any) ?? undefined,
+    status: statusFromFilter ? (statusFromFilter as any) : undefined,
+    filterAdmin: isFilterAdmin ? true : undefined,
     page,
     pageSize: 50,
   })
@@ -44,6 +61,39 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
   return (
     <div>
       <h1 className="text-xl font-semibold mb-4">회원 관리</h1>
+
+      {/* 상태 필터 탭 */}
+      <div className="border-b border-zinc-200 mb-4">
+        <nav className="-mb-px flex gap-2">
+          {FILTER_TABS.map((tab) => {
+            const isActive = activeFilter === tab.value
+            const href = isActive
+              ? undefined // 현재 탭이면 링크 없음
+              : `?${new URLSearchParams({
+                  ...(sp.q ? { q: sp.q } : {}),
+                  ...(tab.value ? { filter: tab.value } : {}),
+                  ...(sp.page ? { page: sp.page } : {}),
+                }).toString()}`
+
+            return isActive ? (
+              <span
+                key={tab.value}
+                className="px-4 py-2 text-sm font-medium border-b-2 border-zinc-800 text-zinc-900"
+              >
+                {tab.label}
+              </span>
+            ) : (
+              <Link
+                key={tab.value}
+                href={href}
+                className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-900"
+              >
+                {tab.label}
+              </Link>
+            )
+          })}
+        </nav>
+      </div>
 
       {/* 검색 / 필터 */}
       <form className="flex gap-2 mb-4">
