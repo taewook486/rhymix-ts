@@ -2,7 +2,7 @@
 id: SPEC-ADMIN-002
 title: 관리자 패널 미구현 기능 완성 — Acceptance Criteria
 version: 1.1.0
-status: planned
+status: in-progress
 created: 2026-06-14
 updated: 2026-06-18
 author: MoAI manager-spec

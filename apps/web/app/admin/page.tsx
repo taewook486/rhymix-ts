@@ -21,34 +21,39 @@ export default async function AdminDashboardPage() {
   const siteId = await getCurrentSiteId()
   const caller = await getServerCaller()
 
-  // REQ-ADMIN2-007: 각 위젯의 데이터를 개별적으로 fetch하여 장애 격리
-  // 방문자 통계 데이터 fetch
+  // REQ-ADMIN2-007: 각 위젯의 데이터를 병렬로 fetch하면서도 위젯별 장애를 격리한다.
+  // Promise.all이 아닌 Promise.allSettled를 사용해 한 위젯의 실패가 다른 위젯의
+  // 결과를 막지 않도록 한다.
+  const [visitStatsResult, recentDocumentsResult, recentCommentsResult] = await Promise.allSettled([
+    caller.admin.dashboard.getVisitStats({ siteId }),
+    caller.admin.dashboard.getRecentDocuments({ siteId }),
+    caller.admin.dashboard.getRecentComments({ siteId }),
+  ])
+
   let visitStatsData
   let visitStatsError = false
-  try {
-    visitStatsData = await caller.admin.dashboard.getVisitStats({ siteId })
-  } catch (error) {
-    console.error('Failed to fetch visit stats:', error)
+  if (visitStatsResult.status === 'fulfilled') {
+    visitStatsData = visitStatsResult.value
+  } else {
+    console.error('Failed to fetch visit stats:', visitStatsResult.reason)
     visitStatsError = true
   }
 
-  // 최근 문서 데이터 fetch
   let recentDocumentsData
   let recentDocumentsError = false
-  try {
-    recentDocumentsData = await caller.admin.dashboard.getRecentDocuments({ siteId })
-  } catch (error) {
-    console.error('Failed to fetch recent documents:', error)
+  if (recentDocumentsResult.status === 'fulfilled') {
+    recentDocumentsData = recentDocumentsResult.value
+  } else {
+    console.error('Failed to fetch recent documents:', recentDocumentsResult.reason)
     recentDocumentsError = true
   }
 
-  // 최근 댓글 데이터 fetch
   let recentCommentsData
   let recentCommentsError = false
-  try {
-    recentCommentsData = await caller.admin.dashboard.getRecentComments({ siteId })
-  } catch (error) {
-    console.error('Failed to fetch recent comments:', error)
+  if (recentCommentsResult.status === 'fulfilled') {
+    recentCommentsData = recentCommentsResult.value
+  } else {
+    console.error('Failed to fetch recent comments:', recentCommentsResult.reason)
     recentCommentsError = true
   }
 

@@ -2,7 +2,7 @@
 id: SPEC-ADMIN-002
 title: 관리자 패널 미구현 기능 완성 (레거시 분석 기반)
 version: 1.1.0
-status: planned
+status: in-progress
 created: 2026-06-14
 updated: 2026-06-18
 author: MoAI manager-spec
@@ -19,6 +19,7 @@ language: ko
 
 ## HISTORY
 
+- 2026-06-18 (M1 구현 완료): Phase 1(M1) 구현 완료 — Slice 1A~1F(대시보드 위젯, 페이지 편집, 회원 그룹·직접등록, 회원 설정 핵심 탭, 전체 문서/댓글 관리, 알림·보안 설정) 전체 구현 및 커밋(`fa42d4e`). 독립 보안 리뷰에서 발견된 4건의 이슈(SMTP 비밀번호 평문 노출, 회원 그룹 `isAdmin` 권한 상승 경로, 설정 비원자적 쓰기, 대시보드 위젯 순차 fetch로 인한 장애 전파 위험)를 sync 전에 모두 수정함. status를 `planned`→`in-progress`로 전환(M1 완료, M2/M3 대기). 상세는 `## Implementation Notes` 절 참조.
 - 2026-06-18 (v1.1.0): Playwright 실사 기반 `research.md` 추가 후 갱신. 레거시 admin(http://localhost:8080, Rhymix 2.1.33)을 7개 카테고리(대시보드/사이트 제작·편집/회원/콘텐츠/즐겨찾기/설정/고급) 순서로 실제 화면 단위 재조사하고 rhymix-ts 코드와 직접 대조. 신규 REQ-ADMIN2-150~156(7건) 추가 — 관리자 메뉴 초기화(150), 세션 정리(151), 회원 목록 상태 필터 탭(152), 문서 "임시" 상태 필터 보강(153), 비동기 작업 설정(154), 사이트 잠금 런타임 UI(155), 태그 구분 방법 설정(156). REQ-ADMIN2-053(회원 디자인 설정)을 P3→P2로 상향(레거시 사이트 디자인 설정의 1차 탭). "쉬운 설치"(원격 마켓플레이스, 13개 카테고리) 영구 제외 확정. 정정: `/admin/trash`는 이미 구현되어 있음(1차 탐색의 "휴지통 누락" 보고는 오류). 기존 REQ-ADMIN2-001~149는 재번호 없이 그대로 유지.
 - 2026-06-14 (v1.0.0): 최초 작성. 사용자가 브라우저에서 rhymix-ts 관리자 패널을 열었을 때 다수의 메뉴가 "준비중"으로 표시되는 문제를 해결하기 위한 마스터 플랜. 레거시 Rhymix PHP 관리자(http://localhost:8080/)의 전체 admin 디스패치 함수(disp*) 인벤토리와 현재 rhymix-ts `apps/web/app/admin/` 구현을 1:1 대조한 gap 분석 기반. SPEC-ADMIN-001(기반 관리자 기능)과 SPEC-ADMIN-EXTRAS-001(export/import + 잔여 REQ)이 모두 구현 완료된 상태를 전제하며, 그 위에 레거시 대비 누락된 관리자 기능을 6개 섹션으로 구조화하여 완성한다.
 
@@ -465,3 +466,37 @@ language: ko
 - Q2. 약관 버전 관리(REQ-ADMIN2-051)에서 기존 동의 회원에 대한 재동의 요구 트리거 정책 — 법무/운영 판단 필요.
 - Q3. 스팸필터 rate-limit(REQ-ADMIN2-123)의 저장소(메모리 vs Redis vs DB) 선택 — 배포 환경에 따라 결정.
 - Q4. 파일 고아 GC(REQ-ADMIN2-079)의 안전 마진(업로드 직후 미연결 파일을 즉시 삭제 대상으로 볼지, grace period를 둘지).
+
+---
+
+## Implementation Notes
+
+### M1 (Phase 1 / P1) — 구현 완료 (2026-06-18, 커밋 `fa42d4e`)
+
+plan.md의 마일스톤 정의(M1: Slice 1A~1F)에 따라 Phase 1의 모든 P1 REQ를 구현했다.
+
+| Slice | 구현 범위 | 대응 REQ |
+|---|---|---|
+| 1A — 대시보드 위젯 | 방문자 통계 요약, 최근 문서 10건/최근 댓글 10건 위젯, 위젯별 장애 격리 | REQ-ADMIN2-001~003, 007, 010 |
+| 1B — 페이지 모듈 완성 | `/admin/pages` 목록 + `/admin/pages/[instanceId]/edit` mcontent 편집기, "준비중" stub 제거 | REQ-ADMIN2-025, 026 |
+| 1C — 회원 그룹 + 직접 등록 | `/admin/members/groups` CRUD, 기본 그룹 단일성 보장, `/admin/members/new` 직접 등록 | REQ-ADMIN2-040~045 |
+| 1D — 회원 설정 핵심 탭 | `/admin/members/settings` 가입/로그인/약관 탭 | REQ-ADMIN2-046~048, 050 |
+| 1E — 전체 문서/댓글 관리 | `/admin/documents`, `/admin/comments` 목록·필터·일괄 작업(트랜잭션) | REQ-ADMIN2-070, 071, 075, 076 |
+| 1F — 알림 + 보안 설정 | `/admin/settings/notification`, `/admin/settings/security` | REQ-ADMIN2-110, 113, 114 |
+
+신규 라우터: `apps/web/server/api/routers/admin/{dashboard,document,comment,group,settings}.ts`. 신규 화면: `apps/web/app/admin/{page.tsx, pages/, comments/, documents/, members/groups/, members/new/, members/settings/, settings/notification/, settings/security/}`. `packages/admin/src/settings.ts`, `packages/document/src/admin.ts`, `packages/comment/src/admin.ts`에 도메인 서비스 로직 추가. Prisma 마이그레이션 1건 포함(`schema.prisma` +23 lines).
+
+### 독립 보안 리뷰 후속 수정 (sync 전 적용, 미커밋 → 본 SPEC 동기화와 함께 반영)
+
+Phase 1 구현 완료 후 독립 보안 리뷰에서 4건의 이슈가 발견되어 sync 전에 모두 수정했다.
+
+1. **SMTP 비밀번호 평문 노출** (`packages/admin/src/settings.ts`) — `getNotificationSettings()`가 `smtpPassword`를 평문으로 RSC 페이로드에 포함시키던 문제. `NotificationSettingsView` 타입을 신설하여 `smtpPassword` 필드를 제거하고 저장 여부만 `hasPassword: boolean`으로 전달하도록 수정. `NotificationSettingsForm.tsx`도 write-only 비밀번호 입력 필드로 변경(서버에서 받은 값을 다시 표시하지 않음).
+2. **회원 그룹 `isAdmin` 권한 상승 경로** (`apps/web/server/api/routers/admin/group.ts`) — `group.create`/`group.update` mutation의 입력 스키마에 `isAdmin: z.boolean()`이 포함되어 있어, 클라이언트가 그룹을 `isAdmin=true`로 생성하고 임의 회원을 배정하는 것만으로 관리자 권한을 획득할 수 있는 권한 상승 경로가 존재했음. `isAdmin`을 입력 스키마에서 완전히 제거하고 항상 `false`로 고정하도록 수정. 관리자 권한 부여 그룹 지정은 별도 SPEC으로 분리.
+3. **설정 비원자적 쓰기** (`apps/web/server/api/routers/admin/settings.ts`) — 알림/보안 설정 저장이 여러 개의 개별 쓰기로 분리되어 있어 일부 실패 시 설정이 부분 적용되는 위험이 있었음. 트랜잭션으로 묶어 원자적 쓰기로 변경.
+4. **대시보드 순차 fetch로 인한 장애 전파** (`apps/web/app/admin/page.tsx`) — REQ-ADMIN2-007(위젯별 장애 격리)이 `try/catch` 순차 `await`로 구현되어 있어, 의도는 격리였으나 한 위젯의 지연이 다른 위젯 fetch 시작을 막는 형태였음. `Promise.allSettled`로 병렬 fetch + 위젯별 격리를 동시에 satisfy하도록 수정.
+
+영향받은 파일: `apps/web/app/admin/page.tsx`, `apps/web/app/admin/settings/notification/NotificationSettingsForm.tsx`, `apps/web/server/api/routers/admin/group.ts`, `apps/web/server/api/routers/admin/settings.ts`, `packages/admin/src/settings.ts`.
+
+### M2 (Phase 2 / P2), M3 (Phase 3 / P3) — 미착수
+
+plan.md 마일스톤 정의에 따라 M2(Slice 2A~2H), M3(Slice 3A~3F)는 아직 구현되지 않았다. M2는 M1의 acceptance 통과를 진입 조건으로 한다(본 SPEC 섹션 5 "Phase 진입 조건" 참조).

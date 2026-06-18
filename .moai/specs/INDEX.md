@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-14 (Phase 4 + Phase 5 구현 완료 — 전체 5-Phase 완료)
+> 마지막 갱신: 2026-06-18 (SPEC-ADMIN-002 Phase 1(M1) 구현 완료 — 대시보드 위젯/페이지 편집/회원 그룹·등록/회원 설정/문서·댓글 관리/알림·보안 설정 + 보안 리뷰 4건 수정)
 
 ## 기술 스택 (확정)
 
@@ -30,6 +30,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 3. MEMBER ECOSYSTEM | 회원 ecosystem + cross-cutting (file/point/mail) | 3 | 3/3 | 🟢 구현 완료 |
 | 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 2/2 | 🟢 구현 완료 |
 | 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 1/1 | 🟢 구현 완료 |
+| 6. ADMIN LEGACY PARITY | 레거시 분석 기반 admin 미구현 기능 완성 | 1 | 0/1 (M1/3 완료) | 🟡 Phase 1(M1) 구현 완료, Phase 2/3 대기 |
 
 ---
 
@@ -82,6 +83,15 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 |---|---|---|---|
 | [SPEC-ADMIN-EXTRAS-001](./SPEC-ADMIN-EXTRAS-001/spec.md) | export/import + 2FA enforce + DnD + WidgetPreset + IP filter + bulk ops | ADMIN, AUTH, WIDGET, DOCUMENT, COMMENT | ✅ 구현 완료 (`6ee92fc`) |
 
+### Phase 6: ADMIN LEGACY PARITY (P1, Phase 1(M1) 구현 완료)
+
+| ID | 제목 | 의존 | 상태 |
+|---|---|---|---|
+| [SPEC-ADMIN-002](./SPEC-ADMIN-002/spec.md) | 관리자 패널 미구현 기능 완성 (레거시 분석 기반) — 대시보드/레이아웃/회원설정/콘텐츠관리/사이트설정/고급 | 전 도메인 | 🟡 M1(Phase 1/P1) 구현 완료 (`fa42d4e` + 보안 수정), M2/M3 대기 |
+
+> 레거시 Rhymix PHP admin 전체 디스패치 함수 인벤토리 대비 gap 분석. 60+ REQ를 6개 섹션·3개 Phase로 구조화. P1 22건(대시보드·페이지·회원그룹·회원설정·문서/댓글관리·알림/보안) — **구현 완료**. P2 24건(레이아웃·파일·신고·SEO·스팸필터·통계·도메인) — 대기. P3 16건(설문·태그·닉네임이력·쪽지·서버환경) — 대기.
+> M1 구현 후 독립 보안 리뷰에서 SMTP 비밀번호 평문 노출, 회원 그룹 `isAdmin` 권한 상승 경로, 설정 비원자적 쓰기, 대시보드 위젯 순차 fetch 4건을 발견·수정함 (상세: SPEC-ADMIN-002/spec.md `## Implementation Notes`).
+
 ### Meta-Plan 문서 (참조)
 
 | 문서 | 역할 | 상태 |
@@ -118,8 +128,11 @@ SPEC-ADMIN-001 (Foundation, ✅)
          │   ├── SPEC-ADDON-001 (PAGE + DOCUMENT + COMMENT 의존)
          │   └── SPEC-THEME-POLISH-001 (LAYOUT 의존, 독립적)
          │
-         └── Phase 5 (📝 SPEC 완료)
-             └── SPEC-ADMIN-EXTRAS-001 (모든 도메인 의존)
+         ├── Phase 5 (✅ 구현 완료)
+         │   └── SPEC-ADMIN-EXTRAS-001 (모든 도메인 의존)
+         │
+         └── Phase 6 (📝 SPEC 완료)
+             └── SPEC-ADMIN-002 (전 도메인 의존, 레거시 parity)
 ```
 
 ---

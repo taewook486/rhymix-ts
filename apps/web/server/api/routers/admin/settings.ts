@@ -85,6 +85,9 @@ async function getSiteSetting(
 
 /**
  * SiteSetting에 값을 저장. AdminLog 기록.
+ *
+ * `ctx.prisma`로 Prisma 트랜잭션 클라이언트(tx)를 전달하면 호출자가 여러 키를
+ * 하나의 트랜잭션으로 묶어 원자적으로 적용할 수 있다 (REQ-ADMIN2-110/113/114).
  */
 async function setSiteSetting(
   ctx: { prisma: any; siteId?: number; ip?: string; userAgent?: string },
@@ -165,43 +168,49 @@ export const adminSettingsRouter = router({
 
   /**
    * 가입 설정 업데이트 (REQ-ADMIN2-047).
+   *
+   * 여러 SiteSetting 키를 하나의 트랜잭션으로 묶어 원자적으로 적용한다.
+   * 중간에 실패하면 전체가 롤백되어 부분 적용 + 감사 로그 누락을 방지한다.
    */
   updateSignup: protectedAdminProcedure
     .input(SignupSettingsSchema)
     .mutation(async ({ ctx, input }) => {
       const actorId = Number(ctx.session.user.id);
 
-      // 각 설정을 개별적으로 저장
-      await setSiteSetting(
-        ctx,
-        'member.signup.enabled',
-        input.enabled,
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.signup.requireEmailVerification',
-        input.requireEmailVerification,
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.signup.requireAdminApproval',
-        input.requireAdminApproval,
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.signup.defaultGroupId',
-        input.defaultGroupId ?? null,
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.signup.allowDuplicateNickname',
-        input.allowDuplicateNickname,
-        actorId,
-      );
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        await setSiteSetting(
+          txCtx,
+          'member.signup.enabled',
+          input.enabled,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.signup.requireEmailVerification',
+          input.requireEmailVerification,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.signup.requireAdminApproval',
+          input.requireAdminApproval,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.signup.defaultGroupId',
+          input.defaultGroupId ?? null,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.signup.allowDuplicateNickname',
+          input.allowDuplicateNickname,
+          actorId,
+        );
+      });
 
       return { success: true };
     }),
@@ -240,36 +249,42 @@ export const adminSettingsRouter = router({
 
   /**
    * 로그인 설정 업데이트 (REQ-ADMIN2-048).
+   *
+   * 여러 SiteSetting 키를 하나의 트랜잭션으로 묶어 원자적으로 적용한다.
    */
   updateLogin: protectedAdminProcedure
     .input(LoginSettingsSchema)
     .mutation(async ({ ctx, input }) => {
       const actorId = Number(ctx.session.user.id);
 
-      await setSiteSetting(
-        ctx,
-        'member.login.allowAutoLogin',
-        input.allowAutoLogin,
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.login.autoLoginDuration',
-        input.autoLoginDuration,
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.login.maxFailedAttempts',
-        input.maxFailedAttempts,
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.login.redirectAfterLogin',
-        input.redirectAfterLogin,
-        actorId,
-      );
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        await setSiteSetting(
+          txCtx,
+          'member.login.allowAutoLogin',
+          input.allowAutoLogin,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.login.autoLoginDuration',
+          input.autoLoginDuration,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.login.maxFailedAttempts',
+          input.maxFailedAttempts,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.login.redirectAfterLogin',
+          input.redirectAfterLogin,
+          actorId,
+        );
+      });
 
       return { success: true };
     }),
@@ -300,36 +315,42 @@ export const adminSettingsRouter = router({
 
   /**
    * 약관 설정 업데이트 (REQ-ADMIN2-050).
+   *
+   * 여러 SiteSetting 키를 하나의 트랜잭션으로 묶어 원자적으로 적용한다.
    */
   updateAgreement: protectedAdminProcedure
     .input(AgreementSettingsSchema)
     .mutation(async ({ ctx, input }) => {
       const actorId = Number(ctx.session.user.id);
 
-      await setSiteSetting(
-        ctx,
-        'member.agreement.terms',
-        input.terms ?? '',
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.agreement.privacy',
-        input.privacy ?? '',
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.agreement.termsRequired',
-        input.termsRequired,
-        actorId,
-      );
-      await setSiteSetting(
-        ctx,
-        'member.agreement.privacyRequired',
-        input.privacyRequired,
-        actorId,
-      );
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        await setSiteSetting(
+          txCtx,
+          'member.agreement.terms',
+          input.terms ?? '',
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.agreement.privacy',
+          input.privacy ?? '',
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.agreement.termsRequired',
+          input.termsRequired,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.agreement.privacyRequired',
+          input.privacyRequired,
+          actorId,
+        );
+      });
 
       return { success: true };
     }),

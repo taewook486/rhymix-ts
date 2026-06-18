@@ -17,7 +17,7 @@ export function NotificationSettingsForm({
     smtpPort?: number | null;
     smtpSecure?: boolean | null;
     smtpUser?: string | null;
-    smtpPassword?: string | null;
+    hasPassword?: boolean;
     smtpFrom?: string | null;
   };
 }) {
@@ -139,8 +139,15 @@ export function NotificationSettingsForm({
               name="smtpPassword"
               type="password"
               className="w-full border rounded px-3 py-2"
-              defaultValue={initial.smtpPassword ?? ''}
+              defaultValue=""
+              placeholder={initial.hasPassword ? '저장된 비밀번호를 유지하려면 비워두세요' : ''}
+              autoComplete="new-password"
             />
+            <p className="text-sm text-gray-500 mt-1">
+              {initial.hasPassword
+                ? '비밀번호가 저장되어 있습니다. 변경하려면 새 값을 입력하세요. 비워두면 기존 값이 유지됩니다.'
+                : '저장된 비밀번호가 없습니다.'}
+            </p>
           </div>
 
           <div>

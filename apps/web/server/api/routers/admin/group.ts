@@ -75,6 +75,12 @@ export const adminGroupRouter = router({
    * 회원 그룹 생성 (REQ-ADMIN2-041).
    * title, description, autoAssign(신규 가입자 자동 배정 플래그).
    * isDefault=true인 경우 기존 default 그룹의 isDefault를 false로 변경.
+   *
+   * @MX:NOTE [AUTO]: isAdmin은 입력 스키마에서 의도적으로 제외했다 (보안 수정).
+   * 클라이언트가 그룹을 isAdmin=true로 생성/수정할 수 있으면, 해당 그룹에 멤버를
+   * 배정하는 것만으로 임의 계정에 관리자 권한을 부여하는 권한 상승 경로가 생긴다.
+   * 그룹은 항상 isAdmin=false로 생성되며, 관리자 권한 부여 그룹 지정은 별도의
+   * 전용 플로우(차후 SPEC)에서 다뤄야 한다.
    */
   create: protectedAdminProcedure
     .input(
@@ -82,7 +88,6 @@ export const adminGroupRouter = router({
         title: z.string().min(1).max(80),
         description: z.string().max(1000).optional(),
         isDefault: z.boolean().default(false),
-        isAdmin: z.boolean().default(false),
         listOrder: z.number().int().default(0),
       }),
     )
@@ -100,7 +105,7 @@ export const adminGroupRouter = router({
           title: input.title,
           description: input.description,
           isDefault: input.isDefault,
-          isAdmin: input.isAdmin,
+          isAdmin: false,
           listOrder: input.listOrder,
         },
       });
@@ -111,7 +116,8 @@ export const adminGroupRouter = router({
 
   /**
    * 회원 그룹 수정 (REQ-ADMIN2-041).
-   * title, description, isDefault, isAdmin, listOrder 수정 가능.
+   * title, description, isDefault, listOrder 수정 가능.
+   * isAdmin은 클라이언트 입력에서 제외 (위 create 참고 — 권한 상승 방지).
    */
   update: protectedAdminProcedure
     .input(
@@ -120,7 +126,6 @@ export const adminGroupRouter = router({
         title: z.string().min(1).max(80).optional(),
         description: z.string().max(1000).optional(),
         isDefault: z.boolean().optional(),
-        isAdmin: z.boolean().optional(),
         listOrder: z.number().int().optional(),
       }),
     )

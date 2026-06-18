@@ -137,15 +137,27 @@ export interface NotificationSettings {
 }
 
 /**
+ * 클라이언트로 반환되는 알림 설정. smtpPassword는 평문으로 절대 노출하지 않고
+ * 저장 여부만 hasPassword 플래그로 전달한다.
+ */
+export type NotificationSettingsView = Omit<NotificationSettings, 'smtpPassword'> & {
+  hasPassword: boolean;
+};
+
+/**
  * 알림 설정을 조회한다.
+ *
+ * @MX:NOTE [AUTO]: smtpPassword는 SSR/RSC 페이로드에 평문으로 노출되면 안 되므로
+ * hasPassword(boolean)로만 저장 여부를 전달한다. 실제 비밀번호 값은 반환하지 않는다.
  */
 export async function getNotificationSettings(
   ctx: { prisma: PrismaClient },
-): Promise<NotificationSettings> {
+): Promise<NotificationSettingsView> {
   const setting = await getOrCreateSiteSetting(ctx.prisma, 'notification');
 
   // 기본값 반환
   const value = setting.value as Record<string, unknown>;
+  const smtpPassword = value.smtpPassword as string | undefined;
   return {
     senderName: (value.senderName as string) || '관리자',
     senderEmail: (value.senderEmail as string) || 'noreply@example.com',
@@ -153,24 +165,41 @@ export async function getNotificationSettings(
     smtpPort: value.smtpPort as number | undefined,
     smtpSecure: value.smtpSecure as boolean | undefined,
     smtpUser: value.smtpUser as string | undefined,
-    smtpPassword: value.smtpPassword as string | undefined,
     smtpFrom: value.smtpFrom as string | undefined,
+    hasPassword: Boolean(smtpPassword && smtpPassword.length > 0),
   };
 }
 
 /**
  * 알림 설정을 업데이트한다.
+ *
+ * smtpPassword가 빈 문자열/undefined로 전달되면 기존에 저장된 비밀번호를 유지한다
+ * ("blank means unchanged" semantic). 새 비밀번호를 저장하려면 비어있지 않은 값을
+ * 전달해야 한다.
  */
 export async function updateNotificationSettings(
   input: NotificationSettings,
   ctx: { prisma: PrismaClient },
-): Promise<NotificationSettings> {
+): Promise<NotificationSettingsView> {
   // 검증
   const validated = NotificationSettingsSchema.parse(input);
 
-  await updateSiteSetting(ctx.prisma, 'notification', validated);
+  const existingSetting = await getOrCreateSiteSetting(ctx.prisma, 'notification');
+  const existingValue = existingSetting.value as Record<string, unknown>;
+  const existingPassword = existingValue.smtpPassword as string | undefined;
 
-  return validated;
+  const toPersist: NotificationSettings = {
+    ...validated,
+    smtpPassword: validated.smtpPassword ? validated.smtpPassword : existingPassword,
+  };
+
+  await updateSiteSetting(ctx.prisma, 'notification', toPersist as unknown as Record<string, unknown>);
+
+  const { smtpPassword, ...rest } = toPersist;
+  return {
+    ...rest,
+    hasPassword: Boolean(smtpPassword && smtpPassword.length > 0),
+  };
 }
 
 // ---------------------------------------------------------------------------
