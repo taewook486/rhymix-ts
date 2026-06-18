@@ -43,6 +43,29 @@ const AgreementSettingsSchema = z.object({
   privacy: z.string().optional(),
   termsRequired: z.boolean().default(true),
   privacyRequired: z.boolean().default(true),
+  termsVersion: z.string().nullable(),
+  privacyVersion: z.string().nullable(),
+});
+
+const FeatureSettingsSchema = z.object({
+  allowProfileImage: z.boolean().default(true),
+  allowSignature: z.boolean().default(true),
+  exposeInMemberSearch: z.boolean().default(true),
+});
+
+// REQ-ADMIN2-054/055: 가입 양식 커스터마이징
+const RESERVED_JOIN_FORM_KEYS = ['email', 'password', 'nickname'] as const;
+
+const JoinFormFieldSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  type: z.enum(['text', 'textarea', 'select', 'checkbox']),
+  required: z.boolean(),
+  order: z.number().int(),
+});
+
+const JoinFormSettingsSchema = z.object({
+  fields: z.array(JoinFormFieldSchema),
 });
 
 // ---------------------------------------------------------------------------
@@ -292,7 +315,7 @@ export const adminSettingsRouter = router({
     }),
 
   /**
-   * 약관 설정 조회 (REQ-ADMIN2-050).
+   * 약관 설정 조회 (REQ-ADMIN2-050, REQ-ADMIN2-051).
    */
   getAgreement: protectedAdminProcedure
     .input(z.object({}).optional())
@@ -310,36 +333,66 @@ export const adminSettingsRouter = router({
           'member.agreement.privacyRequired',
           true,
         ),
+        termsVersion: await getSiteSetting(ctx, 'member.agreement.termsVersion', null),
+        privacyVersion: await getSiteSetting(ctx, 'member.agreement.privacyVersion', null),
       };
 
       return AgreementSettingsSchema.parse(settings);
     }),
 
   /**
-   * 약관 설정 업데이트 (REQ-ADMIN2-050).
+   * 약관 설정 업데이트 (REQ-ADMIN2-050, REQ-ADMIN2-051).
    *
    * 여러 SiteSetting 키를 하나의 트랜잭션으로 묶어 원자적으로 적용한다.
+   * REQ-ADMIN2-051: 약관 내용이 변경된 경우에만 버전 타임스탬프를 갱신한다.
    */
   updateAgreement: protectedAdminProcedure
     .input(AgreementSettingsSchema)
     .mutation(async ({ ctx, input }) => {
       const actorId = Number(ctx.session.user.id);
 
+      // REQ-ADMIN2-051: 현재 저장된 약관 내용을 읽어서 변경 여부를 확인
+      const currentTerms = await getSiteSetting(ctx, 'member.agreement.terms', '');
+      const currentPrivacy = await getSiteSetting(ctx, 'member.agreement.privacy', '');
+      const currentTermsVersion = await getSiteSetting(ctx, 'member.agreement.termsVersion', null);
+      const currentPrivacyVersion = await getSiteSetting(ctx, 'member.agreement.privacyVersion', null);
+
       await ctx.prisma.$transaction(async (tx) => {
         const txCtx = { ...ctx, prisma: tx };
 
+        // 이용약관: 내용이 변경된 경우에만 버전 갱신
         await setSiteSetting(
           txCtx,
           'member.agreement.terms',
           input.terms ?? '',
           actorId,
         );
+        if (input.terms !== currentTerms) {
+          await setSiteSetting(
+            txCtx,
+            'member.agreement.termsVersion',
+            new Date().toISOString(),
+            actorId,
+          );
+        }
+
+        // 개인정보처리방침: 내용이 변경된 경우에만 버전 갱신
         await setSiteSetting(
           txCtx,
           'member.agreement.privacy',
           input.privacy ?? '',
           actorId,
         );
+        if (input.privacy !== currentPrivacy) {
+          await setSiteSetting(
+            txCtx,
+            'member.agreement.privacyVersion',
+            new Date().toISOString(),
+            actorId,
+          );
+        }
+
+        // 필수 동의 여부는 항상 갱신
         await setSiteSetting(
           txCtx,
           'member.agreement.termsRequired',
@@ -352,6 +405,145 @@ export const adminSettingsRouter = router({
           input.privacyRequired,
           actorId,
         );
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // Feature Settings (REQ-ADMIN2-052)
+  // ==========================================================================
+
+  /**
+   * 기능 설정 조회 (REQ-ADMIN2-052).
+   */
+  getFeature: protectedAdminProcedure
+    .input(z.object({}).optional())
+    .query(async ({ ctx }) => {
+      const settings = {
+        allowProfileImage: await getSiteSetting(
+          ctx,
+          'member.feature.allowProfileImage',
+          true,
+        ),
+        allowSignature: await getSiteSetting(
+          ctx,
+          'member.feature.allowSignature',
+          true,
+        ),
+        exposeInMemberSearch: await getSiteSetting(
+          ctx,
+          'member.feature.exposeInMemberSearch',
+          true,
+        ),
+      };
+
+      return FeatureSettingsSchema.parse(settings);
+    }),
+
+  /**
+   * 기능 설정 업데이트 (REQ-ADMIN2-052).
+   *
+   * 여러 SiteSetting 키를 하나의 트랜잭션으로 묵어 원자적으로 적용한다.
+   */
+  updateFeature: protectedAdminProcedure
+    .input(FeatureSettingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        await setSiteSetting(
+          txCtx,
+          'member.feature.allowProfileImage',
+          input.allowProfileImage,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.feature.allowSignature',
+          input.allowSignature,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.feature.exposeInMemberSearch',
+          input.exposeInMemberSearch,
+          actorId,
+        );
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // Join Form Settings (REQ-ADMIN2-054/055)
+  // ==========================================================================
+
+  /**
+   * 가입 양식 설정 조회 (REQ-ADMIN2-054).
+   *
+   * 저장된 필드 목록이 없으면 예약된 필드(email, password, nickname) 3개를 기본값으로 반환한다.
+   */
+  getJoinForm: protectedAdminProcedure
+    .input(z.object({}).optional())
+    .query(async ({ ctx }) => {
+      const savedFields = await getSiteSetting(ctx, 'member.joinform.fields', null);
+
+      let fields;
+      if (!savedFields || !Array.isArray(savedFields) || savedFields.length === 0) {
+        // 기본 예약 필드 반환
+        fields = [
+          { key: 'email', label: '이메일', type: 'text' as const, required: true, order: 0 },
+          { key: 'password', label: '비밀번호', type: 'text' as const, required: true, order: 1 },
+          { key: 'nickname', label: '닉네임', type: 'text' as const, required: true, order: 2 },
+        ];
+      } else {
+        fields = savedFields;
+      }
+
+      return JoinFormSettingsSchema.parse({ fields });
+    }),
+
+  /**
+   * 가입 양식 설정 업데이트 (REQ-ADMIN2-054, REQ-ADMIN2-055).
+   *
+   * REQ-ADMIN2-055: 예약된 필드(email, password, nickname)가 제거되거나 이름이 변경되는 것을 금지한다.
+   * 중복된 키를 허용하지 않는다.
+   */
+  updateJoinForm: protectedAdminProcedure
+    .input(JoinFormSettingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      // REQ-ADMIN2-055: 예약된 필드 존재 확인
+      const inputKeys = new Set(input.fields.map((f) => f.key));
+      for (const reservedKey of RESERVED_JOIN_FORM_KEYS) {
+        if (!inputKeys.has(reservedKey)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '예약된 필드(이메일/비밀번호/닉네임)는 제거하거나 이름을 바꿀 수 없습니다.',
+          });
+        }
+      }
+
+      // 중복 키 확인
+      const keyCounts = new Map<string, number>();
+      for (const field of input.fields) {
+        const count = keyCounts.get(field.key) || 0;
+        keyCounts.set(field.key, count + 1);
+        if (count > 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '중복된 필드 키가 있습니다.',
+          });
+        }
+      }
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'member.joinform.fields', input.fields, actorId);
       });
 
       return { success: true };

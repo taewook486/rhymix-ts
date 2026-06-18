@@ -1,8 +1,8 @@
 'use server'
 /**
- * Admin 회원 설정 Server Actions — SPEC-ADMIN-002 Slice 1D (REQ-ADMIN2-047~048, 050).
+ * Admin 회원 설정 Server Actions — SPEC-ADMIN-002 Slice 1D + Slice 2C.
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-047, REQ-ADMIN2-048, REQ-ADMIN2-050
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-047, REQ-ADMIN2-048, REQ-ADMIN2-050, REQ-ADMIN2-051, REQ-ADMIN2-052
  */
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -104,6 +104,8 @@ const UpdateAgreementSettingsSchema = z.object({
   privacy: z.string().optional(),
   termsRequired: z.boolean().default(true),
   privacyRequired: z.boolean().default(true),
+  termsVersion: z.string().nullable(),
+  privacyVersion: z.string().nullable(),
 })
 
 export async function updateAgreementSettingsAction(
@@ -115,6 +117,8 @@ export async function updateAgreementSettingsAction(
     privacy: formData.get('privacy') || undefined,
     termsRequired: formData.get('termsRequired') === 'on',
     privacyRequired: formData.get('privacyRequired') === 'on',
+    termsVersion: null, // 클라이언트에서 전송하지 않음 (서버에서 자동 계산)
+    privacyVersion: null, // 클라이언트에서 전송하지 않음 (서버에서 자동 계산)
   })
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors }
@@ -162,6 +166,42 @@ export async function updateDesignSettingsAction(
       return { error: err.message }
     }
     return { error: '디자인 설정 저장 중 오류가 발생했습니다.' }
+  }
+  revalidatePath('/admin/members/settings')
+  return {}
+}
+
+// ---------------------------------------------------------------------------
+// Feature Settings Actions (REQ-ADMIN2-052)
+// ---------------------------------------------------------------------------
+
+const UpdateFeatureSettingsSchema = z.object({
+  allowProfileImage: z.boolean().default(true),
+  allowSignature: z.boolean().default(true),
+  exposeInMemberSearch: z.boolean().default(true),
+})
+
+export async function updateFeatureSettingsAction(
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = UpdateFeatureSettingsSchema.safeParse({
+    allowProfileImage: formData.get('allowProfileImage') === 'on',
+    allowSignature: formData.get('allowSignature') === 'on',
+    exposeInMemberSearch: formData.get('exposeInMemberSearch') === 'on',
+  })
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors }
+  }
+
+  try {
+    const caller = await getServerCaller()
+    await caller.admin.settings.updateFeature(parsed.data)
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message }
+    }
+    return { error: '기능 설정 저장 중 오류가 발생했습니다.' }
   }
   revalidatePath('/admin/members/settings')
   return {}

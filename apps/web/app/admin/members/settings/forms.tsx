@@ -1,9 +1,11 @@
 'use client';
 /**
- * 회원 설정 폼 (Client Components) — SPEC-ADMIN-002 Slice 1D.
+ * 회원 설정 폼 (Client Components) — SPEC-ADMIN-002 Slice 1D + Slice 2C.
  *
  * useActionState로 Server Action(actions.ts)을 바인딩한다.
  * page.tsx는 Server Component로 초기 설정값만 조회해서 props로 넘긴다.
+ *
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-047, REQ-ADMIN2-048, REQ-ADMIN2-050, REQ-ADMIN2-051, REQ-ADMIN2-052
  */
 import { useActionState } from 'react';
 import {
@@ -11,6 +13,7 @@ import {
   updateLoginSettingsAction,
   updateAgreementSettingsAction,
   updateDesignSettingsAction,
+  updateFeatureSettingsAction,
   type ActionState,
 } from './actions';
 
@@ -197,6 +200,8 @@ export function AgreementSettingsForm({
     privacy: string;
     termsRequired: boolean;
     privacyRequired: boolean;
+    termsVersion: string | null;
+    privacyVersion: string | null;
   };
 }) {
   const [state, formAction, isPending] = useActionState(
@@ -236,6 +241,9 @@ export function AgreementSettingsForm({
           className="w-full border border-zinc-300 rounded px-3 py-2 font-mono text-sm"
           placeholder="이용약관 내용을 입력하세요 (Markdown/HTML 지원)"
         />
+        <p className="text-xs text-zinc-500 mt-1">
+          마지막 수정: {initial.termsVersion ? new Date(initial.termsVersion).toLocaleString('ko-KR') : '없음'}
+        </p>
       </div>
 
       <div className="flex items-center gap-4">
@@ -262,6 +270,9 @@ export function AgreementSettingsForm({
           className="w-full border border-zinc-300 rounded px-3 py-2 font-mono text-sm"
           placeholder="개인정보처리방침 내용을 입력하세요 (Markdown/HTML 지원)"
         />
+        <p className="text-xs text-zinc-500 mt-1">
+          마지막 수정: {initial.privacyVersion ? new Date(initial.privacyVersion).toLocaleString('ko-KR') : '없음'}
+        </p>
       </div>
 
       <div className="pt-4">
@@ -334,6 +345,77 @@ export function DesignSettingsForm({
         <p className="text-xs text-zinc-500 mt-1">
           회원 영역의 레이아웃 템플릿을 선택합니다.
         </p>
+      </div>
+
+      <div className="pt-4">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="px-4 py-2 text-sm bg-zinc-800 text-white rounded hover:bg-zinc-700 disabled:opacity-50"
+        >
+          {isPending ? '저장 중...' : '저장'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export function FeatureSettingsForm({
+  initial,
+}: {
+  initial: {
+    allowProfileImage: boolean;
+    allowSignature: boolean;
+    exposeInMemberSearch: boolean;
+  };
+}) {
+  const [state, formAction, isPending] = useActionState(
+    updateFeatureSettingsAction,
+    initialActionState,
+  );
+
+  return (
+    <form action={formAction} className="max-w-2xl space-y-4">
+      {state.error && (
+        <p className="text-sm text-red-600" role="alert">
+          {state.error}
+        </p>
+      )}
+
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="allowProfileImage"
+            defaultChecked={initial.allowProfileImage}
+            className="rounded"
+          />
+          <span className="text-sm font-medium">프로필 이미지 허용</span>
+        </label>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="allowSignature"
+            defaultChecked={initial.allowSignature}
+            className="rounded"
+          />
+          <span className="text-sm font-medium">서명 허용</span>
+        </label>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="exposeInMemberSearch"
+            defaultChecked={initial.exposeInMemberSearch}
+            className="rounded"
+          />
+          <span className="text-sm font-medium">회원 검색 노출</span>
+        </label>
       </div>
 
       <div className="pt-4">
