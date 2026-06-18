@@ -234,3 +234,10 @@ playwright/.cache/
 nul
 # Test coverage output
 coverage/
+
+# moai sync auto-backups (regenerated each sync run)
+.moai/backups/
+**/.moai/state/
+
+# Playwright MCP debug artifacts (console logs, screenshots)
+.playwright-mcp/
