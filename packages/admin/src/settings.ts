@@ -367,8 +367,8 @@ const DesignSettingsSchema = z.object({
 });
 
 export interface DesignSettings {
-  memberSkinId: string;
-  memberTemplateId: string;
+  memberSkinId?: string;
+  memberTemplateId?: string;
 }
 
 /**
