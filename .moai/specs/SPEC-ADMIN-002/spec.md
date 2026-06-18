@@ -1,7 +1,7 @@
 ---
 id: SPEC-ADMIN-002
 title: 관리자 패널 미구현 기능 완성 (레거시 분석 기반)
-version: 1.1.0
+version: 1.2.0
 status: in-progress
 created: 2026-06-14
 updated: 2026-06-18
@@ -19,6 +19,7 @@ language: ko
 
 ## HISTORY
 
+- 2026-06-18 (M2 Slice 2A~2C 구현 완료): Slice 2A(레이아웃 인스턴스 관리)·2B(파일 관리)·2C(신고 관리 + 회원 설정 확장(051/052/054/055) + 문서 설정(074)) 구현 및 커밋(`3614ae3`, `a6416e7`, `9e6bc5e`, `412d2b6`, `97d0b55`, `7c1fa42`, `83de4cf`, `11410ea`, `e23235d`). 신규 procedure에 대한 vitest 테스트 17건 추가. M2 Slice 2D~2H, M3는 미착수. 상세는 `## Implementation Notes` M2 절 참조.
 - 2026-06-18 (M1 구현 완료): Phase 1(M1) 구현 완료 — Slice 1A~1F(대시보드 위젯, 페이지 편집, 회원 그룹·직접등록, 회원 설정 핵심 탭, 전체 문서/댓글 관리, 알림·보안 설정) 전체 구현 및 커밋(`fa42d4e`). 독립 보안 리뷰에서 발견된 4건의 이슈(SMTP 비밀번호 평문 노출, 회원 그룹 `isAdmin` 권한 상승 경로, 설정 비원자적 쓰기, 대시보드 위젯 순차 fetch로 인한 장애 전파 위험)를 sync 전에 모두 수정함. status를 `planned`→`in-progress`로 전환(M1 완료, M2/M3 대기). 상세는 `## Implementation Notes` 절 참조.
 - 2026-06-18 (v1.1.0): Playwright 실사 기반 `research.md` 추가 후 갱신. 레거시 admin(http://localhost:8080, Rhymix 2.1.33)을 7개 카테고리(대시보드/사이트 제작·편집/회원/콘텐츠/즐겨찾기/설정/고급) 순서로 실제 화면 단위 재조사하고 rhymix-ts 코드와 직접 대조. 신규 REQ-ADMIN2-150~156(7건) 추가 — 관리자 메뉴 초기화(150), 세션 정리(151), 회원 목록 상태 필터 탭(152), 문서 "임시" 상태 필터 보강(153), 비동기 작업 설정(154), 사이트 잠금 런타임 UI(155), 태그 구분 방법 설정(156). REQ-ADMIN2-053(회원 디자인 설정)을 P3→P2로 상향(레거시 사이트 디자인 설정의 1차 탭). "쉬운 설치"(원격 마켓플레이스, 13개 카테고리) 영구 제외 확정. 정정: `/admin/trash`는 이미 구현되어 있음(1차 탐색의 "휴지통 누락" 보고는 오류). 기존 REQ-ADMIN2-001~149는 재번호 없이 그대로 유지.
 - 2026-06-14 (v1.0.0): 최초 작성. 사용자가 브라우저에서 rhymix-ts 관리자 패널을 열었을 때 다수의 메뉴가 "준비중"으로 표시되는 문제를 해결하기 위한 마스터 플랜. 레거시 Rhymix PHP 관리자(http://localhost:8080/)의 전체 admin 디스패치 함수(disp*) 인벤토리와 현재 rhymix-ts `apps/web/app/admin/` 구현을 1:1 대조한 gap 분석 기반. SPEC-ADMIN-001(기반 관리자 기능)과 SPEC-ADMIN-EXTRAS-001(export/import + 잔여 REQ)이 모두 구현 완료된 상태를 전제하며, 그 위에 레거시 대비 누락된 관리자 기능을 6개 섹션으로 구조화하여 완성한다.
@@ -497,6 +498,18 @@ Phase 1 구현 완료 후 독립 보안 리뷰에서 4건의 이슈가 발견되
 
 영향받은 파일: `apps/web/app/admin/page.tsx`, `apps/web/app/admin/settings/notification/NotificationSettingsForm.tsx`, `apps/web/server/api/routers/admin/group.ts`, `apps/web/server/api/routers/admin/settings.ts`, `packages/admin/src/settings.ts`.
 
-### M2 (Phase 2 / P2), M3 (Phase 3 / P3) — 미착수
+### M2 (Phase 2 / P2) — Slice 2A~2C 구현 완료 (2026-06-18)
 
-plan.md 마일스톤 정의에 따라 M2(Slice 2A~2H), M3(Slice 3A~3F)는 아직 구현되지 않았다. M2는 M1의 acceptance 통과를 진입 조건으로 한다(본 SPEC 섹션 5 "Phase 진입 조건" 참조).
+| Slice | 구현 범위 | 대응 REQ | 커밋 |
+|---|---|---|---|
+| 2A — 레이아웃/페이지 설정 확장 | `/admin/site/layouts` 목록, 레이아웃 인스턴스 생성/단건 조회(`getInstance`)/변수 편집, `LayoutInstanceForm`의 server action 분리 | REQ-ADMIN2-020~022, 027, 029, 030 | `3614ae3`, `412d2b6`(후속 수정) |
+| 2B — 파일 관리 | `/admin/files` 목록·고아 파일 정리·업로드/다운로드 설정 | REQ-ADMIN2-078~081 | `a6416e7`, `97d0b55`(후속 수정) |
+| 2C — 신고 관리 + 문서/회원 설정 | 신고 문서/댓글 관리(`/admin/documents/declared`, `/admin/comments/declared`), 회원 디자인 설정, 회원 목록 상태 필터, 문서 "임시" 필터, 약관 버전 기록, 기능 설정 탭, 가입 양식 커스터마이징(`/admin/members/joinform`), 문서 설정(`/admin/documents/config`) | REQ-ADMIN2-072, 074, 077, 051~055, 152, 153 | `9e6bc5e`, `7c1fa42`, `83de4cf`, `11410ea`, `e23235d` |
+
+2C는 두 차례에 걸쳐 구현되었다: 1차로 신고 관리(072/077)만 구현되었고, 053/152/153은 그 이전 작업에서 이미 존재함이 확인되어 별도 구현 없이 완료로 처리했다. 나머지 5건(051/052/054/055/074)은 본 sync 직전 세션에서 회원 설정 확장(051 약관 버전, 052 기능 탭, 054/055 가입 양식 에디터)과 문서 설정 페이지(074)로 나누어 병렬 구현했다. `SiteSetting` 키 기반 저장 패턴(`getSiteSetting`/`setSiteSetting` + 트랜잭션 + AdminLog)을 `settings.ts`와 `document.ts` 양쪽에 일관되게 적용했으며, `document.ts`는 파일 충돌 방지를 위해 동일 헬퍼를 로컬로 의도적으로 중복시켰다(기존 `packages/admin/src/settings.ts` ↔ `apps/web/.../settings.ts` 간 중복 패턴과 동일한 전례).
+
+신규/수정 파일: `apps/web/app/admin/{comments,documents}/declared/*`, `apps/web/app/admin/members/joinform/*`, `apps/web/app/admin/documents/config/*`, `apps/web/app/admin/members/settings/{page.tsx,forms.tsx,actions.ts}`, `apps/web/server/api/routers/admin/{settings.ts,document.ts,moderation.ts}`, `apps/web/app/admin/site/layouts/instances/actions.ts`(신규), `apps/web/app/admin/files/FileManagementClient.tsx`, `apps/web/server/api/routers/admin/file.ts`, `packages/file/src/index.ts`, `packages/admin/src/settings.ts`. 테스트: `apps/web/server/api/routers/admin/{settings,document}.test.ts` 신규(17건, `createCallerFactory` + mocked Prisma 패턴).
+
+### M2 (Phase 2 / P2) Slice 2D~2H, M3 (Phase 3 / P3) — 미착수
+
+plan.md 마일스톤 정의에 따라 M2의 나머지 Slice(2D SEO·고급·큐·비동기/사이트잠금, 2E 스팸필터, 2F 통계·도메인·모듈상세, 2G 보안 IP·테스트메일, 2H admin 전역 유틸리티)와 M3(Slice 3A~3F)는 아직 구현되지 않았다.
