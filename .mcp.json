@@ -21,7 +21,9 @@
       "type": "stdio",
       "command": "/home/taewook/.nvm/versions/node/v22.22.3/bin/node",
       "args": [
-        "/home/taewook/.nvm/versions/node/v22.22.3/lib/node_modules/@playwright/mcp/cli.js"
+        "/home/taewook/.nvm/versions/node/v22.22.3/lib/node_modules/@playwright/mcp/cli.js",
+        "--browser", "chromium",
+        "--executable-path", "/home/taewook/.cache/ms-playwright/chromium-1217/chrome-linux64/chrome"
       ],
       "env": {}
     },
