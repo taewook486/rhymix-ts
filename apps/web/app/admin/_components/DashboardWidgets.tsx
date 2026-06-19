@@ -1,14 +1,15 @@
 /**
- * 대시보드 위젯 컴포넌트들 — SPEC-ADMIN-002 Slice 1A.
+ * 대시보드 위젯 컴포넌트들 — SPEC-ADMIN-002 Slice 1A + Slice 2F.
  *
  * REQ-ADMIN2-007: 각 위젯은 개별적으로 장애 격리 (graceful degradation)
  * REQ-ADMIN2-010: 인덱스 기반 쿼리 사용 (tRPC 라우터에서 처리)
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-001, REQ-ADMIN2-002, REQ-ADMIN2-003, REQ-ADMIN2-007
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-001, REQ-ADMIN2-002, REQ-ADMIN2-003, REQ-ADMIN2-004, REQ-ADMIN2-005, REQ-ADMIN2-006, REQ-ADMIN2-007
  */
 'use client';
 
 import Link from 'next/link';
+import { Checkbox } from '@rhymix-ts/ui/components';
 
 interface VisitStatsWidgetProps {
   stats?: {
@@ -255,6 +256,156 @@ export function RecentCommentsWidget({ comments, error }: RecentCommentsWidgetPr
       >
         댓글 관리 →
       </Link>
+    </div>
+  );
+}
+
+interface UpdateNotificationWidgetProps {
+  hasUpdate?: boolean;
+  currentVersion?: string;
+  latestVersion?: string;
+  error?: boolean;
+}
+
+/**
+ * 업데이트 알림 위젯
+ * - REQ-ADMIN2-004: Dashboard update notification widget
+ * - REQ-ADMIN2-005: "최신 버전" status when no update available
+ * - REQ-ADMIN2-007: 장애 시 에러 상태 렌더링
+ */
+export function UpdateNotificationWidget({
+  hasUpdate = false,
+  currentVersion = '0.0.0',
+  latestVersion,
+  error,
+}: UpdateNotificationWidgetProps) {
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border border-red-200 p-6">
+        <h3 className="text-sm font-semibold text-zinc-700 mb-4">업데이트 알림</h3>
+        <p className="text-sm text-red-600">
+          ⚠️ 업데이트 정보를 불러오지 못했습니다.
+        </p>
+      </div>
+    );
+  }
+
+  // REQ-ADMIN2-005: If no manifest source configured, show stub "최신 버전" status
+  if (!latestVersion) {
+    return (
+      <div className="bg-white rounded-lg border border-zinc-200 p-6">
+        <h3 className="text-sm font-semibold text-zinc-700 mb-4">업데이트 알림</h3>
+        <div className="space-y-2">
+          <p className="text-sm text-zinc-600">현재 버전: {currentVersion}</p>
+          <p className="text-sm text-green-600 font-medium">✓ 최신 버전</p>
+          <p className="text-xs text-zinc-500 mt-2">
+            업데이트 매니페스트 소스가 설정되지 않았습니다.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasUpdate) {
+    return (
+      <div className="bg-white rounded-lg border border-blue-200 p-6">
+        <h3 className="text-sm font-semibold text-zinc-700 mb-4">업데이트 알림</h3>
+        <div className="space-y-2">
+          <p className="text-sm text-zinc-600">현재 버전: {currentVersion}</p>
+          <p className="text-sm text-blue-600 font-medium">
+            새 버전 사용 가능: {latestVersion}
+          </p>
+          <Link
+            href="/admin/settings/advanced"
+            className="inline-block text-xs text-blue-600 hover:text-blue-700"
+          >
+            업데이트 설정 →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // REQ-ADMIN2-005: "최신 버전" status without making admin believe action is required
+  return (
+    <div className="bg-white rounded-lg border border-zinc-200 p-6">
+      <h3 className="text-sm font-semibold text-zinc-700 mb-4">업데이트 알림</h3>
+      <div className="space-y-2">
+        <p className="text-sm text-zinc-600">현재 버전: {currentVersion}</p>
+        <p className="text-sm text-green-600 font-medium">✓ 최신 버전</p>
+      </div>
+    </div>
+  );
+}
+
+interface SummaryCounts {
+  members: number;
+  documents: number;
+  comments: number;
+  files: number;
+}
+
+interface SummaryCounterStripProps {
+  counts?: SummaryCounts;
+  error?: boolean;
+}
+
+/**
+ * 요약 카운터 스트립 위젯
+ * - REQ-ADMIN2-006: Summary counter strip showing total member/document/comment/file counts
+ * - REQ-ADMIN2-007: 장애 시 에러 상태 렌더링
+ */
+export function SummaryCounterStrip({
+  counts,
+  error,
+}: SummaryCounterStripProps) {
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border border-red-200 p-6 col-span-full">
+        <p className="text-sm text-red-600">
+          ⚠️ 요약 데이터를 불러오지 못했습니다.
+        </p>
+      </div>
+    );
+  }
+
+  if (!counts) {
+    return (
+      <div className="bg-white rounded-lg border border-zinc-200 p-6 col-span-full">
+        <p className="text-sm text-zinc-500">요약 데이터 로딩 중...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg border border-zinc-200 p-6 col-span-full">
+      <h3 className="text-sm font-semibold text-zinc-700 mb-4">사이트 현황</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+          <p className="text-xs text-zinc-500">총 회원 수</p>
+          <p className="text-2xl font-bold text-zinc-900">
+            {counts.members.toLocaleString()}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-zinc-500">총 문서 수</p>
+          <p className="text-2xl font-bold text-zinc-900">
+            {counts.documents.toLocaleString()}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-zinc-500">총 댓글 수</p>
+          <p className="text-2xl font-bold text-zinc-900">
+            {counts.comments.toLocaleString()}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-zinc-500">총 파일 수</p>
+          <p className="text-2xl font-bold text-zinc-900">
+            {counts.files.toLocaleString()}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

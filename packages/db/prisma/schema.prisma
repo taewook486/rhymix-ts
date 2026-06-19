@@ -1108,3 +1108,61 @@ model DailyVisit {
   @@index([date])
   @@map("daily_visits")
 }
+
+// =====================================================================
+// SPEC-ADMIN-002 Slice 2E: 스팸 필터 시스템
+// =====================================================================
+
+/**
+ * SpamDeniedWord — 금지어 목록
+ *
+ * REQ-ADMIN2-121: 문서/댓글 제출 시 금지어 포함 여부 검사
+ */
+model SpamDeniedWord {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  word      String   @db.VarChar(200)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@unique([siteId, word])
+  @@index([siteId])
+  @@map("spam_denied_words")
+}
+
+/**
+ * SpamDeniedIp — 차단 IP 목록
+ *
+ * REQ-ADMIN2-120: 문서/댓글 제출 시 IP 차단 여부 검사
+ */
+model SpamDeniedIp {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  ipPattern String   @db.VarChar(100) // IPv4/IPv6 또는 CIDR 표기법
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@unique([siteId, ipPattern])
+  @@index([siteId])
+  @@map("spam_denied_ips")
+}
+
+/**
+ * SpamRule — 스팸 필터 규칙 (속도 제한 등)
+ *
+ * REQ-ADMIN2-123: 제출 속도 제한 설정 (도배 방지)
+ */
+model SpamRule {
+  id              Int      @id @default(autoincrement())
+  siteId          Int
+  actionType      String   @db.VarChar(50) // 'document.create', 'comment.create', etc.
+  maxSubmissions  Int      @default(5) // N초당 M회
+  windowSeconds   Int      @default(60) // 윈도우 크기 (초)
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
+
+  @@unique([siteId, actionType])
+  @@index([siteId])
+  @@map("spam_rules")
+}

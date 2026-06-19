@@ -1,14 +1,16 @@
 /**
- * settings.ts — SPEC-ADMIN-002 Slice 1F (알림 + 보안 설정)
+ * settings.ts — SPEC-ADMIN-002 Slice 1F + Slice 2D
  *
  * Admin settings management:
- * - getNotificationSettings / updateNotificationSettings: SMTP + email sender settings
- * - getSecuritySettings / updateSecuritySettings: Password policy, session, lockout
+ * - Slice 1F: notification (SMTP + email sender), security (password, session, lockout)
+ * - Slice 2D: email queue, SEO, advanced (routing/localization/performance), async, sitelock
  *
  * @MX:ANCHOR [AUTO]: Admin settings CRUD의 단일 진입점.
  * @MX:REASON: SiteSetting 기반 설정의 일관성과 검증 로직의 중앙화 —
  *             fan_in >= 2 (admin tRPC, future import/export tools).
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-110, REQ-ADMIN2-113, REQ-ADMIN2-114
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-110, REQ-ADMIN2-113, REQ-ADMIN2-114,
+ *                   REQ-ADMIN2-112, REQ-ADMIN2-118/119, REQ-ADMIN2-116/157/158,
+ *                   REQ-ADMIN2-154, REQ-ADMIN2-155
  */
 import type { PrismaClient, SiteSetting, Prisma } from '@prisma/client';
 import { z } from 'zod';
@@ -402,4 +404,470 @@ export async function updateDesignSettings(
   await updateSiteSetting(ctx.prisma, 'member.design', validated);
 
   return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 이메일 큐 설정 (Email Queue Settings) — REQ-ADMIN2-112
+// ---------------------------------------------------------------------------
+
+const EmailQueueSettingsSchema = z.object({
+  queueMode: z.enum(['immediate', 'queued']), // 즉시 발송 / 큐 적재
+  batchSize: z.number().int().min(1).max(1000).default(50), // 배치 크기
+});
+
+export interface EmailQueueSettings {
+  queueMode: 'immediate' | 'queued';
+  batchSize: number;
+}
+
+/**
+ * 이메일 큐 설정을 조회한다.
+ *
+ * REQ-ADMIN2-112: 즉시 발송/큐 적재 모드와 배치 크기.
+ */
+export async function getEmailQueueSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<EmailQueueSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'emailQueue');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    queueMode: (value.queueMode as EmailQueueSettings['queueMode']) || 'immediate',
+    batchSize: (value.batchSize as number) || 50,
+  };
+}
+
+/**
+ * 이메일 큐 설정을 업데이트한다.
+ */
+export async function updateEmailQueueSettings(
+  input: EmailQueueSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<EmailQueueSettings> {
+  // Zod 검증
+  const validated = EmailQueueSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'emailQueue', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// SEO 설정 (SEO Settings) — REQ-ADMIN2-118/119
+// ---------------------------------------------------------------------------
+
+const SeoSettingsSchema = z.object({
+  defaultMetaTitle: z.string().max(200).optional(),
+  defaultMetaDescription: z.string().max(500).optional(),
+  ogTitle: z.string().max(200).optional(),
+  ogDescription: z.string().max(500).optional(),
+  ogImageUrl: z.string().url().optional().or(z.literal('')),
+  canonicalUrlPolicy: z.enum(['none', 'default', 'custom']).default('none'),
+  sitemapEnabled: z.boolean().default(false),
+});
+
+export interface SeoSettings {
+  defaultMetaTitle?: string;
+  defaultMetaDescription?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImageUrl?: string;
+  canonicalUrlPolicy: 'none' | 'default' | 'custom';
+  sitemapEnabled: boolean;
+}
+
+/**
+ * SEO 설정을 조회한다.
+ *
+ * REQ-ADMIN2-118: 메타 태그, Open Graph, canonical URL 정책.
+ * REQ-ADMIN2-119: sitemap.xml 생성 활성화 여부.
+ */
+export async function getSeoSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<SeoSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'seo');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    defaultMetaTitle: (value.defaultMetaTitle as string) || '',
+    defaultMetaDescription: (value.defaultMetaDescription as string) || '',
+    ogTitle: (value.ogTitle as string) || '',
+    ogDescription: (value.ogDescription as string) || '',
+    ogImageUrl: (value.ogImageUrl as string) || '',
+    canonicalUrlPolicy: (value.canonicalUrlPolicy as SeoSettings['canonicalUrlPolicy']) || 'none',
+    sitemapEnabled: (value.sitemapEnabled as boolean) || false,
+  };
+}
+
+/**
+ * SEO 설정을 업데이트한다.
+ */
+export async function updateSeoSettings(
+  input: SeoSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<SeoSettings> {
+  // Zod 검증
+  const validated = SeoSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'seo', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 고급 설정 - 라우팅/지역화 (Advanced Settings - Routing/Localization) — REQ-ADMIN2-116/157
+// ---------------------------------------------------------------------------
+
+const SUPPORTED_LANGUAGES = [
+  'ko',
+  'en',
+  'ja',
+  'zh-CN',
+  'zh-TW',
+  'es',
+  'fr',
+  'de',
+  'ru',
+  'pt',
+  'vi',
+  'th',
+  'id',
+] as const;
+
+const AdvancedRoutingSchema = z.object({
+  siteTimezone: z.string().default('Asia/Seoul'),
+  defaultLanguage: z.enum(SUPPORTED_LANGUAGES).default('ko'),
+  cacheDriver: z.enum(['file', 'redis', 'memcached']).default('file'),
+});
+
+const AdvancedLocalizationSchema = z.object({
+  shortUrlPolicy: z.enum(['disabled', 'xe_compat', 'all']).default('disabled'),
+  mobileViewEnabled: z.boolean().default(true),
+  tabletAsMobile: z.boolean().default(false),
+  autoLanguageSelection: z.boolean().default(false),
+  supportedLanguages: z.array(z.enum(SUPPORTED_LANGUAGES)).default(['ko']),
+  defaultLanguage: z.enum(SUPPORTED_LANGUAGES).default('ko'),
+  mobileViewport: z.string().default('width=device-width, initial-scale=1'),
+});
+
+export interface AdvancedRoutingSettings {
+  siteTimezone: string;
+  defaultLanguage: string;
+  cacheDriver: 'file' | 'redis' | 'memcached';
+}
+
+export interface AdvancedLocalizationSettings {
+  shortUrlPolicy: 'disabled' | 'xe_compat' | 'all';
+  mobileViewEnabled: boolean;
+  tabletAsMobile: boolean;
+  autoLanguageSelection: boolean;
+  supportedLanguages: string[];
+  defaultLanguage: string;
+  mobileViewport: string;
+}
+
+/**
+ * 고급 설정(라우팅)을 조회한다.
+ *
+ * REQ-ADMIN2-116: 시간대, 기본 언어, 캐시 드라이버.
+ */
+export async function getAdvancedRoutingSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<AdvancedRoutingSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'advanced.routing');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    siteTimezone: (value.siteTimezone as string) || 'Asia/Seoul',
+    defaultLanguage: (value.defaultLanguage as string) || 'ko',
+    cacheDriver: (value.cacheDriver as AdvancedRoutingSettings['cacheDriver']) || 'file',
+  };
+}
+
+/**
+ * 고급 설정(라우팅)을 업데이트한다.
+ */
+export async function updateAdvancedRoutingSettings(
+  input: AdvancedRoutingSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<AdvancedRoutingSettings> {
+  // Zod 검증
+  const validated = AdvancedRoutingSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'advanced.routing', validated);
+
+  return validated;
+}
+
+/**
+ * 고급 설정(지역화)을 조회한다.
+ *
+ * REQ-ADMIN2-157: 짧은 주소 정책, 모바일 뷰, 언어 설정, viewport.
+ */
+export async function getAdvancedLocalizationSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<AdvancedLocalizationSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'advanced.localization');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    shortUrlPolicy: (value.shortUrlPolicy as AdvancedLocalizationSettings['shortUrlPolicy']) || 'disabled',
+    mobileViewEnabled: (value.mobileViewEnabled as boolean) ?? true,
+    tabletAsMobile: (value.tabletAsMobile as boolean) ?? false,
+    autoLanguageSelection: (value.autoLanguageSelection as boolean) ?? false,
+    supportedLanguages: (value.supportedLanguages as string[]) || ['ko'],
+    defaultLanguage: (value.defaultLanguage as string) || 'ko',
+    mobileViewport: (value.mobileViewport as string) || 'width=device-width, initial-scale=1',
+  };
+}
+
+/**
+ * 고급 설정(지역화)을 업데이트한다.
+ */
+export async function updateAdvancedLocalizationSettings(
+  input: AdvancedLocalizationSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<AdvancedLocalizationSettings> {
+  // Zod 검증
+  const validated = AdvancedLocalizationSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'advanced.localization', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 고급 설정 - 성능/캐시 (Advanced Settings - Performance/Cache) — REQ-ADMIN2-158
+// ---------------------------------------------------------------------------
+
+const AdvancedPerformanceSchema = z.object({
+  sessionDbUse: z.boolean().default(false),
+  sessionDelayStart: z.boolean().default(false),
+  templateCacheDelay: z.boolean().default(false),
+  thumbnailTarget: z.enum(['attached', 'all', 'none']).default('attached'),
+  thumbnailMethod: z.enum(['gd', 'imagick', 'none']).default('gd'),
+  cacheEnabled: z.boolean().default(true),
+  cacheDefaultTtl: z.number().int().min(0).max(86400).default(3600),
+  cacheDeleteMethod: z.enum(['folder', 'content']).default('folder'),
+  cacheControlOptions: z.array(z.enum(['no-cache', 'no-store', 'must-revalidate'])).default([]),
+  adminLayout: z.enum(['module', 'admin']).default('admin'),
+  jsCompressionPolicy: z.enum(['none', 'common', 'all']).default('none'),
+  jsMergePolicy: z.enum(['none', 'css', 'js', 'both']).default('none'),
+  cssCompressionPolicy: z.enum(['none', 'common', 'all']).default('none'),
+  cssMergePolicy: z.enum(['none', 'css', 'js', 'both']).default('none'),
+  jqueryVersion: z.enum(['2.2.4', '3.7.1']).default('3.7.1'),
+});
+
+export interface AdvancedPerformanceSettings {
+  sessionDbUse: boolean;
+  sessionDelayStart: boolean;
+  templateCacheDelay: boolean;
+  thumbnailTarget: 'attached' | 'all' | 'none';
+  thumbnailMethod: 'gd' | 'imagick' | 'none';
+  cacheEnabled: boolean;
+  cacheDefaultTtl: number;
+  cacheDeleteMethod: 'folder' | 'content';
+  cacheControlOptions: string[];
+  adminLayout: 'module' | 'admin';
+  jsCompressionPolicy: 'none' | 'common' | 'all';
+  jsMergePolicy: 'none' | 'css' | 'js' | 'both';
+  cssCompressionPolicy: 'none' | 'common' | 'all';
+  cssMergePolicy: 'none' | 'css' | 'js' | 'both';
+  jqueryVersion: '2.2.4' | '3.7.1';
+}
+
+/**
+ * 고급 설정(성능/캐시)를 조회한다.
+ *
+ * REQ-ADMIN2-158: 세션, 썸네일, 캐시, HTTP Cache-Control, JS/CSS, jQuery.
+ *
+ * @MX:WARN [AUTO]: JS/CSS 압축·병합 정책은 UI에만 노출되며 실제 빌드 타임 번들링과의
+ * 양립 여부는 Open Question Q5 미결 상태임. 실제 적용 로직 없이 값만 영속.
+ */
+export async function getAdvancedPerformanceSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<AdvancedPerformanceSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'advanced.performance');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    sessionDbUse: (value.sessionDbUse as boolean) ?? false,
+    sessionDelayStart: (value.sessionDelayStart as boolean) ?? false,
+    templateCacheDelay: (value.templateCacheDelay as boolean) ?? false,
+    thumbnailTarget: (value.thumbnailTarget as AdvancedPerformanceSettings['thumbnailTarget']) || 'attached',
+    thumbnailMethod: (value.thumbnailMethod as AdvancedPerformanceSettings['thumbnailMethod']) || 'gd',
+    cacheEnabled: (value.cacheEnabled as boolean) ?? true,
+    cacheDefaultTtl: (value.cacheDefaultTtl as number) || 3600,
+    cacheDeleteMethod: (value.cacheDeleteMethod as AdvancedPerformanceSettings['cacheDeleteMethod']) || 'folder',
+    cacheControlOptions: (value.cacheControlOptions as string[]) || [],
+    adminLayout: (value.adminLayout as AdvancedPerformanceSettings['adminLayout']) || 'admin',
+    jsCompressionPolicy: (value.jsCompressionPolicy as AdvancedPerformanceSettings['jsCompressionPolicy']) || 'none',
+    jsMergePolicy: (value.jsMergePolicy as AdvancedPerformanceSettings['jsMergePolicy']) || 'none',
+    cssCompressionPolicy: (value.cssCompressionPolicy as AdvancedPerformanceSettings['cssCompressionPolicy']) || 'none',
+    cssMergePolicy: (value.cssMergePolicy as AdvancedPerformanceSettings['cssMergePolicy']) || 'none',
+    jqueryVersion: (value.jqueryVersion as AdvancedPerformanceSettings['jqueryVersion']) || '3.7.1',
+  };
+}
+
+/**
+ * 고급 설정(성능/캐시)를 업데이트한다.
+ */
+export async function updateAdvancedPerformanceSettings(
+  input: AdvancedPerformanceSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<AdvancedPerformanceSettings> {
+  // Zod 검증
+  const validated = AdvancedPerformanceSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'advanced.performance', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 비동기 작업 설정 (Async Task Settings) — REQ-ADMIN2-154
+// ---------------------------------------------------------------------------
+
+/**
+ * 웹크론 인증키를 자동 생성한다.
+ *
+ * @returns 32자 hex 문자열 (암호적으로 안전한 무작위성)
+ */
+function generateWebcronKey(): string {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+const AsyncSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  driver: z.enum(['none', 'db']).default('none'),
+  webcronKey: z.string().length(32).optional(),
+  webcronShowError: z.boolean().default(false),
+  intervalMinutes: z.number().int().min(1).max(1440).default(5), // 1분 ~ 1440분(24시간)
+  processCount: z.number().int().min(1).max(10).default(1),
+});
+
+export interface AsyncSettings {
+  enabled: boolean;
+  driver: 'none' | 'db';
+  webcronKey?: string;
+  webcronShowError: boolean;
+  intervalMinutes: number;
+  processCount: number;
+}
+
+/**
+ * 비동기 작업 설정을 조회한다.
+ *
+ * REQ-ADMIN2-154: 사용 여부, 드라이버, 웹크론 설정, 호출 간격, 프로세스 갯수.
+ */
+export async function getAsyncSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<AsyncSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'async');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    enabled: (value.enabled as boolean) ?? false,
+    driver: (value.driver as AsyncSettings['driver']) || 'none',
+    webcronKey: (value.webcronKey as string) || undefined,
+    webcronShowError: (value.webcronShowError as boolean) ?? false,
+    intervalMinutes: (value.intervalMinutes as number) || 5,
+    processCount: (value.processCount as number) || 1,
+  };
+}
+
+/**
+ * 비동기 작업 설정을 업데이트한다.
+ *
+ * 웹크론 인증키가 비어있으면 자동 생성한다.
+ */
+export async function updateAsyncSettings(
+  input: AsyncSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<AsyncSettings> {
+  // 웹크론 인증키 자동 생성
+  const toPersist = {
+    ...input,
+    webcronKey: input.webcronKey || generateWebcronKey(),
+  };
+
+  // Zod 검증
+  const validated = AsyncSettingsSchema.parse(toPersist);
+
+  await updateSiteSetting(ctx.prisma, 'async', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 사이트 잠금 설정 (Site Lock Settings) — REQ-ADMIN2-155
+// ---------------------------------------------------------------------------
+
+const SitelockSettingsSchema = z.object({
+  locked: z.boolean().default(false),
+  message: z.string().max(1000).optional(),
+  allowedIpList: z.array(z.string()).default([]),
+});
+
+export interface SitelockSettings {
+  locked: boolean;
+  message?: string;
+  allowedIpList: string[];
+}
+
+/**
+ * 사이트 잠금 설정을 조회한다.
+ *
+ * REQ-ADMIN2-155: 사이트 잠금 토글, 허용 IP 목록 런타임 관리.
+ */
+export async function getSitelockSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<SitelockSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'sitelock');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    locked: (value.locked as boolean) || false,
+    message: (value.message as string) || '',
+    allowedIpList: (value.allowedIpList as string[]) || [],
+  };
+}
+
+/**
+ * 사이트 잠금 설정을 업데이트한다.
+ *
+ * @MX:ANCHOR [AUTO]: 사이트 잠금 설정 업데이트 — 자가 잠금 방지 로직 포함.
+ * @MX:REASON: fan_in >= 2 (tRPC, 향후 잠금 해제 CLI 등).
+ * @MX:WARN: Sitelock 활성화 시 현재 관리자 IP가 자동 포함되어야 함.
+ */
+export async function updateSitelockSettings(
+  input: SitelockSettings,
+  ctx: { prisma: PrismaClient; currentIp?: string },
+): Promise<SitelockSettings> {
+  // Zod 검증
+  const validated = SitelockSettingsSchema.parse(input);
+
+  // REQ-ADMIN2-155: Sitelock 활성화 시 현재 관리자 IP 자동 포함
+  let finalIpList = validated.allowedIpList;
+  if (validated.locked && ctx.currentIp && !finalIpList.includes(ctx.currentIp)) {
+    finalIpList = [...finalIpList, ctx.currentIp];
+  }
+
+  const toPersist = {
+    ...validated,
+    allowedIpList: finalIpList,
+  };
+
+  await updateSiteSetting(ctx.prisma, 'sitelock', toPersist);
+
+  return toPersist;
 }

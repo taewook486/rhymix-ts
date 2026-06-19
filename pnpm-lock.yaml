@@ -117,6 +117,9 @@ importers:
       '@trpc/server':
         specifier: ^11.0.0
         version: 11.17.0(typescript@5.9.3)
+      '@types/nodemailer':
+        specifier: ^6.4.14
+        version: 6.4.24
       iron-session:
         specifier: ^8.0.4
         version: 8.0.4
@@ -138,6 +141,9 @@ importers:
       next-themes:
         specifier: ^0.4.4
         version: 0.4.6(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      nodemailer:
+        specifier: ^6.9.0
+        version: 6.10.1
       react:
         specifier: 19.0.0
         version: 19.0.0

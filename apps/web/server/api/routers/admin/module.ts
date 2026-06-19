@@ -104,6 +104,54 @@ export const adminModuleRouter = router({
     ),
 
   /**
+   * 모듈 인스턴스 상세 조회 (REQ-ADMIN2-146).
+   *
+   * ID로 모듈 인스턴스의 상세 정보를 조회한다.
+   * config, grant settings, category 등을 포함한다.
+   */
+  getById: protectedAdminProcedure
+    .input(
+      z.object({
+        instanceId: z.number().int().positive(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const instance = await ctx.prisma.moduleInstance.findUnique({
+        where: { id: input.instanceId },
+        include: {
+          config: true,
+        },
+      });
+
+      if (!instance) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Module instance not found',
+        });
+      }
+
+      return {
+        id: instance.id,
+        mid: instance.mid,
+        title: instance.name,
+        browserTitle: instance.browserTitle,
+        moduleCode: instance.moduleCode,
+        moduleName: instance.moduleCode, // Use moduleCode as name since there's no separate module relation
+        layoutId: instance.layoutId,
+        mobileLayoutId: instance.mobileLayoutId,
+        skin: instance.skin,
+        mobileSkin: instance.mobileSkin,
+        menuId: instance.menuId,
+        category: null, // Not implemented in current schema
+        config: instance.config?.config || null,
+        extraVars: null, // Not implemented in current schema
+        rssEnabled: instance.rssEnabled,
+        createdAt: instance.createdAt,
+        updatedAt: instance.updatedAt,
+      };
+    }),
+
+  /**
    * 모듈 인스턴스 수정 — 페이지 설정 (REQ-ADMIN2-027).
    *
    * title, browserTitle, layoutId, grant 등의 기본 설정을 수정한다.

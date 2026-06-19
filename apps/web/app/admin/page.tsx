@@ -13,7 +13,7 @@
  */
 import { getServerCaller } from '@/lib/trpc/server'
 import { getCurrentSiteId } from '@/lib/admin/site-context'
-import { VisitStatsWidget, RecentDocumentsWidget, RecentCommentsWidget } from './_components/DashboardWidgets'
+import { VisitStatsWidget, RecentDocumentsWidget, RecentCommentsWidget, UpdateNotificationWidget, SummaryCounterStrip } from './_components/DashboardWidgets'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,10 +24,11 @@ export default async function AdminDashboardPage() {
   // REQ-ADMIN2-007: 각 위젯의 데이터를 병렬로 fetch하면서도 위젯별 장애를 격리한다.
   // Promise.all이 아닌 Promise.allSettled를 사용해 한 위젯의 실패가 다른 위젯의
   // 결과를 막지 않도록 한다.
-  const [visitStatsResult, recentDocumentsResult, recentCommentsResult] = await Promise.allSettled([
+  const [visitStatsResult, recentDocumentsResult, recentCommentsResult, summaryCountsResult] = await Promise.allSettled([
     caller.admin.dashboard.getVisitStats({ siteId }),
     caller.admin.dashboard.getRecentDocuments({ siteId }),
     caller.admin.dashboard.getRecentComments({ siteId }),
+    caller.admin.stats.getSummaryCounts({ siteId }),
   ])
 
   let visitStatsData
@@ -57,15 +58,31 @@ export default async function AdminDashboardPage() {
     recentCommentsError = true
   }
 
+  let summaryCountsData
+  let summaryCountsError = false
+  if (summaryCountsResult.status === 'fulfilled') {
+    summaryCountsData = summaryCountsResult.value
+  } else {
+    console.error('Failed to fetch summary counts:', summaryCountsResult.reason)
+    summaryCountsError = true
+  }
+
   // 모듈 인스턴스 데이터 (기존 기능)
   const instances = await caller.admin.module.list({ siteId })
 
   return (
     <section>
       <h1 className="text-2xl font-bold mb-6">대시보드</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* 방문자 통계 위젯 */}
-        <VisitStatsWidget stats={visitStatsData} error={visitStatsError} />
+      <div className="space-y-4">
+        {/* REQ-ADMIN2-006: Summary counter strip - full width */}
+        <SummaryCounterStrip counts={summaryCountsData} error={summaryCountsError} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* REQ-ADMIN2-004/005: Update notification widget */}
+          <UpdateNotificationWidget currentVersion="0.1.0" />
+
+          {/* 방문자 통계 위젯 */}
+          <VisitStatsWidget stats={visitStatsData} error={visitStatsError} />
 
         {/* 모듈 인스턴스 카드 (기존 유지) */}
         <div className="bg-white rounded-lg border border-zinc-200 p-6">
@@ -82,6 +99,7 @@ export default async function AdminDashboardPage() {
           <RecentCommentsWidget comments={recentCommentsData} error={recentCommentsError} />
         </div>
       </div>
+    </div>
     </section>
   )
 }

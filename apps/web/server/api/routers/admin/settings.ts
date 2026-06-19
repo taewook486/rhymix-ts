@@ -17,6 +17,20 @@ import {
   getDesignSettings,
   updateDesignSettings,
   SiteNotFoundError,
+  getEmailQueueSettings,
+  updateEmailQueueSettings,
+  getSeoSettings,
+  updateSeoSettings,
+  getAdvancedRoutingSettings,
+  updateAdvancedRoutingSettings,
+  getAdvancedLocalizationSettings,
+  updateAdvancedLocalizationSettings,
+  getAdvancedPerformanceSettings,
+  updateAdvancedPerformanceSettings,
+  getAsyncSettings,
+  updateAsyncSettings,
+  getSitelockSettings,
+  updateSitelockSettings,
 } from '@rhymix-ts/admin';
 
 // ---------------------------------------------------------------------------
@@ -639,4 +653,294 @@ export const adminSettingsRouter = router({
     .mutation(async ({ ctx, input }) =>
       updateDesignSettings(input, { prisma: ctx.prisma }),
     ),
+
+  // ==========================================================================
+  // Email Queue Settings (REQ-ADMIN2-112)
+  // ==========================================================================
+
+  /**
+   * 이메일 큐 설정 조회.
+   */
+  getEmailQueue: protectedAdminProcedure.query(async ({ ctx }) =>
+    getEmailQueueSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 이메일 큐 설정 업데이트.
+   */
+  updateEmailQueue: protectedAdminProcedure
+    .input(
+      z.object({
+        queueMode: z.enum(['immediate', 'queued']),
+        batchSize: z.number().int().min(1).max(1000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'emailQueue', input, actorId);
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // SEO Settings (REQ-ADMIN2-118/119)
+  // ==========================================================================
+
+  /**
+   * SEO 설정 조회.
+   */
+  getSeo: protectedAdminProcedure.query(async ({ ctx }) =>
+    getSeoSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * SEO 설정 업데이트.
+   */
+  updateSeo: protectedAdminProcedure
+    .input(
+      z.object({
+        defaultMetaTitle: z.string().max(200).optional(),
+        defaultMetaDescription: z.string().max(500).optional(),
+        ogTitle: z.string().max(200).optional(),
+        ogDescription: z.string().max(500).optional(),
+        ogImageUrl: z.string().url().optional().or(z.literal('')),
+        canonicalUrlPolicy: z.enum(['none', 'default', 'custom']),
+        sitemapEnabled: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'seo', input, actorId);
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // Advanced Settings (REQ-ADMIN2-116/157/158)
+  // ==========================================================================
+
+  /**
+   * 고급 설정(라우팅) 조회.
+   */
+  getAdvancedRouting: protectedAdminProcedure.query(async ({ ctx }) =>
+    getAdvancedRoutingSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 고급 설정(라우팅) 업데이트.
+   */
+  updateAdvancedRouting: protectedAdminProcedure
+    .input(
+      z.object({
+        siteTimezone: z.string(),
+        defaultLanguage: z.string(),
+        cacheDriver: z.enum(['file', 'redis', 'memcached']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'advanced.routing', input, actorId);
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * 고급 설정(지역화) 조회.
+   */
+  getAdvancedLocalization: protectedAdminProcedure.query(async ({ ctx }) =>
+    getAdvancedLocalizationSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 고급 설정(지역화) 업데이트.
+   */
+  updateAdvancedLocalization: protectedAdminProcedure
+    .input(
+      z.object({
+        shortUrlPolicy: z.enum(['disabled', 'xe_compat', 'all']),
+        mobileViewEnabled: z.boolean(),
+        tabletAsMobile: z.boolean(),
+        autoLanguageSelection: z.boolean(),
+        supportedLanguages: z.array(z.string()),
+        defaultLanguage: z.string(),
+        mobileViewport: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'advanced.localization', input, actorId);
+      });
+
+      return { success: true };
+    }),
+
+  /**
+   * 고급 설정(성능/캐시) 조회.
+   */
+  getAdvancedPerformance: protectedAdminProcedure.query(async ({ ctx }) =>
+    getAdvancedPerformanceSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 고급 설정(성능/캐시) 업데이트.
+   */
+  updateAdvancedPerformance: protectedAdminProcedure
+    .input(
+      z.object({
+        sessionDbUse: z.boolean(),
+        sessionDelayStart: z.boolean(),
+        templateCacheDelay: z.boolean(),
+        thumbnailTarget: z.enum(['attached', 'all', 'none']),
+        thumbnailMethod: z.enum(['gd', 'imagick', 'none']),
+        cacheEnabled: z.boolean(),
+        cacheDefaultTtl: z.number().int().min(0).max(86400),
+        cacheDeleteMethod: z.enum(['folder', 'content']),
+        cacheControlOptions: z.array(z.enum(['no-cache', 'no-store', 'must-revalidate'])),
+        adminLayout: z.enum(['module', 'admin']),
+        jsCompressionPolicy: z.enum(['none', 'common', 'all']),
+        jsMergePolicy: z.enum(['none', 'css', 'js', 'both']),
+        cssCompressionPolicy: z.enum(['none', 'common', 'all']),
+        cssMergePolicy: z.enum(['none', 'css', 'js', 'both']),
+        jqueryVersion: z.enum(['2.2.4', '3.7.1']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'advanced.performance', input, actorId);
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // Async Task Settings (REQ-ADMIN2-154)
+  // ==========================================================================
+
+  /**
+   * 비동기 작업 설정 조회.
+   */
+  getAsync: protectedAdminProcedure.query(async ({ ctx }) =>
+    getAsyncSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 비동기 작업 설정 업데이트.
+   */
+  updateAsync: protectedAdminProcedure
+    .input(
+      z.object({
+        enabled: z.boolean(),
+        driver: z.enum(['none', 'db']),
+        webcronKey: z.string().length(32).optional(),
+        webcronShowError: z.boolean(),
+        intervalMinutes: z.number().int().min(1).max(1440),
+        processCount: z.number().int().min(1).max(10),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'async', input, actorId);
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // Site Lock Settings (REQ-ADMIN2-155)
+  // ==========================================================================
+
+  /**
+   * 사이트 잠금 설정 조회.
+   */
+  getSitelock: protectedAdminProcedure.query(async ({ ctx }) =>
+    getSitelockSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 사이트 잠금 설정 업데이트.
+   */
+  updateSitelock: protectedAdminProcedure
+    .input(
+      z.object({
+        locked: z.boolean(),
+        message: z.string().max(1000).optional(),
+        allowedIpList: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(
+          txCtx,
+          'sitelock',
+          input,
+          actorId,
+        );
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // IP Control Settings (REQ-ADMIN2-115)
+  // ==========================================================================
+
+  /**
+   * IP 접근 제어 설정 조회.
+   */
+  getIpControl: protectedAdminProcedure.query(async ({ ctx }) => {
+    const { getIpControlSettings } = await import('@rhymix-ts/admin');
+    return getIpControlSettings({ prisma: ctx.prisma });
+  }),
+
+  /**
+   * IP 접근 제어 설정 업데이트.
+   */
+  updateIpControl: protectedAdminProcedure
+    .input(
+      z.object({
+        enabled: z.boolean(),
+        allowList: z.array(z.string()),
+        denyList: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { updateIpControlSettings } = await import('@rhymix-ts/admin');
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(
+          txCtx,
+          'ipControl',
+          input,
+          actorId,
+        );
+      });
+
+      return input;
+    }),
 });

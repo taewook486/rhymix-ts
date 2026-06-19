@@ -1,17 +1,20 @@
 'use server';
 /**
- * Admin 알림 설정 Server Action — SPEC-ADMIN-002 Slice 1F (REQ-ADMIN2-110).
+ * Admin 알림 설정 Server Actions — SPEC-ADMIN-002 Slice 1F + Slice 2G (REQ-ADMIN2-110, REQ-ADMIN2-111).
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-110
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-110, REQ-ADMIN2-111
  */
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { auth } from '@/lib/auth/config';
 import { getServerCaller } from '@/lib/trpc/server';
 
 export interface ActionState {
   error?: string;
   fieldErrors?: Record<string, string[]>;
+  success?: boolean;
+  message?: string;
 }
 
 const UpdateNotificationSchema = z.object({
@@ -57,4 +60,77 @@ export async function updateNotificationSettingsAction(
   }
   revalidatePath('/admin/settings/notification');
   return {};
+}
+
+/**
+ * 테스트 메일 발송 Server Action — SPEC-ADMIN-002 Slice 2G (REQ-ADMIN2-111)
+ *
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-111
+ */
+export async function sendTestEmailAction(
+  _prev: ActionState | null,
+  _formData: FormData,
+): Promise<ActionState> {
+  try {
+    const caller = await getServerCaller();
+    const settings = await caller.admin.settings.getNotification();
+
+    // Check if SMTP is configured
+    if (!settings.smtpHost || !settings.smtpPort) {
+      return { error: 'SMTP 설정이 완료되지 않았습니다. 먼저 SMTP 설정을 저장해주세요.' };
+    }
+
+    // Import nodemailer from packages/auth for test email (bypass template system)
+    const nodemailer = await import('nodemailer');
+
+    // Get the password from settings if it exists (from database, not from View)
+    // For test email, we need to use a temporary password if user just entered one
+    const smtpPassword = _formData.get('smtpPassword') as string | null;
+
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      host: settings.smtpHost,
+      port: settings.smtpPort,
+      secure: settings.smtpSecure ?? false,
+      auth: settings.smtpUser
+        ? { user: settings.smtpUser, pass: smtpPassword || '' }
+        : undefined,
+    });
+
+    // Get current admin's email for test
+    const session = await auth();
+    const userEmail = session?.user?.email || (session?.user as any)?.email;
+    if (!userEmail) {
+      return { error: '로그인된 사용자의 이메일을 찾을 수 없습니다.' };
+    }
+
+    // Send test email directly (HTML + text)
+    const testEmailContent = {
+      text: '这是一封测试邮件. 如果您收到此邮件,则SMTP配置正常.\n\nThis is a test email. If you receive this email, your SMTP configuration is working correctly.',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">테스트 메일 / Test Email</h2>
+          <p>这是一封测试邮件. 如果您收到此邮件,则SMTP配置正常.</p>
+          <p>This is a test email. If you receive this email, your SMTP configuration is working correctly.</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;" />
+          <p style="color: #666; font-size: 12px;">SMTP Host: ${settings.smtpHost}:${settings.smtpPort}</p>
+          <p style="color: #666; font-size: 12px;">Sent at: ${new Date().toISOString()}</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail({
+      from: settings.smtpFrom || settings.senderEmail,
+      to: userEmail,
+      subject: '테스트 메일 / Test Email',
+      ...testEmailContent,
+    });
+
+    return { success: true, message: '테스트 메일이 발송되었습니다. 이메일을 확인해주세요.' };
+  } catch (err) {
+    if (err instanceof Error) {
+      return { error: `테스트 메일 발송 실패: ${err.message}` };
+    }
+    return { error: '테스트 메일 발송 중 오류가 발생했습니다.' };
+  }
 }

@@ -51,3 +51,54 @@ export async function updateSecuritySettingsAction(
   revalidatePath('/admin/settings/security');
   return {};
 }
+
+/**
+ * IP 접근 제어 설정 Server Action — SPEC-ADMIN-002 Slice 2G (REQ-ADMIN2-115)
+ *
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-115
+ */
+const UpdateIpControlSchema = z.object({
+  ipControlEnabled: z.boolean().default(false),
+  ipControlAllowList: z.string().default(''),
+  ipControlDenyList: z.string().default(''),
+});
+
+export async function updateIpControlSettingsAction(
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = UpdateIpControlSchema.safeParse({
+    ipControlEnabled: formData.get('ipControlEnabled') === 'on',
+    ipControlAllowList: formData.get('ipControlAllowList'),
+    ipControlDenyList: formData.get('ipControlDenyList'),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  try {
+    const caller = await getServerCaller();
+
+    // Parse IP lists (comma or newline separated)
+    const parseIpList = (text: string): string[] => {
+      if (!text) return [];
+      return text
+        .split(/[,\n]/)
+        .map((ip) => ip.trim())
+        .filter((ip) => ip.length > 0);
+    };
+
+    await caller.admin.settings.updateIpControl({
+      enabled: parsed.data.ipControlEnabled,
+      allowList: parseIpList(parsed.data.ipControlAllowList),
+      denyList: parseIpList(parsed.data.ipControlDenyList),
+    });
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message };
+    }
+    return { error: 'IP 제어 설정 저장 중 오류가 발생했습니다.' };
+  }
+  revalidatePath('/admin/settings/security');
+  return {};
+}

@@ -38,6 +38,7 @@ const mockSiteFindFirst = vi.fn();
 const mockSiteSettingFindFirst = vi.fn();
 const mockSiteSettingFindUnique = vi.fn();
 const mockSiteSettingUpsert = vi.fn();
+const mockSiteSettingCreate = vi.fn();
 const mockAdminLogCreate = vi.fn();
 
 const mockPrisma = {
@@ -48,6 +49,7 @@ const mockPrisma = {
     findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
     findUnique: (...args: unknown[]) => mockSiteSettingFindUnique(...args),
     upsert: (...args: unknown[]) => mockSiteSettingUpsert(...args),
+    create: (...args: unknown[]) => mockSiteSettingCreate(...args),
   },
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
@@ -61,6 +63,7 @@ const mockPrisma = {
         findFirst: mockSiteSettingFindFirst,
         findUnique: mockSiteSettingFindUnique,
         upsert: mockSiteSettingUpsert,
+        create: mockSiteSettingCreate,
       },
       adminLog: {
         create: mockAdminLogCreate,
@@ -82,6 +85,8 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     vi.clearAllMocks();
     mockSiteFindFirst.mockResolvedValue({ id: 1 });
     mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA disabled
+    mockSiteSettingFindUnique.mockResolvedValue(null); // Default: no existing settings
+    mockSiteSettingCreate.mockResolvedValue({ id: 1, siteId: 1, key: 'test', value: {} });
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
   });
 
@@ -414,5 +419,136 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
 
     await expect(caller.updateJoinForm({ fields })).rejects.toThrow(TRPCError);
     await expect(caller.updateJoinForm({ fields })).rejects.toThrow('중복된 필드 키');
+  });
+
+  // ==========================================================================
+  // Slice 2D Tests (REQ-ADMIN2-112, 118/119, 116/157/158, 154, 155)
+  // ==========================================================================
+
+  it('SETTINGS-EMAIL-QUEUE-001: getEmailQueue → returns defaults', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getEmailQueue();
+
+    expect(result.queueMode).toBe('immediate');
+    expect(result.batchSize).toBe(50);
+  });
+
+  it('SETTINGS-SEO-001: getSeo → returns defaults', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getSeo();
+
+    expect(result.canonicalUrlPolicy).toBe('none');
+    expect(result.sitemapEnabled).toBe(false);
+  });
+
+  it('SETTINGS-SEO-002: updateSeo → persists settings', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateSeo({
+      defaultMetaTitle: 'Test Site',
+      sitemapEnabled: true,
+      canonicalUrlPolicy: 'default',
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockSiteSettingUpsert).toHaveBeenCalled();
+  });
+
+  it('SETTINGS-ADV-ROUTE-001: getAdvancedRouting → returns defaults', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getAdvancedRouting();
+
+    expect(result.siteTimezone).toBe('Asia/Seoul');
+    expect(result.cacheDriver).toBe('file');
+  });
+
+  it('SETTINGS-ADV-LOC-001: getAdvancedLocalization → returns defaults', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getAdvancedLocalization();
+
+    expect(result.shortUrlPolicy).toBe('disabled');
+    expect(result.mobileViewEnabled).toBe(true);
+  });
+
+  it('SETTINGS-ADV-PERF-001: getAdvancedPerformance → returns defaults', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getAdvancedPerformance();
+
+    expect(result.sessionDbUse).toBe(false);
+    expect(result.jqueryVersion).toBe('3.7.1');
+  });
+
+  it('SETTINGS-ASYNC-001: getAsync → returns defaults', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getAsync();
+
+    expect(result.enabled).toBe(false);
+    expect(result.intervalMinutes).toBe(5);
+  });
+
+  it('SETTINGS-SITELOCK-001: getSitelock → returns defaults', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getSitelock();
+
+    expect(result.locked).toBe(false);
+    expect(result.allowedIpList).toEqual([]);
+  });
+
+  it('SETTINGS-SITELOCK-002: updateSitelock → persists settings', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateSitelock({
+      locked: true,
+      message: 'Maintenance mode',
+      allowedIpList: ['192.168.1.1'],
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockSiteSettingUpsert).toHaveBeenCalled();
   });
 });

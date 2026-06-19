@@ -20,12 +20,22 @@ export default async function AdminSecuritySettingsPage() {
   }
 
   const caller = await getServerCaller();
-  const settings = await caller.admin.settings.getSecurity();
+  const [securitySettings, ipControlSettings] = await Promise.all([
+    caller.admin.settings.getSecurity(),
+    caller.admin.settings.getIpControl(),
+  ]);
+
+  const initial = {
+    ...securitySettings,
+    ipControlEnabled: ipControlSettings.enabled,
+    ipControlAllowList: ipControlSettings.allowList.join('\n'),
+    ipControlDenyList: ipControlSettings.denyList.join('\n'),
+  };
 
   return (
     <section>
       <h1 className="text-2xl font-bold mb-4">보안 설정</h1>
-      <SecuritySettingsForm initial={settings} />
+      <SecuritySettingsForm initial={initial} />
     </section>
   );
 }

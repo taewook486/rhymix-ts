@@ -15,6 +15,20 @@ import {
   getFileDownloadSettings,
   updateFileDownloadSettings,
   SiteNotFoundError,
+  getEmailQueueSettings,
+  updateEmailQueueSettings,
+  getSeoSettings,
+  updateSeoSettings,
+  getAdvancedRoutingSettings,
+  updateAdvancedRoutingSettings,
+  getAdvancedLocalizationSettings,
+  updateAdvancedLocalizationSettings,
+  getAdvancedPerformanceSettings,
+  updateAdvancedPerformanceSettings,
+  getAsyncSettings,
+  updateAsyncSettings,
+  getSitelockSettings,
+  updateSitelockSettings,
 } from './settings';
 import type { PrismaClient } from '@prisma/client';
 import { ZodError } from 'zod';
@@ -281,12 +295,354 @@ describe('updateFileDownloadSettings — REQ-ADMIN2-081', () => {
     await expect(
       updateFileDownloadSettings(
         {
+          // Intentionally invalid value to verify Zod rejects it at runtime.
           downloadPermission: 'invalid_permission',
           pointDeduction: 0,
           hotlinkProtection: true,
+        } as unknown as Parameters<typeof updateFileDownloadSettings>[0],
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Email Queue Settings — REQ-ADMIN2-112
+// ---------------------------------------------------------------------------
+
+describe('getEmailQueueSettings — REQ-ADMIN2-112', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default queue settings', async () => {
+    const result = await getEmailQueueSettings({ prisma: mockPrisma });
+
+    expect(result.queueMode).toBe('immediate');
+    expect(result.batchSize).toBe(50);
+  });
+});
+
+describe('updateEmailQueueSettings — REQ-ADMIN2-112', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update queue settings', async () => {
+    const result = await updateEmailQueueSettings(
+      {
+        queueMode: 'queued',
+        batchSize: 100,
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.queueMode).toBe('queued');
+    expect(result.batchSize).toBe(100);
+  });
+
+  it('should reject batchSize > 1000 via Zod validation', async () => {
+    await expect(
+      updateEmailQueueSettings(
+        {
+          queueMode: 'immediate',
+          batchSize: 2000, // Too large
         },
         { prisma: mockPrisma },
       ),
     ).rejects.toThrow(ZodError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SEO Settings — REQ-ADMIN2-118/119
+// ---------------------------------------------------------------------------
+
+describe('getSeoSettings — REQ-ADMIN2-118', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default SEO settings', async () => {
+    const result = await getSeoSettings({ prisma: mockPrisma });
+
+    expect(result.defaultMetaTitle).toBe('');
+    expect(result.defaultMetaDescription).toBe('');
+    expect(result.canonicalUrlPolicy).toBe('none');
+    expect(result.sitemapEnabled).toBe(false);
+  });
+});
+
+describe('updateSeoSettings — REQ-ADMIN2-118', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update SEO settings', async () => {
+    const result = await updateSeoSettings(
+      {
+        defaultMetaTitle: 'My Site',
+        defaultMetaDescription: 'Description',
+        canonicalUrlPolicy: 'default',
+        sitemapEnabled: true,
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.defaultMetaTitle).toBe('My Site');
+    expect(result.canonicalUrlPolicy).toBe('default');
+    expect(result.sitemapEnabled).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Advanced Routing Settings — REQ-ADMIN2-116
+// ---------------------------------------------------------------------------
+
+describe('getAdvancedRoutingSettings — REQ-ADMIN2-116', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default routing settings', async () => {
+    const result = await getAdvancedRoutingSettings({ prisma: mockPrisma });
+
+    expect(result.siteTimezone).toBe('Asia/Seoul');
+    expect(result.defaultLanguage).toBe('ko');
+    expect(result.cacheDriver).toBe('file');
+  });
+});
+
+describe('updateAdvancedRoutingSettings — REQ-ADMIN2-116', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update routing settings', async () => {
+    const result = await updateAdvancedRoutingSettings(
+      {
+        siteTimezone: 'America/New_York',
+        defaultLanguage: 'en',
+        cacheDriver: 'redis',
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.siteTimezone).toBe('America/New_York');
+    expect(result.cacheDriver).toBe('redis');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Advanced Localization Settings — REQ-ADMIN2-157
+// ---------------------------------------------------------------------------
+
+describe('getAdvancedLocalizationSettings — REQ-ADMIN2-157', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default localization settings', async () => {
+    const result = await getAdvancedLocalizationSettings({ prisma: mockPrisma });
+
+    expect(result.shortUrlPolicy).toBe('disabled');
+    expect(result.mobileViewEnabled).toBe(true);
+    expect(result.supportedLanguages).toEqual(['ko']);
+  });
+});
+
+describe('updateAdvancedLocalizationSettings — REQ-ADMIN2-157', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update localization settings', async () => {
+    const result = await updateAdvancedLocalizationSettings(
+      {
+        shortUrlPolicy: 'xe_compat',
+        mobileViewEnabled: false,
+        tabletAsMobile: false,
+        autoLanguageSelection: false,
+        supportedLanguages: ['ko', 'en', 'ja'],
+        defaultLanguage: 'ko',
+        mobileViewport: 'width=device-width, initial-scale=1',
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.shortUrlPolicy).toBe('xe_compat');
+    expect(result.mobileViewEnabled).toBe(false);
+    expect(result.supportedLanguages).toEqual(['ko', 'en', 'ja']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Advanced Performance Settings — REQ-ADMIN2-158
+// ---------------------------------------------------------------------------
+
+describe('getAdvancedPerformanceSettings — REQ-ADMIN2-158', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default performance settings', async () => {
+    const result = await getAdvancedPerformanceSettings({ prisma: mockPrisma });
+
+    expect(result.sessionDbUse).toBe(false);
+    expect(result.cacheEnabled).toBe(true);
+    expect(result.cacheDefaultTtl).toBe(3600);
+    expect(result.jqueryVersion).toBe('3.7.1');
+  });
+});
+
+describe('updateAdvancedPerformanceSettings — REQ-ADMIN2-158', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update performance settings', async () => {
+    const result = await updateAdvancedPerformanceSettings(
+      {
+        sessionDbUse: true,
+        sessionDelayStart: false,
+        templateCacheDelay: false,
+        thumbnailTarget: 'attached',
+        thumbnailMethod: 'gd',
+        cacheEnabled: false,
+        cacheDefaultTtl: 3600,
+        cacheDeleteMethod: 'folder',
+        cacheControlOptions: [],
+        adminLayout: 'admin',
+        jsCompressionPolicy: 'none',
+        jsMergePolicy: 'none',
+        cssCompressionPolicy: 'none',
+        cssMergePolicy: 'none',
+        jqueryVersion: '2.2.4',
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.sessionDbUse).toBe(true);
+    expect(result.cacheEnabled).toBe(false);
+    expect(result.jqueryVersion).toBe('2.2.4');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Async Task Settings — REQ-ADMIN2-154
+// ---------------------------------------------------------------------------
+
+describe('getAsyncSettings — REQ-ADMIN2-154', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default async settings', async () => {
+    const result = await getAsyncSettings({ prisma: mockPrisma });
+
+    expect(result.enabled).toBe(false);
+    expect(result.driver).toBe('none');
+    expect(result.intervalMinutes).toBe(5);
+  });
+});
+
+describe('updateAsyncSettings — REQ-ADMIN2-154', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update async settings and generate webcron key', async () => {
+    const result = await updateAsyncSettings(
+      {
+        enabled: true,
+        driver: 'db',
+        webcronShowError: false,
+        intervalMinutes: 10,
+        processCount: 2,
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.enabled).toBe(true);
+    expect(result.driver).toBe('db');
+    expect(result.webcronKey).toBeDefined();
+    expect(result.webcronKey?.length).toBe(32);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Site Lock Settings — REQ-ADMIN2-155
+// ---------------------------------------------------------------------------
+
+describe('getSitelockSettings — REQ-ADMIN2-155', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default sitelock settings', async () => {
+    const result = await getSitelockSettings({ prisma: mockPrisma });
+
+    expect(result.locked).toBe(false);
+    expect(result.allowedIpList).toEqual([]);
+  });
+});
+
+describe('updateSitelockSettings — REQ-ADMIN2-155', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update sitelock settings', async () => {
+    const result = await updateSitelockSettings(
+      {
+        locked: true,
+        message: 'Site under maintenance',
+        allowedIpList: ['192.168.1.1'],
+      },
+      { prisma: mockPrisma, currentIp: undefined },
+    );
+
+    expect(result.locked).toBe(true);
+    expect(result.message).toBe('Site under maintenance');
+  });
+
+  it('should auto-include current admin IP when locking site', async () => {
+    const result = await updateSitelockSettings(
+      {
+        locked: true,
+        allowedIpList: ['192.168.1.1'],
+      },
+      { prisma: mockPrisma, currentIp: '10.0.0.1' },
+    );
+
+    expect(result.allowedIpList).toContain('10.0.0.1');
   });
 });

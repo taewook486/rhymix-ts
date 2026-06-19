@@ -1,9 +1,9 @@
 'use client';
 /**
- * 알림 설정 폼 (Client Component) — SPEC-ADMIN-002 Slice 1F (REQ-ADMIN2-110).
+ * 알림 설정 폼 (Client Component) — SPEC-ADMIN-002 Slice 1F + Slice 2G (REQ-ADMIN2-110, REQ-ADMIN2-111).
  */
 import { useActionState } from 'react';
-import { updateNotificationSettingsAction, type ActionState } from './actions';
+import { updateNotificationSettingsAction, sendTestEmailAction, type ActionState } from './actions';
 
 const initialActionState: ActionState = {};
 
@@ -23,6 +23,11 @@ export function NotificationSettingsForm({
 }) {
   const [state, formAction, isPending] = useActionState(
     updateNotificationSettingsAction,
+    initialActionState,
+  );
+
+  const [testState, testFormAction, testPending] = useActionState(
+    sendTestEmailAction,
     initialActionState,
   );
 
@@ -175,7 +180,34 @@ export function NotificationSettingsForm({
         >
           {isPending ? '저장 중...' : '저장'}
         </button>
-        {/* 테스트 메일 발송(REQ-ADMIN2-111)은 Phase 2 범위 */}
+      </div>
+
+      {/* 테스트 메일 발송 (REQ-ADMIN2-111) */}
+      <div className="border-t pt-4 mt-4">
+        <h3 className="text-md font-semibold mb-3">SMTP 설정 테스트</h3>
+        {testState.error && (
+          <p className="text-sm text-red-600 mb-3" role="alert">
+            {testState.error}
+          </p>
+        )}
+        {testState.success && (
+          <p className="text-sm text-green-600 mb-3" role="status">
+            {testState.message || '테스트 메일이 발송되었습니다. 이메일을 확인해주세요.'}
+          </p>
+        )}
+        <form action={testFormAction}>
+          <button
+            type="submit"
+            disabled={testPending}
+            className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {testPending ? '발송 중...' : '테스트 메일 발송'}
+          </button>
+          <p className="text-sm text-gray-500 mt-2">
+            현재 로그인된 관리자의 이메일로 테스트 메일을 발송합니다. SMTP 설정이 올바른지 확인할 수
+            있습니다.
+          </p>
+        </form>
       </div>
     </form>
   );

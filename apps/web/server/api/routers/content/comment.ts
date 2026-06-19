@@ -71,6 +71,25 @@ export const contentCommentRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // REQ-ADMIN2-122: 스팸 필터 가드 (Prisma 생성 이전에 실행)
+        const { checkSpamGuard, SpamGuardError } = await import('@rhymix-ts/admin/spamfilter');
+        try {
+          await checkSpamGuard(
+            input.content,
+            ctx.ip ?? '127.0.0.1',
+            ctx.session.user.id,
+            'comment.create',
+            ctx.prisma,
+          );
+        } catch (err) {
+          if (err instanceof Error && err.name === 'SpamGuardError') {
+            // 스팸 필터링 에러를 그대로 전파
+            throw err;
+          }
+          // 기타 에러는 다시 throw
+          throw err;
+        }
+
         return await createComment(
           {
             documentId: input.documentId,

@@ -125,6 +125,16 @@ export const contentDocumentRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // REQ-ADMIN2-122: 스팸 필터 가드 (Prisma 생성 이전에 실행)
+        const { checkSpamGuard } = await import('@rhymix-ts/admin/spamfilter');
+        await checkSpamGuard(
+          input.title + ' ' + input.content,
+          ctx.ip ?? '127.0.0.1',
+          ctx.session.user.id,
+          'document.create',
+          ctx.prisma,
+        );
+
         return await createDocument(
           {
             moduleInstanceId: input.moduleInstanceId,

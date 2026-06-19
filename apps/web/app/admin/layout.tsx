@@ -19,6 +19,7 @@ import { isAdminSession, isAdminTwoFactorRequired, isSessionTwoFactorVerified } 
 import { prisma } from '@rhymix-ts/db'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { AdminTopbar } from '@/components/admin/AdminTopbar'
+import { AdminFooter } from '@/components/admin/AdminFooter'
 import { Toaster } from '@rhymix-ts/ui/components'
 
 export const dynamic = 'force-dynamic'
@@ -59,9 +60,10 @@ export default async function AdminLayout({
   return (
     <div className="grid min-h-screen" style={{ gridTemplateColumns: '220px 1fr' }}>
       <AdminSidebar />
-      <div className="grid" style={{ gridTemplateRows: '56px 1fr' }}>
+      <div className="grid" style={{ gridTemplateRows: '56px 1fr auto' }}>
         <AdminTopbar userName={userName} />
         <main className="p-6 overflow-y-auto bg-zinc-50">{children}</main>
+        <AdminFooter />
       </div>
       <Toaster position="top-right" />
     </div>

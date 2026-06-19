@@ -11,7 +11,9 @@
     "./import": "./src/import/index.ts",
     "./security": "./src/security/index.ts",
     "./logs": "./src/logs/index.ts",
-    "./favorites": "./src/favorites/index.ts"
+    "./favorites": "./src/favorites/index.ts",
+    "./stats": "./src/stats/index.ts",
+    "./spamfilter": "./src/spamfilter/index.ts"
   },
   "scripts": {
     "lint": "echo 'no lint'",
