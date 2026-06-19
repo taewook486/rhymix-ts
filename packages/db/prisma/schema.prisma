@@ -42,6 +42,9 @@ model Site {
   menus           Menu[]
   moduleInstances ModuleInstance[]
   dailyVisits     DailyVisit[]
+  spamDeniedWords SpamDeniedWord[]
+  spamDeniedIps   SpamDeniedIp[]
+  spamRules       SpamRule[]
 
   @@map("sites")
 }
@@ -1125,6 +1128,8 @@ model SpamDeniedWord {
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
 
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
   @@unique([siteId, word])
   @@index([siteId])
   @@map("spam_denied_words")
@@ -1141,6 +1146,8 @@ model SpamDeniedIp {
   ipPattern String   @db.VarChar(100) // IPv4/IPv6 또는 CIDR 표기법
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@unique([siteId, ipPattern])
   @@index([siteId])
@@ -1161,6 +1168,8 @@ model SpamRule {
   enabled         Boolean  @default(true)
   createdAt       DateTime @default(now()) @db.Timestamptz
   updatedAt       DateTime @updatedAt @db.Timestamptz
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@unique([siteId, actionType])
   @@index([siteId])
