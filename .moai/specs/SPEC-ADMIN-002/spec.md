@@ -1,10 +1,10 @@
 ---
 id: SPEC-ADMIN-002
 title: 관리자 패널 미구현 기능 완성 (레거시 분석 기반)
-version: 1.2.0
+version: 1.2.1
 status: in-progress
 created: 2026-06-14
-updated: 2026-06-18
+updated: 2026-06-19
 author: MoAI manager-spec
 priority: P1
 phase: 6
@@ -19,6 +19,9 @@ language: ko
 
 ## HISTORY
 
+- 2026-06-19 (v1.2.1 전체 재검토): evaluator-active 문서 전체(96개 REQ 전수) 독립 재검토에서 Medium 결함 3건 신규 발견·수정 — (1) REQ-ADMIN2-004/005(대시보드 업데이트 알림 위젯, v1.0.0부터 존재)가 어떤 Slice에도 미배치된 고아 REQ였음을 발견, Slice 2F로 편입. (2) REQ-ADMIN2-146(P2)이 Slice 2F와 Slice 3F(P3)에 이중 배치되어 우선순위와 모순됐음을 발견, Slice 3F에서 제거. (3) REQ-ADMIN2-161이 157~160과 같은 라운드에서 추가됐음에도 영문 SHALL EARS 템플릿 통일에서 누락(한국어 산문 잔존)되었음을 발견·수정. 그 외 EARS 키워드/Pn·Phase 태그/커밋해시 10건/116·117 footnote/버전 태그는 전수 검증 결과 결함 없음.
+- 2026-06-19 (v1.2.1 보완): evaluator-active 독립 검토에서 발견된 Medium 결함 2건 수정 — (1) REQ-157/158/159/160의 본문을 다른 REQ와 동일한 영문 SHALL EARS 템플릿으로 통일(기존엔 한국어 산문 혼용), (2) plan.md REQ-161 설명의 "이메일 큐와 동일 저장소 재사용" 가정이 미검증임을 명시(드라이버=미사용/DB 선택형이라 큐 테이블 존재 보장 안 됨, 161 채택 시 선확인 필요). Low 결함(REQ-160 "경고" 표현 출처)은 legacy 화면 라디오 레이블 표기를 근거로 본문에 주석 추가. 추가로 acceptance.md의 AC-18(REQ-154)이 폐기된 "큐 즉시실행" 주장을 그대로 담고 있던 결함을 발견해 정정하고, AC-23(157/158)·AC-24(159/160)·AC-25(161, 선택·DoD 제외) 신규 추가(기존 AC-20 태그 번호와 충돌 방지를 위해 23부터 부여).
+- 2026-06-19 (v1.2.1): research.md 06-19 Playwright 재실측(설정 8탭 중 미확인 5탭: 알림/고급/디버그/비동기/사이트잠금에 실제 진입) 결과를 spec.md에 반영. REQ-ADMIN2-116(고급 설정)·117(디버그 설정)이 레거시 실제 필드의 일부만 커버하던 것을 보강 — 신규 REQ-ADMIN2-157(고급: 라우팅/지역화), 158(고급: 성능/캐시), 159(디버그: 임계값/표시), 160(디버그: 쿼리 진단) 4건 추가. Slice 2D(157/158 병합), Slice 3E(159/160 병합) 갱신. 정정: REQ-ADMIN2-154(비동기 작업)의 "legacy: 큐 상태 모니터링" 근거가 부정확했음을 확인 — 레거시에는 큐 모니터링 UI가 없고 설정 6필드(사용여부/드라이버/웹크론키/오류표시/호출간격/프로세스갯수)만 존재함. REQ-154 범위를 이 6필드로 정정하고, 큐 모니터링+즉시실행 기능은 레거시에 없는 선택적 개선으로 분리해 신규 REQ-ADMIN2-161(P3, Slice 3G)로 이동. 기존 REQ-ADMIN2-001~156은 재번호 없이 그대로 유지.
 - 2026-06-18 (M2 Slice 2A~2C 구현 완료): Slice 2A(레이아웃 인스턴스 관리)·2B(파일 관리)·2C(신고 관리 + 회원 설정 확장(051/052/054/055) + 문서 설정(074)) 구현 및 커밋(`3614ae3`, `a6416e7`, `9e6bc5e`, `412d2b6`, `97d0b55`, `7c1fa42`, `83de4cf`, `11410ea`, `e23235d`). 신규 procedure에 대한 vitest 테스트 17건 추가. M2 Slice 2D~2H, M3는 미착수. 상세는 `## Implementation Notes` M2 절 참조.
 - 2026-06-18 (M1 구현 완료): Phase 1(M1) 구현 완료 — Slice 1A~1F(대시보드 위젯, 페이지 편집, 회원 그룹·직접등록, 회원 설정 핵심 탭, 전체 문서/댓글 관리, 알림·보안 설정) 전체 구현 및 커밋(`fa42d4e`). 독립 보안 리뷰에서 발견된 4건의 이슈(SMTP 비밀번호 평문 노출, 회원 그룹 `isAdmin` 권한 상승 경로, 설정 비원자적 쓰기, 대시보드 위젯 순차 fetch로 인한 장애 전파 위험)를 sync 전에 모두 수정함. status를 `planned`→`in-progress`로 전환(M1 완료, M2/M3 대기). 상세는 `## Implementation Notes` 절 참조.
 - 2026-06-18 (v1.1.0): Playwright 실사 기반 `research.md` 추가 후 갱신. 레거시 admin(http://localhost:8080, Rhymix 2.1.33)을 7개 카테고리(대시보드/사이트 제작·편집/회원/콘텐츠/즐겨찾기/설정/고급) 순서로 실제 화면 단위 재조사하고 rhymix-ts 코드와 직접 대조. 신규 REQ-ADMIN2-150~156(7건) 추가 — 관리자 메뉴 초기화(150), 세션 정리(151), 회원 목록 상태 필터 탭(152), 문서 "임시" 상태 필터 보강(153), 비동기 작업 설정(154), 사이트 잠금 런타임 UI(155), 태그 구분 방법 설정(156). REQ-ADMIN2-053(회원 디자인 설정)을 P3→P2로 상향(레거시 사이트 디자인 설정의 1차 탭). "쉬운 설치"(원격 마켓플레이스, 13개 카테고리) 영구 제외 확정. 정정: `/admin/trash`는 이미 구현되어 있음(1차 탐색의 "휴지통 누락" 보고는 오류). 기존 REQ-ADMIN2-001~149는 재번호 없이 그대로 유지.
@@ -296,9 +299,17 @@ language: ko
 
 #### 5.C 고급 설정
 
-**REQ-ADMIN2-116** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide 고급 설정 at `/admin/settings/advanced` persisting site timezone, default language, and cache driver selection. (legacy: `dispAdminConfigAdvanced`)
+**REQ-ADMIN2-116** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide 고급 설정 at `/admin/settings/advanced` persisting site timezone, default language, and cache driver selection. (legacy: `dispAdminConfigAdvanced`) [v1.2.1: 06-19 Playwright 재실측 결과 레거시 화면에 본 REQ가 다루지 않는 11개 추가 필드가 존재함을 확인 — REQ-ADMIN2-157(라우팅/지역화)·158(성능/캐시) 참고.]
 
-**REQ-ADMIN2-117** (Optional) — *P3 / Phase 3*: Where debug tooling is enabled, the admin SHALL provide 디버그 설정 persisting debug display level and target audience (관리자만 / 비활성). (legacy: `dispAdminConfigDebug`)
+**REQ-ADMIN2-117** (Optional) — *P3 / Phase 3*: Where debug tooling is enabled, the admin SHALL provide 디버그 설정 persisting debug display level and target audience (관리자만 / 비활성). (legacy: `dispAdminConfigDebug`) [v1.2.1: 06-19 Playwright 재실측 결과 레거시 화면에 본 REQ가 다루지 않는 10개 추가 필드가 존재함을 확인 — REQ-ADMIN2-159(임계값/표시)·160(쿼리 진단) 참고.]
+
+**REQ-ADMIN2-157** (Ubiquitous) — *P2 / Phase 2* (v1.2.1 추가): The admin SHALL provide 고급 설정 fields for routing/localization, persisting 짧은 주소 사용 정책 (사용안함 / XE 호환 주소만 / 모든 주소 형태), 모바일 뷰 사용 여부, 태블릿을 모바일로 취급할지 여부, 언어 자동 선택 여부 + 지원 언어 다중 선택 (13개 언어) + 기본 언어, and 모바일 viewport 설정. (legacy: `dispAdminConfigAdvanced`, 06-19 재실측)
+
+**REQ-ADMIN2-158** (Ubiquitous) — *P2 / Phase 2* (v1.2.1 추가): The admin SHALL provide 고급 설정 fields for performance/cache, persisting 인증 세션 DB 사용 여부, 세션 시작 지연 여부, 템플릿 변환 지연 여부, 썸네일 생성 대상 (첨부 이미지 / 모든 이미지 / 생성 안 함) 및 생성 방식, 캐시 사용 여부 + 기본 TTL + 캐시 삭제 방식 (폴더 삭제 / 내용만 삭제), HTTP Cache-Control 옵션 (no-cache / no-store / must-revalidate 다중 선택), 관리자 화면 표시에 사용할 레이아웃 (해당 모듈 레이아웃 / 관리자 레이아웃), JS/CSS 압축 정책 (압축 안 함 / 공통 파일만 / 모든 파일) 및 병합 정책 (합치지 않음 / CSS만 / JS만 / CSS+JS), and jQuery 버전 선택 (2.2.4 / 3.7.1). JS/CSS 압축·병합 옵션의 Next.js 빌드 타임 번들링과의 양립 가능 여부는 Open Question Q5에서 별도 결정한다. (legacy: `dispAdminConfigAdvanced`, 06-19 재실측)
+
+**REQ-ADMIN2-159** (Optional) — *P3 / Phase 3* (v1.2.1 추가): Where debug tooling is enabled, the admin SHALL provide 디버그 설정 threshold/display fields, persisting 느린 쿼리 / 느린 트리거 / 느린 위젯 / 느린 외부 요청 임계값 (초 단위 숫자, 각각 독립), 디버그 정보 표시 방법 (HTML 소스 주석 / 화면 패널 / 파일 기록 다중 선택), 디버그 정보 표시 내용 (요청·응답 정보 / 디버그 메시지 / 에러 / 쿼리 / 느린 쿼리 / 느린 트리거 / 느린 위젯 / 느린 외부 요청 — 8종 다중 선택), 디버그 로그 기록 파일 경로 (날짜별 분리 패턴 지원), 디버그 정보 표시 대상 (관리자에게만 / 지정 IP의 방문자에게만 / 모두에게), and 디버그 허용 IP 목록. (legacy: `dispAdminConfigDebug`, 06-19 재실측)
+
+**REQ-ADMIN2-160** (Optional) — *P3 / Phase 3* (v1.2.1 추가): Where debug tooling is enabled, the admin SHALL provide 디버그 설정 query-diagnostics fields, persisting 쿼리에 주석 (쿼리명 + IP) 추가 여부, 쿼리 콜 스택 전체 표시 여부, 동일 위치에서 반복 발생하는 오류/쿼리의 중복 항목 정리 여부, and 에러 로그 기록 수준 (모든 에러와 경고를 기록 / 치명적인 에러만 기록 — legacy 화면 원문에는 "치명적인 에러만 기록"이 기본값이며 "경고" 포함 옵션은 라디오 버튼 레이블 자체에 표기됨). (legacy: `dispAdminConfigDebug`, 06-19 재실측)
 
 #### 5.D SEO 설정
 
@@ -324,7 +335,9 @@ language: ko
 
 #### 5.G 비동기 작업 (v1.1.0 추가)
 
-**REQ-ADMIN2-154** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 비동기 작업 page at `/admin/settings/async` displaying the async/background task queue status (대기 / 처리중 / 실패 건수) and a control to trigger immediate processing of pending tasks. (legacy: 시스템 설정 > 비동기 작업 탭)
+**REQ-ADMIN2-154** (Ubiquitous) — *P2 / Phase 2*: The admin SHALL provide a 비동기 작업 page at `/admin/settings/async` persisting 비동기 작업 사용 여부, 비동기 드라이버 선택(미사용 / DB), 웹크론 인증키(자동 생성) 및 웹크론 오류 표시 여부, 호출 간격(분), 프로세스 갯수, and SHALL display crontab/webcron/systemd timer 설정 안내(실행 명령 예시 포함). (legacy: 시스템 설정 > 비동기 작업 탭, `dispAdminConfigQueue`) [v1.2.1 정정: 06-19 Playwright 재실측 결과 레거시 화면에는 큐 항목의 대기/처리중/실패 건수를 보여주는 모니터링 UI가 없음 — 이전 버전(v1.1.0)의 "큐 상태 모니터링 + 즉시 실행 버튼" 서술은 레거시에 없는 기능을 legacy parity로 잘못 표기한 오류였다. 본 REQ는 위 6개 설정 필드로 범위를 정정한다. 모니터링 기능 자체는 REQ-ADMIN2-161 참고.]
+
+**REQ-ADMIN2-161** (Optional) — *P3 / Phase 3* (v1.2.1 추가, 레거시에 없는 선택적 개선 — 사용자 확인 후 채택 여부 결정): Where the operator wants async task queue visibility, `/admin/settings/async` SHALL display queue status (대기 / 처리중 / 실패 건수) and SHALL provide a control to trigger immediate processing of pending tasks. This is NOT legacy parity but a rhymix-ts self-improvement proposal.
 
 #### 5.H 사이트 잠금 런타임 UI (v1.1.0 추가)
 
@@ -404,9 +417,9 @@ language: ko
 1. **Slice 2A — 레이아웃/페이지 설정 확장**: REQ-ADMIN2-020~022, 027, 029, 030
 2. **Slice 2B — 파일 관리**: REQ-ADMIN2-078~081
 3. **Slice 2C — 신고 관리 + 문서/회원 설정**: REQ-ADMIN2-072, 074, 077, 051, 052, 053, 054, 055, 152, 153 *(053 P3→P2 회원 디자인 설정, 152 회원 목록 상태 필터, 153 문서 "임시" 필터 추가)*
-4. **Slice 2D — SEO + 고급 설정 + 큐 + 비동기/사이트잠금**: REQ-ADMIN2-112, 116, 118, 119, 154, 155 *(154 비동기 작업, 155 사이트 잠금 런타임 UI 병합)*
+4. **Slice 2D — SEO + 고급 설정 + 큐 + 비동기/사이트잠금**: REQ-ADMIN2-112, 116, 157, 158, 118, 119, 154, 155 *(154 비동기 작업[v1.2.1 범위 정정], 155 사이트 잠금 런타임 UI 병합, 157/158 고급 설정 세부 필드 보강 v1.2.1)*
 5. **Slice 2E — 스팸필터**: REQ-ADMIN2-120~123
-6. **Slice 2F — 통계 + 도메인 + 모듈 상세**: REQ-ADMIN2-006, 009, 140~142, 125, 146
+6. **Slice 2F — 통계 + 도메인 + 모듈 상세**: REQ-ADMIN2-004, 005, 006, 009, 140~142, 125, 146 *(004/005 대시보드 업데이트 알림 위젯 — v1.2.1 재검토에서 미배치 발견, 본 슬라이스로 편입)*
 7. **Slice 2G — 보안 IP 제어 + 테스트 메일**: REQ-ADMIN2-111, 115
 8. **Slice 2H — admin 전역 유틸리티**: REQ-ADMIN2-150, 151 *(관리자 메뉴 초기화, 세션 정리 — admin 레이아웃 footer)*
 
@@ -418,8 +431,9 @@ language: ko
 2. **Slice 3B — 태그 + 문서 별칭 + 닉네임 이력**: REQ-ADMIN2-087, 156, 073, 056, 057 *(156 태그 구분 방법 설정 추가)*
 3. **Slice 3C — 회원 부가 설정**: REQ-ADMIN2-049, 028 *(053은 P2로 상향되어 Slice 2C로 이동)*
 4. **Slice 3D — 레이아웃 미리보기/복사**: REQ-ADMIN2-023, 024, 031
-5. **Slice 3E — 디버그/캡챠/기타 파일 설정**: REQ-ADMIN2-117, 124, 082, 008
-6. **Slice 3F — 쪽지 + 서버환경 + 모듈 카테고리/언어코드 + 코어정리**: REQ-ADMIN2-143~149
+5. **Slice 3E — 디버그/캡챠/기타 파일 설정**: REQ-ADMIN2-117, 159, 160, 124, 082, 008 *(159/160 디버그 설정 세부 필드 보강 v1.2.1)*
+6. **Slice 3F — 쪽지 + 서버환경 + 모듈 카테고리/언어코드 + 코어정리**: REQ-ADMIN2-143~145, 147~149 *(146은 P2이므로 Slice 2F로 이전 — v1.2.1 재검토에서 이중 배치 발견·수정)*
+7. **Slice 3G — 비동기 작업 큐 모니터링 (선택, v1.2.1 추가)**: REQ-ADMIN2-161 *(레거시 동등 기능 아님 — 사용자 확인 후 채택 여부 결정)*
 
 ### Phase 진입 조건
 
@@ -467,6 +481,7 @@ language: ko
 - Q2. 약관 버전 관리(REQ-ADMIN2-051)에서 기존 동의 회원에 대한 재동의 요구 트리거 정책 — 법무/운영 판단 필요.
 - Q3. 스팸필터 rate-limit(REQ-ADMIN2-123)의 저장소(메모리 vs Redis vs DB) 선택 — 배포 환경에 따라 결정.
 - Q4. 파일 고아 GC(REQ-ADMIN2-079)의 안전 마진(업로드 직후 미연결 파일을 즉시 삭제 대상으로 볼지, grace period를 둘지).
+- Q5 (v1.2.1 추가). REQ-ADMIN2-158의 JS/CSS 압축·병합 정책 설정이 Next.js 빌드 파이프라인(정적 빌드 타임 번들링)과 충돌하는지 — 레거시는 런타임 PHP 압축이지만 rhymix-ts는 Next.js가 빌드 타임에 처리하므로, 이 설정을 그대로 admin UI 토글로 노출할 수 있는지 또는 안내성 표시로 대체해야 하는지 아키텍처 결정 필요.
 
 ---
 
