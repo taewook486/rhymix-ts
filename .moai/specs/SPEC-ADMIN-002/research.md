@@ -2,8 +2,9 @@
 spec-id: SPEC-ADMIN-002
 type: research
 created: 2026-06-18
+updated: 2026-06-19
 method: Playwright 브라우저 실사 (http://localhost:8080, Rhymix 2.1.33) + rhymix-ts 라우트 코드 대조
-screenshots: assets/legacy-*.png (18장, 2026-06-18 작성)
+screenshots: assets/legacy-*.png (18장, 2026-06-18 작성 + 5장, 2026-06-19 보강 — 설정 탭 5종)
 ---
 
 # SPEC-ADMIN-002 Research — 레거시 admin 재분석 (Playwright 실사 기반)
@@ -119,18 +120,18 @@ rhymix-ts 현재 사이드바(`apps/web/components/admin/AdminSidebar.tsx`)는 �
 
 ## 6. 설정
 
-### 레거시 인벤토리 — "시스템 설정"은 8개 탭으로 구성 (legacy-settings-general.png, -security.png, -seo.png)
+### 레거시 인벤토리 — "시스템 설정"은 8개 탭으로 구성 (legacy-settings-general.png, -security.png, -seo.png, -notification.png, -advanced.png, -debug.png, -queue.png, -sitelock.png)
 
 | # | 탭 | 확인된 필드/항목 |
 |---|---|---|
 | 1 | 사이트 설정 | 사이트 제목/도메인/HTTPS/메인모듈/메인문서, 새 도메인 추가, 멀티도메인 미설정 도메인 처리 정책(301/302/접속허용/404) |
-| 2 | 알림 설정 | (미확인 — 탭 존재만 확인) |
+| 2 | 알림 설정 | **이메일**: 기본 발신자 이름/주소(+일괄적용), Reply-To, 발송 방법(미사용/SES/Brevo/Mailgun/Mandrill/NAVER/PHP mail/Postmark/SendGrid/SMTP/SparkPost/Woorimail). **SMS**: 발신번호(+일괄적용), 발송방법(미사용/CoolSMS/iwinv/NAVER/Ppurio/SolAPI/Twilio), SMS/LMS·MMS 분할발송 여부. **푸시**: APNs/FCM HTTP v1/FCM Legacy 선택, 비회원 기기 등록 허용 여부. 메일/SMS 테스트 발송 링크 |
 | 3 | 보안 설정 | 외부 멀티미디어 허용 도메인 목록, HTML class 허용 목록, 로봇 user-agent 목록, 관리자 로그인 허용/금지 IP, 자동 로그인 유지 기간(1~400일) + 보안키 갱신, SSL 전용 세션/쿠키 사용 |
-| 4 | 고급 설정 | (미확인 — 탭 존재만 확인) |
-| 5 | 디버그 설정 | (미확인 — 탭 존재만 확인) |
+| 4 | 고급 설정 | 짧은 주소 사용 정책(사용안함/XE호환/모든형태), 모바일 뷰 사용 여부, 태블릿 모바일 취급 여부, 언어 자동선택 + 지원언어 다중선택(13개 언어) + 기본언어, 표준 시간대, 모바일 viewport, 인증 세션 DB 사용, 세션 시작 지연, 템플릿 변환 지연, 썸네일 생성 대상/방식, 캐시 사용 여부·TTL·삭제방식(폴더삭제/내용만삭제), HTTP Cache-Control(no-cache/no-store/must-revalidate), 관리자 화면 레이아웃, JS/CSS 압축·병합 정책, jQuery 버전(2.2.4/3.7.1) |
+| 5 | 디버그 설정 | 디버그 기능 사용 여부, 느린 쿼리/트리거/위젯/외부요청 임계값(초), 디버그 정보 표시 방법(HTML주석/화면패널/파일기록) 및 표시 내용(요청응답/메시지/에러/쿼리/느린쿼리 등 8종 다중선택), 디버그 로그 파일 경로, 표시 대상(관리자만/특정IP/모두), 디버그 허용 IP, 쿼리에 주석 추가 여부, 쿼리 콜스택 전체표시 여부, 중복 항목 정리 여부, 에러 로그 기록 수준(모든 에러/치명적 에러만) |
 | 6 | SEO 설정 | 메인화면/서브페이지/개별문서 제목 템플릿($SITE_TITLE 등 변수), SEO 키워드/설명, OpenGraph·트위터 메타태그 사용 여부, 본문에서 설명/이미지/해시태그 추출 여부, 글 작성자명·작성시각 표시 여부 |
-| 7 | 비동기 작업 | (미확인 — 탭 존재만 확인) |
-| 8 | 사이트 잠금 | (미확인 — 탭 존재만 확인) |
+| 7 | 비동기 작업 | 비동기 작업 사용 여부(체크박스), 비동기 드라이버(미사용/DB), 작업 처리 스크립트 안내(crontab/webcron/systemd timer 탭), 크론 명령 예시(`* * * * * php index.php common.cron`), 웹크론 인증키(자동생성), 웹크론 오류 표시 여부, 호출 간격(분, 기본 1), 프로세스 갯수(기본 1). **큐 항목 상태(대기/처리중/실패 건수) 표시 UI는 이 화면에 없음 — 순수 설정 페이지** |
+| 8 | 사이트 잠금 | 사이트 잠금 사용 여부(예/아니오), 접근 허용 IP(+ 현재 접속 IP 표시), 안내문 제목(기본값 "Maintenance"), 안내문 내용(HTML 허용) |
 
 ### rhymix-ts 구현 상태 (코드 직접 대조: `apps/web/app/admin/settings/*`, `apps/web/app/admin/site/*`)
 
@@ -139,20 +140,23 @@ rhymix-ts 현재 사이드바(`apps/web/components/admin/AdminSidebar.tsx`)는 �
 | 레거시 탭 | rhymix-ts 대응 | 상태 |
 |---|---|---|
 | 사이트 설정 | `/admin/settings/site` | **구현됨** |
-| 알림 설정 | REQ-ADMIN2-110~112 (`/admin/settings/notification`) | **미구현** (REQ는 정의됨, 라우트 없음) |
-| 보안 설정 | REQ-ADMIN2-113~115 (`/admin/settings/security`) | **미구현** (REQ는 정의됨, 라우트 없음) |
-| 고급 설정 | REQ-ADMIN2-116 (`/admin/settings/advanced`) | **미구현** |
-| 디버그 설정 | REQ-ADMIN2-117 | **미구현** |
+| 알림 설정 | REQ-ADMIN2-110~112, 라우트 `apps/web/app/admin/settings/notification` **존재 확인** | **구현됨** — 단, 코드가 이메일/발신자 설정만 다루는지, 레거시처럼 SMS·푸시(APNs/FCM) 발송 방법까지 다루는지는 본 세션에서 코드 내부까지는 미검토. REQ-ADMIN2-112(이메일 큐 설정)는 정의되어 있으나 SMS/푸시 발송 방법 선택 REQ는 spec.md에 없음 |
+| 보안 설정 | REQ-ADMIN2-113~115, 라우트 `apps/web/app/admin/settings/security` **존재 확인** | **구현됨** — REQ-ADMIN2-115(IP 접근 제어)가 레거시의 "관리자 로그인 허용/금지 IP"에 대응. 단 레거시의 "외부 멀티미디어 허용 도메인", "HTML class 허용 목록", "로봇 user-agent 목록", "자동 로그인 유지 기간 1~400일 + 보안키 갱신", "SSL 전용 세션/쿠키"는 spec.md REQ-ADMIN2-113~115 어디에도 구체적으로 명시되지 않음 — 광범위한 REQ 문구("password policy, session lifetime, login lockout")로는 이 5개 세부 필드가 커버되는지 불명확 |
+| 고급 설정 | REQ-ADMIN2-116 (`/admin/settings/advanced`) | **미구현** (라우트 디렉터리 없음). REQ-ADMIN2-116 문구는 "timezone, default language, cache driver"만 언급 — 레거시 실측 결과 짧은주소/모바일뷰/세션DB/캐시TTL/Cache-Control/JS·CSS압축/jQuery버전 등 **11개 이상 세부 옵션**이 누락되어 있어 REQ 자체가 과소 정의됨 |
+| 디버그 설정 | REQ-ADMIN2-117 | **미구현** (라우트 없음). REQ 문구 "debug display level and target audience (관리자만/비활성)"은 레거시의 2가지 옵션만 반영하며, 느린쿼리 임계값/표시방법 3종/표시내용 8종 다중선택/로그파일경로/허용IP/쿼리주석/콜스택/중복정리/에러기록수준 등 **실제로는 10개 이상 세부 필드**가 있음 — REQ가 과소 정의됨 |
 | SEO 설정 | REQ-ADMIN2-118~119 (`/admin/settings/seo`) | **미구현** |
-| 비동기 작업 | spec.md에 **REQ 자체가 없음** | **누락 — 신규 REQ 필요** |
-| 사이트 잠금 | install 단계에서만 설정 가능(`app/install/admin-config/admin-config-form.tsx`), **런타임 admin UI 없음** | **부분 — install-time만 존재, 신규 REQ 필요** |
+| 비동기 작업 | REQ-ADMIN2-154 (`/admin/settings/async`) | **미구현, 그리고 REQ 자체가 부정확함 — 아래 정정사항 참고** |
+| 사이트 잠금 | install 단계에서만 설정 가능(`app/install/admin-config/admin-config-form.tsx`), **런타임 admin UI 없음**. REQ-ADMIN2-155 정의됨 | **부분 — install-time만 존재**. 레거시 실측 결과 런타임 필드는 사용여부/허용IP/안내문 제목·내용 4개뿐으로 단순 — REQ-ADMIN2-155 범위로 충분 |
 
-기존 spec.md가 "설정 8개 서브메뉴 중 일부만 구현"이라는 결론은 정확하다 — 다만 **6개 탭은 이미 REQ가 정의되어 있고 실제 코드만 없는 상태(설계 완료, 구현 대기)**이며, 신규로 발견된 갭은 "비동기 작업"과 "사이트 잠금 런타임 UI" 2건뿐이다.
+기존 spec.md가 "설정 8개 서브메뉴 중 일부만 구현"이라는 결론은 정확하다. 1차 조사(06-18)에서는 6개 탭이 "이미 REQ가 정의되어 있고 코드만 없는 상태"라고 평가했으나, **2차 실측(06-19, Playwright 재진입) 결과 고급/디버그 설정 REQ(116, 117)가 레거시 실제 필드 수 대비 과소 정의되어 있음**이 새로 드러났다 — "설계 완료, 구현 대기"가 아니라 "설계 자체가 불완전, 구현 전 REQ 보강 필요" 상태다.
 
 ### 신규 REQ 후보
 
-- **REQ-ADMIN2-CAND-F1**: `/admin/settings/async`에 비동기 작업 큐 상태(대기/처리중/실패 건수)와 즉시 실행 버튼을 제공하는 비동기 작업 설정 페이지. (legacy: 비동기 작업 탭)
-- **REQ-ADMIN2-CAND-F2**: `/admin/settings/sitelock` 런타임 UI 추가 — 현재 install 단계 1회 설정만 가능한 사이트 잠금(점검 모드 + 허용 IP)을 운영 중에도 토글할 수 있도록 함. (legacy: 사이트 잠금 탭, `dispAdminConfigSitelock`)
+- **REQ-ADMIN2-CAND-F1 [정정]**: ~~`/admin/settings/async`에 비동기 작업 큐 상태(대기/처리중/실패 건수)와 즉시 실행 버튼을 제공~~ — **이 설명은 부정확함**. Playwright 재진입 결과 레거시 비동기 작업 탭(`dispAdminConfigQueue`)에는 큐 항목의 대기/처리중/실패 건수를 보여주는 모니터링 UI가 전혀 없다. 실제 화면은 순수 설정 페이지로: 비동기 작업 사용 여부, 드라이버(미사용/DB), crontab·webcron·systemd timer 안내, 웹크론 인증키, 웹크론 오류 표시 여부, 호출 간격(분), 프로세스 갯수만 존재한다. **수정된 REQ 범위**: `/admin/settings/async`는 위 6개 설정 필드만 제공하면 레거시와 동등하다. "큐 상태 모니터링 + 즉시 실행 버튼"은 레거시에 없는 **신규 기능 제안**이므로, 별도 후보(REQ-ADMIN2-CAND-F1b, P3, "선택적 개선")로 분리하고 154의 필수 범위에서는 제외할 것을 권고.
+- **REQ-ADMIN2-CAND-F2**: `/admin/settings/sitelock` 런타임 UI 추가 — 현재 install 단계 1회 설정만 가능한 사이트 잠금(점검 모드 + 허용 IP)을 운영 중에도 토글할 수 있도록 함. (legacy: 사이트 잠금 탭, `dispAdminConfigSitelock`) — 실측 결과 필드 4개(사용여부/허용IP/안내문 제목·내용)로 범위 확정, 추가 발견 없음.
+- **REQ-ADMIN2-CAND-H1 (신규, 06-19 발견)**: REQ-ADMIN2-116(고급 설정)을 레거시 실측 필드 기준으로 재정의 필요 — 짧은주소 정책(3종), 모바일뷰/태블릿취급, 지원언어 다중선택, 세션DB, 캐시 TTL·Cache-Control 3종, 관리자 레이아웃, JS/CSS 압축·병합 정책, jQuery 버전 선택 등 누락 필드 보강.
+- **REQ-ADMIN2-CAND-H2 (신규, 06-19 발견)**: REQ-ADMIN2-117(디버그 설정)을 레거시 실측 필드 기준으로 재정의 필요 — 느린쿼리/트리거/위젯/외부요청 임계값(4개 숫자필드), 표시방법 3종 다중선택, 표시내용 8종 다중선택, 로그파일 경로, 허용IP, 쿼리주석/콜스택/중복정리 토글, 에러기록수준 등 보강. 현재 REQ는 "표시여부 + 대상 2종"만 다뤄 실제 화면의 약 15% 필드만 커버.
+- **REQ-ADMIN2-CAND-H3 (신규, 06-19 발견)**: REQ-ADMIN2-113~115(보안 설정)에 레거시의 외부 멀티미디어 허용 도메인 목록 / HTML class 허용 목록 / 로봇 user-agent 목록 / 자동로그인 유지기간(1~400일)+보안키 갱신 / SSL 전용 세션·쿠키 5개 필드가 명시적으로 포함되는지 spec 작성자가 재확인 필요 (현재 REQ 문구가 범위를 포괄적으로만 서술해 누락 위험).
 
 ---
 
@@ -185,21 +189,28 @@ rhymix-ts 현재 사이드바(`apps/web/components/admin/AdminSidebar.tsx`)는 �
 
 ## 신규 발견 사항 요약
 
-기존 spec.md(149개 REQ)는 실제로 매우 포괄적이며, 코드 대조 결과 **대부분의 "갭"은 이미 REQ로 정의되어 있고 구현만 대기 중인 상태**였다. 진짜 신규 발견(기존 spec.md에 전혀 없던 것)은 다음 8건이다:
+기존 spec.md(149개 REQ)는 실제로 매우 포괄적이며, 코드 대조 결과 **대부분의 "갭"은 이미 REQ로 정의되어 있고 구현만 대기 중인 상태**였다. 1차 조사(06-18) 신규 발견 8건 + 2차 실측(06-19, 설정 5탭 Playwright 재진입) 발견 4건, 총 12건:
 
 1. **REQ-ADMIN2-CAND-A1** — 관리자 메뉴 초기화 (대시보드 footer)
 2. **REQ-ADMIN2-CAND-A2** — 세션 정리 (대시보드 footer)
 3. **REQ-ADMIN2-CAND-C1** — 회원 목록 상태 필터 탭(승인/거부/미인증 등)
 4. **REQ-ADMIN2-CAND-D1** — 문서 관리 "임시" 상태 필터 보강
-5. **REQ-ADMIN2-CAND-F1** — 비동기 작업 설정 페이지 (설정 8개 탭 중 유일하게 REQ 자체가 없던 항목)
-6. **REQ-ADMIN2-CAND-F2** — 사이트 잠금 런타임 admin UI (현재 install-time 전용)
+5. **REQ-ADMIN2-CAND-F1 [06-19 정정]** — 비동기 작업 설정 페이지. ~~큐 상태 모니터링 포함~~은 **레거시에 없는 기능을 있는 것처럼 잘못 기술한 오류**였음. 실제 레거시는 사용여부/드라이버/크론안내/웹크론키/호출간격/프로세스수 6개 필드만 있는 순수 설정 화면. REQ-ADMIN2-154는 이 6개 필드 범위로 축소하고, 큐 모니터링은 별도 선택적 개선(F1b)으로 분리 권고.
+6. **REQ-ADMIN2-CAND-F2** — 사이트 잠금 런타임 admin UI (현재 install-time 전용). 06-19 재확인: 필드 4개(사용여부/IP/제목/내용)로 범위 확정.
 7. **REQ-ADMIN2-CAND-G1** — 쉬운 설치(마켓플레이스) 처리 방향 결정 필요 (영구 제외 후보, 사용자 확인 필요)
 8. **REQ-ADMIN2-CAND-G2** — 태그 구분 방법 설정
+9. **REQ-ADMIN2-CAND-H1 [06-19 신규]** — 고급 설정(REQ-ADMIN2-116)이 레거시 11개 이상 필드 중 3개만 커버 — 재정의 필요
+10. **REQ-ADMIN2-CAND-H2 [06-19 신규]** — 디버그 설정(REQ-ADMIN2-117)이 레거시 10개 이상 필드 중 2개만 커버 — 재정의 필요
+11. **REQ-ADMIN2-CAND-H3 [06-19 신규]** — 보안 설정(REQ-ADMIN2-113~115)의 레거시 5개 세부 필드(멀티미디어 도메인/HTML class/로봇 UA/자동로그인기간+보안키/SSL전용세션) 커버 여부 재확인 필요
+12. (참고) 알림 설정(REQ-ADMIN2-110~112)도 레거시의 SMS/푸시(APNs/FCM) 발송 방법 선택 필드가 REQ 문구에 명시되어 있는지 재확인 권장 — 06-19 세션에서는 라우트 존재만 확인, 코드 내부 필드까지는 미검증.
 
-또한 **정정 사항**: 1차 탐색 보고에서 "휴지통 누락"이라 했던 것은 코드 확인 결과 오류로, `/admin/trash`는 이미 구현되어 있다.
+또한 **정정 사항 (06-18)**: 1차 탐색 보고에서 "휴지통 누락"이라 했던 것은 코드 확인 결과 오류로, `/admin/trash`는 이미 구현되어 있다.
+
+**정정 사항 (06-19)**: REQ-ADMIN2-CAND-F1(및 이를 반영한 spec.md REQ-ADMIN2-154)의 "legacy: 비동기 작업 탭"이라는 근거 표기가 부정확했다 — 큐 상태 모니터링은 레거시에 존재하지 않는 기능이며, 06-18 조사 시점에 레거시 화면을 클릭해서 진입하지 않고(탭 존재만 확인) 추정으로 작성된 항목이었다.
 
 ### 우선순위 재검토 권고
 
 - REQ-ADMIN2-053(회원 디자인 스킨, 현재 P3)은 레거시에서 사이트 디자인 설정의 1차 탭이므로 P2로 상향 검토.
-- REQ-ADMIN2-CAND-F1/F2(비동기 작업/사이트 잠금)은 설정 화면의 구조적 완성도를 위해 P2로 분류 권장 — 기존 Phase 2 Slice 2D(SEO + 고급 설정 + 큐)에 병합 가능.
+- REQ-ADMIN2-CAND-F2(사이트 잠금)는 설정 화면의 구조적 완성도를 위해 P2로 분류 권장 — 기존 Phase 2 Slice 2D에 병합 가능. REQ-ADMIN2-CAND-F1(비동기 작업, 6필드로 축소된 범위)도 동일하게 P2.
 - REQ-ADMIN2-CAND-G1(쉬운 설치)은 구현 여부 자체가 아키텍처 결정 사항이므로 사용자 확인 후 "영구 제외" 또는 "npm 기반 대체 REQ"로 분기.
+- **REQ-ADMIN2-CAND-H1/H2(고급/디버그 설정 재정의)는 Slice 2D 착수 전 spec.md 보강이 선행되어야 함** — 현재 REQ 문구로 구현하면 레거시 대비 80%+ 필드가 누락된 화면이 나온다. Phase 2 진입 전 spec.md 어노테이션 사이클에서 REQ-116/117 문구를 본 research.md의 실측 필드 목록으로 교체할 것을 권고.
