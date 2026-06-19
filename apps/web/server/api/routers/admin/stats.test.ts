@@ -7,6 +7,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { adminStatsRouter } from './stats'
 
+vi.mock('@/lib/auth/two-factor', () => ({
+  isAdminTwoFactorRequired: vi.fn().mockResolvedValue(false),
+  isSessionTwoFactorVerified: vi.fn().mockReturnValue(true),
+}))
+
 // Mock Prisma - named export, not default
 vi.mock('@/lib/db/prisma', () => ({
   prisma: {
@@ -37,7 +42,7 @@ describe('adminStatsRouter', () => {
   beforeEach(() => {
     mockCtx = {
       prisma: prismaMock,
-      session: { user: { id: 1 } },
+      session: { user: { id: 1, isAdmin: true, groups: [] } },
       ip: '127.0.0.1',
       userAgent: 'test-agent',
     }
@@ -145,17 +150,25 @@ describe('adminStatsRouter', () => {
     it('should fetch daily visits for date range', async () => {
       const mockDailyVisits = [
         {
+          id: 1,
+          siteId: 1,
           date: new Date('2026-06-20'),
           uniqueVisitors: 100,
           pageViews: 500,
+          createdAt: new Date('2026-06-20'),
+          updatedAt: new Date('2026-06-20'),
         },
         {
+          id: 2,
+          siteId: 1,
           date: new Date('2026-06-19'),
           uniqueVisitors: 80,
           pageViews: 400,
+          createdAt: new Date('2026-06-19'),
+          updatedAt: new Date('2026-06-19'),
         },
       ]
-      prismaMock.dailyVisit.findMany.mockResolvedValue(mockDailyVisits)
+      vi.mocked(prismaMock.dailyVisit.findMany).mockResolvedValue(mockDailyVisits)
 
       const { createCallerFactory } = await import('../../trpc')
       const caller = createCallerFactory(adminStatsRouter)(mockCtx)
@@ -181,10 +194,26 @@ describe('adminStatsRouter', () => {
 
     it('should calculate summary statistics', async () => {
       const mockDailyVisits = [
-        { date: new Date('2026-06-20'), uniqueVisitors: 100, pageViews: 500 },
-        { date: new Date('2026-06-19'), uniqueVisitors: 80, pageViews: 400 },
+        {
+          id: 1,
+          siteId: 1,
+          date: new Date('2026-06-20'),
+          uniqueVisitors: 100,
+          pageViews: 500,
+          createdAt: new Date('2026-06-20'),
+          updatedAt: new Date('2026-06-20'),
+        },
+        {
+          id: 2,
+          siteId: 1,
+          date: new Date('2026-06-19'),
+          uniqueVisitors: 80,
+          pageViews: 400,
+          createdAt: new Date('2026-06-19'),
+          updatedAt: new Date('2026-06-19'),
+        },
       ]
-      prismaMock.dailyVisit.findMany.mockResolvedValue(mockDailyVisits)
+      vi.mocked(prismaMock.dailyVisit.findMany).mockResolvedValue(mockDailyVisits)
 
       const { createCallerFactory } = await import('../../trpc')
       const caller = createCallerFactory(adminStatsRouter)(mockCtx)
@@ -198,7 +227,7 @@ describe('adminStatsRouter', () => {
     })
 
     it('should return zero summary for empty data', async () => {
-      prismaMock.dailyVisit.findMany.mockResolvedValue([])
+      vi.mocked(prismaMock.dailyVisit.findMany).mockResolvedValue([])
 
       const { createCallerFactory } = await import('../../trpc')
       const caller = createCallerFactory(adminStatsRouter)(mockCtx)

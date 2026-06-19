@@ -35,10 +35,12 @@ vi.mock('@/lib/auth/two-factor', () => ({
 // Prisma mock
 const mockSiteFindFirst = vi.fn();
 const mockSpamDeniedWordFindMany = vi.fn();
+const mockSpamDeniedWordFindFirst = vi.fn();
 const mockSpamDeniedWordFindUnique = vi.fn();
 const mockSpamDeniedWordCreate = vi.fn();
 const mockSpamDeniedWordDelete = vi.fn();
 const mockSpamDeniedIpFindMany = vi.fn();
+const mockSpamDeniedIpFindFirst = vi.fn();
 const mockSpamDeniedIpFindUnique = vi.fn();
 const mockSpamDeniedIpCreate = vi.fn();
 const mockSpamDeniedIpDelete = vi.fn();
@@ -53,12 +55,14 @@ const mockPrisma = {
   },
   spamDeniedWord: {
     findMany: (...args: unknown[]) => mockSpamDeniedWordFindMany(...args),
+    findFirst: (...args: unknown[]) => mockSpamDeniedWordFindFirst(...args),
     findUnique: (...args: unknown[]) => mockSpamDeniedWordFindUnique(...args),
     create: (...args: unknown[]) => mockSpamDeniedWordCreate(...args),
     delete: (...args: unknown[]) => mockSpamDeniedWordDelete(...args),
   },
   spamDeniedIp: {
     findMany: (...args: unknown[]) => mockSpamDeniedIpFindMany(...args),
+    findFirst: (...args: unknown[]) => mockSpamDeniedIpFindFirst(...args),
     findUnique: (...args: unknown[]) => mockSpamDeniedIpFindUnique(...args),
     create: (...args: unknown[]) => mockSpamDeniedIpCreate(...args),
     delete: (...args: unknown[]) => mockSpamDeniedIpDelete(...args),
@@ -123,9 +127,9 @@ describe('admin.spamfilter tRPC router (Slice 2E)', () => {
   });
 
   it('SPAM-DENIED-WORD-002: deniedWords.remove → 금지어 삭제', async () => {
-    mockSpamDeniedWordFindMany.mockResolvedValue([
+    mockSpamDeniedWordFindFirst.mockResolvedValue(
       { id: 1, siteId: 1, word: 'to-remove' },
-    ]);
+    );
     mockSpamDeniedWordDelete.mockResolvedValue({});
 
     const { adminSpamfilterRouter } = await import('./spamfilter');
@@ -178,9 +182,9 @@ describe('admin.spamfilter tRPC router (Slice 2E)', () => {
   });
 
   it('SPAM-DENIED-IP-002: deniedIps.remove → 차단 IP 삭제', async () => {
-    mockSpamDeniedIpFindMany.mockResolvedValue([
+    mockSpamDeniedIpFindFirst.mockResolvedValue(
       { id: 1, siteId: 1, ipPattern: '10.0.0.1' },
-    ]);
+    );
     mockSpamDeniedIpDelete.mockResolvedValue({});
 
     const { adminSpamfilterRouter } = await import('./spamfilter');
@@ -237,17 +241,18 @@ describe('admin.spamfilter tRPC router (Slice 2E)', () => {
     });
     expect(mockSpamRuleUpsert).toHaveBeenCalledWith({
       where: { siteId_actionType: { siteId: 1, actionType: 'document.create' } },
-      create: expect.objectContaining({
-        data: expect.objectContaining({
-          siteId: 1,
-          actionType: 'document.create',
-          maxSubmissions: 3,
-          windowSeconds: 60,
-        }),
-      }),
-      update: expect.objectContaining({
-        data: { maxSubmissions: 3, windowSeconds: 60 },
-      }),
+      create: {
+        siteId: 1,
+        actionType: 'document.create',
+        maxSubmissions: 3,
+        windowSeconds: 60,
+        enabled: true,
+      },
+      update: {
+        maxSubmissions: 3,
+        windowSeconds: 60,
+        enabled: true,
+      },
     });
     expect(mockAdminLogCreate).toHaveBeenCalled();
   });

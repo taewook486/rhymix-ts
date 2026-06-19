@@ -72,7 +72,14 @@ export const adminStatsRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Fire-and-forget: do not await in render path
       // Use void to explicitly ignore promise
-      void incrementVisitCounters(input, ctx.prisma)
+      void incrementVisitCounters(
+        {
+          ...input,
+          referer: input.referer ?? null,
+          userAgent: input.userAgent ?? null,
+        },
+        ctx.prisma,
+      )
       return { success: true }
     }),
 
@@ -93,14 +100,17 @@ export const adminStatsRouter = router({
     .query(async ({ ctx, input }) => {
       // Phase 1: Return daily visit data for date range
       // Future: Add referrer breakdown, unique vs total breakdown
+      const hasDateFilter = input.startDate || input.endDate
       const stats = await ctx.prisma.dailyVisit.findMany({
         where: {
           siteId: input.siteId,
-          ...(input.startDate
-            ? { date: { gte: new Date(input.startDate) } }
-            : {}),
-          ...(input.endDate
-            ? { date: { lte: new Date(input.endDate) } }
+          ...(hasDateFilter
+            ? {
+                date: {
+                  ...(input.startDate ? { gte: new Date(input.startDate) } : {}),
+                  ...(input.endDate ? { lte: new Date(input.endDate) } : {}),
+                },
+              }
             : {}),
         },
         orderBy: { date: 'desc' },

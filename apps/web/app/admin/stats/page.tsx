@@ -13,13 +13,23 @@ import { StatsChart } from './_components/StatsChart'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminStatsPage() {
+interface PageProps {
+  searchParams: Promise<{ days?: string }>
+}
+
+export default async function AdminStatsPage({ searchParams }: PageProps) {
+  const sp = await searchParams
+  const days = sp.days ? Number(sp.days) : 30
   const siteId = await getCurrentSiteId()
   const caller = await getServerCaller()
 
-  // Get last 30 days of stats by default
+  const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
+
   const stats = await caller.admin.stats.getDetailedStats({
     siteId,
+    startDate,
   })
 
   return (
@@ -31,7 +41,7 @@ export default async function AdminStatsPage() {
         </p>
       </header>
 
-      <StatsChart initialStats={stats} siteId={siteId} />
+      <StatsChart stats={stats} days={days} />
     </section>
   )
 }
