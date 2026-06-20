@@ -9,7 +9,7 @@
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-023
  */
 import React, { useState, useTransition } from 'react';
-import { getServerCaller } from '@/lib/trpc/server';
+import { trpc } from '@/providers/TRPCProvider';
 
 interface LayoutPreviewDialogProps {
   layoutId: string;
@@ -24,6 +24,7 @@ export function LayoutPreviewDialog({
   const [isPending, startTransition] = useTransition();
   const [previewData, setPreviewData] = useState<{ layout: unknown; sampleContent: unknown } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const utils = trpc.useUtils();
 
   function handleOpen(): void {
     setIsOpen(true);
@@ -32,8 +33,7 @@ export function LayoutPreviewDialog({
 
     startTransition(async () => {
       try {
-        const caller = await getServerCaller();
-        const data = await caller.admin.layout.preview({ layoutId });
+        const data = await utils.admin.layout.preview.fetch({ layoutId });
         setPreviewData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : '미리보기 로드 중 오류가 발생했습니다.');

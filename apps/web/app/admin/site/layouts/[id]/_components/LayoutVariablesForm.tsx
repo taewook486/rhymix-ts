@@ -9,10 +9,10 @@
  * @MX:NOTE: [AUTO] 클라이언트 컴포넌트로 분리된 이유 — textarea 상태와 form submit 필요.
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-022
  */
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@rhymix-ts/ui/components';
-import { getServerCaller } from '@/lib/trpc/server';
+import { trpc } from '@/providers/TRPCProvider';
 
 interface LayoutVariablesFormProps {
   instanceId: string;
@@ -21,14 +21,15 @@ interface LayoutVariablesFormProps {
 
 export function LayoutVariablesForm({ instanceId, tokensOverride }: LayoutVariablesFormProps): React.ReactElement {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const updateInstanceVariables = trpc.admin.layout.updateInstanceVariables.useMutation();
+  const isPending = updateInstanceVariables.isPending;
   const [jsonValue, setJsonValue] = useState(
     JSON.stringify(tokensOverride || {}, null, 2),
   );
   const [isDirty, setIsDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
 
     // JSON 유효성 검증
@@ -36,15 +37,12 @@ export function LayoutVariablesForm({ instanceId, tokensOverride }: LayoutVariab
       const parsed = JSON.parse(jsonValue);
       setError(null);
 
-      startTransition(async () => {
-        const caller = await getServerCaller();
-        await caller.admin.layout.updateInstanceVariables({
-          id: instanceId,
-          tokensOverride: parsed,
-        });
-        setIsDirty(false);
-        router.refresh();
+      await updateInstanceVariables.mutateAsync({
+        id: instanceId,
+        tokensOverride: parsed,
       });
+      setIsDirty(false);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid JSON');
     }

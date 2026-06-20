@@ -6,7 +6,7 @@
 'use client';
 
 import { useState } from 'react';
-import { getServerCaller } from '@/lib/trpc/server';
+import { trpc } from '@/providers/TRPCProvider';
 
 interface WidgetPrefs {
   visitStats: boolean;
@@ -25,25 +25,22 @@ export function WidgetSettingsButton() {
     updateNotification: true,
     summaryCounterStrip: true,
   });
-  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const updateWidgetPrefs = trpc.admin.dashboard.updateWidgetPrefs.useMutation();
+  const isSaving = updateWidgetPrefs.isPending;
 
   const handleToggle = async (key: keyof WidgetPrefs) => {
     const newPrefs = { ...prefs, [key]: !prefs[key] };
     setPrefs(newPrefs);
-    setIsSaving(true);
     setMessage(null);
 
     try {
-      const caller = await getServerCaller();
-      await caller.admin.dashboard.updateWidgetPrefs({ [key]: newPrefs[key] });
+      await updateWidgetPrefs.mutateAsync({ [key]: newPrefs[key] });
       setMessage({ type: 'success', text: '설정이 저장되었습니다.' });
     } catch (error) {
       setMessage({ type: 'error', text: '설정 저장 중 오류가 발생했습니다.' });
       // Revert on error
       setPrefs(prefs);
-    } finally {
-      setIsSaving(false);
     }
   };
 
