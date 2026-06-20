@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-20 (SPEC-ADMIN-002 M3 구현 완료, status: completed v1.3.0 — Phase 6 전체 종료. SPEC-ADMIN-EXTRAS-001 상태 모순 정정)
+> 마지막 갱신: 2026-06-20 (SPEC-MODULE-BACKLOG-001 평가 SPEC 작성 완료 — 미포팅 레거시 모듈 14종 triage. KEEP 4 / DROP 8 / NEEDS-RESEARCH 2)
 
 ## 기술 스택 (확정)
 
@@ -92,6 +92,14 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 > 레거시 Rhymix PHP admin 전체 디스패치 함수 인벤토리 대비 gap 분석. 60+ REQ를 6개 섹션·3개 Phase로 구조화. P1 22건(대시보드·페이지·회원그룹·회원설정·문서/댓글관리·알림/보안) — **구현 완료**. P2 24건(레이아웃·파일·신고·SEO·스팸필터·통계·도메인 등) — **구현 완료**. P3 16건(설문·태그·닉네임이력·쪽지·서버환경) — **구현 완료**. 예외: REQ-ADMIN2-049(소셜 로그인 프로바이더 토글)는 전제 조건인 소셜 프로바이더 설정이 코드베이스에 부재해 DEFERRED·백로그 재분류, REQ-ADMIN2-161(비동기 작업 큐 모니터링, 선택)은 사용자가 비채택 결정.
 > M1 구현 후 독립 보안 리뷰에서 SMTP 비밀번호 평문 노출, 회원 그룹 `isAdmin` 권한 상승 경로, 설정 비원자적 쓰기, 대시보드 위젯 순차 fetch 4건을 발견·수정함 (상세: SPEC-ADMIN-002/spec.md `## Implementation Notes`).
 
+### Backlog Evaluation (평가/Triage SPEC, 구현 없음)
+
+| ID | 제목 | 우선순위 | 상태 |
+|---|---|---|---|
+| [SPEC-MODULE-BACKLOG-001](./SPEC-MODULE-BACKLOG-001/spec.md) | 미포팅 레거시 모듈 14종 평가 및 처분 (Triage) | P3 | ✅ SPEC 완료 (평가 문서 — 구현 없음) |
+
+> MASTER-PLAN-002 §8.1·§5.13의 위임에 따라 미포팅 레거시 PHP 모듈 14종(poll/tag/trash/rss/counter/importer/krzip/editor/session/communication/message/ncenterlite/integration_search/autoinstall)을 1차 소스 직접 분석으로 triage. 결과: **KEEP 4** (poll→프론트 투표 위젯, rss→피드, communication→쪽지, ncenterlite→알림센터) · **DROP 8** (counter/editor/session/message/krzip/autoinstall + tag·trash 독립화 — 이미 구현됐거나 Auth.js/Next.js/Tiptap/npm으로 대체) · **NEEDS-RESEARCH 2** (importer→데이터 마이그레이션 SPEC 종속, integration_search→검색 백엔드 결정 선행). KEEP 4종 후속 SPEC 후보: SPEC-POLL-WIDGET-001 / SPEC-FEED-001 / SPEC-MESSAGE-001 / SPEC-NOTIFICATION-001 (모두 가칭, 미작성).
+
 ### Meta-Plan 문서 (참조)
 
 | 문서 | 역할 | 상태 |
@@ -143,7 +151,7 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). 다음 작업은 신규 SPEC 작성이 필요하다:
 
-1. **`SPEC-MODULE-BACKLOG-001`** (미작성) — MASTER-PLAN-002 8.1절에서 언급된 미포팅 레거시 모듈 14종(poll/tag 독립화/rss/counter 등) 평가용. 아직 SPEC 문서로 구체화되지 않음.
+1. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — 미포팅 레거시 모듈 14종 triage 완료. KEEP 4종(poll 위젯·rss 피드·쪽지·알림센터)이 후속 SPEC 후보로 등록됨. 다음은 그중 우선순위를 골라 `/moai plan` 호출(예: rss 또는 알림센터부터 권고).
 2. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증
 
 ### 완료된 전체 워크플로우
