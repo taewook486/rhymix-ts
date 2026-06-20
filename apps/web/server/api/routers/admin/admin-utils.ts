@@ -47,15 +47,17 @@ export const adminUtilsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Extract current session token from context to exclude it from purge
-      // NextAuth stores session token in session.user or we can use a session identifier
-      const currentSessionToken = ctx.session?.user?.id
-        ? `user-${ctx.session.user.id}`
-        : undefined;
+      // Exclude the current admin's own AutoLogin tokens from the purge by userId.
+      // securityKey is a real per-token value, so the previous `user-<id>` token
+      // string never matched and the current admin could be logged out.
+      const currentUserId =
+        ctx.session?.user?.id !== undefined
+          ? Number(ctx.session.user.id)
+          : undefined;
 
       return purgeExpiredSessions(ctx, {
         batchSize: input.batchSize,
-        currentSessionToken,
+        currentUserId,
       });
     }),
 });

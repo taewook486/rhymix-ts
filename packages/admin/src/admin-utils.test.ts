@@ -57,13 +57,13 @@ describe('admin-utils — REQ-ADMIN2-150, REQ-ADMIN2-151', () => {
       expect(result.removedCount).toBeGreaterThanOrEqual(0);
     });
 
-    it('should exclude current admin session from purge', async () => {
+    it('should exclude current admin session from purge by userId', async () => {
       const ctx = { prisma };
-      const currentSessionToken = 'current-admin-session-token';
+      const currentUserId = 42;
 
       const result = await purgeExpiredSessions(ctx, {
         batchSize: 500,
-        currentSessionToken,
+        currentUserId,
       });
 
       // Verify the current session was not deleted
@@ -102,8 +102,10 @@ describe('admin-utils — REQ-ADMIN2-150, REQ-ADMIN2-151', () => {
       // This is verified through the implementation logic
     });
 
-    // Critical test: Ensures current admin session is never purged
-    it('should never delete current admin session even if expired — @MX:ANCHOR', async () => {
+    // Critical test: Ensures current admin's own AutoLogin tokens are never purged.
+    // The exclusion MUST be by userId, because securityKey is a real per-token value
+    // and a fabricated `user-<id>` string never matches it.
+    it('should never delete current admin AutoLogin tokens — excluded by userId — @MX:ANCHOR', async () => {
       let capturedWhere: any = null;
       const prismaTrack = {
         autoLogin: {
@@ -118,17 +120,53 @@ describe('admin-utils — REQ-ADMIN2-150, REQ-ADMIN2-151', () => {
         },
       } as unknown as PrismaClient;
 
-      const currentSessionToken = 'current-admin-token-12345';
+      const currentUserId = 12345;
 
       const result = await purgeExpiredSessions(
         { prisma: prismaTrack },
-        { batchSize: 500, currentSessionToken },
+        { batchSize: 500, currentUserId },
       );
 
-      // Verify current session token was excluded via the `not` clause
+      // Verify current admin's tokens were excluded via the userId `not` clause
+      // (NOT via the fabricated securityKey string, which never matched).
       expect(capturedWhere).toBeDefined();
-      expect(capturedWhere?.securityKey?.not).toBe(currentSessionToken);
+      expect(capturedWhere?.userId?.not).toBe(currentUserId);
+      expect(capturedWhere?.securityKey).toBeUndefined();
       expect(result.currentSessionPreserved).toBe(true);
+    });
+
+    // Regression: an expired AutoLogin row belonging to the current admin must NOT be
+    // deleted, while expired rows of other users ARE deleted.
+    it('should preserve current admin expired rows while deleting others — @MX:ANCHOR', async () => {
+      const autoLoginRows = [
+        { id: 1, userId: 12345, expiresAt: new Date(0) }, // current admin, expired
+        { id: 2, userId: 99, expiresAt: new Date(0) }, // other user, expired
+        { id: 3, userId: 100, expiresAt: new Date(0) }, // other user, expired
+      ];
+
+      const prismaFilter = {
+        autoLogin: {
+          deleteMany: async ({ where }: any) => {
+            // Emulate Prisma applying the where clause to the dataset.
+            const excludedUserId = where?.userId?.not;
+            const deleted = autoLoginRows.filter(
+              (r) => r.expiresAt < new Date() && r.userId !== excludedUserId,
+            );
+            return { count: deleted.length };
+          },
+        },
+        sessionRevocation: {
+          deleteMany: async () => ({ count: 0 }),
+        },
+      } as unknown as PrismaClient;
+
+      const result = await purgeExpiredSessions(
+        { prisma: prismaFilter },
+        { batchSize: 500, currentUserId: 12345 },
+      );
+
+      // Only the 2 other users' expired rows are deleted; admin's row is preserved.
+      expect(result.breakdown.expiredAutoLogins).toBe(2);
     });
   });
 });

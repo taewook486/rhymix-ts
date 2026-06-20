@@ -14,6 +14,7 @@
  */
 import type { PrismaClient, SiteSetting, Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { parseIpFilter } from './logs/ip-filter';
 
 // ---------------------------------------------------------------------------
 // 에러
@@ -32,6 +33,18 @@ export class SiteNotFoundError extends Error {
   constructor() {
     super('Site not found');
     this.name = 'SiteNotFoundError';
+  }
+}
+
+/**
+ * Sitelock allowedIpList 에 잘못된 IP/CIDR 형식이 포함되었을 때 발생한다 (REQ-ADMIN2-155).
+ * 호출자(tRPC router)는 이 에러를 BAD_REQUEST 로 매핑한다.
+ */
+export class InvalidSitelockIpError extends Error {
+  readonly code = 'INVALID_SITELOCK_IP';
+  constructor(ip: string, reason: string) {
+    super(`Invalid IP address in sitelock allow list: ${ip} - ${reason}`);
+    this.name = 'InvalidSitelockIpError';
   }
 }
 
@@ -843,6 +856,50 @@ export async function getSitelockSettings(
 }
 
 /**
+ * Sitelock 입력값을 검증하고 자가 잠금 방지 로직을 적용한 안전한 값으로 변환한다 (영속 없음).
+ *
+ * REQ-ADMIN2-155 자가 잠금 방지:
+ * 1. SitelockSettingsSchema 로 재검증한다.
+ * 2. allowedIpList 의 각 항목을 parseIpFilter 로 검증한다. 잘못된 형식이 하나라도 있으면
+ *    InvalidSitelockIpError 를 던진다 (호출자가 BAD_REQUEST 로 매핑).
+ * 3. locked=true 이고 현재 관리자 IP 가 목록에 없으면 자동으로 포함시킨다.
+ *
+ * 이 함수는 부수효과(DB 쓰기)가 없는 순수 함수이므로 router 와
+ * updateSitelockSettings 양쪽에서 재사용된다.
+ *
+ * @MX:ANCHOR [AUTO]: Sitelock 자가 잠금 방지 단일 진입점.
+ * @MX:REASON: fan_in >= 2 (tRPC updateSitelock, updateSitelockSettings).
+ *             이 로직을 우회하면 관리자가 자신을 잠금 대상에서 제외하지 못해
+ *             영구적으로 사이트에서 차단될 수 있음.
+ */
+export function resolveSitelockUpdate(
+  input: SitelockSettings,
+  currentIp?: string,
+): SitelockSettings {
+  // 1. Zod 재검증
+  const validated = SitelockSettingsSchema.parse(input);
+
+  // 2. allowedIpList 의 각 IP/CIDR 형식 검증
+  for (const entry of validated.allowedIpList) {
+    const parsed = parseIpFilter(entry);
+    if ('error' in parsed) {
+      throw new InvalidSitelockIpError(entry, parsed.error);
+    }
+  }
+
+  // 3. REQ-ADMIN2-155: Sitelock 활성화 시 현재 관리자 IP 자동 포함
+  let finalIpList = validated.allowedIpList;
+  if (validated.locked && currentIp && !finalIpList.includes(currentIp)) {
+    finalIpList = [...finalIpList, currentIp];
+  }
+
+  return {
+    ...validated,
+    allowedIpList: finalIpList,
+  };
+}
+
+/**
  * 사이트 잠금 설정을 업데이트한다.
  *
  * @MX:ANCHOR [AUTO]: 사이트 잠금 설정 업데이트 — 자가 잠금 방지 로직 포함.
@@ -853,21 +910,14 @@ export async function updateSitelockSettings(
   input: SitelockSettings,
   ctx: { prisma: PrismaClient; currentIp?: string },
 ): Promise<SitelockSettings> {
-  // Zod 검증
-  const validated = SitelockSettingsSchema.parse(input);
+  // 검증 + 자가 잠금 방지 (resolveSitelockUpdate 재사용)
+  const toPersist = resolveSitelockUpdate(input, ctx.currentIp);
 
-  // REQ-ADMIN2-155: Sitelock 활성화 시 현재 관리자 IP 자동 포함
-  let finalIpList = validated.allowedIpList;
-  if (validated.locked && ctx.currentIp && !finalIpList.includes(ctx.currentIp)) {
-    finalIpList = [...finalIpList, ctx.currentIp];
-  }
-
-  const toPersist = {
-    ...validated,
-    allowedIpList: finalIpList,
-  };
-
-  await updateSiteSetting(ctx.prisma, 'sitelock', toPersist);
+  await updateSiteSetting(
+    ctx.prisma,
+    'sitelock',
+    toPersist as unknown as Record<string, unknown>,
+  );
 
   return toPersist;
 }

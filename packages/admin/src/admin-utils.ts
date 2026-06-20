@@ -28,7 +28,15 @@ export interface InvalidateMenuCacheResult {
 
 export interface PurgeExpiredSessionsOptions {
   batchSize?: number;
-  currentSessionToken?: string;
+  /**
+   * 현재 로그인한 관리자의 userId. 이 사용자가 소유한 AutoLogin 토큰은
+   * 만료되었더라도 절대 삭제하지 않는다 (현재 세션 보존).
+   *
+   * NOTE: 이전에는 fabricated `user-<id>` 토큰 문자열을 securityKey 와 비교했으나
+   * AutoLogin.securityKey 는 실제 고유 토큰이므로 매칭되지 않아 제외가 무력화되었다.
+   * 따라서 userId 기준 제외로 정정한다.
+   */
+  currentUserId?: number;
 }
 
 export interface PurgeExpiredSessionsResult {
@@ -86,10 +94,12 @@ export async function invalidateAdminMenuCache(ctx: {
  *
  * @MX:ANCHOR [AUTO]: 현재 관리자의 AutoLogin 토큰은 절대 삭제하지 않습니다.
  * @MX:REASON: 현재 세션을 삭제하면 관리자가 즉시 로그아웃되어 작업이 중단됩니다.
+ *             제외 기준은 userId 이며, fabricated 토큰 문자열이 아니다 — AutoLogin.securityKey 는
+ *             실제 고유 토큰이라 `user-<id>` 형태와 절대 매칭되지 않기 때문이다.
  *             fan_in >= 2 (admin footer, API 호출).
  *
  * @param ctx - Prisma context
- * @param options - Batch size and current session token to exclude
+ * @param options - Batch size and current admin userId to exclude
  * @returns Summary of purged records
  */
 export async function purgeExpiredSessions(
@@ -97,22 +107,24 @@ export async function purgeExpiredSessions(
   options: PurgeExpiredSessionsOptions = {},
 ): Promise<PurgeExpiredSessionsResult> {
   const batchSize = options.batchSize ?? DEFAULT_BATCH_SIZE;
-  const currentSessionToken = options.currentSessionToken;
+  const currentUserId = options.currentUserId;
 
   // Get current timestamp
   const now = new Date();
 
   // 1. Purge expired AutoLogin tokens
   // AutoLogin tokens have explicit expiresAt timestamps
-  // We exclude the current admin's token if provided
+  // We exclude the current admin's tokens (by userId) if provided
   const expiredAutoLoginsWhere: Record<string, unknown> = {
     expiresAt: { lt: now },
   };
 
-  // CRITICAL: Never delete the current admin's AutoLogin token
-  if (currentSessionToken) {
-    expiredAutoLoginsWhere.securityKey = {
-      not: currentSessionToken,
+  // CRITICAL: Never delete the current admin's AutoLogin tokens.
+  // Excluded by userId because securityKey is a real per-token value that
+  // can never equal a fabricated `user-<id>` string.
+  if (currentUserId !== undefined) {
+    expiredAutoLoginsWhere.userId = {
+      not: currentUserId,
     };
   }
 

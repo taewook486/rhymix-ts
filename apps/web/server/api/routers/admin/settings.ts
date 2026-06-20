@@ -30,7 +30,8 @@ import {
   getAsyncSettings,
   updateAsyncSettings,
   getSitelockSettings,
-  updateSitelockSettings,
+  resolveSitelockUpdate,
+  InvalidSitelockIpError,
 } from '@rhymix-ts/admin';
 
 // ---------------------------------------------------------------------------
@@ -891,12 +892,25 @@ export const adminSettingsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const actorId = Number(ctx.session.user.id);
 
+      // REQ-ADMIN2-155: 자가 잠금 방지 — 검증 + 현재 관리자 IP 자동 포함.
+      // resolveSitelockUpdate 가 allowedIpList 형식 검증과 self-IP 주입을 수행하며,
+      // 잘못된 IP 가 있으면 InvalidSitelockIpError 를 던진다 (BAD_REQUEST 로 매핑).
+      let processed;
+      try {
+        processed = resolveSitelockUpdate(input, ctx.ip);
+      } catch (err) {
+        if (err instanceof InvalidSitelockIpError) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: err.message });
+        }
+        throw err;
+      }
+
       await ctx.prisma.$transaction(async (tx) => {
         const txCtx = { ...ctx, prisma: tx };
         await setSiteSetting(
           txCtx,
           'sitelock',
-          input,
+          processed,
           actorId,
         );
       });

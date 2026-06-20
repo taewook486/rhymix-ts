@@ -6,15 +6,47 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { checkSpamGuard, SpamGuardError } from './guard';
 
 describe('spamfilter guard', () => {
+  // In-memory content_rate_limits ledger so the DB-backed checkRateLimit works in unit tests.
+  let ledgerRows: { identifier: string; endpoint: string; createdAt: Date }[] = [];
+
   const mockPrisma = {
     site: { findFirst: vi.fn() },
     spamDeniedWord: { findMany: vi.fn() },
     spamDeniedIp: { findMany: vi.fn() },
     spamRule: { findFirst: vi.fn() },
+    contentRateLimit: {
+      count: vi.fn(async ({ where }: any) =>
+        ledgerRows.filter(
+          (r) =>
+            r.identifier === where.identifier &&
+            r.endpoint === where.endpoint &&
+            r.createdAt > where.createdAt.gt,
+        ).length,
+      ),
+      create: vi.fn(async ({ data }: any) => {
+        ledgerRows.push({
+          identifier: data.identifier,
+          endpoint: data.endpoint,
+          createdAt: new Date(),
+        });
+        return data;
+      }),
+      findFirst: vi.fn(async ({ where }: any) =>
+        ledgerRows
+          .filter(
+            (r) =>
+              r.identifier === where.identifier &&
+              r.endpoint === where.endpoint &&
+              r.createdAt > where.createdAt.gt,
+          )
+          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0] ?? null,
+      ),
+    },
   } as any;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    ledgerRows = [];
     mockPrisma.site.findFirst.mockResolvedValue({ id: 1 });
   });
 

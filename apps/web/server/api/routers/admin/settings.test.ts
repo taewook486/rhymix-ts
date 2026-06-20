@@ -551,4 +551,47 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     expect(result).toEqual({ success: true });
     expect(mockSiteSettingUpsert).toHaveBeenCalled();
   });
+
+  it('SETTINGS-SITELOCK-003: updateSitelock with locked=true auto-includes current admin IP — self-lockout protection (REQ-ADMIN2-155)', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // adminCtx.ip is '::1' — it is NOT in the provided allowedIpList.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await caller.updateSitelock({
+      locked: true,
+      message: 'Maintenance mode',
+      allowedIpList: ['192.168.1.1'],
+    });
+
+    // The persisted value MUST include the current admin IP (::1) so the admin
+    // is never locked out of their own site.
+    const upsertCall = mockSiteSettingUpsert.mock.calls.find(
+      (c) => c[0]?.where?.siteId_key?.key === 'sitelock',
+    );
+    expect(upsertCall).toBeDefined();
+    const persistedAllowList = upsertCall![0].create.value.allowedIpList as string[];
+    expect(persistedAllowList).toContain('::1');
+    expect(persistedAllowList).toContain('192.168.1.1');
+  });
+
+  it('SETTINGS-SITELOCK-004: updateSitelock rejects malformed IP in allow list with BAD_REQUEST (REQ-ADMIN2-155)', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.updateSitelock({
+        locked: true,
+        message: '',
+        allowedIpList: ['not-an-ip-address'],
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
 });
