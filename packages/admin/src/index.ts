@@ -35,3 +35,6 @@ export { validatePresetProps } from './widgets/preset';
 
 // Stats (SPEC-ADMIN-002 Slice 2F)
 export * from './stats';
+
+// Poll (SPEC-ADMIN-002 Slice 3A)
+export * from './poll/poll';

@@ -29,6 +29,8 @@ import {
   updateAsyncSettings,
   getSitelockSettings,
   updateSitelockSettings,
+  getPollConfig,
+  updatePollConfig,
 } from './settings';
 import type { PrismaClient } from '@prisma/client';
 import { ZodError } from 'zod';
@@ -644,5 +646,47 @@ describe('updateSitelockSettings — REQ-ADMIN2-155', () => {
     );
 
     expect(result.allowedIpList).toContain('10.0.0.1');
+  });
+});
+
+describe('getPollConfig — REQ-ADMIN2-086', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default poll config when not configured', async () => {
+    const result = await getPollConfig({ prisma: mockPrisma });
+
+    expect(result.allowGuestVote).toBe(false);
+    expect(result.duplicateVotePolicy).toBe('by-member');
+  });
+});
+
+describe('updatePollConfig — REQ-ADMIN2-086', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update poll config', async () => {
+    const result = await updatePollConfig(
+      { allowGuestVote: true, duplicateVotePolicy: 'by-ip' },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.allowGuestVote).toBe(true);
+    expect(result.duplicateVotePolicy).toBe('by-ip');
+  });
+
+  it('should reject an invalid duplicateVotePolicy value', async () => {
+    await expect(
+      updatePollConfig(
+        { allowGuestVote: false, duplicateVotePolicy: 'invalid-policy' as never },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
   });
 });

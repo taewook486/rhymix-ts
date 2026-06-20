@@ -50,6 +50,7 @@ import { adminStatsRouter } from './stats';
 import { adminDomainRouter } from './domain';
 import { adminUtilsRouter } from './admin-utils';
 import { adminSpamfilterRouter } from './spamfilter';
+import { adminPollRouter } from './poll';
 
 export const adminRouter = router({
   module:          adminModuleRouter,
@@ -80,4 +81,5 @@ export const adminRouter = router({
   domain:          adminDomainRouter,
   adminUtils:       adminUtilsRouter,
   spamfilter:       adminSpamfilterRouter,
+  poll:             adminPollRouter,
 });

@@ -34,6 +34,7 @@ import {
   ShieldCheck,
   UserPlus,
   SlidersHorizontal,
+  BarChart3,
 } from 'lucide-react'
 import { trpc } from '@/providers/TRPCProvider'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -78,6 +79,7 @@ const NAV: ReadonlyArray<NavSection> = [
       { href: '/admin/pages', label: '페이지', icon: FileText },
       { href: '/admin/documents', label: '전체 문서 관리', icon: FileText },
       { href: '/admin/comments', label: '전체 댓글 관리', icon: MessageSquare },
+      { href: '/admin/polls', label: '설문', icon: BarChart3 },
     ],
   },
   {

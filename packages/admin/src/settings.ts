@@ -921,3 +921,49 @@ export async function updateSitelockSettings(
 
   return toPersist;
 }
+
+// ---------------------------------------------------------------------------
+// 설문 전역 설정 (Poll Config) — SPEC-ADMIN-002 Slice 3A, REQ-ADMIN2-086
+// ---------------------------------------------------------------------------
+
+const PollConfigSchema = z.object({
+  // 비회원 투표 허용 여부 (설문 생성 시 기본값으로 사용)
+  allowGuestVote: z.boolean().default(false),
+  // 중복 투표 방지 방식 기본값
+  duplicateVotePolicy: z.enum(['by-member', 'by-ip', 'by-cookie']).default('by-member'),
+});
+
+export interface PollConfig {
+  allowGuestVote: boolean;
+  duplicateVotePolicy: 'by-member' | 'by-ip' | 'by-cookie';
+}
+
+/**
+ * 설문 전역 설정(비회원 투표 허용, 중복 투표 방지 방식)을 조회한다.
+ *
+ * REQ-ADMIN2-086: 신규 설문 생성 시 이 값이 기본값으로 적용된다.
+ */
+export async function getPollConfig(ctx: { prisma: PrismaClient }): Promise<PollConfig> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'pollConfig');
+
+  const value = setting.value as Record<string, unknown>;
+  return {
+    allowGuestVote: (value.allowGuestVote as boolean) ?? false,
+    duplicateVotePolicy:
+      (value.duplicateVotePolicy as PollConfig['duplicateVotePolicy']) || 'by-member',
+  };
+}
+
+/**
+ * 설문 전역 설정을 업데이트한다.
+ */
+export async function updatePollConfig(
+  input: PollConfig,
+  ctx: { prisma: PrismaClient },
+): Promise<PollConfig> {
+  const validated = PollConfigSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'pollConfig', validated);
+
+  return validated;
+}

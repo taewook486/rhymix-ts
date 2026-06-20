@@ -45,6 +45,7 @@ model Site {
   spamDeniedWords SpamDeniedWord[]
   spamDeniedIps   SpamDeniedIp[]
   spamRules       SpamRule[]
+  polls           Poll[]
 
   @@map("sites")
 }
@@ -1174,4 +1175,81 @@ model SpamRule {
   @@unique([siteId, actionType])
   @@index([siteId])
   @@map("spam_rules")
+}
+
+// =====================================================================
+// SPEC-ADMIN-002 Slice 3A: 설문(Poll) 시스템
+// =====================================================================
+
+/**
+ * Poll — 설문
+ *
+ * REQ-ADMIN2-083: 설문 목록 (제목/상태/투표수/기간)
+ * REQ-ADMIN2-084: 설문 생성/수정 시 질문/옵션/복수선택여부/투표기간 영속화
+ * REQ-ADMIN2-086: 비회원 투표 허용, 중복 투표 방지 방식
+ */
+model Poll {
+  id                   Int      @id @default(autoincrement())
+  siteId               Int
+  title                String   @db.VarChar(200)
+  description          String?  @db.Text
+  allowGuestVote       Boolean  @default(false)
+  allowMultipleChoice  Boolean  @default(false)
+  // 중복 투표 방지 방식: 'by-member' | 'by-ip' | 'by-cookie'
+  duplicateVotePolicy  String   @default("by-member") @db.VarChar(20)
+  startAt              DateTime @db.Timestamptz
+  endAt                DateTime @db.Timestamptz
+  createdAt            DateTime @default(now()) @db.Timestamptz
+  updatedAt            DateTime @updatedAt @db.Timestamptz
+
+  site    Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  options PollOption[]
+  votes   PollVote[]
+
+  @@index([siteId])
+  @@map("polls")
+}
+
+/**
+ * PollOption — 설문 선택 항목
+ */
+model PollOption {
+  id        Int      @id @default(autoincrement())
+  pollId    Int
+  label     String   @db.VarChar(200)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([pollId])
+  @@map("poll_options")
+}
+
+/**
+ * PollVote — 설문 투표 기록
+ *
+ * memberId 는 비회원 투표(REQ-ADMIN2-086) 를 위해 nullable.
+ * duplicateVotePolicy='by-member' 인 경우 (pollId, memberId) 유니크 제약으로 중복을 막는다.
+ * Postgres 의 유니크 제약은 NULL 값을 서로 다른 값으로 취급하므로, 비회원 투표(memberId=NULL)
+ * 는 이 제약에 걸리지 않는다 — by-ip/by-cookie 정책의 중복 방지는 애플리케이션 레벨에서
+ * voterIp/voterCookie 를 조회하여 처리한다 (DB partial unique index 미사용).
+ */
+model PollVote {
+  id           Int      @id @default(autoincrement())
+  pollId       Int
+  pollOptionId Int
+  memberId     Int?
+  voterIp      String?  @db.VarChar(45)
+  createdAt    DateTime @default(now()) @db.Timestamptz
+
+  poll       Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  pollOption PollOption @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, memberId])
+  @@index([pollId])
+  @@index([pollOptionId])
+  @@index([pollId, voterIp])
+  @@map("poll_votes")
 }
