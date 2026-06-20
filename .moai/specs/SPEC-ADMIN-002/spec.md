@@ -19,6 +19,7 @@ language: ko
 
 ## HISTORY
 
+- 2026-06-20 (M3 Slice 3C 점검 완료): Slice 3C(회원 부가 설정, REQ-ADMIN2-049/028) 점검 결과 — REQ-ADMIN2-028은 Slice 3D 커밋 `accc895`에서 이미 구현·테스트(EDIT-8/EDIT-9) 완료되어 추가 작업 불필요함을 확인. REQ-ADMIN2-049는 "기존에 구성된 소셜 프로바이더 토글"을 전제하지만, 코드베이스 전체(Prisma 스키마, 서버 라우터, research.md)에 소셜 로그인 프로바이더 설정 자체가 존재하지 않아 토글할 대상이 없음을 발견. 사용자 확인 후 REQ-ADMIN2-049를 **DEFERRED**로 재분류하고 SSO/OIDC 연동(Exclusions §5)과 함께 백로그로 이동. 코드 변경 없음 — SPEC 문서(본 항목, REQ-049 본문, Slice 3C 라인, Exclusions §5)만 갱신. M3 잔여 항목: Slice 3G(REQ-161, 선택적 개선)는 사용자가 이번 세션에서 비채택을 선택해 범위에서 제외.
 - 2026-06-20 (M2 Slice 2D~2H 구현 완료): Slice 2D(SEO `/admin/settings/seo` · 고급 설정 `/admin/settings/advanced`[157/158 포함] · 비동기/큐 `/admin/settings/async`[154, v1.2.1 범위로 6필드 한정] · 사이트 잠금 런타임 `/admin/settings/sitelock`) · 2E(스팸필터 — 금지어/IP 관리 `/admin/settings/spamfilter/{words,ip}`, 차단 규칙 `/admin/settings/spamfilter/block`, `comment.ts`/`document.ts` 제출 경로에 필터 가드 연동, 신규 Prisma 모델 `SpamDeniedWord`/`SpamDeniedIp`/`SpamRule`) · 2F(통계 `/admin/stats`, 대시보드 업데이트 알림 위젯 + 요약 카운터 strip을 `DashboardWidgets.tsx`에 확장, 도메인 관리 `/admin/domains`[신규 `domain` tRPC 라우터], 모듈 상세 `/admin/modules/[id]`; 비차단 방문 카운팅[141/142]은 기존 `ip-hasher.ts` 해시 경로로 충족 확인) · 2G(보안 IP 허용/차단 목록을 `/admin/settings/security`에 연동, 알림 설정에 테스트 메일 발송 액션 추가) · 2H(admin 메뉴 캐시 초기화 + 만료 세션 정리를 신규 `AdminFooter.tsx`에 연동, admin 레이아웃에 배치)를 모두 구현·커밋(`127f0e6`, 후속 범위 수정 `2f8b242`). 품질 근거: `pnpm --filter @rhymix-ts/admin typecheck` clean, `pnpm --filter @rhymix-ts/admin test` 117/117 통과, 관련 `apps/web` 라우터 테스트 39/39 통과, SPEC-ADMIN-002 대상 파일 `apps/web` typecheck clean(잔존 40건의 typecheck 오류는 `app/admin/members/page.tsx`, `app/admin/pages/[instanceId]/edit/*`, `app/admin/site/design/*`, `components/admin/site-design/*`, `components/theme/*`, `lib/theme/token-form-builder.*`에 위치한 본 SPEC과 무관한 기존 결함이며 본 세션에서 손대지 않았다). 알려진 갭 4건을 정직하게 기록한다 — (1) 신규 테이블 3종(SpamDeniedWord/SpamDeniedIp/SpamRule)에 대한 Prisma 마이그레이션 파일이 아직 없음. `prisma generate`는 실행해 클라이언트 타입은 확보했으나, 이 환경에 로컬 Postgres가 없어 `prisma migrate dev`를 실행하지 못했다 — 실제 dev DB가 있는 환경에서 마이그레이션 생성 전까지는 배포 차단 요인이다. (2) `acceptance.md`에 REQ-ADMIN2-111/115/004/005/006/125/146에 대응하는 AC 항목이 없다 — 본 세션 이전부터 존재하던 SPEC 문서화 갭이며 본 세션이 만든 것은 아니나, 차후 manager-spec 패스에서 보강이 필요함을 표시한다. (3) 신규 UI 페이지(advanced/async/seo/sitelock/spamfilter/stats/domains/modules[id])에는 페이지 단위 단위 테스트가 없다 — 기존 프로젝트 관행과 동일(대부분의 설정 페이지가 페이지 레벨에서는 미테스트 상태이며 `settings/site/page.test.tsx`만 예외)이므로 회귀는 아니지만 기록해 둔다. (4) 구현 커밋이 환경의 worktree 격리 한계로 인해 비원자적으로 묶였다 — `127f0e6` 1건에 2D+2E+2F+2G+2H가 모두 포함된 뒤 범위 수정 커밋 `2f8b242`가 뒤따랐다. 이는 투명성을 위해 기록하며 git history를 재작성하지 않는다. M3(Slice 3A~3G)는 여전히 미착수다.
 - 2026-06-19 (v1.2.1 전체 재검토): evaluator-active 문서 전체(96개 REQ 전수) 독립 재검토에서 Medium 결함 3건 신규 발견·수정 — (1) REQ-ADMIN2-004/005(대시보드 업데이트 알림 위젯, v1.0.0부터 존재)가 어떤 Slice에도 미배치된 고아 REQ였음을 발견, Slice 2F로 편입. (2) REQ-ADMIN2-146(P2)이 Slice 2F와 Slice 3F(P3)에 이중 배치되어 우선순위와 모순됐음을 발견, Slice 3F에서 제거. (3) REQ-ADMIN2-161이 157~160과 같은 라운드에서 추가됐음에도 영문 SHALL EARS 템플릿 통일에서 누락(한국어 산문 잔존)되었음을 발견·수정. 그 외 EARS 키워드/Pn·Phase 태그/커밋해시 10건/116·117 footnote/버전 태그는 전수 검증 결과 결함 없음.
 - 2026-06-19 (v1.2.1 보완): evaluator-active 독립 검토에서 발견된 Medium 결함 2건 수정 — (1) REQ-157/158/159/160의 본문을 다른 REQ와 동일한 영문 SHALL EARS 템플릿으로 통일(기존엔 한국어 산문 혼용), (2) plan.md REQ-161 설명의 "이메일 큐와 동일 저장소 재사용" 가정이 미검증임을 명시(드라이버=미사용/DB 선택형이라 큐 테이블 존재 보장 안 됨, 161 채택 시 선확인 필요). Low 결함(REQ-160 "경고" 표현 출처)은 legacy 화면 라디오 레이블 표기를 근거로 본문에 주석 추가. 추가로 acceptance.md의 AC-18(REQ-154)이 폐기된 "큐 즉시실행" 주장을 그대로 담고 있던 결함을 발견해 정정하고, AC-23(157/158)·AC-24(159/160)·AC-25(161, 선택·DoD 제외) 신규 추가(기존 AC-20 태그 번호와 충돌 방지를 위해 23부터 부여).
@@ -198,7 +199,7 @@ language: ko
 
 **REQ-ADMIN2-048** (Ubiquitous) — *P1 / Phase 1*: The 로그인 설정 tab SHALL persist: 자동 로그인 허용 및 유지 기간, 로그인 실패 잠금 임계값, 로그인 후 리디렉션 정책. (legacy: `dispMemberAdminLoginConfig`)
 
-**REQ-ADMIN2-049** (Optional) — *P3 / Phase 3*: Where social login is configured, the 로그인 설정 tab SHALL allow enabling/disabling configured social providers WITHOUT requiring credentials to be re-entered in plaintext.
+**REQ-ADMIN2-049** (Optional, **DEFERRED**) — *P3 / Phase 3*: Where social login is configured, the 로그인 설정 tab SHALL allow enabling/disabling configured social providers WITHOUT requiring credentials to be re-entered in plaintext. *(2026-06-20: 전제 조건 불충족 — 코드베이스 전체에 소셜 로그인 프로바이더 설정 자체가 존재하지 않음[Prisma 스키마/서버 라우터/research.md 모두 미확인]. 토글할 대상이 없어 구현 불가. SSO/OIDC 연동[Exclusions §5]과 함께 백로그로 재분류. 사용자 확인 완료.)*
 
 **REQ-ADMIN2-050** (Ubiquitous) — *P1 / Phase 1*: The 약관 설정 tab SHALL persist editable 이용약관 and 개인정보처리방침 documents (markdown/HTML), shown during sign-up, with required-consent flags. (legacy: `dispMemberAdminAgreementsConfig`)
 
@@ -430,7 +431,7 @@ language: ko
 
 1. **Slice 3A — 설문(Poll)**: REQ-ADMIN2-083~086
 2. **Slice 3B — 태그 + 문서 별칭 + 닉네임 이력**: REQ-ADMIN2-087, 156, 073, 056, 057 *(156 태그 구분 방법 설정 추가)*
-3. **Slice 3C — 회원 부가 설정**: REQ-ADMIN2-049, 028 *(053은 P2로 상향되어 Slice 2C로 이동)*
+3. **Slice 3C — 회원 부가 설정** (완료, 2026-06-20): REQ-ADMIN2-049(**DEFERRED** — 전제 조건인 소셜 프로바이더 설정이 코드베이스에 부재해 구현 불가, 백로그 재분류), 028(Slice 3D 커밋 `accc895`에서 이미 구현·테스트 완료, 본 Slice에서 추가 작업 불필요) *(053은 P2로 상향되어 Slice 2C로 이동)*
 4. **Slice 3D — 레이아웃 미리보기/복사**: REQ-ADMIN2-023, 024, 031
 5. **Slice 3E — 디버그/캡챠/기타 파일 설정**: REQ-ADMIN2-117, 159, 160, 124, 082, 008 *(159/160 디버그 설정 세부 필드 보강 v1.2.1)*
 6. **Slice 3F — 쪽지 + 서버환경 + 모듈 카테고리/언어코드 + 코어정리**: REQ-ADMIN2-143~145, 147~149 *(146은 P2이므로 Slice 2F로 이전 — v1.2.1 재검토에서 이중 배치 발견·수정)*
@@ -463,7 +464,7 @@ language: ko
 2. **이미 구현된 기능 재작성** — SPEC-ADMIN-001 / SPEC-ADMIN-EXTRAS-001 / Phase 1~5 완료 SPEC이 제공한 export/import, 2FA, 게시판 CRUD, 휴지통, 회원 목록/상세, 포인트 설정, 메일 설정, 테마 디자인, 위젯, 애드온, 캐시, 사이트잠금은 재구현하지 않는다 (섹션 2 참조).
 3. **회원/그룹/차단 목록 export-import** — PII 위험으로 별도 정책 SPEC에서 다룸 (SPEC-ADMIN-EXTRAS-001 Non-Goals 계승).
 4. **자동 스케줄 백업 / 시점 복원(PITR) / DB 레벨 백업** — DBA·인프라 책임 영역. 본 SPEC은 application-layer만.
-5. **SSO / OIDC 연동** — 백로그. REQ-ADMIN2-049는 *기존에 구성된* 소셜 프로바이더 토글만 다루며 신규 연동 구현은 제외.
+5. **SSO / OIDC 연동** — 백로그. REQ-ADMIN2-049는 *기존에 구성된* 소셜 프로바이더 토글만 다루며 신규 연동 구현은 제외. (2026-06-20: 코드베이스에 소셜 프로바이더 설정이 전혀 존재하지 않아 REQ-ADMIN2-049 자체가 DEFERRED 처리됨 — Slice 3C 참조)
 6. **Admin UI 다국어(i18n)** — SPEC-ADMIN-001 Open Question 3 계승, 백로그.
 7. **모듈 간 콘텐츠 마이그레이션 도구**(게시판→위키 변환 등) — 백로그.
 8. **패키지 마켓 신규 패키지 설치/배포 파이프라인** — SPEC-ADDON-001 범위. 본 SPEC은 패키지 마켓 화면을 재구현하지 않는다.

@@ -142,6 +142,14 @@ language: ko
 
 - **Given** 태그 설정에서 구분 방법을 "해시(#)"로 지정한다, **When** 해시로 구분된 태그가 포함된 문서를 저장한다, **Then** 해당 구분 규칙으로 태그가 파싱·등록된다.
 
+### AC-21: 페이지 모바일 콘텐츠 (REQ-ADMIN2-028) — 구현 완료 (Slice 3D)
+
+- **Given** 페이지에 모바일 전용 콘텐츠가 있다, **When** 관리자가 모바일 탭으로 전환한다, **Then** 별도의 textarea에 모바일 콘텐츠가 표시되고 `saveMobilePageAction`으로 독립 저장된다. 구현·테스트 위치: `apps/web/app/admin/pages/[instanceId]/edit/_components/PageEditForm.tsx`, `page.test.tsx` EDIT-8/EDIT-9 (커밋 `accc895`).
+
+### AC-22 (DEFERRED, 2026-06-20): 소셜 로그인 프로바이더 토글 (REQ-ADMIN2-049)
+
+- 본 AC는 작성하지 않는다. 전제 조건("기존에 구성된 소셜 프로바이더")이 코드베이스에 존재하지 않음(Prisma 스키마, 서버 라우터, research.md 전수 확인 결과 미발견)을 Slice 3C 점검에서 확인했다. 사용자 확인 후 REQ-ADMIN2-049를 SSO/OIDC 연동(Exclusions §5)과 함께 백로그로 재분류했다. 신규 소셜 프로바이더 연동이 별도 SPEC으로 착수될 경우, 이 AC를 그때 작성한다.
+
 ---
 
 ## Edge Cases
