@@ -2,7 +2,7 @@
 
 TypeScript + Next.js 16 redesign of the [Rhymix](https://github.com/rhymix/rhymix) CMS.
 
-> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (975 unit) · SPEC-THEME-001 완료 (946 unit)**.
+> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (975 unit) · SPEC-THEME-001 완료 (946 unit) · SPEC-FEED-001 완료 (67 unit, 게시판별 RSS/Atom 피드)**.
 > Reference instance running at `http://localhost:8080` (PHP, Docker).
 
 ## Architecture (locked)
@@ -124,10 +124,11 @@ pnpm test:e2e
 | SPEC-CONTENT-001 | 완료 (Slice A–F + UI) | 975 unit | 게시판/문서/댓글/첨부파일/FTS/View Page/ClamAV/Comment UI/Tiptap |
 | SPEC-THEME-001 | 완료 (Slice A–F) | 946 unit | 테마/레이아웃/스킨/토큰/다크모드/프리뷰/위젯 |
 | SPEC-POINT-001 | 완료 (Slice A+B) | 24 unit | 포인트 시스템 독립 패키지 + 크로스 모듈 트랜잭션 통합 + 관리자 UI |
+| SPEC-FEED-001 | 완료 (Slice A+B+C) | 67 unit | 게시판별 RSS 2.0/Atom 1.0 피드, 캐싱+자동탐색+이벤트 무효화, admin 설정 패널 |
 
 ## Next Step
 
-Phase 3 SPEC-POINT-001 구현 완료. 다음 단계는 SPEC-MAIL-001 구현 또는 E2E 통합 테스트:
+Phase 7 SPEC-FEED-001 구현 완료. 다음 단계는 SPEC-MODULE-BACKLOG-001 KEEP 잔여 3종(poll 위젯/쪽지/알림센터) SPEC 작성 또는 E2E 통합 테스트:
 
 ```bash
 # E2E 테스트 실행

@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-20 (SPEC-FEED-001 작성 완료 — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목 후속 구현 SPEC 첫 착수)
+> 마지막 갱신: 2026-06-20 (SPEC-FEED-001 구현 완료 — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목 첫 구현 SPEC 완료)
 
 ## 기술 스택 (확정)
 
@@ -107,9 +107,9 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 | ID | 제목 | 의존 | 우선순위 | 상태 |
 |---|---|---|---|---|
-| [SPEC-FEED-001](./SPEC-FEED-001/spec.md) | 게시판별 RSS 2.0 / Atom 1.0 피드 (Next.js Route Handler) | BOARD-CRUD, DOCUMENT, COMMENT | P2 | 📝 SPEC 완료, 구현 대기 |
+| [SPEC-FEED-001](./SPEC-FEED-001/spec.md) | 게시판별 RSS 2.0 / Atom 1.0 피드 (Next.js Route Handler) | BOARD-CRUD, DOCUMENT, COMMENT | P2 | ✅ 구현 완료 (Slice A/B/C, 12/12 태스크) |
 
-> rss 레거시 모듈(SPEC-MODULE-BACKLOG-001 §1.4 KEEP)의 후속 구현. `app/[mid]/rss/route.ts` + `app/[mid]/atom/route.ts` 분리 라우트(공유 빌더), `listDocuments` PUBLIC-only 데이터 소스, 비밀글/임시저장/비공개 게시판 제외, `revalidate=300`+SWR+문서 이벤트 `revalidateTag` 3중 캐싱, `Board.feedConfig Json` additive 컬럼 + board admin 확장 설정 패널. 36개 REQ(REQ-FEED-001~066), 3개 슬라이스. 통합 피드·팟캐스트 RSS·WebSub 명시 제외. KEEP 나머지 3종(SPEC-POLL-WIDGET-001/SPEC-MESSAGE-001/SPEC-NOTIFICATION-001)은 미작성 백로그.
+> rss 레거시 모듈(SPEC-MODULE-BACKLOG-001 §1.4 KEEP)의 후속 구현. `app/[mid]/rss/route.ts` + `app/[mid]/atom/route.ts` 분리 라우트(공유 빌더), `listDocuments` PUBLIC-only 데이터 소스, 비밀글/임시저장/비공개 게시판 제외, `revalidate=300`+SWR+문서 이벤트 `revalidateTag` 3중 캐싱, `Board.feedConfig Json` additive 컬럼 + board admin 확장 설정 패널. 36개 REQ(REQ-FEED-001~066), 3개 슬라이스 전체 완료. `pnpm tsc --noEmit` 0 errors / vitest 67/67 통과 / expert-security 리뷰 CRITICAL·HIGH 0건. 통합 피드·팟캐스트 RSS·WebSub 명시 제외. KEEP 나머지 3종(SPEC-POLL-WIDGET-001/SPEC-MESSAGE-001/SPEC-NOTIFICATION-001)은 미작성 백로그.
 
 ### Meta-Plan 문서 (참조)
 
@@ -160,9 +160,9 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ### 즉시 가능
 
-Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). Phase 7(backlog follow-up)이 시작되었다:
+Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). Phase 7(backlog follow-up)이 진행 중이다:
 
-1. **`SPEC-FEED-001`** (📝 SPEC 완료, 구현 대기) — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목의 첫 구현 SPEC. 즉시 `/moai run SPEC-FEED-001` 호출 가능(Slice A: 빌더+라우트 → B: 캐싱 → C: 관리설정).
+1. **`SPEC-FEED-001`** (✅ 구현 완료) — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목의 첫 구현 SPEC, Slice A/B/C 전체 완료.
 2. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — KEEP 나머지 3종(poll 위젯·쪽지·알림센터)은 미작성. 우선순위를 골라 `/moai plan` 호출(예: SPEC-NOTIFICATION-001 또는 SPEC-MESSAGE-001).
 3. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증
 

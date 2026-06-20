@@ -16,5 +16,9 @@ export async function register(): Promise<void> {
     // File 패키지 이벤트 구독 등록
     const { registerFileEvents } = await import('./lib/file-init');
     registerFileEvents();
+
+    // Feed 캐시 무효화 이벤트 구독 등록
+    const { registerFeedEvents } = await import('./lib/feed-init');
+    registerFeedEvents();
   }
 }

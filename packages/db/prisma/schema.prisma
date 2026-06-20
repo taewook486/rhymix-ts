@@ -661,6 +661,8 @@ model Board {
   protectDeleteComment Int            @default(0)
   protectUpdateComment Int            @default(0)
   permissions          Json           @default("{}")
+  // SPEC-FEED-001 REQ-FEED-050: 게시판별 RSS/Atom 피드 설정 (additive, Zod 검증은 boardFeedConfigSchema)
+  feedConfig           Json           @default("{}")
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
 

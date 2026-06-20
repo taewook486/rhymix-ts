@@ -9,14 +9,59 @@
  */
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { auth } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 import { getModuleDefinition } from '@/lib/modules/registry';
+import { boardFeedConfigSchema, resolveFeedAlternates } from '@rhymix-ts/board/feed';
 
 interface ViewPageProps {
   params: Promise<{ mid: string; id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+/**
+ * REQ-FEED-007: 게시판 피드 자동 검출을 위한 메타데이터 생성.
+ * 문서 상세 페이지에서도 피드 링크를 제공한다 (피드는 게시판 단위, 문서 단위 아님).
+ *
+ * @MX:SPEC: SPEC-FEED-001 REQ-FEED-007
+ */
+export async function generateMetadata({ params }: ViewPageProps): Promise<Metadata> {
+  const { mid } = await params;
+  const h = await headers();
+  const siteIdStr = h.get('x-site-id');
+  const siteId = siteIdStr != null ? Number(siteIdStr) : NaN;
+
+  // siteId가 유효하지 않은 경우 빈 메타데이터 반환
+  if (!Number.isFinite(siteId) || siteId <= 0) {
+    return {};
+  }
+
+  const instance = await getModuleInstanceByMid(siteId, mid, { prisma });
+  if (!instance || instance.moduleCode !== 'board') {
+    return {};
+  }
+
+  const board = await prisma.board.findUnique({
+    where: { moduleInstanceId: instance.id },
+  });
+  if (!board) {
+    return {};
+  }
+
+  const feedConfig = boardFeedConfigSchema.parse(board.feedConfig ?? {});
+  const alternates = resolveFeedAlternates(feedConfig, mid);
+
+  if (!alternates) {
+    return {};
+  }
+
+  return {
+    alternates: {
+      types: alternates,
+    },
+  };
 }
 
 export default async function ViewPage({ params, searchParams }: ViewPageProps) {

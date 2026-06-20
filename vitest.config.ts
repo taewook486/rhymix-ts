@@ -40,6 +40,8 @@ export default defineConfig({
     setupFiles: ['./apps/web/vitest.setup.ts'],
     environmentMatchGlobs: [
       ['packages/board/src/components/**/*.test.tsx', 'jsdom'],
+      // SPEC-FEED-001 Slice C (T-011): board admin feed 설정 페이지 렌더 테스트
+      ['apps/web/app/admin/boards/**/*.test.tsx', 'jsdom'],
       // SPEC-LAYOUT-001: themes DefaultLayout 렌더링 테스트
       ['themes/**/*.test.tsx', 'jsdom'],
       // SPEC-WIDGET-001: 위젯 컴포넌트 및 렌더 파이프라인 테스트

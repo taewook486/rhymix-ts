@@ -13,7 +13,8 @@
     "./actions/comment-create": "./src/actions/comment-create.ts",
     "./actions/comment-update": "./src/actions/comment-update.ts",
     "./actions/comment-delete": "./src/actions/comment-delete.ts",
-    "./category": "./src/category.ts"
+    "./category": "./src/category.ts",
+    "./feed": "./src/feed/index.ts"
   },
   "scripts": {
     "lint": "echo 'no lint'",

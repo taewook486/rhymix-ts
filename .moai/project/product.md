@@ -47,6 +47,12 @@
 | SPEC-POINT-001 | @rhymix-ts/point 독립 패키지 | 24 |
 | SPEC-THEME-001 | 테마/레이아웃/스킨 레지스트리 + 다크 모드 + 디자인 토큰 | 946 |
 
+### Phase 7 — Backlog Follow-up (레거시 KEEP 모듈 후속 구현)
+
+| SPEC | 기능 | 테스트 |
+|------|------|--------|
+| SPEC-FEED-001 | 게시판별 RSS 2.0 / Atom 1.0 피드 (캐싱+자동탐색+관리 설정) | 67 |
+
 ## 계획된 기능
 
 | SPEC | 기능 |

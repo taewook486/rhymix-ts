@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### SPEC-FEED-001 — 게시판별 RSS 2.0 / Atom 1.0 피드
+
+- **피드 빌더 + 라우트** (`packages/board/src/feed/`, `apps/web/app/[mid]/{rss,atom}/route.ts`)
+  - 공유 feed-builder 서비스: RSS 2.0 / Atom 1.0 동시 직렬화 (`build-feed.ts`)
+  - `boardFeedConfigSchema` Zod 스키마: `enabled`/`itemCount`/`fullContent`/`excerptLength`/`description`/`imageUrl`/`copyright`
+  - XML 안전 헬퍼: 엔티티 이스케이프 + CDATA `]]>` 종료 시퀀스 방어
+  - PUBLIC-only 데이터 소스(`listDocuments`), 비밀글/임시저장/비공개 게시판 자동 제외
+- **캐싱 + 자동탐색 + 이벤트 무효화**
+  - 라우트 `revalidate=300` + `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`
+  - `feed:{instanceId}` 캐시 태그 + 문서 생성/수정/삭제 이벤트 구독(`apps/web/lib/feed-init.ts` 신규) → `revalidateTag`
+  - board 목록/상세 페이지 `generateMetadata`(alternates.types) 기반 RSS/Atom 자동탐색 링크
+- **관리자 설정 패널** (`apps/web/app/admin/boards/[mid]/feed/page.tsx`)
+  - board admin 셸 확장, 트랜잭션 저장 + 캐시 무효화
+- **DB 마이그레이션**
+  - `20260624000000_spec_feed_001_board_feedconfig`: `Board.feedConfig Json @default("{}")` additive 컬럼 추가
+- 테스트: 67/67 passing (9개 테스트 파일, 단위+e2e) / `pnpm tsc --noEmit` 0 errors / expert-security 리뷰 CRITICAL·HIGH 0건
+
 #### SPEC-POINT-001 — 포인트 시스템 독립 패키지 + 크로스 모듈 통합
 
 - **`@rhymix-ts/point` 신규 패키지** (`packages/point/`)

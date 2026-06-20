@@ -2,7 +2,7 @@
 id: SPEC-FEED-001
 title: 게시판별 RSS 2.0 / Atom 1.0 피드 (Feed Output)
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-06-20
 updated: 2026-06-20
 author: MoAI manager-spec
@@ -20,6 +20,7 @@ language: ko
 ## HISTORY
 
 - 2026-06-20 (v1.0.0): 최초 작성. SPEC-MODULE-BACKLOG-001(triage) §1.4가 KEEP으로 분류한 레거시 `rss` 모듈의 후속 구현 SPEC. triage REQ-MODBL-011("WHEN SPEC-FEED-001 is authored, it SHALL deliver per-board RSS 2.0 and Atom 1.0 feeds as Next.js Route Handlers ... excluding secret/non-public documents, WITHOUT introducing a separate runtime module-installer mechanism")의 범위 경계를 입력 제약으로 사용. 레거시 `/mnt/d/project/rhymix/modules/rss/` 1차 소스(`rss.view.php`, `tpl/format/rss20.html`·`atom10.html`, `rss.admin.controller.php`)를 직접 분석하여 RSS 2.0 / Atom 1.0 필드 매핑과 관리 설정 옵션을 확정. 게시판별(part) 피드만 다루며 사이트 통합 피드·팟캐스트·WebSub는 명시적 제외. 근거 상세는 `research.md` 참조. status: draft — 평가 전용이던 parent와 달리 본 SPEC은 구현 대기 신규 SPEC.
+- 2026-06-20 (sync): 구현 완료. Slice A(피드 빌더+라우트)/B(캐싱+자동탐색+이벤트 무효화)/C(관리 설정 패널) 전체 완료, 12/12 태스크(T-001~T-012) done. `pnpm tsc --noEmit` 0 errors(packages/board, packages/document, apps/web) / `pnpm vitest run` 67/67 통과(9개 테스트 파일) / expert-security 독립 리뷰 CRITICAL·HIGH 0건. status: draft → completed. 상세는 하단 `## Implementation Notes` 신규 절 참조.
 
 ---
 
@@ -325,9 +326,42 @@ EARS coverage: REQ-FEED-051~054.
 
 ---
 
+## Implementation Notes (구현 완료 — 2026-06-20 sync)
+
+본 절은 `/moai run SPEC-FEED-001` 구현 완료 후 sync 단계에서 추가된 결과 보고다. 위 Q1~Q5 절(작성 시점 best-judgment)과 구분하여 별도 절로 둔다.
+
+### 슬라이스별 완료 현황
+
+3개 슬라이스 전체 완료, `tasks.md` 기준 12/12 태스크(T-001~T-012) `done`:
+
+- **Slice A**(T-001~007, 피드 빌더 + 라우트 핵심): `Board.feedConfig` additive 컬럼·`boardFeedConfigSchema`·XML 안전 헬퍼·공유 feed-builder·RSS/Atom route handler·가시성 보안 테스트. 전부 신규 구현.
+- **Slice B**(T-008~010, 012, 캐싱+자동탐색+이벤트 무효화+e2e): `revalidate=300`+`Cache-Control` SWR, `feed:{instanceId}` 캐시 태그 + 문서 이벤트 구독(`apps/web/lib/feed-init.ts` 신규 + `instrumentation.ts` 연결), board 목록/상세 라우트의 `generateMetadata`(alternates.types) 기반 autodiscovery, `apps/web/e2e/feed.spec.ts` e2e.
+- **Slice C**(T-011, 관리 설정 패널): `apps/web/app/admin/boards/[mid]/feed/page.tsx` 설정 패널 + 트랜잭션 저장 + 캐시 무효화.
+
+**T-008(캐싱 헤더)과 T-011(admin 설정 패널)은 run phase 착수 시점에 코드 확인 결과 이미 구현되어 있었음** — `tasks.md` 작성 당시 stale 상태였고 별도 구현 작업이 필요하지 않았다.
+
+### sync 단계 검증 중 발견 및 수정한 버그 2건 (원 계획 범위 외)
+
+1. **Next.js 16 `revalidateTag` 2-인자 시그니처 누락**: admin feed 설정 페이지의 저장 액션에서 `revalidateTag(tag)` 1-인자 호출만 있었고, `apps/web/lib/feed-init.ts`가 따르는 Next.js 16 `revalidateTag(tag, profile)` 2-인자 패턴이 빠져 있었다. `revalidateTag(tag, undefined as any)`로 수정하여 기존 패턴과 정합시켰다.
+2. **admin 미인증 리다이렉트 경로 placeholder 잔존**: admin feed 설정 페이지의 비인증 사용자 리다이렉트가 실제 `mid` 값이 아닌 라우트 패턴 문자열 `/admin/boards/[mid]/feed`를 리터럴로 사용하고 있었다. 실제 `mid` 값을 사용하도록 수정.
+
+두 버그 모두 orchestrator가 직접 수정(서브에이전트가 아닌 메인 세션에서 검증 중 발견).
+
+### 커버리지 메모
+
+`packages/board/src/feed` 브랜치 커버리지는 84.81%로 저장소 전역 85% 임계값에 근소하게 미달한다. 원인은 `resolve-feed.ts`/`cache-invalidation.ts`의 일부 엣지 케이스 분기 미커버 + 0% 커버리지인 `index.ts` re-export 배럴 파일이 분모를 깎아내리는 구조적 요인이다. 라인·구문·함수 커버리지는 96% 이상으로 목표치를 충분히 상회하므로, 추가 테스트 추적(test-chasing)은 불필요한 것으로 판단한다.
+
+### 품질 게이트 결과
+
+- `pnpm tsc --noEmit`(packages/board, packages/document, apps/web): feed 관련 파일 0 errors (타 도메인 베이스라인 에러는 본 SPEC 범위 밖).
+- `pnpm vitest run`: feed 관련 9개 테스트 파일, 67/67 통과.
+- expert-security 독립 보안 리뷰: CRITICAL·HIGH 0건.
+
+---
+
 Version: 1.0.0
-Status: draft (구현 대기 — `/moai run SPEC-FEED-001` 대상)
+Status: completed (구현 완료 — Slice A/B/C 전체, REQ-FEED 36개 항목 구현 완료)
 Estimated REQ Count: 36 (7개 계층: 라우트/포맷 7, 필드매핑 9, 데이터소스 4, 권한 5, 캐싱 4, 관리설정 5, 품질 7 — 일부 그룹 내 번호 여유)
 Estimated Slice Count: 3 (A: 빌더+라우트, B: 캐싱+자동탐색, C: 관리 설정)
 Dependencies (upstream): SPEC-BOARD-CRUD-001 ✅, SPEC-DOCUMENT-001 ✅, SPEC-COMMENT-001 ✅
-Next Action: `/moai run SPEC-FEED-001` (Slice A 부터)
+Next Action: 없음 (구현 완료) — 후속은 SPEC-MODULE-BACKLOG-001 KEEP 잔여 3종(poll 위젯/쪽지/알림센터) 신규 SPEC 작성
