@@ -1,8 +1,8 @@
 ---
 id: SPEC-ADMIN-002
 title: 관리자 패널 미구현 기능 완성 (레거시 분석 기반)
-version: 1.2.1
-status: in-progress
+version: 1.3.0
+status: completed
 created: 2026-06-14
 updated: 2026-06-20
 author: MoAI manager-spec
@@ -543,11 +543,17 @@ Phase 1 구현 완료 후 독립 보안 리뷰에서 4건의 이슈가 발견되
 
 알려진 갭 (정직하게 기록, 은폐하지 않음):
 
-1. **Prisma 마이그레이션 미생성** — 신규 테이블 3종(`SpamDeniedWord`/`SpamDeniedIp`/`SpamRule`)에 대해 `prisma generate`는 실행했으나(클라이언트 타입 확보), 이 환경에 로컬 Postgres가 없어 `prisma migrate dev`를 실행할 수 없었다. 실제 dev DB가 있는 환경에서 마이그레이션 파일 생성 전까지는 배포 차단 요인이다.
+1. **Prisma 마이그레이션 미생성** — ~~신규 테이블 3종...~~ **(2026-06-20 해소)** `packages/db/prisma/migrations/20260620000000_spec_admin_002_slice2e_spamfilter/`에 마이그레이션 파일이 생성되어 있음을 확인. 배포 차단 요인 해소.
 2. **acceptance.md AC 공백** — REQ-ADMIN2-111, 115, 004, 005, 006, 125, 146에 대응하는 AC 항목이 `acceptance.md`에 없다. 본 세션 이전부터 존재하던 SPEC 문서화 갭으로, 본 세션이 신규로 만든 것은 아니나 차후 manager-spec 패스에서 보강이 필요하다.
 3. **페이지 레벨 단위 테스트 부재** — 신규 UI 페이지(advanced/async/seo/sitelock/spamfilter/stats/domains/modules[id])에는 페이지 단위 테스트가 없다. 기존 프로젝트 관행(대부분의 설정 페이지가 페이지 레벨 미테스트, `settings/site/page.test.tsx`만 예외)과 동일하므로 회귀는 아니다.
 4. **커밋 비원자성** — 환경의 worktree 격리 한계로 2D+2E+2F+2G+2H 구현이 커밋 `127f0e6` 1건에 모두 묶였고, 이후 범위 수정 커밋 `2f8b242`가 별도로 추가됐다. git history는 재작성하지 않는다.
 
-### M3 (Phase 3 / P3) — 미착수
+### M3 (Phase 3 / P3) — 완료 (2026-06-20)
 
-plan.md 마일스톤 정의에 따라 M3(Slice 3A~3G — 설문, 태그·별칭·닉네임 이력, 회원 부가 설정, 레이아웃 미리보기/복사, 디버그/캡챠/기타, 쪽지·서버환경·모듈 카테고리·코어정리, 비동기 작업 큐 모니터링[161, 선택])는 아직 구현되지 않았다.
+plan.md 마일스톤 정의에 따른 M3(Slice 3A~3G)의 최종 상태:
+
+- Slice 3A(설문), 3B(태그/별칭/닉네임 이력), 3D(레이아웃 미리보기/복제·메뉴 단축·페이지 모바일 콘텐츠), 3E(디버그/캡챠/쪽지), 3E2(파일 기타설정/대시보드 위젯), 3F(서버환경/코어정리) — 모두 구현·테스트·커밋 완료(`40ec2af`, `7523006`, `accc895`, `ae1214f`, `7f13866`, `f00953a`).
+- Slice 3C(회원 부가 설정, REQ-ADMIN2-049/028) — REQ-028은 Slice 3D에서 기구현 확인(추가 작업 불필요), REQ-049는 전제 조건(기존 구성된 소셜 프로바이더)이 코드베이스에 부재하여 사용자 확인 후 DEFERRED·백로그 재분류. 코드 변경 없음.
+- Slice 3G(비동기 작업 큐 모니터링, REQ-161, 선택) — 사용자가 비채택을 결정하여 본 SPEC 범위에서 제외.
+
+M3을 포함해 SPEC-ADMIN-002의 모든 Phase(P1~P3)가 종료 상태에 도달했다.
