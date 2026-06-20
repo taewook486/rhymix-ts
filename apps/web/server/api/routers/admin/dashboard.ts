@@ -1,14 +1,16 @@
 /**
- * admin.dashboard tRPC 라우터 — SPEC-ADMIN-002 Slice 1A.
+ * admin.dashboard tRPC 라우터 — SPEC-ADMIN-002 Slice 1A + Slice 3E.
  *
  * 대시보드 위젯 데이터 제공:
  * - 방문자 통계 (일별/월별)
  * - 최근 문서 (10개)
  * - 최근 댓글 (10개)
+ * - 위젯 표시 여부 (REQ-ADMIN2-008)
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-001, REQ-ADMIN2-002, REQ-ADMIN2-003, REQ-ADMIN2-010
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-001, REQ-ADMIN2-002, REQ-ADMIN2-003, REQ-ADMIN2-008, REQ-ADMIN2-010
  */
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 import { router, protectedAdminProcedure } from '../../trpc';
 
 /**
@@ -165,5 +167,69 @@ export const adminDashboardRouter = router({
         boardMid: comment.document.board.moduleInstance.mid,
         regdate: comment.regdate,
       }));
+    }),
+
+  /**
+   * 위젯 표시 여부 조회
+   * - REQ-ADMIN2-008: 관리자 계정별 위젯 표시 여부 (JSON 형식)
+   */
+  getWidgetPrefs: protectedAdminProcedure
+    .query(async ({ ctx }) => {
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+        select: { dashboardWidgetPrefs: true },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // 기본값 반환 (모든 위젯 표시)
+      const prefs = user.dashboardWidgetPrefs as Record<string, boolean> | null;
+      return {
+        visitStats: prefs?.visitStats ?? true,
+        recentDocuments: prefs?.recentDocuments ?? true,
+        recentComments: prefs?.recentComments ?? true,
+        updateNotification: prefs?.updateNotification ?? true,
+        summaryCounterStrip: prefs?.summaryCounterStrip ?? true,
+      };
+    }),
+
+  /**
+   * 위젯 표시 여부 업데이트
+   * - REQ-ADMIN2-008: 관리자 계정별 위젯 표시 여부 업데이트
+   */
+  updateWidgetPrefs: protectedAdminProcedure
+    .input(z.object({
+      visitStats: z.boolean().optional(),
+      recentDocuments: z.boolean().optional(),
+      recentComments: z.boolean().optional(),
+      updateNotification: z.boolean().optional(),
+      summaryCounterStrip: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // 기존 설정 가져오기
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+        select: { dashboardWidgetPrefs: true },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // 기존 값과 병합
+      const existingPrefs = user.dashboardWidgetPrefs as Record<string, boolean> | null;
+      const updatedPrefs = {
+        ...(existingPrefs || {}),
+        ...input,
+      };
+
+      await ctx.prisma.user.update({
+        where: { id: ctx.session.user.id },
+        data: { dashboardWidgetPrefs: updatedPrefs as unknown as Prisma.JsonObject },
+      });
+
+      return updatedPrefs;
     }),
 });

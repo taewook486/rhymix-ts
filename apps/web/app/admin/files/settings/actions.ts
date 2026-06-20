@@ -1,8 +1,8 @@
 'use server';
 /**
- * Admin 파일 설정 Server Action — SPEC-ADMIN-002 Slice 2B (REQ-ADMIN2-080, REQ-ADMIN2-081).
+ * Admin 파일 설정 Server Action — SPEC-ADMIN-002 Slice 2B + Slice 3E (REQ-ADMIN2-080, REQ-ADMIN2-081, REQ-ADMIN2-082).
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-080, REQ-ADMIN2-081
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-080, REQ-ADMIN2-081, REQ-ADMIN2-082
  */
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -29,6 +29,11 @@ const DownloadSettingsSchema = z.object({
   downloadPermission: z.enum(['unlimited', 'member_only', 'point_deduction']),
   pointDeduction: z.coerce.number().int().min(0).max(1000).optional(),
   hotlinkProtection: z.boolean(),
+});
+
+const OtherSettingsSchema = z.object({
+  thumbnailGenerationStrategy: z.enum(['on_demand', 'eager']),
+  storagePathStrategy: z.enum(['flat', 'date_sharded']),
 });
 
 export async function updateUploadSettingsAction(
@@ -88,6 +93,33 @@ export async function updateDownloadSettingsAction(
       return { error: err.message };
     }
     return { error: '다운로드 설정 저장 중 오류가 발생했습니다.' };
+  }
+
+  revalidatePath('/admin/files/settings');
+  return { success: true };
+}
+
+export async function updateOtherSettingsAction(
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = OtherSettingsSchema.safeParse({
+    thumbnailGenerationStrategy: formData.get('thumbnailGenerationStrategy'),
+    storagePathStrategy: formData.get('storagePathStrategy'),
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  try {
+    const caller = await getServerCaller();
+    await caller.admin.file.updateOtherSettings(parsed.data);
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message };
+    }
+    return { error: '기타 설정 저장 중 오류가 발생했습니다.' };
   }
 
   revalidatePath('/admin/files/settings');

@@ -303,6 +303,8 @@ model User {
   lastLoginAt       DateTime?  @db.Timestamptz
   lastLoginIp       String?
   extraVars         Json       @default("{}")
+  // SPEC-ADMIN-002 Slice 3E REQ-ADMIN2-008: 대시보드 위젯 표시 여부 (관리자 계정별)
+  dashboardWidgetPrefs Json? @default("{}")
   createdAt         DateTime   @default(now()) @db.Timestamptz
   updatedAt         DateTime   @updatedAt @db.Timestamptz
   deletedAt         DateTime?  @db.Timestamptz

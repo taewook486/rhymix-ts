@@ -1,15 +1,16 @@
 'use client';
 /**
- * 파일 설정 폼 (Client Component) — SPEC-ADMIN-002 Slice 2B (REQ-ADMIN2-080, REQ-ADMIN2-081).
+ * 파일 설정 폼 (Client Component) — SPEC-ADMIN-002 Slice 2B + Slice 3E (REQ-ADMIN2-080, REQ-ADMIN2-081, REQ-ADMIN2-082).
  */
 import { useActionState } from 'react';
-import { updateUploadSettingsAction, updateDownloadSettingsAction, type ActionState } from './actions';
+import { updateUploadSettingsAction, updateDownloadSettingsAction, updateOtherSettingsAction, type ActionState } from './actions';
 
 const initialActionState: ActionState = {};
 
 export function FileSettingsForm({
   initialUpload,
   initialDownload,
+  initialOther,
 }: {
   initialUpload: {
     allowedExtensions: string[];
@@ -22,6 +23,10 @@ export function FileSettingsForm({
     pointDeduction?: number;
     hotlinkProtection: boolean;
   };
+  initialOther: {
+    thumbnailGenerationStrategy: 'on_demand' | 'eager';
+    storagePathStrategy: 'flat' | 'date_sharded';
+  };
 }) {
   const [uploadState, uploadAction, isUploadPending] = useActionState(
     updateUploadSettingsAction,
@@ -30,6 +35,11 @@ export function FileSettingsForm({
 
   const [downloadState, downloadAction, isDownloadPending] = useActionState(
     updateDownloadSettingsAction,
+    initialActionState,
+  );
+
+  const [otherState, otherAction, isOtherPending] = useActionState(
+    updateOtherSettingsAction,
     initialActionState,
   );
 
@@ -222,6 +232,75 @@ export function FileSettingsForm({
               className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             >
               {isDownloadPending ? '저장 중...' : '다운로드 설정 저장'}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      {/* 기타 설정 */}
+      <form action={otherAction} className="border rounded bg-white p-6">
+        <h2 className="text-lg font-semibold mb-4">기타 설정</h2>
+
+        {otherState.error && (
+          <p className="text-sm text-red-600 mb-4" role="alert">
+            {otherState.error}
+          </p>
+        )}
+
+        {otherState.success && (
+          <p className="text-sm text-green-600 mb-4" role="status">
+            기타 설정이 저장되었습니다.
+          </p>
+        )}
+
+        <div className="space-y-4 max-w-2xl">
+          <div>
+            <label htmlFor="thumbnailGenerationStrategy" className="block text-sm font-medium mb-1">
+              썸네일 생성 방식
+            </label>
+            <select
+              id="thumbnailGenerationStrategy"
+              name="thumbnailGenerationStrategy"
+              className="w-full border rounded px-3 py-2"
+              defaultValue={initialOther.thumbnailGenerationStrategy}
+            >
+              <option value="on_demand">요청 시 생성</option>
+              <option value="eager">업로드 시 즉시 생성</option>
+            </select>
+            <p className="text-sm text-gray-500 mt-1">
+              {initialOther.thumbnailGenerationStrategy === 'eager'
+                ? '파일 업로드 시 즉시 썸네일을 생성합니다. 저장 공간을 더 사용하지만 조회 시 빠릅니다.'
+                : '썸네일 요청 시 생성합니다. 저장 공간을 절약하지만 첫 조회 시 생성 시간이 필요합니다.'}
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="storagePathStrategy" className="block text-sm font-medium mb-1">
+              저장 경로 전략
+            </label>
+            <select
+              id="storagePathStrategy"
+              name="storagePathStrategy"
+              className="w-full border rounded px-3 py-2"
+              defaultValue={initialOther.storagePathStrategy}
+            >
+              <option value="flat">단일 디렉토리</option>
+              <option value="date_sharded">날짜별 하위 디렉토리</option>
+            </select>
+            <p className="text-sm text-gray-500 mt-1">
+              {initialOther.storagePathStrategy === 'flat'
+                ? '모든 파일을 단일 디렉토리에 저장합니다. 관리가 간단하지만 파일이 많아지면 성능이 저하될 수 있습니다.'
+                : '날짜별 하위 디렉토리에 파일을 저장합니다. 파일 수가 많을 때 성능이 우수합니다.'}
+            </p>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <button
+              type="submit"
+              disabled={isOtherPending}
+              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isOtherPending ? '저장 중...' : '기타 설정 저장'}
             </button>
           </div>
         </div>

@@ -7,8 +7,9 @@
  * - purgeOrphans: 고아 파일 정리 (REQ-ADMIN2-079)
  * - getUploadSettings/updateUploadSettings: 파일 업로드 설정 (REQ-ADMIN2-080)
  * - getDownloadSettings/updateDownloadSettings: 파일 다운로드 설정 (REQ-ADMIN2-081)
+ * - getOtherSettings/updateOtherSettings: 파일 기타 설정 (REQ-ADMIN2-082)
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-078, REQ-ADMIN2-079, REQ-ADMIN2-080, REQ-ADMIN2-081
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-078, REQ-ADMIN2-079, REQ-ADMIN2-080, REQ-ADMIN2-081, REQ-ADMIN2-082
  */
 import { z } from 'zod';
 import { router, protectedAdminProcedure } from '../../trpc';
@@ -18,6 +19,8 @@ import {
   updateFileUploadSettings,
   getFileDownloadSettings,
   updateFileDownloadSettings,
+  getFileOtherSettings,
+  updateFileOtherSettings,
 } from '@rhymix-ts/admin';
 
 export const adminFileRouter = router({
@@ -148,5 +151,27 @@ export const adminFileRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       return updateFileDownloadSettings(input, { prisma: ctx.prisma });
+    }),
+
+  /**
+   * 파일 기타 설정 조회
+   * - REQ-ADMIN2-082: 썸네일 생성 방식, 저장 경로 전략
+   */
+  getOtherSettings: protectedAdminProcedure
+    .query(async ({ ctx }) => {
+      return getFileOtherSettings({ prisma: ctx.prisma });
+    }),
+
+  /**
+   * 파일 기타 설정 업데이트
+   * - REQ-ADMIN2-082: 썸네일 생성 방식, 저장 경로 전략
+   */
+  updateOtherSettings: protectedAdminProcedure
+    .input(z.object({
+      thumbnailGenerationStrategy: z.enum(['on_demand', 'eager']),
+      storagePathStrategy: z.enum(['flat', 'date_sharded']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return updateFileOtherSettings(input, { prisma: ctx.prisma });
     }),
 });
