@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-20 (SPEC-MODULE-BACKLOG-001 평가 SPEC 작성 완료 — 미포팅 레거시 모듈 14종 triage. KEEP 4 / DROP 8 / NEEDS-RESEARCH 2)
+> 마지막 갱신: 2026-06-20 (SPEC-FEED-001 작성 완료 — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목 후속 구현 SPEC 첫 착수)
 
 ## 기술 스택 (확정)
 
@@ -31,6 +31,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 2/2 | 🟢 구현 완료 |
 | 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 1/1 | 🟢 구현 완료 |
 | 6. ADMIN LEGACY PARITY | 레거시 분석 기반 admin 미구현 기능 완성 | 1 | 1/1 | 🟢 구현 완료 (M1~M3 전체, status: completed v1.3.0) |
+| 7. BACKLOG FOLLOW-UP | KEEP 레거시 모듈 후속 구현 (rss/poll/message/notification) | 1 | 0/1 | 📝 SPEC 작성 단계 (FEED-001 구현 대기) |
 
 ---
 
@@ -100,6 +101,16 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 > MASTER-PLAN-002 §8.1·§5.13의 위임에 따라 미포팅 레거시 PHP 모듈 14종(poll/tag/trash/rss/counter/importer/krzip/editor/session/communication/message/ncenterlite/integration_search/autoinstall)을 1차 소스 직접 분석으로 triage. 결과: **KEEP 4** (poll→프론트 투표 위젯, rss→피드, communication→쪽지, ncenterlite→알림센터) · **DROP 8** (counter/editor/session/message/krzip/autoinstall + tag·trash 독립화 — 이미 구현됐거나 Auth.js/Next.js/Tiptap/npm으로 대체) · **NEEDS-RESEARCH 2** (importer→데이터 마이그레이션 SPEC 종속, integration_search→검색 백엔드 결정 선행). KEEP 4종 후속 SPEC 후보: SPEC-POLL-WIDGET-001 / SPEC-FEED-001 / SPEC-MESSAGE-001 / SPEC-NOTIFICATION-001 (모두 가칭, 미작성).
 
+### Phase 7: BACKLOG FOLLOW-UP (KEEP 모듈 후속 구현, P2~P3)
+
+> SPEC-MODULE-BACKLOG-001 triage 의 KEEP 4종(rss 피드 · poll 위젯 · 쪽지 · 알림센터)을 개별 구현 SPEC으로 분리하는 Phase. Phase 1~6 코어 포팅 완료 이후의 backlog follow-up.
+
+| ID | 제목 | 의존 | 우선순위 | 상태 |
+|---|---|---|---|---|
+| [SPEC-FEED-001](./SPEC-FEED-001/spec.md) | 게시판별 RSS 2.0 / Atom 1.0 피드 (Next.js Route Handler) | BOARD-CRUD, DOCUMENT, COMMENT | P2 | 📝 SPEC 완료, 구현 대기 |
+
+> rss 레거시 모듈(SPEC-MODULE-BACKLOG-001 §1.4 KEEP)의 후속 구현. `app/[mid]/rss/route.ts` + `app/[mid]/atom/route.ts` 분리 라우트(공유 빌더), `listDocuments` PUBLIC-only 데이터 소스, 비밀글/임시저장/비공개 게시판 제외, `revalidate=300`+SWR+문서 이벤트 `revalidateTag` 3중 캐싱, `Board.feedConfig Json` additive 컬럼 + board admin 확장 설정 패널. 36개 REQ(REQ-FEED-001~066), 3개 슬라이스. 통합 피드·팟캐스트 RSS·WebSub 명시 제외. KEEP 나머지 3종(SPEC-POLL-WIDGET-001/SPEC-MESSAGE-001/SPEC-NOTIFICATION-001)은 미작성 백로그.
+
 ### Meta-Plan 문서 (참조)
 
 | 문서 | 역할 | 상태 |
@@ -149,10 +160,11 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ### 즉시 가능
 
-Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). 다음 작업은 신규 SPEC 작성이 필요하다:
+Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). Phase 7(backlog follow-up)이 시작되었다:
 
-1. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — 미포팅 레거시 모듈 14종 triage 완료. KEEP 4종(poll 위젯·rss 피드·쪽지·알림센터)이 후속 SPEC 후보로 등록됨. 다음은 그중 우선순위를 골라 `/moai plan` 호출(예: rss 또는 알림센터부터 권고).
-2. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증
+1. **`SPEC-FEED-001`** (📝 SPEC 완료, 구현 대기) — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목의 첫 구현 SPEC. 즉시 `/moai run SPEC-FEED-001` 호출 가능(Slice A: 빌더+라우트 → B: 캐싱 → C: 관리설정).
+2. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — KEEP 나머지 3종(poll 위젯·쪽지·알림센터)은 미작성. 우선순위를 골라 `/moai plan` 호출(예: SPEC-NOTIFICATION-001 또는 SPEC-MESSAGE-001).
+3. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증
 
 ### 완료된 전체 워크플로우
 
