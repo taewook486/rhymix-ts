@@ -33,6 +33,10 @@ import {
   updatePollConfig,
   getTagSettings,
   updateTagSettings,
+  getCommunicationSettings,
+  updateCommunicationSettings,
+  getDebugSettings,
+  updateDebugSettings,
 } from './settings';
 import type { PrismaClient } from '@prisma/client';
 import { ZodError } from 'zod';
@@ -756,5 +760,306 @@ describe('updateTagSettings — REQ-ADMIN2-087/156', () => {
         { prisma: mockPrisma },
       ),
     ).rejects.toThrow(ZodError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Communication Settings Tests (REQ-ADMIN2-143)
+// ---------------------------------------------------------------------------
+
+describe('getCommunicationSettings', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default communication settings when not configured', async () => {
+    const result = await getCommunicationSettings({ prisma: mockPrisma });
+
+    expect(result.enabled).toBe(false);
+    expect(result.inboxLimit).toBe(100);
+  });
+
+  it('should return stored communication settings', async () => {
+    const settings = new Map();
+    settings.set('communication', { enabled: true, inboxLimit: 50 });
+    (mockPrisma as any).siteSetting.findUnique = async ({ where }: any) => {
+      const key = where?.siteId_key?.key;
+      const value = settings.get(key);
+      if (value) {
+        return { id: 1, siteId: 1, key, value };
+      }
+      return null;
+    };
+
+    const result = await getCommunicationSettings({ prisma: mockPrisma });
+
+    expect(result.enabled).toBe(true);
+    expect(result.inboxLimit).toBe(50);
+  });
+});
+
+describe('updateCommunicationSettings', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update communication settings successfully', async () => {
+    const result = await updateCommunicationSettings(
+      { enabled: true, inboxLimit: 200 },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.enabled).toBe(true);
+    expect(result.inboxLimit).toBe(200);
+  });
+
+  it('should reject inboxLimit below minimum', async () => {
+    await expect(
+      updateCommunicationSettings(
+        { enabled: true, inboxLimit: 0 },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+
+  it('should reject inboxLimit above maximum', async () => {
+    await expect(
+      updateCommunicationSettings(
+        { enabled: true, inboxLimit: 10001 },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+
+  it('should reject negative inboxLimit', async () => {
+    await expect(
+      updateCommunicationSettings(
+        { enabled: true, inboxLimit: -10 },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Debug Settings Tests (REQ-ADMIN2-117/159/160)
+// ---------------------------------------------------------------------------
+
+describe('getDebugSettings — REQ-ADMIN2-117/159/160', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default debug settings when not configured', async () => {
+    const result = await getDebugSettings({ prisma: mockPrisma });
+
+    expect(result.enabled).toBe(false);
+    expect(result.slowQueryThreshold).toBe(1.0);
+    expect(result.slowTriggerThreshold).toBe(1.0);
+    expect(result.slowWidgetThreshold).toBe(1.0);
+    expect(result.slowExternalThreshold).toBe(1.0);
+    expect(result.displayMethods).toEqual(['html_comment']);
+    expect(result.displayTarget).toBe('admin_only');
+    expect(result.allowedIps).toEqual([]);
+    expect(result.addQueryComment).toBe(false);
+    expect(result.showFullCallStack).toBe(false);
+    expect(result.deduplicateErrors).toBe(true);
+    expect(result.errorLogLevel).toBe('critical_only');
+  });
+
+  it('should return stored debug settings', async () => {
+    const settings = new Map();
+    settings.set('debug', {
+      enabled: true,
+      slowQueryThreshold: 0.5,
+      slowTriggerThreshold: 2.0,
+      slowWidgetThreshold: 1.5,
+      slowExternalThreshold: 3.0,
+      displayMethods: ['file_log', 'screen_panel'],
+      contentTypes: ['error', 'slow_query', 'slow_trigger'],
+      logFilePath: '/var/log/rhymix/debug.log',
+      displayTarget: 'allowed_ips',
+      allowedIps: ['192.168.1.100', '10.0.0.1'],
+      addQueryComment: true,
+      showFullCallStack: true,
+      deduplicateErrors: false,
+      errorLogLevel: 'all_errors_warnings',
+    });
+    (mockPrisma as any).siteSetting.findUnique = async ({ where }: any) => {
+      const key = where?.siteId_key?.key;
+      const value = settings.get(key);
+      if (value) {
+        return { id: 1, siteId: 1, key, value };
+      }
+      return null;
+    };
+
+    const result = await getDebugSettings({ prisma: mockPrisma });
+
+    expect(result.enabled).toBe(true);
+    expect(result.slowQueryThreshold).toBe(0.5);
+    expect(result.displayMethods).toEqual(['file_log', 'screen_panel']);
+    expect(result.logFilePath).toBe('/var/log/rhymix/debug.log');
+    expect(result.displayTarget).toBe('allowed_ips');
+    expect(result.allowedIps).toEqual(['192.168.1.100', '10.0.0.1']);
+  });
+});
+
+describe('updateDebugSettings — REQ-ADMIN2-117/159/160', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update debug settings successfully', async () => {
+    const result = await updateDebugSettings(
+      {
+        enabled: true,
+        slowQueryThreshold: 0.5,
+        slowTriggerThreshold: 1.0,
+        slowWidgetThreshold: 1.5,
+        slowExternalThreshold: 2.0,
+        displayMethods: ['html_comment', 'file_log'],
+        contentTypes: ['error', 'slow_query', 'slow_trigger'],
+        logFilePath: '/var/log/rhymix/debug_{date}.log',
+        displayTarget: 'admin_only',
+        allowedIps: ['127.0.0.1'],
+        addQueryComment: true,
+        showFullCallStack: true,
+        deduplicateErrors: false,
+        errorLogLevel: 'all_errors_warnings',
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.enabled).toBe(true);
+    expect(result.slowQueryThreshold).toBe(0.5);
+    expect(result.displayMethods).toEqual(['html_comment', 'file_log']);
+    expect(result.logFilePath).toBe('/var/log/rhymix/debug_{date}.log');
+    expect(result.addQueryComment).toBe(true);
+    expect(result.showFullCallStack).toBe(true);
+  });
+
+  it('should reject negative threshold values', async () => {
+    await expect(
+      updateDebugSettings(
+        {
+          enabled: true,
+          slowQueryThreshold: -1.0,
+          slowTriggerThreshold: 1.0,
+          slowWidgetThreshold: 1.0,
+          slowExternalThreshold: 1.0,
+          displayMethods: ['html_comment'],
+          contentTypes: ['error'],
+          displayTarget: 'admin_only',
+          allowedIps: [],
+          addQueryComment: false,
+          showFullCallStack: false,
+          deduplicateErrors: true,
+          errorLogLevel: 'critical_only',
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+
+  it('should reject empty displayMethods array', async () => {
+    await expect(
+      updateDebugSettings(
+        {
+          enabled: true,
+          slowQueryThreshold: 1.0,
+          slowTriggerThreshold: 1.0,
+          slowWidgetThreshold: 1.0,
+          slowExternalThreshold: 1.0,
+          displayMethods: [],
+          contentTypes: ['error'],
+          displayTarget: 'admin_only',
+          allowedIps: [],
+          addQueryComment: false,
+          showFullCallStack: false,
+          deduplicateErrors: true,
+          errorLogLevel: 'critical_only',
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+
+  it('should reject invalid displayTarget value', async () => {
+    await expect(
+      updateDebugSettings(
+        {
+          enabled: true,
+          slowQueryThreshold: 1.0,
+          slowTriggerThreshold: 1.0,
+          slowWidgetThreshold: 1.0,
+          slowExternalThreshold: 1.0,
+          displayMethods: ['html_comment'],
+          contentTypes: ['error'],
+          displayTarget: 'invalid_target' as never,
+          allowedIps: [],
+          addQueryComment: false,
+          showFullCallStack: false,
+          deduplicateErrors: true,
+          errorLogLevel: 'critical_only',
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+
+  it('should reject invalid errorLogLevel value', async () => {
+    await expect(
+      updateDebugSettings(
+        {
+          enabled: true,
+          slowQueryThreshold: 1.0,
+          slowTriggerThreshold: 1.0,
+          slowWidgetThreshold: 1.0,
+          slowExternalThreshold: 1.0,
+          displayMethods: ['html_comment'],
+          contentTypes: ['error'],
+          displayTarget: 'admin_only',
+          allowedIps: [],
+          addQueryComment: false,
+          showFullCallStack: false,
+          deduplicateErrors: true,
+          errorLogLevel: 'invalid_level' as never,
+        },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+
+  it('should accept all valid display methods', async () => {
+    const result = await updateDebugSettings(
+      {
+        enabled: true,
+        slowQueryThreshold: 1.0,
+        slowTriggerThreshold: 1.0,
+        slowWidgetThreshold: 1.0,
+        slowExternalThreshold: 1.0,
+        displayMethods: ['html_comment', 'screen_panel', 'file_log'],
+        contentTypes: ['error', 'slow_query', 'slow_trigger', 'slow_widget', 'slow_external'],
+        displayTarget: 'all',
+        allowedIps: [],
+        addQueryComment: false,
+        showFullCallStack: false,
+        deduplicateErrors: true,
+        errorLogLevel: 'critical_only',
+      },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.displayMethods).toEqual(['html_comment', 'screen_panel', 'file_log']);
+    expect(result.displayTarget).toBe('all');
   });
 });

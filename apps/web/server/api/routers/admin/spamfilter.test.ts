@@ -1,11 +1,13 @@
 /**
- * Specification tests for admin.spamfilter tRPC router — SPEC-ADMIN-002 Slice 2E.
+ * Specification tests for admin.spamfilter tRPC router — SPEC-ADMIN-002 Slice 2E + Slice 3E.
  *
  * SPAM-DENIED-WORD-001: deniedWords.add → 금지어 추가
  * SPAM-DENIED-WORD-002: deniedWords.remove → 금지어 삭제
  * SPAM-DENIED-IP-001: deniedIps.add → 차단 IP 추가
  * SPAM-DENIED-IP-002: deniedIps.remove → 차단 IP 삭제
  * SPAM-RATE-LIMIT-001: rateLimit.update → 속도 제한 규칙 업데이트
+ * SPAM-CAPTCHA-001: captcha.get → 캡차 설정 조회
+ * SPAM-CAPTCHA-002: captcha.update → 캡차 설정 업데이트
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
@@ -34,6 +36,8 @@ vi.mock('@/lib/auth/two-factor', () => ({
 
 // Prisma mock
 const mockSiteFindFirst = vi.fn();
+const mockSiteSettingFindUnique = vi.fn();
+const mockSiteSettingUpsert = vi.fn();
 const mockSpamDeniedWordFindMany = vi.fn();
 const mockSpamDeniedWordFindFirst = vi.fn();
 const mockSpamDeniedWordFindUnique = vi.fn();
@@ -52,6 +56,10 @@ const mockAdminLogCreate = vi.fn();
 const mockPrisma = {
   site: {
     findFirst: (...args: unknown[]) => mockSiteFindFirst(...args),
+  },
+  siteSetting: {
+    findUnique: (...args: unknown[]) => mockSiteSettingFindUnique(...args),
+    upsert: (...args: unknown[]) => mockSiteSettingUpsert(...args),
   },
   spamDeniedWord: {
     findMany: (...args: unknown[]) => mockSpamDeniedWordFindMany(...args),
@@ -252,6 +260,98 @@ describe('admin.spamfilter tRPC router (Slice 2E)', () => {
         maxSubmissions: 3,
         windowSeconds: 60,
         enabled: true,
+      },
+    });
+    expect(mockAdminLogCreate).toHaveBeenCalled();
+  });
+
+  // ==========================================================================
+  // Captcha Settings Management (REQ-ADMIN2-124)
+  // ==========================================================================
+
+  it('SPAM-CAPTCHA-001: captcha.get → 캡차 설정 조회', async () => {
+    mockSiteSettingFindUnique.mockResolvedValue({
+      id: 1,
+      siteId: 1,
+      key: 'captcha',
+      value: {
+        provider: 'recaptcha',
+        triggers: ['document.create', 'comment.create'],
+        siteKey: 'test-site-key',
+        secret: 'test-secret',
+        threshold: 0.5,
+      },
+      updatedAt: new Date(),
+    });
+
+    const { adminSpamfilterRouter } = await import('./spamfilter');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSpamfilterRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.captcha.get();
+
+    expect(result).toEqual({
+      provider: 'recaptcha',
+      triggers: ['document.create', 'comment.create'],
+      siteKey: 'test-site-key',
+      secret: 'test-secret',
+      threshold: 0.5,
+    });
+  });
+
+  it('SPAM-CAPTCHA-002: captcha.update → 캡차 설정 업데이트', async () => {
+    mockSiteSettingFindUnique.mockResolvedValue(null);
+    mockSiteSettingUpsert.mockResolvedValue({
+      id: 1,
+      siteId: 1,
+      key: 'captcha',
+      value: {
+        provider: 'turnstile',
+        triggers: ['document.create'],
+        siteKey: 'new-site-key',
+        secret: 'new-secret',
+        threshold: 0.3,
+      },
+      updatedAt: new Date(),
+    });
+
+    const { adminSpamfilterRouter } = await import('./spamfilter');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSpamfilterRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.captcha.update({
+      provider: 'turnstile',
+      triggers: ['document.create'],
+      siteKey: 'new-site-key',
+      secret: 'new-secret',
+      threshold: 0.3,
+    });
+
+    expect(mockSiteSettingUpsert).toHaveBeenCalledWith({
+      where: { siteId_key: { siteId: 1, key: 'captcha' } },
+      create: {
+        siteId: 1,
+        key: 'captcha',
+        value: {
+          provider: 'turnstile',
+          triggers: ['document.create'],
+          siteKey: 'new-site-key',
+          secret: 'new-secret',
+          threshold: 0.3,
+        },
+      },
+      update: {
+        value: {
+          provider: 'turnstile',
+          triggers: ['document.create'],
+          siteKey: 'new-site-key',
+          secret: 'new-secret',
+          threshold: 0.3,
+        },
       },
     });
     expect(mockAdminLogCreate).toHaveBeenCalled();

@@ -34,6 +34,10 @@ import {
   InvalidSitelockIpError,
   getTagSettings,
   updateTagSettings,
+  getCommunicationSettings,
+  updateCommunicationSettings,
+  getDebugSettings,
+  updateDebugSettings,
 } from '@rhymix-ts/admin';
 
 // ---------------------------------------------------------------------------
@@ -993,5 +997,96 @@ export const adminSettingsRouter = router({
         }
         throw err;
       }
+    }),
+
+  // ==========================================================================
+  // Communication Settings (REQ-ADMIN2-143)
+  // ==========================================================================
+
+  /**
+   * 쪽지 설정 조회 (REQ-ADMIN2-143).
+   */
+  getCommunication: protectedAdminProcedure.query(async ({ ctx }) =>
+    getCommunicationSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 쪽지 설정 업데이트 (REQ-ADMIN2-143).
+   */
+  updateCommunication: protectedAdminProcedure
+    .input(
+      z.object({
+        enabled: z.boolean(),
+        inboxLimit: z.number().int().min(1).max(10000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'communication', input, actorId);
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // Debug Settings (REQ-ADMIN2-117/159/160)
+  // ==========================================================================
+
+  /**
+   * 디버그 설정 조회 (REQ-ADMIN2-117/159/160).
+   *
+   * REQ-ADMIN2-117: 디버그 표시 대상.
+   * REQ-ADMIN2-159: 느린 작업 임계값, 표시 방법/내용, 로그 파일 경로, 허용 IP.
+   * REQ-ADMIN2-160: 쿼리 진단 옵션, 에러 로그 수준.
+   */
+  getDebug: protectedAdminProcedure.query(async ({ ctx }) =>
+    getDebugSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 디버그 설정 업데이트 (REQ-ADMIN2-117/159/160).
+   */
+  updateDebug: protectedAdminProcedure
+    .input(
+      z.object({
+        enabled: z.boolean(),
+        slowQueryThreshold: z.number().nonnegative(),
+        slowTriggerThreshold: z.number().nonnegative(),
+        slowWidgetThreshold: z.number().nonnegative(),
+        slowExternalThreshold: z.number().nonnegative(),
+        displayMethods: z.array(z.enum(['html_comment', 'screen_panel', 'file_log'])).min(1),
+        contentTypes: z.array(
+          z.enum([
+            'request_response',
+            'debug_message',
+            'error',
+            'query',
+            'slow_query',
+            'slow_trigger',
+            'slow_widget',
+            'slow_external',
+          ]),
+        ),
+        logFilePath: z.string().optional(),
+        displayTarget: z.enum(['admin_only', 'allowed_ips', 'all']),
+        allowedIps: z.array(z.string()),
+        addQueryComment: z.boolean(),
+        showFullCallStack: z.boolean(),
+        deduplicateErrors: z.boolean(),
+        errorLogLevel: z.enum(['all_errors_warnings', 'critical_only']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+        await setSiteSetting(txCtx, 'debug', input, actorId);
+      });
+
+      return { success: true };
     }),
 });

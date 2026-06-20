@@ -969,6 +969,56 @@ export async function updatePollConfig(
 }
 
 // ---------------------------------------------------------------------------
+// 파일 기타 설정 (File Other Settings) — SPEC-ADMIN-002 Slice 3E, REQ-ADMIN2-082
+// ---------------------------------------------------------------------------
+
+const FileOtherSettingsSchema = z.object({
+  // 썸네일 생성 방식: on_demand(요청 시 생성), eager(업로드 시 즉시 생성)
+  thumbnailGenerationStrategy: z.enum(['on_demand', 'eager']).default('on_demand'),
+  // 저장 경로 전략: flat(단일 디렉토리), date_sharded(날짜별 하위 디렉토리)
+  storagePathStrategy: z.enum(['flat', 'date_sharded']).default('flat'),
+});
+
+export interface FileOtherSettings {
+  thumbnailGenerationStrategy: 'on_demand' | 'eager';
+  storagePathStrategy: 'flat' | 'date_sharded';
+}
+
+/**
+ * 파일 기타 설정(썸네일 생성 방식, 저장 경로 전략)을 조회한다.
+ *
+ * REQ-ADMIN2-082: 기타 설정 (썸네일 생성 방식, 저장 경로 전략).
+ */
+export async function getFileOtherSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<FileOtherSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'fileOther');
+
+  // 기본값 반환
+  const value = setting.value as Record<string, unknown>;
+  return {
+    thumbnailGenerationStrategy:
+      (value.thumbnailGenerationStrategy as FileOtherSettings['thumbnailGenerationStrategy']) || 'on_demand',
+    storagePathStrategy: (value.storagePathStrategy as FileOtherSettings['storagePathStrategy']) || 'flat',
+  };
+}
+
+/**
+ * 파일 기타 설정을 업데이트한다.
+ */
+export async function updateFileOtherSettings(
+  input: FileOtherSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<FileOtherSettings> {
+  // Zod 검증
+  const validated = FileOtherSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'fileOther', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
 // 태그 설정 (Tag Settings) — SPEC-ADMIN-002 Slice 3B, REQ-ADMIN2-087/156
 // ---------------------------------------------------------------------------
 
@@ -1022,6 +1072,192 @@ export async function updateTagSettings(
   const validated = TagSettingsSchema.parse(input);
 
   await updateSiteSetting(ctx.prisma, 'tagSettings', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 쪽지 설정 (Communication Settings) — SPEC-ADMIN-002 Slice 3E, REQ-ADMIN2-143
+// ---------------------------------------------------------------------------
+
+const CommunicationSettingsSchema = z.object({
+  // 쪽지 기능 활성화 여부
+  enabled: z.boolean().default(false),
+  // 회원별 쪽지함 최대 저장 개수
+  inboxLimit: z.number().int().min(1).max(10000).default(100),
+});
+
+export interface CommunicationSettings {
+  enabled: boolean;
+  inboxLimit: number;
+}
+
+/**
+ * 쪽지 설정(활성화 여부 + 수신함 제한)을 조회한다.
+ *
+ * REQ-ADMIN2-143: 쪽지 기능 토글, 회원별 수신함 최대 개수 제한.
+ */
+export async function getCommunicationSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<CommunicationSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'communication');
+
+  const value = setting.value as Record<string, unknown>;
+  return {
+    enabled: (value.enabled as boolean) ?? false,
+    inboxLimit: (value.inboxLimit as number) || 100,
+  };
+}
+
+/**
+ * 쪽지 설정을 업데이트한다.
+ */
+export async function updateCommunicationSettings(
+  input: CommunicationSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<CommunicationSettings> {
+  const validated = CommunicationSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'communication', validated);
+
+  return validated;
+}
+
+// ---------------------------------------------------------------------------
+// 디버그 설정 (Debug Settings) — SPEC-ADMIN-002 Slice 3E, REQ-ADMIN2-117/159/160
+// ---------------------------------------------------------------------------
+
+/**
+ * 디버그 표시 대상 (REQ-ADMIN2-117).
+ */
+const DEBUG_DISPLAY_TARGETS = ['admin_only', 'allowed_ips', 'all'] as const;
+
+/**
+ * 디버그 정보 표시 방법 (REQ-ADMIN2-159).
+ */
+const DEBUG_DISPLAY_METHODS = ['html_comment', 'screen_panel', 'file_log'] as const;
+
+/**
+ * 디버그 정보 표시 내용 (REQ-ADMIN2-159).
+ */
+const DEBUG_CONTENT_TYPES = [
+  'request_response',
+  'debug_message',
+  'error',
+  'query',
+  'slow_query',
+  'slow_trigger',
+  'slow_widget',
+  'slow_external',
+] as const;
+
+/**
+ * 에러 로그 기록 수준 (REQ-ADMIN2-160).
+ */
+const ERROR_LOG_LEVELS = ['all_errors_warnings', 'critical_only'] as const;
+
+const DebugSettingsSchema = z.object({
+  // REQ-ADMIN2-117: 디버그 기능 활성화 여부
+  enabled: z.boolean().default(false),
+  // REQ-ADMIN2-159: 느린 작업 임계값 (초 단위)
+  slowQueryThreshold: z.number().nonnegative().default(1.0),
+  slowTriggerThreshold: z.number().nonnegative().default(1.0),
+  slowWidgetThreshold: z.number().nonnegative().default(1.0),
+  slowExternalThreshold: z.number().nonnegative().default(1.0),
+  // REQ-ADMIN2-159: 디버그 정보 표시 방법 (복수 선택)
+  displayMethods: z.array(z.enum(DEBUG_DISPLAY_METHODS)).min(1).default(['html_comment']),
+  // REQ-ADMIN2-159: 디버그 정보 표시 내용 (복수 선택)
+  contentTypes: z.array(z.enum(DEBUG_CONTENT_TYPES)).default([
+    'error',
+    'slow_query',
+    'slow_trigger',
+  ]),
+  // REQ-ADMIN2-159: 디버그 로그 파일 경로
+  logFilePath: z.string().optional(),
+  // REQ-ADMIN2-117/159: 디버그 정보 표시 대상
+  displayTarget: z.enum(DEBUG_DISPLAY_TARGETS).default('admin_only'),
+  // REQ-ADMIN2-159: 디버그 허용 IP 목록
+  allowedIps: z.array(z.string()).default([]),
+  // REQ-ADMIN2-160: 쿼리에 주석(쿼리명+IP) 추가 여부
+  addQueryComment: z.boolean().default(false),
+  // REQ-ADMIN2-160: 쿼리 콜 스택 전체 표시 여부
+  showFullCallStack: z.boolean().default(false),
+  // REQ-ADMIN2-160: 동일 위치 반복 오류/쿼리 중복 정리 여부
+  deduplicateErrors: z.boolean().default(true),
+  // REQ-ADMIN2-160: 에러 로그 기록 수준
+  errorLogLevel: z.enum(ERROR_LOG_LEVELS).default('critical_only'),
+});
+
+export type DebugDisplayTarget = (typeof DEBUG_DISPLAY_TARGETS)[number];
+export type DebugDisplayMethod = (typeof DEBUG_DISPLAY_METHODS)[number];
+export type DebugContentType = (typeof DEBUG_CONTENT_TYPES)[number];
+export type ErrorLogLevel = (typeof ERROR_LOG_LEVELS)[number];
+
+export interface DebugSettings {
+  enabled: boolean;
+  slowQueryThreshold: number;
+  slowTriggerThreshold: number;
+  slowWidgetThreshold: number;
+  slowExternalThreshold: number;
+  displayMethods: DebugDisplayMethod[];
+  contentTypes: DebugContentType[];
+  logFilePath?: string;
+  displayTarget: DebugDisplayTarget;
+  allowedIps: string[];
+  addQueryComment: boolean;
+  showFullCallStack: boolean;
+  deduplicateErrors: boolean;
+  errorLogLevel: ErrorLogLevel;
+}
+
+/**
+ * 디버그 설정을 조회한다.
+ *
+ * REQ-ADMIN2-117: 디버그 기능 활성화 여부, 표시 대상.
+ * REQ-ADMIN2-159: 느린 작업 임계값, 표시 방법/내용, 로그 파일 경로, 허용 IP 목록.
+ * REQ-ADMIN2-160: 쿼리 진단 옵션(주석/콜스택/중복제거), 에러 로그 수준.
+ */
+export async function getDebugSettings(
+  ctx: { prisma: PrismaClient },
+): Promise<DebugSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'debug');
+
+  const value = setting.value as Record<string, unknown>;
+  return {
+    enabled: (value.enabled as boolean) ?? false,
+    slowQueryThreshold: (value.slowQueryThreshold as number) || 1.0,
+    slowTriggerThreshold: (value.slowTriggerThreshold as number) || 1.0,
+    slowWidgetThreshold: (value.slowWidgetThreshold as number) || 1.0,
+    slowExternalThreshold: (value.slowExternalThreshold as number) || 1.0,
+    displayMethods:
+      (Array.isArray(value.displayMethods) && value.displayMethods.length > 0
+        ? (value.displayMethods as DebugDisplayMethod[])
+        : ['html_comment']) || ['html_comment'],
+    contentTypes: (value.contentTypes as DebugContentType[]) || [
+      'error',
+      'slow_query',
+      'slow_trigger',
+    ],
+    logFilePath: (value.logFilePath as string) || '',
+    displayTarget: (value.displayTarget as DebugDisplayTarget) || 'admin_only',
+    allowedIps: (value.allowedIps as string[]) || [],
+    addQueryComment: (value.addQueryComment as boolean) ?? false,
+    showFullCallStack: (value.showFullCallStack as boolean) ?? false,
+    deduplicateErrors: (value.deduplicateErrors as boolean) ?? true,
+    errorLogLevel: (value.errorLogLevel as ErrorLogLevel) || 'critical_only',
+  };
+}
+
+/**
+ * 디버그 설정을 업데이트한다.
+ */
+export async function updateDebugSettings(
+  input: DebugSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<DebugSettings> {
+  const validated = DebugSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'debug', validated);
 
   return validated;
 }

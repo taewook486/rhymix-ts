@@ -40,6 +40,23 @@ const mockSiteSettingFindUnique = vi.fn();
 const mockSiteSettingUpsert = vi.fn();
 const mockSiteSettingCreate = vi.fn();
 const mockAdminLogCreate = vi.fn();
+const mockTransaction = vi.fn((callback: (tx: any) => Promise<any>) => {
+  const tx = {
+    site: {
+      findFirst: mockSiteFindFirst,
+    },
+    siteSetting: {
+      findFirst: mockSiteSettingFindFirst,
+      findUnique: mockSiteSettingFindUnique,
+      upsert: mockSiteSettingUpsert,
+      create: mockSiteSettingCreate,
+    },
+    adminLog: {
+      create: mockAdminLogCreate,
+    },
+  };
+  return callback(tx);
+});
 
 const mockPrisma = {
   site: {
@@ -54,23 +71,7 @@ const mockPrisma = {
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
   },
-  $transaction: (callback: (tx: any) => Promise<any>) => {
-    const tx = {
-      site: {
-        findFirst: mockSiteFindFirst,
-      },
-      siteSetting: {
-        findFirst: mockSiteSettingFindFirst,
-        findUnique: mockSiteSettingFindUnique,
-        upsert: mockSiteSettingUpsert,
-        create: mockSiteSettingCreate,
-      },
-      adminLog: {
-        create: mockAdminLogCreate,
-      },
-    };
-    return callback(tx);
-  },
+  $transaction: mockTransaction,
 };
 
 const adminCtx = {
@@ -681,5 +682,347 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
         delimiters: [],
       }),
     ).rejects.toThrow();
+  });
+
+  // ==========================================================================
+  // Communication Settings Tests (REQ-ADMIN2-143)
+  // ==========================================================================
+
+  it('SETTINGS-COMMUNICATION-001: getCommunication → returns defaults when no SiteSetting exists', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    mockSiteSettingFindUnique.mockResolvedValue(null);
+
+    const result = await caller.getCommunication();
+
+    expect(result).toEqual({
+      enabled: false,
+      inboxLimit: 100,
+    });
+  });
+
+  it('SETTINGS-COMMUNICATION-002: getCommunication → returns stored values', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    mockSiteSettingFindUnique.mockResolvedValue({
+      id: 1,
+      siteId: 1,
+      key: 'communication',
+      value: { enabled: true, inboxLimit: 50 },
+    });
+
+    const result = await caller.getCommunication();
+
+    expect(result).toEqual({
+      enabled: true,
+      inboxLimit: 50,
+    });
+  });
+
+  it('SETTINGS-COMMUNICATION-003: updateCommunication → persists values via siteSetting.upsert inside transaction', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    mockSiteSettingFindUnique.mockResolvedValue({
+      id: 1,
+      siteId: 1,
+      key: 'communication',
+      value: { enabled: true, inboxLimit: 50 },
+    });
+
+    await caller.updateCommunication({
+      enabled: false,
+      inboxLimit: 200,
+    });
+
+    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockSiteSettingUpsert).toHaveBeenCalledWith({
+      where: { siteId_key: { siteId: 1, key: 'communication' } },
+      create: { siteId: 1, key: 'communication', value: { enabled: false, inboxLimit: 200 } },
+      update: { value: { enabled: false, inboxLimit: 200 } },
+    });
+  });
+
+  it('SETTINGS-COMMUNICATION-004: updateCommunication → writes AdminLog entry', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    mockSiteSettingFindUnique.mockResolvedValue({
+      id: 1,
+      siteId: 1,
+      key: 'communication',
+      value: { enabled: true, inboxLimit: 50 },
+    });
+
+    await caller.updateCommunication({
+      enabled: false,
+      inboxLimit: 200,
+    });
+
+    expect(mockAdminLogCreate).toHaveBeenCalledWith({
+      data: {
+        actorId: 1,
+        action: 'configure',
+        target: 'site_setting:communication',
+        diff: { before: { enabled: true, inboxLimit: 50 }, after: { enabled: false, inboxLimit: 200 } },
+        ip: '::1',
+        userAgent: 'test',
+      },
+    });
+  });
+
+  // ==========================================================================
+  // Debug Settings Tests (REQ-ADMIN2-117/159/160)
+  // ==========================================================================
+
+  it('SETTINGS-DEBUG-001: getDebug → returns defaults when no SiteSetting exists', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    mockSiteSettingFindUnique.mockResolvedValue(null);
+
+    const result = await caller.getDebug();
+
+    expect(result).toEqual({
+      enabled: false,
+      slowQueryThreshold: 1.0,
+      slowTriggerThreshold: 1.0,
+      slowWidgetThreshold: 1.0,
+      slowExternalThreshold: 1.0,
+      displayMethods: ['html_comment'],
+      contentTypes: ['error', 'slow_query', 'slow_trigger'],
+      logFilePath: '',
+      displayTarget: 'admin_only',
+      allowedIps: [],
+      addQueryComment: false,
+      showFullCallStack: false,
+      deduplicateErrors: true,
+      errorLogLevel: 'critical_only',
+    });
+  });
+
+  it('SETTINGS-DEBUG-002: getDebug → returns stored values', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    mockSiteSettingFindUnique.mockResolvedValue({
+      id: 1,
+      siteId: 1,
+      key: 'debug',
+      value: {
+        enabled: true,
+        slowQueryThreshold: 0.5,
+        slowTriggerThreshold: 2.0,
+        slowWidgetThreshold: 1.5,
+        slowExternalThreshold: 3.0,
+        displayMethods: ['file_log', 'screen_panel'],
+        contentTypes: ['error', 'slow_query'],
+        logFilePath: '/var/log/debug.log',
+        displayTarget: 'allowed_ips',
+        allowedIps: ['192.168.1.1'],
+        addQueryComment: true,
+        showFullCallStack: true,
+        deduplicateErrors: false,
+        errorLogLevel: 'all_errors_warnings',
+      },
+    });
+
+    const result = await caller.getDebug();
+
+    expect(result).toEqual({
+      enabled: true,
+      slowQueryThreshold: 0.5,
+      slowTriggerThreshold: 2.0,
+      slowWidgetThreshold: 1.5,
+      slowExternalThreshold: 3.0,
+      displayMethods: ['file_log', 'screen_panel'],
+      contentTypes: ['error', 'slow_query'],
+      logFilePath: '/var/log/debug.log',
+      displayTarget: 'allowed_ips',
+      allowedIps: ['192.168.1.1'],
+      addQueryComment: true,
+      showFullCallStack: true,
+      deduplicateErrors: false,
+      errorLogLevel: 'all_errors_warnings',
+    });
+  });
+
+  it('SETTINGS-DEBUG-003: updateDebug → persists values via siteSetting.upsert inside transaction', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const updateData = {
+      enabled: true,
+      slowQueryThreshold: 0.5,
+      slowTriggerThreshold: 1.0,
+      slowWidgetThreshold: 1.5,
+      slowExternalThreshold: 2.0,
+      displayMethods: ['html_comment', 'file_log'],
+      contentTypes: ['error', 'slow_query'],
+      logFilePath: '/var/log/rhymix/debug.log',
+      displayTarget: 'admin_only',
+      allowedIps: ['127.0.0.1'],
+      addQueryComment: true,
+      showFullCallStack: false,
+      deduplicateErrors: true,
+      errorLogLevel: 'all_errors_warnings',
+    };
+
+    await caller.updateDebug(updateData);
+
+    expect(mockPrisma.$transaction).toHaveBeenCalled();
+    expect(mockSiteSettingUpsert).toHaveBeenCalledWith({
+      where: { siteId_key: { siteId: 1, key: 'debug' } },
+      create: { siteId: 1, key: 'debug', value: updateData },
+      update: { value: updateData },
+    });
+  });
+
+  it('SETTINGS-DEBUG-004: updateDebug → writes AdminLog entry', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const updateData = {
+      enabled: false,
+      slowQueryThreshold: 1.0,
+      slowTriggerThreshold: 1.0,
+      slowWidgetThreshold: 1.0,
+      slowExternalThreshold: 1.0,
+      displayMethods: ['html_comment'],
+      contentTypes: ['error'],
+      displayTarget: 'admin_only',
+      allowedIps: [],
+      addQueryComment: false,
+      showFullCallStack: false,
+      deduplicateErrors: true,
+      errorLogLevel: 'critical_only',
+    };
+
+    mockSiteSettingFindUnique.mockResolvedValue({
+      id: 1,
+      siteId: 1,
+      key: 'debug',
+      value: { enabled: true, slowQueryThreshold: 2.0 },
+    });
+
+    await caller.updateDebug(updateData);
+
+    expect(mockAdminLogCreate).toHaveBeenCalledWith({
+      data: {
+        actorId: 1,
+        action: 'configure',
+        target: 'site_setting:debug',
+        diff: { before: { enabled: true, slowQueryThreshold: 2.0 }, after: updateData },
+        ip: '::1',
+        userAgent: 'test',
+      },
+    });
+  });
+
+  it('SETTINGS-DEBUG-005: updateDebug → rejects negative threshold values', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.updateDebug({
+        enabled: true,
+        slowQueryThreshold: -1.0,
+        slowTriggerThreshold: 1.0,
+        slowWidgetThreshold: 1.0,
+        slowExternalThreshold: 1.0,
+        displayMethods: ['html_comment'],
+        contentTypes: ['error'],
+        displayTarget: 'admin_only',
+        allowedIps: [],
+        addQueryComment: false,
+        showFullCallStack: false,
+        deduplicateErrors: true,
+        errorLogLevel: 'critical_only',
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('SETTINGS-DEBUG-006: updateDebug → rejects empty displayMethods array', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.updateDebug({
+        enabled: true,
+        slowQueryThreshold: 1.0,
+        slowTriggerThreshold: 1.0,
+        slowWidgetThreshold: 1.0,
+        slowExternalThreshold: 1.0,
+        displayMethods: [],
+        contentTypes: ['error'],
+        displayTarget: 'admin_only',
+        allowedIps: [],
+        addQueryComment: false,
+        showFullCallStack: false,
+        deduplicateErrors: true,
+        errorLogLevel: 'critical_only',
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('SETTINGS-DEBUG-007: updateDebug → accepts all valid display methods and targets', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const updateData = {
+      enabled: true,
+      slowQueryThreshold: 0.3,
+      slowTriggerThreshold: 0.5,
+      slowWidgetThreshold: 0.7,
+      slowExternalThreshold: 1.0,
+      displayMethods: ['html_comment', 'screen_panel', 'file_log'],
+      contentTypes: ['request_response', 'debug_message', 'error', 'query', 'slow_query', 'slow_trigger', 'slow_widget', 'slow_external'],
+      logFilePath: '/var/log/rhymix/debug.log',
+      displayTarget: 'all',
+      allowedIps: [],
+      addQueryComment: true,
+      showFullCallStack: true,
+      deduplicateErrors: false,
+      errorLogLevel: 'all_errors_warnings',
+    };
+
+    const result = await caller.updateDebug(updateData);
+
+    expect(result).toEqual({ success: true });
   });
 });

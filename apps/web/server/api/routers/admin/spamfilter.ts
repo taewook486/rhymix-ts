@@ -1,12 +1,13 @@
 /**
- * admin.spamfilter tRPC router — SPEC-ADMIN-002 Slice 2E.
+ * admin.spamfilter tRPC router — SPEC-ADMIN-002 Slice 2E + Slice 3E.
  *
  * 스팸 필터 관리:
  * - deniedWords: 금지어 CRUD
  * - deniedIps: 차단 IP CRUD
  * - rateLimit: 속도 제한 규칙 관리
+ * - captcha: 캡차 설정 관리
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-120~123
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-120~123, REQ-ADMIN2-124
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
@@ -27,6 +28,83 @@ async function resolveSiteId(ctx: { prisma: any; siteId?: number }): Promise<num
 }
 
 export const adminSpamfilterRouter = router({
+  // 캡차 설정 관리
+  captcha: router({
+    get: protectedAdminProcedure
+      .query(async ({ ctx }) => {
+        const siteId = await resolveSiteId(ctx);
+        const setting = await ctx.prisma.siteSetting.findUnique({
+          where: { siteId_key: { siteId, key: 'captcha' } },
+        });
+
+        // 기본값 반환
+        const value = setting?.value as Record<string, unknown> ?? {};
+        return {
+          provider: (value.provider as string) ?? 'none',
+          triggers: (value.triggers as string[]) ?? [],
+          siteKey: (value.siteKey as string | null) ?? null,
+          secret: (value.secret as string | null) ?? null,
+          threshold: (value.threshold as number | null) ?? 0.5,
+        };
+      }),
+
+    update: protectedAdminProcedure
+      .input(
+        z.object({
+          provider: z.enum(['none', 'recaptcha', 'turnstile', 'simple_math']),
+          triggers: z.array(z.string()).default([]),
+          siteKey: z.string().optional(),
+          secret: z.string().optional(),
+          threshold: z.number().min(0).max(1).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const siteId = await resolveSiteId(ctx);
+
+        // 기존 설정 조회
+        const existing = await ctx.prisma.siteSetting.findUnique({
+          where: { siteId_key: { siteId, key: 'captcha' } },
+        });
+
+        const value = {
+          provider: input.provider,
+          triggers: input.triggers,
+          siteKey: input.provider !== 'none' && input.provider !== 'simple_math' ? input.siteKey ?? null : null,
+          secret: input.provider !== 'none' && input.provider !== 'simple_math' ? input.secret ?? null : null,
+          threshold: input.provider === 'recaptcha' || input.provider === 'turnstile' ? input.threshold ?? 0.5 : null,
+        };
+
+        const result = await ctx.prisma.siteSetting.upsert({
+          where: { siteId_key: { siteId, key: 'captcha' } },
+          create: {
+            siteId,
+            key: 'captcha',
+            value,
+          },
+          update: {
+            value,
+          },
+        });
+
+        // AdminLog 기록
+        await ctx.prisma.adminLog.create({
+          data: {
+            actorId: ctx.session.user.id,
+            action: 'configure',
+            target: `spamfilter:captcha`,
+            diff: {
+              before: existing?.value ?? null,
+              after: value,
+            },
+            ip: ctx.ip ?? null,
+            userAgent: ctx.userAgent ?? null,
+          },
+        });
+
+        return result;
+      }),
+  }),
+
   // 금지어 관리
   deniedWords: router({
     list: protectedAdminProcedure
