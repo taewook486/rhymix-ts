@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-18 (SPEC-ADMIN-002 M2 Slice 2A~2C 구현 완료 — 레이아웃 인스턴스/파일 관리/신고 관리+회원 설정 확장+문서 설정)
+> 마지막 갱신: 2026-06-20 (SPEC-ADMIN-002 M3 구현 완료, status: completed v1.3.0 — Phase 6 전체 종료. SPEC-ADMIN-EXTRAS-001 상태 모순 정정)
 
 ## 기술 스택 (확정)
 
@@ -30,7 +30,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 3. MEMBER ECOSYSTEM | 회원 ecosystem + cross-cutting (file/point/mail) | 3 | 3/3 | 🟢 구현 완료 |
 | 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 2/2 | 🟢 구현 완료 |
 | 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 1/1 | 🟢 구현 완료 |
-| 6. ADMIN LEGACY PARITY | 레거시 분석 기반 admin 미구현 기능 완성 | 1 | 0/1 (M1~M2 Slice 2A-2C 완료) | 🟡 M2 Slice 2A-2C 구현 완료, 2D-2H/M3 대기 |
+| 6. ADMIN LEGACY PARITY | 레거시 분석 기반 admin 미구현 기능 완성 | 1 | 1/1 | 🟢 구현 완료 (M1~M3 전체, status: completed v1.3.0) |
 
 ---
 
@@ -77,19 +77,19 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | [SPEC-ADDON-001](./SPEC-ADDON-001/spec.md) | 선언적 hook system (onContentTransform / onPageView 등 4개) | PAGE, DOCUMENT, COMMENT, ADMIN | ✅ 구현 완료 (`ba0a36b`) |
 | [SPEC-THEME-POLISH-001](./SPEC-THEME-POLISH-001/spec.md) | admin/site/design 3-pane editor + dark mode toggle | LAYOUT, ADMIN | ✅ 구현 완료 (`0739f05`) |
 
-### Phase 5: ADMIN COMPLETION (P2, 진행 중)
+### Phase 5: ADMIN COMPLETION (P2, 구현 완료)
 
 | ID | 제목 | 의존 | 상태 |
 |---|---|---|---|
 | [SPEC-ADMIN-EXTRAS-001](./SPEC-ADMIN-EXTRAS-001/spec.md) | export/import + 2FA enforce + DnD + WidgetPreset + IP filter + bulk ops | ADMIN, AUTH, WIDGET, DOCUMENT, COMMENT | ✅ 구현 완료 (`6ee92fc`) |
 
-### Phase 6: ADMIN LEGACY PARITY (P1, M2 Slice 2A~2C 구현 완료)
+### Phase 6: ADMIN LEGACY PARITY (P1, 구현 완료)
 
 | ID | 제목 | 의존 | 상태 |
 |---|---|---|---|
-| [SPEC-ADMIN-002](./SPEC-ADMIN-002/spec.md) | 관리자 패널 미구현 기능 완성 (레거시 분석 기반) — 대시보드/레이아웃/회원설정/콘텐츠관리/사이트설정/고급 | 전 도메인 | 🟡 M1 + M2 Slice 2A~2C 구현 완료, M2 Slice 2D~2H/M3 대기 |
+| [SPEC-ADMIN-002](./SPEC-ADMIN-002/spec.md) | 관리자 패널 미구현 기능 완성 (레거시 분석 기반) — 대시보드/레이아웃/회원설정/콘텐츠관리/사이트설정/고급 | 전 도메인 | ✅ 구현 완료 (M1~M3 전체, `9551d60`) |
 
-> 레거시 Rhymix PHP admin 전체 디스패치 함수 인벤토리 대비 gap 분석. 60+ REQ를 6개 섹션·3개 Phase로 구조화. P1 22건(대시보드·페이지·회원그룹·회원설정·문서/댓글관리·알림/보안) — **구현 완료**. P2 24건 중 레이아웃·파일·신고/회원설정확장/문서설정(Slice 2A~2C, 약 16건) — **구현 완료**, SEO·스팸필터·통계·도메인 등(Slice 2D~2H, 약 8건) — 대기. P3 16건(설문·태그·닉네임이력·쪽지·서버환경) — 대기.
+> 레거시 Rhymix PHP admin 전체 디스패치 함수 인벤토리 대비 gap 분석. 60+ REQ를 6개 섹션·3개 Phase로 구조화. P1 22건(대시보드·페이지·회원그룹·회원설정·문서/댓글관리·알림/보안) — **구현 완료**. P2 24건(레이아웃·파일·신고·SEO·스팸필터·통계·도메인 등) — **구현 완료**. P3 16건(설문·태그·닉네임이력·쪽지·서버환경) — **구현 완료**. 예외: REQ-ADMIN2-049(소셜 로그인 프로바이더 토글)는 전제 조건인 소셜 프로바이더 설정이 코드베이스에 부재해 DEFERRED·백로그 재분류, REQ-ADMIN2-161(비동기 작업 큐 모니터링, 선택)은 사용자가 비채택 결정.
 > M1 구현 후 독립 보안 리뷰에서 SMTP 비밀번호 평문 노출, 회원 그룹 `isAdmin` 권한 상승 경로, 설정 비원자적 쓰기, 대시보드 위젯 순차 fetch 4건을 발견·수정함 (상세: SPEC-ADMIN-002/spec.md `## Implementation Notes`).
 
 ### Meta-Plan 문서 (참조)
@@ -141,7 +141,9 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ### 즉시 가능
 
-1. **`/moai sync SPEC-ADMIN-EXTRAS-001`** — 문서 동기화 (Phase 5 완료)
+Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). 다음 작업은 신규 SPEC 작성이 필요하다:
+
+1. **`SPEC-MODULE-BACKLOG-001`** (미작성) — MASTER-PLAN-002 8.1절에서 언급된 미포팅 레거시 모듈 14종(poll/tag 독립화/rss/counter 등) 평가용. 아직 SPEC 문서로 구체화되지 않음.
 2. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증
 
 ### 완료된 전체 워크플로우
@@ -161,8 +163,11 @@ SPEC-ADMIN-001 (Foundation, ✅)
 /moai run SPEC-ADDON-001       # ✅ 완료 (ba0a36b)
 /moai run SPEC-THEME-POLISH-001 # ✅ 완료 (0739f05)
 
-# Phase 5 🟡
-/moai run SPEC-ADMIN-EXTRAS-001 # 🟡 진행 중 (1e6ce2a) — deferred 5건 잔여
+# Phase 5 ✅
+/moai run SPEC-ADMIN-EXTRAS-001 # ✅ 완료 (v2.0.0, 6ee92fc) — deferred 5건 모두 구현 완료
+
+# Phase 6 ✅
+/moai run SPEC-ADMIN-002       # ✅ 완료 (v1.3.0, 9551d60) — M1~M3 전체
 ```
 
 ---
