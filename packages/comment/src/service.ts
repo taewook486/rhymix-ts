@@ -28,6 +28,8 @@ import {
 import { emitCommentDeleted } from './events';
 // SPEC-POINT-001 REQ-POINT-042: 포인트 훅 연동
 import { pointHooks } from '@rhymix-ts/point';
+// SPEC-NOTIFICATION-001 REQ-NOTIF-005: 알림 훅 연동
+import { notificationHooks } from '@rhymix-ts/notification';
 
 // ---------------------------------------------------------------------------
 // HTML sanitize
@@ -124,6 +126,31 @@ export async function createComment(
         boardId: doc.boardId,
         pointPerComment: doc.board.pointPerComment ?? 0,
       }, tx as unknown as import('@prisma/client').Prisma.TransactionClient);
+    }
+
+    // SPEC-NOTIFICATION-001 REQ-NOTIF-005: 댓글 작성 알림 생성
+    if (doc.authorId != null) {
+      let parentCommentAuthorId: number | null = null;
+      if (parsed.parentId != null) {
+        const parentComment = await tx.comment.findUnique({
+          where: { id: parsed.parentId },
+          select: { authorId: true },
+        });
+        parentCommentAuthorId = parentComment?.authorId ?? null;
+      }
+
+      await notificationHooks.onCommentCreated(
+        ctx.prisma,
+        {
+          commentId: comment.id,
+          documentId: doc.id,
+          documentAuthorId: doc.authorId,
+          commentAuthorId: parsed.authorId,
+          commentAuthorNickname: parsed.nickName ?? 'unknown',
+          parentCommentAuthorId,
+        },
+        tx as unknown as import('@prisma/client').Prisma.TransactionClient,
+      );
     }
 
     return comment;

@@ -327,8 +327,11 @@ model User {
   documentUpdates   DocumentUpdateLog[]
   trashDeleted      Trash[]
   // SPEC-POINT-001 REQ-POINT-001: 포인트 시스템
-  pointBalance      Int                @default(0)
-  points            Point[]            @relation("UserPoints")
+  pointBalance             Int                      @default(0)
+  points                   Point[]                  @relation("UserPoints")
+  // SPEC-NOTIFICATION-001 REQ-NOTIF-001: 알림 시스템
+  notifications            Notification[]           @relation("UserNotifications")
+  notificationPreferences  NotificationPreference[] @relation("UserNotificationPreferences")
   // SPEC-ADMIN-002 Slice 3B REQ-ADMIN2-056/057: 닉네임 변경 이력
   nicknameChangeLogs NicknameChangeLog[] @relation("NicknameChangeLogUser")
 
@@ -1281,4 +1284,83 @@ model NicknameChangeLog {
   @@index([userId])
   @@index([changedAt])
   @@map("nickname_change_logs")
+}
+
+// =====================================================================
+// SPEC-NOTIFICATION-001: Notification Center (Slice A — Foundation)
+// =====================================================================
+
+/**
+ * NotificationCategory — 알림 카테고리 enum
+ *
+ * SPEC-NOTIFICATION-001 REQ-NOTIF-006/031: MENTION/MESSAGE는 Slice B(Slice A는 enum만 선반영)
+ */
+enum NotificationCategory {
+  COMMENT         // 댓글 작성 알림 (문서 작성자에게)
+  COMMENT_REPLY   // 대댓글 작성 알림 (부모 댓글 작성자에게)
+  MENTION         // 멘션 알림 (Slice B)
+  MESSAGE         // 쪽지 도착 알림 (future-hook)
+}
+
+/**
+ * NotificationSourceType — 알림 소스 타입 enum
+ *
+ * SPEC-NOTIFICATION-001 REQ-NOTIF-006: MENTION 값을 미리 확보해 Slice B 마이그레이션 없이 기능 추가
+ */
+enum NotificationSourceType {
+  COMMENT  // 댓글/대댓글
+  MENTION  // 멘션 (Slice B)
+  MESSAGE  // 쪽지 (future-hook)
+}
+
+/**
+ * Notification — 알림 내역
+ *
+ * SPEC-NOTIFICATION-001 REQ-NOTIF-001/010: Point 모델 구조 참조 (packages/point/src/service.ts)
+ * - actorId/actorNickname은 denormalized snapshot으로, 회원 삭제 후에도 목록 렌더링 가능
+ * - recipientId 인덱스는 최신순 목록 조회 최적화를 위해 createdAt Desc 정렬 포함
+ * - sourceType/sourceId는 중복 알림 방지(idempotency)를 위한 유니크 제약 조합
+ */
+model Notification {
+  id             Int                    @id @default(autoincrement())
+  recipientId    Int
+  category       NotificationCategory
+  sourceType     NotificationSourceType
+  sourceId       Int
+  actorId        Int?                   // nullable: 탈퇴 회원의 알림 보존
+  actorNickname  String                 // snapshot: 회원 삭제 후에도 표시 가능
+  read           Boolean               @default(false)
+  readAt         DateTime?             @db.Timestamptz
+  createdAt      DateTime              @default(now()) @db.Timestamptz
+
+  recipient User @relation("UserNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceType, sourceId, recipientId])
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([recipientId])
+  @@index([sourceType, sourceId])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+/**
+ * NotificationPreference — 회원별 알림 수신 설정
+ *
+ * SPEC-NOTIFICATION-001 REQ-NOTIF-030/032:
+ * - 정규화 테이블 (@@unique([memberId, category]) — 레거시 와이드 컬럼 방식 미사용)
+ * - 행 부재 = enabled=true (opt-out 모델, 기본값 활성)
+ */
+model NotificationPreference {
+  id        Int                    @id @default(autoincrement())
+  memberId  Int
+  category  NotificationCategory
+  enabled   Boolean               @default(true)
+  createdAt DateTime              @default(now()) @db.Timestamptz
+  updatedAt DateTime              @updatedAt @db.Timestamptz
+
+  member User @relation("UserNotificationPreferences", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, category])
+  @@index([memberId])
+  @@map("notification_preferences")
 }

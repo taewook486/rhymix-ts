@@ -1,6 +1,6 @@
 {
-  "name": "@rhymix-ts/comment",
-  "version": "0.0.1",
+  "name": "@rhymix-ts/notification",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -16,19 +16,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@rhymix-ts/auth": "workspace:*",
-    "@rhymix-ts/document": "workspace:*",
-    "@rhymix-ts/notification": "workspace:*",
-    "@rhymix-ts/point": "workspace:*",
-    "@trpc/server": "^11.0.0",
-    "isomorphic-dompurify": "^2.16.0",
+    "@rhymix-ts/db": "workspace:*",
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@rhymix-ts/db": "workspace:*",
     "@prisma/client": "*",
     "rimraf": "^6.0.1",
     "typescript": "^5.9.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "@types/node": "*"
   }
 }
