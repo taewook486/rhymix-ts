@@ -31,6 +31,8 @@ import {
   updateSitelockSettings,
   getPollConfig,
   updatePollConfig,
+  getTagSettings,
+  updateTagSettings,
 } from './settings';
 import type { PrismaClient } from '@prisma/client';
 import { ZodError } from 'zod';
@@ -685,6 +687,72 @@ describe('updatePollConfig — REQ-ADMIN2-086', () => {
     await expect(
       updatePollConfig(
         { allowGuestVote: false, duplicateVotePolicy: 'invalid-policy' as never },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tag Settings — SPEC-ADMIN-002 Slice 3B, REQ-ADMIN2-087/156
+// ---------------------------------------------------------------------------
+
+describe('getTagSettings — REQ-ADMIN2-087/156', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should return default tag settings when not configured', async () => {
+    const result = await getTagSettings({ prisma: mockPrisma });
+
+    expect(result.cloudDisplayCount).toBe(50);
+    expect(result.sortBy).toBe('frequency');
+    expect(result.delimiters).toEqual(['comma']);
+  });
+});
+
+describe('updateTagSettings — REQ-ADMIN2-087/156', () => {
+  let mockPrisma: PrismaClient;
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma();
+  });
+
+  it('should update tag settings (cloud count, sort, multiple delimiters)', async () => {
+    const result = await updateTagSettings(
+      { cloudDisplayCount: 100, sortBy: 'name', delimiters: ['comma', 'hash'] },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.cloudDisplayCount).toBe(100);
+    expect(result.sortBy).toBe('name');
+    expect(result.delimiters).toEqual(['comma', 'hash']);
+  });
+
+  it('should reject an empty delimiters array (at least one method required)', async () => {
+    await expect(
+      updateTagSettings(
+        { cloudDisplayCount: 50, sortBy: 'frequency', delimiters: [] },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+
+  it('should reject an invalid sortBy value', async () => {
+    await expect(
+      updateTagSettings(
+        { cloudDisplayCount: 50, sortBy: 'invalid-sort' as never, delimiters: ['comma'] },
+        { prisma: mockPrisma },
+      ),
+    ).rejects.toThrow(ZodError);
+  });
+
+  it('should reject cloudDisplayCount out of range', async () => {
+    await expect(
+      updateTagSettings(
+        { cloudDisplayCount: 0, sortBy: 'frequency', delimiters: ['comma'] },
         { prisma: mockPrisma },
       ),
     ).rejects.toThrow(ZodError);

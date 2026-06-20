@@ -594,4 +594,92 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
       }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
+
+  // ==========================================================================
+  // Tag Settings (REQ-ADMIN2-087/156)
+  // ==========================================================================
+
+  it('SETTINGS-TAGS-001: getTags → returns defaults when no SiteSetting row exists', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getTags();
+
+    expect(result).toEqual({
+      cloudDisplayCount: 50,
+      sortBy: 'frequency',
+      delimiters: ['comma'],
+    });
+  });
+
+  it('SETTINGS-TAGS-002: getTags → returns stored values when row exists', async () => {
+    mockSiteSettingFindUnique.mockResolvedValue({
+      value: { cloudDisplayCount: 80, sortBy: 'name', delimiters: ['hash', 'space'] },
+    });
+
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getTags();
+
+    expect(result).toEqual({
+      cloudDisplayCount: 80,
+      sortBy: 'name',
+      delimiters: ['hash', 'space'],
+    });
+  });
+
+  it('SETTINGS-TAGS-003: updateTags → persists via siteSetting.upsert', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateTags({
+      cloudDisplayCount: 100,
+      sortBy: 'recent',
+      delimiters: ['comma', 'hash', 'space'],
+    });
+
+    expect(result).toEqual({
+      cloudDisplayCount: 100,
+      sortBy: 'recent',
+      delimiters: ['comma', 'hash', 'space'],
+    });
+    expect(mockSiteSettingUpsert).toHaveBeenCalledWith({
+      where: { siteId_key: { siteId: 1, key: 'tagSettings' } },
+      create: {
+        siteId: 1,
+        key: 'tagSettings',
+        value: { cloudDisplayCount: 100, sortBy: 'recent', delimiters: ['comma', 'hash', 'space'] },
+      },
+      update: {
+        value: { cloudDisplayCount: 100, sortBy: 'recent', delimiters: ['comma', 'hash', 'space'] },
+      },
+    });
+  });
+
+  it('SETTINGS-TAGS-004: updateTags → rejects empty delimiters array with BAD_REQUEST validation error', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.updateTags({
+        cloudDisplayCount: 50,
+        sortBy: 'frequency',
+        delimiters: [],
+      }),
+    ).rejects.toThrow();
+  });
 });

@@ -330,4 +330,95 @@ export const adminDocumentRouter = router({
 
       return { success: true };
     }),
+
+  // ==========================================================================
+  // 문서 별칭 관리 (REQ-ADMIN2-073)
+  // ==========================================================================
+
+  /**
+   * 별칭이 설정된 문서 목록 조회 (REQ-ADMIN2-073).
+   *
+   * 제목/별칭 부분 일치 검색을 지원한다. alias 가 null 인 문서는 제외한다.
+   */
+  listAliases: protectedAdminProcedure
+    .input(
+      z.object({
+        search: z.string().min(1).optional(),
+        page: z.number().int().positive().default(1),
+        pageSize: z.number().int().positive().max(100).default(50),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const where = {
+        alias: { not: null },
+        ...(input.search
+          ? {
+              OR: [
+                { title: { contains: input.search } },
+                { alias: { contains: input.search } },
+              ],
+            }
+          : {}),
+      };
+
+      const [items, total] = await Promise.all([
+        ctx.prisma.document.findMany({
+          where,
+          orderBy: { id: 'desc' },
+          take: input.pageSize,
+          skip: (input.page - 1) * input.pageSize,
+          select: { id: true, title: true, alias: true, boardId: true },
+        }),
+        ctx.prisma.document.count({ where }),
+      ]);
+
+      return { total, items, page: input.page, pageSize: input.pageSize };
+    }),
+
+  /**
+   * 문서 별칭 설정/수정/해제 (REQ-ADMIN2-073).
+   *
+   * alias 를 null 로 전달하면 별칭을 해제한다. 다른 문서가 이미 같은 별칭을
+   * 사용 중이면 Prisma 유니크 제약(P2002)이 발생하며, BAD_REQUEST 로 매핑한다.
+   */
+  setAlias: protectedAdminProcedure
+    .input(
+      z.object({
+        documentId: z.number().int().positive(),
+        alias: z
+          .string()
+          .trim()
+          .min(1)
+          .max(200)
+          .nullable(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.prisma.document.findUnique({
+        where: { id: input.documentId },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: '문서를 찾을 수 없습니다.' });
+      }
+
+      try {
+        const updated = await ctx.prisma.document.update({
+          where: { id: input.documentId },
+          data: { alias: input.alias },
+          select: { id: true, title: true, alias: true },
+        });
+        return updated;
+      } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((err as any)?.code === 'P2002') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '이미 사용 중인 별칭입니다.',
+          });
+        }
+        throw err;
+      }
+    }),
 });

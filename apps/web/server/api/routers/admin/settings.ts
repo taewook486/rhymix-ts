@@ -32,6 +32,8 @@ import {
   getSitelockSettings,
   resolveSitelockUpdate,
   InvalidSitelockIpError,
+  getTagSettings,
+  updateTagSettings,
 } from '@rhymix-ts/admin';
 
 // ---------------------------------------------------------------------------
@@ -956,5 +958,40 @@ export const adminSettingsRouter = router({
       });
 
       return input;
+    }),
+
+  // ==========================================================================
+  // Tag Settings (REQ-ADMIN2-087/156)
+  // ==========================================================================
+
+  /**
+   * 태그 설정 조회 (클라우드 노출 개수/정렬 기준/구분 방법).
+   */
+  getTags: protectedAdminProcedure.query(async ({ ctx }) =>
+    getTagSettings({ prisma: ctx.prisma }),
+  ),
+
+  /**
+   * 태그 설정 업데이트.
+   *
+   * REQ-ADMIN2-156: delimiters 는 1개 이상 선택해야 한다 (Zod 스키마에서 강제).
+   */
+  updateTags: protectedAdminProcedure
+    .input(
+      z.object({
+        cloudDisplayCount: z.number().int().min(1).max(500),
+        sortBy: z.enum(['frequency', 'name', 'recent']),
+        delimiters: z.array(z.enum(['comma', 'hash', 'space'])).min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await updateTagSettings(input, { prisma: ctx.prisma });
+      } catch (err) {
+        if (err instanceof SiteNotFoundError) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+        }
+        throw err;
+      }
     }),
 });

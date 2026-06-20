@@ -327,6 +327,8 @@ model User {
   // SPEC-POINT-001 REQ-POINT-001: 포인트 시스템
   pointBalance      Int                @default(0)
   points            Point[]            @relation("UserPoints")
+  // SPEC-ADMIN-002 Slice 3B REQ-ADMIN2-056/057: 닉네임 변경 이력
+  nicknameChangeLogs NicknameChangeLog[] @relation("NicknameChangeLogUser")
 
   @@index([status])
   @@index([emailAddress])
@@ -707,6 +709,8 @@ model Document {
   allowTrackback  Boolean        @default(false)
   notifyMessage   Boolean        @default(false)
   tags            String[]       @default([])
+  // SPEC-ADMIN-002 Slice 3B REQ-ADMIN2-073: 문서 별칭(URL alias). 1문서당 1개, 전역 유니크.
+  alias           String?        @unique @db.VarChar(200)
   extraVars       Json           @default("{}")
   listOrder       BigInt         @default(0)
   updateOrder     BigInt         @default(0)
@@ -1252,4 +1256,25 @@ model PollVote {
   @@index([pollOptionId])
   @@index([pollId, voterIp])
   @@map("poll_votes")
+}
+
+/**
+ * NicknameChangeLog — 닉네임 변경 이력 (SPEC-ADMIN-002 Slice 3B REQ-ADMIN2-056/057).
+ *
+ * changedByAdminId 가 null 이면 회원 자가 변경(미구현, 추후 확장 대비 nullable)을 의미하고,
+ * 값이 있으면 관리자가 대신 변경했음을 의미한다.
+ */
+model NicknameChangeLog {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  oldNickName      String   @db.VarChar(40)
+  newNickName      String   @db.VarChar(40)
+  changedByAdminId Int?
+  changedAt        DateTime @default(now()) @db.Timestamptz
+
+  user User @relation("NicknameChangeLogUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([changedAt])
+  @@map("nickname_change_logs")
 }

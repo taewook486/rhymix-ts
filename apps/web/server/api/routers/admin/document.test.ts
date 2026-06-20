@@ -27,6 +27,10 @@ const mockSiteSettingFindFirst = vi.fn();
 const mockSiteSettingFindUnique = vi.fn();
 const mockSiteSettingUpsert = vi.fn();
 const mockAdminLogCreate = vi.fn();
+const mockDocumentFindMany = vi.fn();
+const mockDocumentCount = vi.fn();
+const mockDocumentFindUnique = vi.fn();
+const mockDocumentUpdate = vi.fn();
 
 const mockPrisma = {
   site: {
@@ -36,6 +40,12 @@ const mockPrisma = {
     findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
     findUnique: (...args: unknown[]) => mockSiteSettingFindUnique(...args),
     upsert: (...args: unknown[]) => mockSiteSettingUpsert(...args),
+  },
+  document: {
+    findMany: (...args: unknown[]) => mockDocumentFindMany(...args),
+    count: (...args: unknown[]) => mockDocumentCount(...args),
+    findUnique: (...args: unknown[]) => mockDocumentFindUnique(...args),
+    update: (...args: unknown[]) => mockDocumentUpdate(...args),
   },
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
@@ -197,6 +207,131 @@ describe('admin.document tRPC router (Slice 2C)', () => {
           after: 'latest',
         }),
       }),
+    });
+  });
+
+  // ==========================================================================
+  // 문서 별칭 관리 (REQ-ADMIN2-073)
+  // ==========================================================================
+
+  it('DOCUMENT-ALIAS-001: listAliases → returns paginated documents with non-null alias', async () => {
+    mockDocumentFindMany.mockResolvedValue([
+      { id: 1, title: '공지사항', alias: 'notice', boardId: 1 },
+    ]);
+    mockDocumentCount.mockResolvedValue(1);
+
+    const { adminDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminDocumentRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.listAliases({ page: 1, pageSize: 50 });
+
+    expect(result).toEqual({
+      total: 1,
+      items: [{ id: 1, title: '공지사항', alias: 'notice', boardId: 1 }],
+      page: 1,
+      pageSize: 50,
+    });
+    expect(mockDocumentFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ alias: { not: null } }),
+      }),
+    );
+  });
+
+  it('DOCUMENT-ALIAS-002: listAliases → search filters by title/alias contains', async () => {
+    mockDocumentFindMany.mockResolvedValue([]);
+    mockDocumentCount.mockResolvedValue(0);
+
+    const { adminDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminDocumentRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await caller.listAliases({ search: 'notice', page: 1, pageSize: 50 });
+
+    expect(mockDocumentFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          alias: { not: null },
+          OR: [
+            { title: { contains: 'notice' } },
+            { alias: { contains: 'notice' } },
+          ],
+        }),
+      }),
+    );
+  });
+
+  it('DOCUMENT-ALIAS-003: setAlias → updates the alias for an existing document', async () => {
+    mockDocumentFindUnique.mockResolvedValue({ id: 1 });
+    mockDocumentUpdate.mockResolvedValue({ id: 1, title: '공지사항', alias: 'notice' });
+
+    const { adminDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminDocumentRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.setAlias({ documentId: 1, alias: 'notice' });
+
+    expect(result).toEqual({ id: 1, title: '공지사항', alias: 'notice' });
+    expect(mockDocumentUpdate).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { alias: 'notice' },
+      select: { id: true, title: true, alias: true },
+    });
+  });
+
+  it('DOCUMENT-ALIAS-004: setAlias → alias=null clears the alias', async () => {
+    mockDocumentFindUnique.mockResolvedValue({ id: 1 });
+    mockDocumentUpdate.mockResolvedValue({ id: 1, title: '공지사항', alias: null });
+
+    const { adminDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminDocumentRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.setAlias({ documentId: 1, alias: null });
+
+    expect(result.alias).toBeNull();
+    expect(mockDocumentUpdate).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { alias: null },
+      select: { id: true, title: true, alias: true },
+    });
+  });
+
+  it('DOCUMENT-ALIAS-005: setAlias → throws NOT_FOUND when document does not exist', async () => {
+    mockDocumentFindUnique.mockResolvedValue(null);
+
+    const { adminDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminDocumentRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(caller.setAlias({ documentId: 999, alias: 'foo' })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('DOCUMENT-ALIAS-006: setAlias → throws BAD_REQUEST on unique constraint violation (P2002)', async () => {
+    mockDocumentFindUnique.mockResolvedValue({ id: 2 });
+    mockDocumentUpdate.mockRejectedValue({ code: 'P2002' });
+
+    const { adminDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminDocumentRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(caller.setAlias({ documentId: 2, alias: 'duplicate' })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
     });
   });
 });

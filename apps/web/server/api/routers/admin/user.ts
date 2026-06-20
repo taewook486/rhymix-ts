@@ -2,16 +2,20 @@
  * admin.user tRPC 라우터 — SPEC-ADMIN-001 Slice E-5.
  *                     SPEC-ADMIN-002 Slice 1C (REQ-ADMIN2-044, REQ-ADMIN2-045).
  *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-152).
+ *                     SPEC-ADMIN-002 Slice 3B (REQ-ADMIN2-056, REQ-ADMIN2-057).
  *
- * 회원 관리: list / get / update / bulk / create(직접 등록) / deniedList.*.
+ * 회원 관리: list / get / update / bulk / create(직접 등록) / updateNickname /
+ *           nicknameLog.list / deniedList.*.
  *
  * @MX:ANCHOR: [AUTO] admin.user.update — changeUserStatus 위임 단일 진입점.
  * @MX:REASON: 권한 검증 + status 변경 + 세션 무효화 + AuditLog 가 packages/auth 의
  *             changeUserStatus 한 곳에서 처리된다. 우회 경로 방지를 위해 반드시
  *             이 프로시저를 거쳐야 한다.
- * @MX:SPEC: SPEC-ADMIN-001 US-7, REQ-AUTH-020, SPEC-ADMIN-002 REQ-ADMIN2-152
+ * @MX:SPEC: SPEC-ADMIN-001 US-7, REQ-AUTH-020, SPEC-ADMIN-002 REQ-ADMIN2-152,
+ *           REQ-ADMIN2-056, REQ-ADMIN2-057
  */
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { router, protectedAdminProcedure } from '../../trpc';
 import { changeUserStatus, softDeleteUser } from '@rhymix-ts/auth';
 import { hashPassword } from '@rhymix-ts/auth';
@@ -210,6 +214,106 @@ export const adminUserRouter = router({
 
       return { processed: results.length };
     }),
+
+  /**
+   * 닉네임 변경 (REQ-ADMIN2-057).
+   *
+   * User.nickName 변경과 NicknameChangeLog 기록을 하나의 트랜잭션으로 처리한다.
+   * AdminLog는 auditLogger 미들웨어(트랜스포트 trpc.ts)가 모든 admin mutation 에 대해
+   * 자동으로 기록하므로 여기서 중복 기록하지 않는다 (admin.user.create 와 동일 패턴).
+   *
+   * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-056, REQ-ADMIN2-057
+   */
+  updateNickname: protectedAdminProcedure
+    .input(
+      z.object({
+        userId: z.number().int().positive(),
+        newNickName: z.string().min(1).max(40),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      const existing = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, nickName: true },
+      });
+
+      if (!existing) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: '회원을 찾을 수 없습니다.' });
+      }
+
+      if (existing.nickName === input.newNickName) {
+        // 변경 사항이 없으면 이력을 남기지 않고 현재 값을 그대로 반환한다.
+        return { id: existing.id, nickName: existing.nickName };
+      }
+
+      try {
+        const result = await ctx.prisma.$transaction(async (tx) => {
+          const updated = await tx.user.update({
+            where: { id: input.userId },
+            data: { nickName: input.newNickName },
+            select: { id: true, nickName: true },
+          });
+
+          await tx.nicknameChangeLog.create({
+            data: {
+              userId: input.userId,
+              oldNickName: existing.nickName,
+              newNickName: input.newNickName,
+              changedByAdminId: actorId,
+            },
+          });
+
+          return updated;
+        });
+
+        return result;
+      } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((err as any)?.code === 'P2002') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '이미 사용 중인 닉네임입니다.',
+          });
+        }
+        throw err;
+      }
+    }),
+
+  /**
+   * 닉네임 변경 이력 조회 (REQ-ADMIN2-056).
+   *
+   * admin.log.list 와 동일한 { total, items, page, pageSize } 페이지네이션 형태를 따른다.
+   */
+  nicknameLog: router({
+    list: protectedAdminProcedure
+      .input(
+        z.object({
+          userId: z.number().int().positive().optional(),
+          page: z.number().int().min(1).default(1),
+          pageSize: z.number().int().min(1).max(200).default(50),
+        }),
+      )
+      .query(async ({ ctx, input }) => {
+        const where = input.userId ? { userId: input.userId } : {};
+
+        const [total, items] = await Promise.all([
+          ctx.prisma.nicknameChangeLog.count({ where }),
+          ctx.prisma.nicknameChangeLog.findMany({
+            where,
+            orderBy: { changedAt: 'desc' },
+            take: input.pageSize,
+            skip: (input.page - 1) * input.pageSize,
+            include: {
+              user: { select: { id: true, userId: true, nickName: true } },
+            },
+          }),
+        ]);
+
+        return { total, items, page: input.page, pageSize: input.pageSize };
+      }),
+  }),
 
   deniedList: router({
     /**

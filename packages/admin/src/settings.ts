@@ -967,3 +967,61 @@ export async function updatePollConfig(
 
   return validated;
 }
+
+// ---------------------------------------------------------------------------
+// 태그 설정 (Tag Settings) — SPEC-ADMIN-002 Slice 3B, REQ-ADMIN2-087/156
+// ---------------------------------------------------------------------------
+
+/** 태그 구분 방법. 복수 선택 가능 (예: 쉼표 + 공백 동시 지원). */
+const TAG_DELIMITERS = ['comma', 'hash', 'space'] as const;
+
+const TagSettingsSchema = z.object({
+  // 태그 클라우드에 노출할 최대 태그 개수 (REQ-ADMIN2-087)
+  cloudDisplayCount: z.number().int().min(1).max(500).default(50),
+  // 태그 클라우드 정렬 기준 (REQ-ADMIN2-087)
+  sortBy: z.enum(['frequency', 'name', 'recent']).default('frequency'),
+  // 문서 저장 시 태그 입력 문자열을 파싱하는 구분자 방식. 1개 이상 선택 필수 (REQ-ADMIN2-156)
+  delimiters: z.array(z.enum(TAG_DELIMITERS)).min(1).default(['comma']),
+});
+
+export type TagDelimiter = (typeof TAG_DELIMITERS)[number];
+
+export interface TagSettings {
+  cloudDisplayCount: number;
+  sortBy: 'frequency' | 'name' | 'recent';
+  delimiters: TagDelimiter[];
+}
+
+/**
+ * 태그 설정(클라우드 노출 개수/정렬 기준/구분 방법)을 조회한다.
+ *
+ * REQ-ADMIN2-087: 태그 클라우드 노출 개수, 정렬 기준.
+ * REQ-ADMIN2-156: 문서 저장 시 태그 입력 파싱에 사용하는 구분자(쉼표/해시/공백, 복수 선택).
+ */
+export async function getTagSettings(ctx: { prisma: PrismaClient }): Promise<TagSettings> {
+  const setting = await getOrCreateSiteSetting(ctx.prisma, 'tagSettings');
+
+  const value = setting.value as Record<string, unknown>;
+  return {
+    cloudDisplayCount: (value.cloudDisplayCount as number) || 50,
+    sortBy: (value.sortBy as TagSettings['sortBy']) || 'frequency',
+    delimiters:
+      Array.isArray(value.delimiters) && value.delimiters.length > 0
+        ? (value.delimiters as TagDelimiter[])
+        : ['comma'],
+  };
+}
+
+/**
+ * 태그 설정을 업데이트한다.
+ */
+export async function updateTagSettings(
+  input: TagSettings,
+  ctx: { prisma: PrismaClient },
+): Promise<TagSettings> {
+  const validated = TagSettingsSchema.parse(input);
+
+  await updateSiteSetting(ctx.prisma, 'tagSettings', validated);
+
+  return validated;
+}

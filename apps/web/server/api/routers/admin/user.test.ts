@@ -43,12 +43,25 @@ vi.mock('@rhymix-ts/auth', () => ({
 const mockUserFindMany = vi.fn();
 const mockUserCount = vi.fn();
 const mockUserFindUnique = vi.fn();
+const mockUserUpdate = vi.fn();
 const mockDeniedIdentifierCreate = vi.fn();
 const mockDeniedIdentifierDelete = vi.fn();
 const mockDeniedIdentifierFindMany = vi.fn();
 const mockAdminLogCreate = vi.fn();
 const mockMemberGroupMemberFindMany = vi.fn();
-const mockUserTransaction = vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) => fn({}));
+const mockNicknameChangeLogCreate = vi.fn();
+const mockNicknameChangeLogFindMany = vi.fn();
+const mockNicknameChangeLogCount = vi.fn();
+const mockUserTransaction = vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) =>
+  fn({
+    user: {
+      update: (...args: unknown[]) => mockUserUpdate(...args),
+    },
+    nicknameChangeLog: {
+      create: (...args: unknown[]) => mockNicknameChangeLogCreate(...args),
+    },
+  }),
+);
 const mockSiteSettingFindFirst = vi.fn();
 
 const mockPrisma = {
@@ -59,6 +72,7 @@ const mockPrisma = {
     findMany: (...args: unknown[]) => mockUserFindMany(...args),
     count: (...args: unknown[]) => mockUserCount(...args),
     findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
+    update: (...args: unknown[]) => mockUserUpdate(...args),
   },
   deniedIdentifier: {
     create: (...args: unknown[]) => mockDeniedIdentifierCreate(...args),
@@ -67,6 +81,11 @@ const mockPrisma = {
   },
   memberGroupMember: {
     findMany: (...args: unknown[]) => mockMemberGroupMemberFindMany(...args),
+  },
+  nicknameChangeLog: {
+    create: (...args: unknown[]) => mockNicknameChangeLogCreate(...args),
+    findMany: (...args: unknown[]) => mockNicknameChangeLogFindMany(...args),
+    count: (...args: unknown[]) => mockNicknameChangeLogCount(...args),
   },
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
@@ -238,6 +257,131 @@ describe('admin.user tRPC router (Slice E-5)', () => {
     expect(mockDeniedIdentifierDelete).toHaveBeenCalledOnce();
     expect(mockDeniedIdentifierDelete).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 10 } }),
+    );
+  });
+
+  // ==========================================================================
+  // 닉네임 변경 (REQ-ADMIN2-056, REQ-ADMIN2-057)
+  // ==========================================================================
+
+  it('NICKNAME-001: updateNickname → updates nickName and appends NicknameChangeLog row in a transaction', async () => {
+    mockUserFindUnique.mockResolvedValue({ id: 2, nickName: '이전닉네임' });
+    mockUserUpdate.mockResolvedValue({ id: 2, nickName: '새닉네임' });
+    mockNicknameChangeLogCreate.mockResolvedValue({ id: 1 });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateNickname({ userId: 2, newNickName: '새닉네임' });
+
+    expect(result).toEqual({ id: 2, nickName: '새닉네임' });
+    expect(mockUserUpdate).toHaveBeenCalledWith({
+      where: { id: 2 },
+      data: { nickName: '새닉네임' },
+      select: { id: true, nickName: true },
+    });
+    expect(mockNicknameChangeLogCreate).toHaveBeenCalledWith({
+      data: {
+        userId: 2,
+        oldNickName: '이전닉네임',
+        newNickName: '새닉네임',
+        changedByAdminId: 1,
+      },
+    });
+  });
+
+  it('NICKNAME-002: updateNickname → throws NOT_FOUND when target user does not exist', async () => {
+    mockUserFindUnique.mockResolvedValue(null);
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.updateNickname({ userId: 999, newNickName: '새닉네임' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(mockNicknameChangeLogCreate).not.toHaveBeenCalled();
+  });
+
+  it('NICKNAME-003: updateNickname → no-op (no log entry) when newNickName equals current nickName', async () => {
+    mockUserFindUnique.mockResolvedValue({ id: 2, nickName: '동일닉네임' });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateNickname({ userId: 2, newNickName: '동일닉네임' });
+
+    expect(result).toEqual({ id: 2, nickName: '동일닉네임' });
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+    expect(mockNicknameChangeLogCreate).not.toHaveBeenCalled();
+  });
+
+  it('NICKNAME-004: updateNickname → throws BAD_REQUEST on unique constraint violation (P2002)', async () => {
+    mockUserFindUnique.mockResolvedValue({ id: 2, nickName: '이전닉네임' });
+    mockUserUpdate.mockRejectedValue({ code: 'P2002' });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.updateNickname({ userId: 2, newNickName: '중복닉네임' }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('NICKNAME-005: nicknameLog.list → returns paginated { total, items, page, pageSize }', async () => {
+    mockNicknameChangeLogCount.mockResolvedValue(1);
+    mockNicknameChangeLogFindMany.mockResolvedValue([
+      {
+        id: 1,
+        userId: 2,
+        oldNickName: '이전닉네임',
+        newNickName: '새닉네임',
+        changedByAdminId: 1,
+        changedAt: new Date('2026-06-20T00:00:00Z'),
+        user: { id: 2, userId: 'user1', nickName: '새닉네임' },
+      },
+    ]);
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.nicknameLog.list({ page: 1, pageSize: 50 });
+
+    expect(result.total).toBe(1);
+    expect(result.page).toBe(1);
+    expect(result.pageSize).toBe(50);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({ oldNickName: '이전닉네임', newNickName: '새닉네임' });
+  });
+
+  it('NICKNAME-006: nicknameLog.list → filters by userId when provided', async () => {
+    mockNicknameChangeLogCount.mockResolvedValue(0);
+    mockNicknameChangeLogFindMany.mockResolvedValue([]);
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await caller.nicknameLog.list({ userId: 2, page: 1, pageSize: 50 });
+
+    expect(mockNicknameChangeLogFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 2 } }),
     );
   });
 });
