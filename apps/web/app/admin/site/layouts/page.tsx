@@ -1,14 +1,16 @@
 /**
- * Layout 목록 관리 페이지 — SPEC-ADMIN-002 Slice 2A.
+ * Layout 목록 관리 페이지 — SPEC-ADMIN-002 Slice 2A + Slice 3D.
  *
  * 설치된 Layout 목록을 표시하고, 인스턴스 수를 포함한다 (REQ-ADMIN2-020).
+ * REQ-ADMIN2-023: 레이아웃 미리보기 기능 추가.
  * Server Component: getServerCaller().admin.layout.list() 호출 후 테이블 렌더.
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-020
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-020, REQ-ADMIN2-023
  */
 import Link from 'next/link';
 import { getServerCaller } from '@/lib/trpc/server';
 import { Button } from '@rhymix-ts/ui/components';
+import { LayoutPreviewDialog } from './_components/LayoutPreviewDialog';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,7 +79,11 @@ export default async function LayoutsPage() {
                       {layout.instanceCount}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right space-x-2">
+                    <LayoutPreviewDialog
+                      layoutId={layout.id}
+                      layoutName={layout.name}
+                    />
                     <Button asChild variant="ghost" size="sm">
                       <Link href={`/admin/site/layouts/${layout.id}`}>인스턴스 보기</Link>
                     </Button>

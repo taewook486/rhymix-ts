@@ -1,17 +1,18 @@
 'use server';
 
 /**
- * actions.ts — SPEC-PAGE-001 Slice C + SPEC-ADMIN-002 Slice 2A
+ * actions.ts — SPEC-PAGE-001 Slice C + SPEC-ADMIN-002 Slice 2A + Slice 3D.
  *
  * 페이지 본문 저장 Server Action.
  * 관리자 권한 검증 후 savePageContent 를 호출한다 (REQ-PAGE-032).
  *
  * REQ-ADMIN2-027: 페이지 설정 업데이트
  * REQ-ADMIN2-029: 페이지 삭제
+ * REQ-ADMIN2-028: 모바일 페이지 콘텐츠 저장 추가
  *
  * @MX:ANCHOR [AUTO]: 페이지 편집 Server Action 진입점.
  * @MX:REASON: 권한 검증 + DB 저장이 단일 경로를 통과해야 우회 불가. 3개 이상 호출 예정.
- * @MX:SPEC: SPEC-PAGE-001 REQ-PAGE-032 + SPEC-ADMIN-002 REQ-ADMIN2-027, REQ-ADMIN2-029
+ * @MX:SPEC: SPEC-PAGE-001 REQ-PAGE-032 + SPEC-ADMIN-002 REQ-ADMIN2-027, REQ-ADMIN2-028, REQ-ADMIN2-029
  */
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
@@ -113,4 +114,45 @@ export async function deletePageAction(instanceId: number): Promise<void> {
 
   // 목록 페이지로 리다이렉트
   redirect('/admin/pages');
+}
+
+/**
+ * 모바일 페이지 본문을 저장한다 (REQ-ADMIN2-028).
+ * 비관리자면 권한 오류를 던진다.
+ *
+ * @param instanceId 모듈 인스턴스 ID
+ * @param mcontentMobile 저장할 모바일 HTML 본문
+ */
+export async function saveMobilePageAction(
+  instanceId: number,
+  mcontentMobile: string,
+): Promise<void> {
+  // 관리자 권한 검증
+  const session = await auth();
+  if (!isAdminSession(session)) {
+    throw new Error('관리자 권한이 필요합니다.');
+  }
+
+  // 데스크톱 콘텐츠는 유지하면서 모바일 콘텐츠만 저장
+  // 현재 데스크톱 콘텐츠를 먼저 로드
+  const instance = await prisma.moduleInstance.findUnique({
+    where: { id: instanceId },
+  });
+
+  if (!instance || instance.moduleCode !== 'page') {
+    throw new Error('페이지 인스턴스를 찾을 수 없습니다.');
+  }
+
+  await savePageContent(
+    {
+      instanceId,
+      mcontent: instance.mcontent ?? '',
+      pageType: 'CONTENT',
+      mcontentMobile,
+    },
+    prisma,
+  );
+
+  // 저장 후 편집 페이지로 리다이렉트
+  redirect(`/admin/pages/${instanceId}/edit`);
 }

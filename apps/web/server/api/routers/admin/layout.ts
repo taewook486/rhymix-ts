@@ -1,11 +1,12 @@
 /**
- * admin.layout tRPC 라우터 — SPEC-ADMIN-002 Slice 2A.
+ * admin.layout tRPC 라우터 — SPEC-ADMIN-002 Slice 2A + Slice 3D.
  *
  * Layout 관리: list / listInstances / createInstance / updateInstanceVariables.
+ * Slice 3D 추가: preview / duplicateInstance.
  *
  * @MX:NOTE: [AUTO] Layout 목록 조회 시 각 Layout별 ThemeAssignment 인스턴스 수를 집계.
  *           layoutName 으로 ThemeAssignment 를 카운트하여 instanceCount 를 계산한다.
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-020, REQ-ADMIN2-021, REQ-ADMIN2-022
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-020, REQ-ADMIN2-021, REQ-ADMIN2-022, REQ-ADMIN2-023, REQ-ADMIN2-024
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
@@ -108,6 +109,73 @@ export const adminLayoutRouter = router({
       return ctx.prisma.themeAssignment.update({
         where: { id },
         data: { tokensOverride: tokensOverride as Prisma.InputJsonValue },
+      });
+    }),
+
+  /**
+   * Layout 미리보기 (REQ-ADMIN2-023).
+   * 레이아웃 메타데이터와 샘플 콘텐츠를 반환한다. DB에 저장하지 않는다.
+   */
+  preview: protectedAdminProcedure
+    .input(
+      z.object({
+        layoutId: z.string().min(1),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const layout = await ctx.prisma.layout.findUnique({
+        where: { id: input.layoutId },
+      });
+
+      if (!layout) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Layout not found' });
+      }
+
+      // 샘플 콘텐츠 플레이스홀더 (실제 렌더링은 프론트엔드에서 처리)
+      return {
+        layout,
+        sampleContent: {
+          title: '샘플 페이지 제목',
+          content: '<p>샘플 콘텐츠입니다.</p>',
+          widgets: [],
+        },
+      };
+    }),
+
+  /**
+   * Layout 인스턴스 복제 (REQ-ADMIN2-024).
+   * 기존 ThemeAssignment의 변수 값(토큰)을 포함하여 새 인스턴스를 생성한다.
+   */
+  duplicateInstance: protectedAdminProcedure
+    .input(
+      z.object({
+        instanceId: z.string().min(1),
+        newRefId: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 기존 인스턴스 조회
+      const existingInstance = await ctx.prisma.themeAssignment.findUnique({
+        where: { id: input.instanceId },
+      });
+
+      if (!existingInstance) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Layout instance not found' });
+      }
+
+      // 새 인스턴스 생성 (기존 변수 값 복사)
+      return ctx.prisma.themeAssignment.create({
+        data: {
+          themeId: existingInstance.themeId,
+          scope: existingInstance.scope,
+          refType: existingInstance.refType,
+          refId: input.newRefId,
+          layoutName: existingInstance.layoutName,
+          mobileLayoutName: existingInstance.mobileLayoutName,
+          mlayoutMode: existingInstance.mlayoutMode,
+          skinName: existingInstance.skinName,
+          tokensOverride: existingInstance.tokensOverride as Prisma.InputJsonValue,
+        },
       });
     }),
 });

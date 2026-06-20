@@ -1,13 +1,14 @@
 /**
- * service.ts — SPEC-PAGE-001 Slice A
+ * service.ts — SPEC-PAGE-001 Slice A + SPEC-ADMIN-002 Slice 3D.
  *
  * 페이지 모듈 핵심 서비스 함수.
  * prisma 는 파라미터로 주입받아 apps/web 레이어의 의존성을 피한다 (REQ-PAGE-009).
+ * REQ-ADMIN2-028: 모바일 콘텐츠 지원 추가.
  *
  * @MX:WARN [AUTO]: sanitizePageBody 는 DOMPurify 설정을 직접 수정하므로 설정 변경 시 주의.
  * @MX:REASON: ALLOWED_TAGS / ALLOWED_ATTR 변경이 XSS 취약점을 유발할 수 있음.
  */
-import type { PrismaClient } from '@prisma/client'
+import { type PrismaClient, type Prisma } from '@prisma/client'
 import type DOMPurifyType from 'isomorphic-dompurify'
 import type { PageContent, PageType } from './types'
 
@@ -27,7 +28,7 @@ import { pageConfigSchema } from './config'
  *
  * @MX:ANCHOR [AUTO]: routes.index, admin edit page, savePageContent 에서 참조.
  * @MX:REASON: 인스턴스 유효성(moduleCode === 'page') 검사 + mcontent 로드의 단일 경로.
- * @MX:SPEC: SPEC-PAGE-001 REQ-PAGE-003
+ * @MX:SPEC: SPEC-PAGE-001 REQ-PAGE-003 + SPEC-ADMIN-002 REQ-ADMIN2-028
  */
 export async function loadPageContent(
   instanceId: number,
@@ -47,11 +48,14 @@ export async function loadPageContent(
 
     // 설정 파싱 (실패 시 기본값)
     let pageType: PageType = 'CONTENT'
+    let mcontentMobile: string | null | undefined = undefined
     if (instance.config) {
       try {
         const parsed = pageConfigSchema.safeParse(instance.config.config)
         if (parsed.success) {
           pageType = parsed.data.pageType
+          // REQ-ADMIN2-028: 모바일 콘텐츠를 config 에서 로드
+          mcontentMobile = (parsed.data as Record<string, unknown>)?.mcontentMobile as string | null | undefined
         }
       } catch {
         // 파싱 오류는 무시하고 기본값 사용
@@ -61,6 +65,7 @@ export async function loadPageContent(
     return {
       instanceId: instance.id,
       mcontent: instance.mcontent ?? null,
+      mcontentMobile, // REQ-ADMIN2-028: 모바일 콘텐츠 포함
       pageType,
       mcontentFormat: 'HTML',
     }
@@ -73,31 +78,37 @@ export async function loadPageContent(
 /**
  * 페이지 본문을 저장한다 (upsert).
  * mcontent 와 config.pageType 을 트랜잭션 안에서 함께 업데이트.
+ * REQ-ADMIN2-028: mcontentMobile 도 함께 저장 지원.
  *
- * @MX:SPEC: SPEC-PAGE-001 REQ-PAGE-004
+ * @MX:SPEC: SPEC-PAGE-001 REQ-PAGE-004 + SPEC-ADMIN-002 REQ-ADMIN2-028
  */
 export async function savePageContent(
-  input: { instanceId: number; mcontent: string; pageType: PageType },
+  input: { instanceId: number; mcontent: string; pageType: PageType; mcontentMobile?: string },
   prisma: PrismaClient,
 ): Promise<PageContent> {
-  const { instanceId, mcontent, pageType } = input
+  const { instanceId, mcontent, pageType, mcontentMobile } = input
 
   await prisma.$transaction(async (tx) => {
-    // mcontent 업데이트
+    // mcontent 업데이트 (데스크톱 본문)
     await tx.moduleInstance.update({
       where: { id: instanceId },
       data: { mcontent },
     })
 
-    // config upsert (pageType 저장)
+    // config upsert (pageType + mcontentMobile 저장)
+    const configData: Record<string, unknown> = { pageType, mcontentFormat: 'HTML' }
+    if (mcontentMobile !== undefined) {
+      configData.mcontentMobile = mcontentMobile
+    }
+
     await tx.moduleConfig.upsert({
       where: { moduleInstanceId: instanceId },
       create: {
         moduleInstanceId: instanceId,
-        config: { pageType, mcontentFormat: 'HTML' },
+        config: configData as Prisma.InputJsonValue,
       },
       update: {
-        config: { pageType, mcontentFormat: 'HTML' },
+        config: configData as Prisma.InputJsonValue,
       },
     })
   })
@@ -105,6 +116,7 @@ export async function savePageContent(
   return {
     instanceId,
     mcontent,
+    mcontentMobile,
     pageType,
     mcontentFormat: 'HTML',
   }

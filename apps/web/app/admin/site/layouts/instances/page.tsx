@@ -1,15 +1,17 @@
 /**
- * Layout 인스턴스 관리 페이지 — SPEC-ADMIN-002 Slice 2A.
+ * Layout 인스턴스 관리 페이지 — SPEC-ADMIN-002 Slice 2A + Slice 3D.
  *
  * Layout 인스턴스(ThemeAssignment) 목록을 표시하고 생성을 지원한다 (REQ-ADMIN2-021).
+ * REQ-ADMIN2-024: 인스턴스 복제 기능 추가.
  * Server Component: getServerCaller().admin.layout.listInstances() 호출.
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-021
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-021, REQ-ADMIN2-024
  */
 import Link from 'next/link';
 import { getServerCaller } from '@/lib/trpc/server';
 import { Button } from '@rhymix-ts/ui/components';
 import { LayoutInstanceForm } from './_components/LayoutInstanceForm';
+import { DuplicateInstanceDialog } from './_components/DuplicateInstanceDialog';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,10 +91,14 @@ export default async function LayoutInstancesPage() {
                       {new Date(instance.createdAt).toLocaleDateString('ko-KR')}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right space-x-2">
                     <Button asChild variant="ghost" size="sm">
                       <Link href={`/admin/site/layouts/${instance.id}`}>편집</Link>
                     </Button>
+                    <DuplicateInstanceDialog
+                      instanceId={instance.id}
+                      instanceName={instance.layoutName}
+                    />
                   </td>
                 </tr>
               ))}

@@ -1,11 +1,13 @@
 /**
- * Specification tests for admin.layout tRPC router — SPEC-ADMIN-002 Slice 2A.
+ * Specification tests for admin.layout tRPC router — SPEC-ADMIN-002 Slice 2A + Slice 3D.
  *
  * LAYOUT-001: admin 세션 + layout.list → Layout 목록과 인스턴스 수 반환.
  * LAYOUT-002: layout.list → 각 Layout에 대한 ThemeAssignment 수를 집계.
  * LAYOUT-003: admin 세션 + layout.listInstances → ThemeAssignment 목록 반환.
  * LAYOUT-004: layout.createInstance → 새 ThemeAssignment 생성.
  * LAYOUT-005: layout.updateInstanceVariables → tokensOverride JSON 갱신.
+ * LAYOUT-006: layout.preview → 레이아웃 미리보기 데이터 반환 (REQ-ADMIN2-023).
+ * LAYOUT-007: layout.duplicateInstance → 레이아웃 인스턴스 복제 (REQ-ADMIN2-024).
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
@@ -24,7 +26,9 @@ vi.mock('@/lib/db/prisma', () => ({
 
 // Prisma mock
 const mockLayoutFindMany = vi.fn();
+const mockLayoutFindUnique = vi.fn();
 const mockThemeAssignmentFindMany = vi.fn();
+const mockThemeAssignmentFindUnique = vi.fn();
 const mockThemeAssignmentCreate = vi.fn();
 const mockThemeAssignmentUpdate = vi.fn();
 const mockThemeAssignmentCount = vi.fn();
@@ -40,9 +44,11 @@ const mockPrisma = {
   },
   layout: {
     findMany: (...args: unknown[]) => mockLayoutFindMany(...args),
+    findUnique: (...args: unknown[]) => mockLayoutFindUnique(...args),
   },
   themeAssignment: {
     findMany: (...args: unknown[]) => mockThemeAssignmentFindMany(...args),
+    findUnique: (...args: unknown[]) => mockThemeAssignmentFindUnique(...args),
     create: (...args: unknown[]) => mockThemeAssignmentCreate(...args),
     update: (...args: unknown[]) => mockThemeAssignmentUpdate(...args),
     count: (...args: unknown[]) => mockThemeAssignmentCount(...args),
@@ -202,5 +208,88 @@ describe('admin.layout tRPC router (Slice 2A)', () => {
       data: { tokensOverride: { logo: '/new-logo.png', primaryColor: '#ffffff' } },
     });
     expect(result).toEqual(updatedInstance);
+  });
+
+  it('LAYOUT-006: layout.preview → 레이아웃 미리보기 데이터 반환 (REQ-ADMIN2-023)', async () => {
+    const layout = {
+      id: '1',
+      name: 'default',
+      title: '기본 레이아웃',
+      layoutType: 'DESKTOP' as const,
+      themeId: 'theme1',
+    };
+    mockLayoutFindUnique.mockResolvedValueOnce(layout);
+
+    const { adminLayoutRouter } = await import('./layout');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminLayoutRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.preview({ layoutId: '1' });
+
+    expect(mockLayoutFindUnique).toHaveBeenCalledWith({
+      where: { id: '1' },
+    });
+    expect(result).toEqual({
+      layout,
+      sampleContent: {
+        title: '샘플 페이지 제목',
+        content: '<p>샘플 콘텐츠입니다.</p>',
+        widgets: [],
+      },
+    });
+  });
+
+  it('LAYOUT-007: layout.duplicateInstance → 레이아웃 인스턴스 복제 (REQ-ADMIN2-024)', async () => {
+    const existingInstance = {
+      id: 'existing-id',
+      themeId: 'theme1',
+      scope: 'SITE' as const,
+      refType: 'layout',
+      refId: 'site1',
+      layoutName: 'default',
+      mobileLayoutName: 'mobile',
+      mlayoutMode: 'AUTO',
+      skinName: 'default',
+      tokensOverride: { logo: '/logo.png', primaryColor: '#000000' },
+    };
+    mockThemeAssignmentFindUnique.mockResolvedValueOnce(existingInstance);
+
+    const duplicatedInstance = {
+      ...existingInstance,
+      id: 'new-duplicated-id',
+      refId: 'site2',
+    };
+    mockThemeAssignmentCreate.mockResolvedValueOnce(duplicatedInstance);
+
+    const { adminLayoutRouter } = await import('./layout');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminLayoutRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.duplicateInstance({
+      instanceId: 'existing-id',
+      newRefId: 'site2',
+    });
+
+    expect(mockThemeAssignmentFindUnique).toHaveBeenCalledWith({
+      where: { id: 'existing-id' },
+    });
+    expect(mockThemeAssignmentCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        themeId: 'theme1',
+        scope: 'SITE',
+        refType: 'layout',
+        refId: 'site2',
+        layoutName: 'default',
+        mobileLayoutName: 'mobile',
+        mlayoutMode: 'AUTO',
+        skinName: 'default',
+        tokensOverride: { logo: '/logo.png', primaryColor: '#000000' },
+      }),
+    });
+    expect(result).toEqual(duplicatedInstance);
   });
 });

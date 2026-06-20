@@ -1,13 +1,18 @@
 // @vitest-environment jsdom
 /**
- * page.test.tsx — SPEC-PAGE-001 Slice C
+ * page.test.tsx — SPEC-PAGE-001 Slice C + SPEC-ADMIN-002 Slice 3D.
  *
  * 페이지 편집 관리자 페이지 + Server Action 단위 테스트.
  * RED 단계 기준 작성.
+ * REQ-ADMIN2-028: 모바일 페이지 콘텐츠 지원 테스트 추가.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
+
+afterEach(() => {
+  cleanup();
+});
 
 // ---------- 모듈 목 ----------
 
@@ -41,11 +46,36 @@ vi.mock('@/lib/auth/admin-middleware', () => ({
 vi.mock(
   './_components/PageEditForm',
   () => ({
-    PageEditForm: ({ instanceId, initialContent }: { instanceId: number; initialContent: string }) =>
-      React.createElement('div', { 'data-testid': 'page-edit-form' },
-        React.createElement('textarea', { 'data-testid': 'mcontent-textarea', defaultValue: initialContent }),
-        React.createElement('span', { 'data-testid': 'instance-id' }, String(instanceId)),
-      ),
+    PageEditForm: ({
+      instanceId,
+      initialContent,
+      initialMobileContent,
+    }: {
+      instanceId: number;
+      initialContent: string;
+      initialMobileContent?: string;
+    }) => {
+      const children = [
+        React.createElement('textarea', {
+          key: 'desktop',
+          'data-testid': 'mcontent-textarea',
+          defaultValue: initialContent,
+        }),
+        React.createElement('span', { key: 'instance-id', 'data-testid': 'instance-id' }, String(instanceId)),
+      ];
+
+      if (initialMobileContent !== undefined) {
+        children.push(
+          React.createElement('textarea', {
+            key: 'mobile',
+            'data-testid': 'mcontent-mobile-textarea',
+            defaultValue: initialMobileContent,
+          }),
+        );
+      }
+
+      return React.createElement('div', { 'data-testid': 'page-edit-form' }, ...children);
+    },
   }),
 );
 
@@ -208,5 +238,56 @@ describe('savePageAction', () => {
     // Act & Assert
     await expect(savePageAction(2, '<p>내용</p>')).rejects.toThrow('REDIRECT');
     expect(mockRedirect).toHaveBeenCalledWith('/admin/pages/2/edit');
+  });
+
+  it('EDIT-8: 모바일 콘텐츠가 있으면 모바일 탭 textarea 렌더 (REQ-ADMIN2-028)', async () => {
+    // Arrange
+    mockFindUnique.mockResolvedValue({
+      id: 10,
+      moduleCode: 'page',
+      mid: 'mobile-home',
+      name: '모바일 홈',
+    });
+    mockLoadPageContent.mockResolvedValue({
+      instanceId: 10,
+      mcontent: '<p>데스크톱 내용</p>',
+      mcontentMobile: '<p>모바일 내용</p>',
+      pageType: 'CONTENT',
+      mcontentFormat: 'HTML',
+    });
+
+    const { default: PageEditPage } = await import('./page');
+    const node = await PageEditPage({ params: Promise.resolve({ instanceId: '10' }) });
+    render(node as React.ReactElement);
+
+    // Assert: 모바일 콘텐츠 textarea가 렌더되어야 함 (현재는 실패할 것임 - RED phase)
+    const mobileTextarea = screen.queryByTestId('mcontent-mobile-textarea');
+    expect(mobileTextarea).toBeTruthy(); // 이 테스트는 처음에 실패해야 함
+  });
+
+  it('EDIT-9: saveMobilePageAction으로 모바일 콘텐츠 저장 (REQ-ADMIN2-028)', async () => {
+    // Arrange
+    mockAuth.mockResolvedValue({ user: { id: 1 } });
+    mockIsAdminSession.mockReturnValue(true);
+    mockSavePageContent.mockResolvedValue({
+      instanceId: 5,
+      mcontent: '<p>데스크톱</p>',
+      mcontentMobile: '<p>모바일</p>',
+      pageType: 'CONTENT',
+      mcontentFormat: 'HTML',
+    });
+    mockRedirect.mockImplementation(() => { throw new Error('REDIRECT'); });
+
+    const { saveMobilePageAction } = await import('./actions');
+
+    // Act & Assert
+    await expect(saveMobilePageAction(5, '<p>모바일</p>')).rejects.toThrow('REDIRECT');
+    expect(mockSavePageContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instanceId: 5,
+        mcontentMobile: '<p>모바일</p>',
+      }),
+      expect.anything(),
+    );
   });
 });
