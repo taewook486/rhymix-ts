@@ -6,7 +6,7 @@
  *
  * @MX:SPEC: SPEC-FEED-001 REQ-FEED-007
  */
-import type { BoardFeedConfig } from './config.js';
+import type { BoardFeedConfig } from './config';
 
 /**
  * 피드 자동 검출을 위한 링크 타입과 URL을 생성한다.

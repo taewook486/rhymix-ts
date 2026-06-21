@@ -117,9 +117,7 @@ export default async function NotificationsPage() {
                   </div>
 
                   {isUnread && (
-                    <form action={async () => {
-                      await markOneRead(notif.id);
-                    }}>
+                    <form action={markOneRead.bind(null, notif.id)}>
                       <button
                         type="submit"
                         className="shrink-0 text-xs px-3 py-1.5 bg-white border border-zinc-300 text-zinc-700 rounded hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500"

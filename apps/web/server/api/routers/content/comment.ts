@@ -90,13 +90,18 @@ export const contentCommentRouter = router({
           throw err;
         }
 
+        const actorUser = await ctx.prisma.user.findUnique({
+          where: { id: ctx.session.user.id },
+          select: { nickName: true },
+        });
+
         return await createComment(
           {
             documentId: input.documentId,
             parentId: input.parentId ?? null,
             content: input.content,
             authorId: ctx.session.user.id,
-            nickName: null,
+            nickName: actorUser?.nickName ?? null,
             actor: buildActor(ctx.session),
           },
           { prisma: ctx.prisma },

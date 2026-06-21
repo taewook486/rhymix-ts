@@ -26,6 +26,8 @@ import { z } from 'zod';
 // isomorphic-dompurify is lazy-loaded in sanitizeHtml() to avoid loading jsdom
 // during Next.js page collection (module init time). This prevents the Windows
 // path issue where Turbopack maps __dirname to D:\ROOT.
+// Uses a dynamic import (not require) because Next.js's Turbopack server runtime
+// executes this module as ESM, where a bare require() throws ReferenceError.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _DOMPurify: any = null;
 import { Prisma } from '@prisma/client';
@@ -133,10 +135,10 @@ export function decodeCursor(token: string): { listOrder: bigint; id: number } {
  * 사용자 입력 HTML 을 정화한다 — XSS 방지.
  * SSR/Node 환경에서도 동작하도록 isomorphic-dompurify 사용.
  */
-function sanitizeHtml(html: string): string {
+async function sanitizeHtml(html: string): Promise<string> {
   if (!_DOMPurify) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    _DOMPurify = require('isomorphic-dompurify');
+    const mod = await import('isomorphic-dompurify');
+    _DOMPurify = mod.default ?? mod;
   }
   return _DOMPurify.sanitize(html);
 }
@@ -225,7 +227,7 @@ export async function createDocument(
   }
 
   // XSS sanitize
-  const safeContent = sanitizeHtml(parsed.content);
+  const safeContent = await sanitizeHtml(parsed.content);
   const safeContentText = toPlainText(safeContent);
 
   // categoryId 있으면 트랜잭션 내에서 생성 + incrementDocumentCount
@@ -350,7 +352,7 @@ export async function updateDocument(
   if (parsed.title !== undefined) data.title = parsed.title;
   if (parsed.status !== undefined) data.status = parsed.status;
   if (parsed.content !== undefined) {
-    const safeContent = sanitizeHtml(parsed.content);
+    const safeContent = await sanitizeHtml(parsed.content);
     data.content = safeContent;
     data.contentText = toPlainText(safeContent);
   }
@@ -362,7 +364,7 @@ export async function updateDocument(
   const board = doc.board as { updateLog?: boolean };
   const titleChanged = parsed.title !== undefined && parsed.title !== doc.title;
   const contentChanged = parsed.content !== undefined &&
-    sanitizeHtml(parsed.content) !== doc.content;
+    (await sanitizeHtml(parsed.content)) !== doc.content;
   const shouldLog = board.updateLog === true && (titleChanged || contentChanged);
 
   if (shouldLog) {

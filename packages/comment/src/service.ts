@@ -35,10 +35,12 @@ import { notificationHooks } from '@rhymix-ts/notification';
 // HTML sanitize
 // ---------------------------------------------------------------------------
 
-function sanitizeHtml(html: string): string {
+// Uses a dynamic import (not require) because Next.js's Turbopack server runtime
+// executes this module as ESM, where a bare require() throws ReferenceError.
+async function sanitizeHtml(html: string): Promise<string> {
   if (!_DOMPurify) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    _DOMPurify = require('isomorphic-dompurify');
+    const mod = await import('isomorphic-dompurify');
+    _DOMPurify = mod.default ?? mod;
   }
   return _DOMPurify.sanitize(html);
 }
@@ -96,7 +98,7 @@ export async function createComment(
     }
   }
 
-  const safeContent = sanitizeHtml(parsed.content);
+  const safeContent = await sanitizeHtml(parsed.content);
 
   return ctx.prisma.$transaction(async (tx) => {
     const comment = await tx.comment.create({

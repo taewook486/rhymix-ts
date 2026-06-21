@@ -13,8 +13,8 @@
  *           REQ-FEED-013, REQ-FEED-014, REQ-FEED-015, REQ-FEED-016, REQ-FEED-017,
  *           REQ-FEED-018, REQ-FEED-021
  */
-import { escapeXml, cdataWrap } from './xml.js';
-import type { BoardFeedConfig } from './config.js';
+import { escapeXml, cdataWrap } from './xml';
+import type { BoardFeedConfig } from './config';
 
 /**
  * 피드 빌더가 요구하는 문서 형태 — Document 모델의 일부만 발췌.

@@ -299,12 +299,18 @@ export const protectedAdminProcedure = publicProcedure
  * @MX:NOTE [AUTO]: 일반 인증 프로시저. content.* 라우터에서 사용.
  */
 const requireAuth = t.middleware(({ ctx, next }) => {
-  const userId = ctx.session?.user?.id;
+  // NextAuth JWT 세션의 user.id 는 token.sub 에서 그대로 옮겨지므로 항상 string이다
+  // (AdminSessionUser.id: number 타입 선언과 실제 런타임 값이 불일치 — auth()의
+  // unsafe cast로 인해 타입 검사로는 잡히지 않았던 버그). 여기서 number로 정규화한다.
+  const rawUserId = ctx.session?.user?.id as unknown;
+  const userId = typeof rawUserId === 'string' ? Number.parseInt(rawUserId, 10) : rawUserId;
   if (typeof userId !== 'number' || !Number.isFinite(userId)) {
     throw new TRPCError({ code: 'UNAUTHORIZED', message: '로그인이 필요합니다.' });
   }
-  // ctx.session 을 non-nullable 로 narrowing
-  return next({ ctx: { ...ctx, session: ctx.session! } });
+  // ctx.session 을 non-nullable 로 narrowing + user.id를 number로 정규화
+  return next({
+    ctx: { ...ctx, session: { ...ctx.session!, user: { ...ctx.session!.user, id: userId } } },
+  });
 });
 
 /**

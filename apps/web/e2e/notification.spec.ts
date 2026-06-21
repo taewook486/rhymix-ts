@@ -65,7 +65,10 @@ async function createDocumentViaUi(
   await page.locator('textarea#content').fill(content);
   await page.getByRole('button', { name: '작성' }).click();
 
-  await expect(page).toHaveURL(new RegExp(`/${mid}/\\d+$`), { timeout: 15_000 });
+  // 프로세스 기동 후 첫 sanitizeHtml() 호출은 isomorphic-dompurify(jsdom)를
+  // 처음 로드하는 1회성 비용이 수십 초 걸릴 수 있다(serverExternalPackages로
+  // 외부화되어 디스크에서 실제로 require되므로). 이후 호출은 빠르다.
+  await expect(page).toHaveURL(new RegExp(`/${mid}/\\d+$`), { timeout: 90_000 });
   const match = page.url().match(/\/(\d+)$/);
   if (!match) {
     throw new Error(`문서 작성 후 URL에서 documentId를 추출할 수 없습니다: ${page.url()}`);
@@ -112,6 +115,8 @@ test.beforeEach(async () => {
 test('REQ-NOTIF-065: 댓글 알림 — 미읽음 1개 표시 후 읽음 처리하면 0이 된다', async ({
   browser,
 }) => {
+  // jsdom 1회성 cold-load 대비 (createDocumentViaUi의 90s 대기 + 나머지 단계 여유)
+  test.setTimeout(180_000);
   // 1. 사이트 + 회원 A(문서 작성자), B(댓글 작성자) + 게시판 시드
   const { siteId } = await seedInstalledSite({ hostname: 'localhost' });
   await seedMember({ userId: 'alice', password: 'alice-pw-1234', nickName: '앨리스' });

@@ -19,9 +19,9 @@
  */
 import type { PrismaClient } from '@prisma/client';
 import { listDocuments } from '@rhymix-ts/document';
-import { canPerformAction } from '../permissions.js';
-import { boardFeedConfigSchema } from './config.js';
-import { buildFeed, type FeedDocument } from './build-feed.js';
+import { canPerformAction } from '../permissions';
+import { boardFeedConfigSchema } from './config';
+import { buildFeed, type FeedDocument } from './build-feed';
 
 /** F1 결정: 라우트 레이어에서 itemCount 를 100 으로 추가 clamp (listDocuments 의
  *  자체 limit.max(100) 제약과는 별개의 책임 — 변경하지 않는다). */
