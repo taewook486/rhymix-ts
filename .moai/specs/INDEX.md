@@ -32,6 +32,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 1/1 | 🟢 구현 완료 |
 | 6. ADMIN LEGACY PARITY | 레거시 분석 기반 admin 미구현 기능 완성 | 1 | 1/1 | 🟢 구현 완료 (M1~M3 전체, status: completed v1.3.0) |
 | 7. BACKLOG FOLLOW-UP | KEEP 레거시 모듈 후속 구현 (rss/poll/message/notification) | 2 | 2/2 | 🟢 구현 완료 (FEED-001, NOTIFICATION-001 Slice A+B 모두 완료. e2e만 후속 deferred) |
+| 8. ADMIN SECURITY HARDENING | 보안 리뷰에서 파생된 후속 구현 (2FA TOTP 백엔드 등) | 1 | 0/1 | 🟡 SPEC 작성 (ADMIN-2FA-OTP-001 draft) |
 
 ---
 
@@ -116,6 +117,16 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 > rss 레거시 모듈(SPEC-MODULE-BACKLOG-001 §1.4 KEEP)의 후속 구현. `app/[mid]/rss/route.ts` + `app/[mid]/atom/route.ts` 분리 라우트(공유 빌더), `listDocuments` PUBLIC-only 데이터 소스, 비밀글/임시저장/비공개 게시판 제외, `revalidate=300`+SWR+문서 이벤트 `revalidateTag` 3중 캐싱, `Board.feedConfig Json` additive 컬럼 + board admin 확장 설정 패널. 36개 REQ(REQ-FEED-001~066), 3개 슬라이스 전체 완료. `pnpm tsc --noEmit` 0 errors / vitest 67/67 통과 / expert-security 리뷰 CRITICAL·HIGH 0건. 통합 피드·팟캐스트 RSS·WebSub 명시 제외.
 >
 > ncenterlite 레거시 모듈(SPEC-MODULE-BACKLOG-001 §3.B KEEP)의 후속 구현. Slice A(MVP): `packages/notification` 패키지 신설(point 패턴) + Notification/NotificationPreference 스키마, `packages/comment/src/service.ts` 댓글 작성 훅 연동, `(member)/notifications` + `(member)/settings/notifications` 라우트, `NotificationBell`(GlobalHeader 연동). Slice B(@mention 감지): `packages/notification/src/mention.ts`의 정규식 기반 후보 추출 + `hooks.ts`의 `onMentionDetected`(자기-멘션·중복 억제는 기존 `NotificationService.create` 가드 재사용, 신규 로직 미중복) + `comment/src/service.ts` 트랜잭션 연동. e2e 실행 검증(2026-06-21): 작성만 되어 있던 `notification.spec.ts`를 Postgres 가용 환경에서 실제 실행, REQ-NOTIF-065 + AC-NOTIF-B1 모두 cold-start 포함 재현 PASS 확인. 검증 과정에서 SPEC 범위 밖 사전 존재 결함 6건 발견·수정(Turbopack ESM `.js` import로 dev 서버 전체 부팅 실패, `sanitizeHtml`의 `require()` ESM 비호환, jsdom `__dirname` 가상화 ENOENT, `requireAuth`의 세션 id string/number 타입 불일치로 모든 인증 사용자 401, `notifications.id` 마이그레이션의 SERIAL 시퀀스 누락으로 INSERT 전부 실패, 알림 읽음처리 inline Server Action으로 페이지 전체 500) — 상세는 `spec.md` HISTORY 참조, 신규 마이그레이션 `20260625000000_fix_notification_id_sequence` 포함. 커밋 `989fb65`. 전체 단위테스트 재실행으로 신규 회귀 없음 확인(무관한 사전 존재 실패 90건은 `SPEC-TEST-DEBT-001`로 분리). status: completed. KEEP 나머지 2종(SPEC-POLL-WIDGET-001/SPEC-MESSAGE-001)은 미작성 백로그.
+
+### Phase 8: ADMIN SECURITY HARDENING (보안 후속 구현, P1)
+
+> Phase 6 ADMIN LEGACY PARITY 및 SPEC-TEST-DEBT-001 triage에서 파생된 보안 후속 구현 Phase. 게이트(enforcement)는 이미 동작하나 그것을 통과시켜줄 실제 메커니즘이 stub인 gap을 메운다.
+
+| ID | 제목 | 의존 | 우선순위 | 상태 |
+|---|---|---|---|---|
+| [SPEC-ADMIN-2FA-OTP-001](./SPEC-ADMIN-2FA-OTP-001/spec.md) | 관리자 2단계 인증(TOTP) 실제 백엔드 구현 (시크릿 발급/암호화/검증 + 세션 플래그) | AUTH-001, ADMIN-001, ADMIN-EXTRAS-001 | P1 | 📝 SPEC 작성 (draft) |
+
+> SPEC-TEST-DEBT-001 triage 중 발견한 admin 2FA enforcement CRITICAL 우회 취약점(siteId 하드코딩 → production 상시 우회, CVSS≈8.8, OWASP A07:2021)을 fail-closed로 긴급 수정(`b220fd1`)한 뒤, 그 과정에서 드러난 더 근본적 gap을 메우는 신규 구현 SPEC. **현재 2FA verify 흐름 전체가 미구현 stub**(시크릿 발급=하드코딩 `JBSWY3DPEHPK3PXP`, enroll/verify=`setTimeout` 시뮬레이션, 세션 플래그 `twoFactorVerified`를 채우는 코드 0건, `checkAdmin2FA`의 등록여부 확인=skip)이라, 운영자가 `requireAdminTwoFactor=true`를 켜면 모든 관리자가 영구 lockout 된다(fail-closed의 의도된 결과). 본 SPEC은 Prisma 2FA 컬럼(시크릿 AES-256-GCM 암호화·백업코드 해시) + `otplib`/`qrcode` 도입 + enroll/verify tRPC mutation(닭-달걀 방지 `admin2FAProcedure`) + Auth.js v5 `update()` 경유 세션 플래그 set + `checkAdmin2FA` 등록여부 실제 확인 + 중복 헬퍼(`two-factor.ts` vs `two-factor-gate.ts`) 일원화를 다룬다. **게이트 미들웨어·enroll/verify 페이지 골격·정책 저장은 이미 존재하므로 제외.** Open Questions 7건(세션 플래그 set 메커니즘 등)은 best-judgment로 confidence와 함께 spec.md §6에 확정. **운영 경고: 본 SPEC 배포 완료 전까지 `requireAdminTwoFactor`를 켜면 안 됨.**
 
 ### Meta-Plan 문서 (참조)
 
