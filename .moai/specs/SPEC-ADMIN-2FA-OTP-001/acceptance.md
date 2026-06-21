@@ -86,6 +86,24 @@
 - **Then** 영향받는 사용자의 시크릿 컬럼이 clear되고 `twoFactorEnabled=false`, 백업코드가 무효화되어, 해당 관리자는 재등록(enroll)을 요구받는다
 - **And** 이 절차가 운영 문서/SPEC에 "키 노출 → 강제 재등록"의 최소 대응으로 명시되어 있다(키 버저닝·무중단 재암호화는 범위 밖)
 
+## AC-12: enroll/verify 레이트 리미팅 (REQ-2OTP-048, 049, 084)
+
+- **Given** enroll 또는 verify mutation을 호출하는 관리자
+- **When** 10분 sliding window 안에서 잘못된 코드를 5회 제출(한도 = `maxErrorCount=5`, `windowMinutes=10`, login.ts와 동일)
+- **Then** 6번째 시도는 **코드 검증 전에** 차단되어, 설령 그 코드가 올바른 TOTP/백업코드였더라도 `TRPCError(code='TOO_MANY_REQUESTS')`로 거부된다
+- **And** 차단 시 `LoginAttempt`에 `result='RATE_LIMITED'` 행이 기록되고, 실패 시도는 `result='INVALID_CREDENTIALS'`(identifier=admin User.id, ip)로 기존 ledger에 기록된다 — 2FA 전용 신규 rate-limit 테이블/메커니즘이 추가되지 않았다
+- **And** window 밖(10분 경과)의 과거 실패는 카운트에 포함되지 않는다
+- **And** 에러 메시지에 남은 시도 횟수·TOTP/백업코드 구분·시크릿 자료가 노출되지 않는다
+
+## AC-13: verify 폼 백업코드 모드 토글 + 형식 (REQ-2OTP-026, 050, 051, 085)
+
+- **Given** `/admin/2fa/verify` 폼(기본 TOTP 모드: `inputMode=numeric`, `pattern=\d{6}`, `maxLength=6`)
+- **When** 관리자가 "백업 코드 사용" 컨트롤을 활성화
+- **Then** 단일 입력 필드가 **백업코드 모드**로 전환되어 영숫자 pattern + `maxLength`가 REQ-2OTP-026(정규화 10자) 형식으로 바뀌고, 다시 TOTP 모드로 토글 가능하며, 동시에 두 입력 필드가 보이지 않는다(항상 한 모드만 활성)
+- **And** 백업코드를 하이픈 포함(`A3F9K-2M7QZ`)/미포함 어느 쪽으로 입력해도 동일한 canonical 10자 값으로 정규화되어 검증된다
+- **And** dead link `/admin/2fa/backup`이 제거되고 백업코드 입력이 verify 폼에 통합되어 있다
+- **And** 클라이언트가 `kind: 'totp' | 'backup'`를 함께 전달하고 서버가 그 모드로 검증 경로를 분기하며, `kind`와 값 형식이 불일치(예: `kind='totp'`인데 백업코드 모양)하면 REQ-2OTP-043과 동일한 일반 오류로 거부된다
+
 ## Edge Cases
 
 - TOTP ±1 step 시간 윈도우 경계(직전/직후 step 코드)와 그 바깥(±2 step) 거부.
@@ -95,9 +113,9 @@
 ## Definition of Done
 
 - [ ] REQ-2OTP-001~089 전부 구현 또는 명시적 제외(spec.md §5)
-- [ ] AC-1 ~ AC-11 (AC-4b 포함) + Edge Cases 전부 PASS
+- [ ] AC-1 ~ AC-13 (AC-4b 포함) + Edge Cases 전부 PASS
 - [ ] `pnpm tsc --noEmit` 0 errors, lint 0 errors
-- [ ] 신규 단위 테스트(TOTP/암호화·IV 유일성/백업코드 SHA-256/서버측 marker one-shot·TTL/mutation/게이트 매트릭스) 통과, 기존 게이트 테스트 무회귀
+- [ ] 신규 단위 테스트(TOTP/암호화·IV 유일성/백업코드 SHA-256·형식 정규화/서버측 marker one-shot·TTL/레이트 리미팅 10분·5회/verify 폼 모드 토글·모드 분기/mutation/게이트 매트릭스) 통과, 기존 게이트 테스트 무회귀
 - [ ] jwt callback이 클라이언트 입력 불신·서버측 marker만 조회함을 검증하는 테스트 통과(REQ-2OTP-047, AC-4b)
 - [ ] e2e: 정책 on → enroll → verify → admin 접근 흐름 PASS, 비관리자 무영향
 - [ ] expert-security 리뷰: 시크릿 암호화·백업코드 해싱·세션 플래그 우회 가능성 CRITICAL/HIGH 0건
