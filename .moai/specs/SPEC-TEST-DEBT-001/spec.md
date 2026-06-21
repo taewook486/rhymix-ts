@@ -61,7 +61,7 @@ language: ko
 |---|---|---|---|---|---|
 | 1. Prisma mock 불완전 | ~50+ | mock `ctx.prisma`/mock Prisma client에 코드가 실제 호출하는 모델 accessor 누락 | **확정** | FIX-LATER | 2순위 (최다 건수, 개별 난이도 최저) |
 | 2. Next.js 16 App Router 테스트 환경 비양립 | ~39 | vitest jsdom이 App Router 요청 스코프(`headers()`/`cookies()`/`useSearchParams()`)를 제공하지 못함 | **확정** | ACCEPT(조건부) → FIX-LATER | 3순위 (공유 셋업 헬퍼 필요) |
-| 3. 2FA 미들웨어 특정 버그 | 2 | `requireAdmin2FAIfEnabled` 미들웨어가 `FORBIDDEN` 대신 `UNAUTHORIZED` 반환 + 2FA-검증 세션도 거부 — **실제 제품 버그 가능성** | **조사 필요** | FIX-NOW | **1순위** (보안 관련 가능성) |
+| 3. 2FA 미들웨어 특정 버그 | 2 | siteId=0 하드코딩으로 production 2FA 강제가 사실상 항상 우회 + 필드명 불일치 + 에러코드 불일치 — **확정된 CRITICAL 보안 결함** | ✅ **수정 완료** (2026-06-21) | RESOLVED | 완료 |
 | 4. 기타 고립 실패(one-off) | ~나머지 | 항목별 상이 (server-only 해석 실패, next-auth 모듈 해석, vi.mock 누락, Zod 스키마 불일치, 타임아웃, 이미지/업로드 토큰 등) | **미특정** | INVESTIGATE | 4순위 (사례별) |
 
 집계: **FIX-NOW 1(2 tests) / FIX-LATER 2 / INVESTIGATE 1(다수 one-off)**. 본 카테고리화는 1차 분석 결과로 제공되며 본 triage에서 재유도하지 않는다.
@@ -147,6 +147,23 @@ REQ ID는 `REQ-TDEBT-XXX`. 본 SPEC의 요구사항은 (1) 평가 산출물의 �
 **검증:** trpc.ts의 직전 커밋 버전을 그대로 체크아웃해 재실행 → 동일 실패. 즉 최근 trpc.ts 변경과 무관.
 
 **처분:** FIX-NOW, **본 triage에서 가장 먼저** 착수 권고. 989fb65에서 발견·수정된 숨은 버그들과 성격이 유사할 수 있으므로, 일반 mock-갭 카테고리보다 높은 조사 우선순위. 경계는 REQ-TDEBT-010.
+
+**2026-06-21 후속 조사·수정 완료 — 실제 보안 우회 결함으로 확정(CVSS ≈ 8.8 High, OWASP A07:2021):**
+
+expert-debug + expert-security가 원인을 규명한 결과, 단순 mock 갭이 아닌 **3겹 실제 결함**으로 판명됨:
+1. `apps/web/server/api/trpc.ts:195`(수정 전)의 `checkAdmin2FA(ctx.session, ctx.prisma, 0)` — siteId가 리터럴 `0`으로 하드코딩. 실제 정책은 siteId=1에 저장되므로 `getSiteAdminTwoFactorPolicy(prisma, 0)` 조회가 항상 빈 결과 → `required=false` → 2FA가 활성화돼 있어도 production에서 **항상 우회**(`'pass'` 즉시 반환). "비밀번호는 탈취됐지만 OTP는 없는 공격자"를 막아야 하는 2FA의 방어선이 사실상 0이었음.
+2. 세션 검증 플래그 위치 불일치 — `checkAdmin2FA`(`two-factor-gate.ts:98`, 수정 전)는 `sess.adminTwoFactorVerified`(세션 최상위)를 읽었으나, 테스트 mock과 (미사용) `isSessionTwoFactorVerified()`는 `session.user.twoFactorVerified`(user 객체 내부)를 기대 — 필드 위치 자체가 어긋남.
+3. I-1-5: `need-enroll`/`need-verify` 분기가 `UNAUTHORIZED`를 던졌으나 REQ-ADMIN-023 및 같은 파일의 다른 권한 거부(`requireAdmin`, IP 차단)는 모두 `FORBIDDEN`을 씀 — 일관성 결함.
+
+추가로 `apps/web/app/admin/2fa/verify/TwoFactorVerifyForm.tsx`(OTP 검증 UI)가 실제 백엔드 호출 없이 `setTimeout` + 무조건 성공 토스트로 위장하는 **stub**임을 확인 — 검증 플래그를 세션에 채울 메커니즘 자체가 코드베이스에 없음. 따라서 siteId 우회만 fail-closed로 고치면 "2FA를 켠 사이트의 모든 관리자가 영원히 admin lockout"이라는 새로운 문제가 생기는 트레이드오프가 있었음.
+
+**사용자 승인 방향:** 우회 버그는 즉시 fail-closed로 차단, 실제 OTP 백엔드 구현(TOTP 시크릿 발급/검증, 세션 플래그 주입)은 범위 밖 — 별도 SPEC(가칭 SPEC-ADMIN-2FA-OTP-001, 미작성)으로 분리.
+
+**적용된 수정** (커밋 예정, expert-backend):
+- `trpc.ts`: 중복 1단계(`isAdminTwoFactorRequired`) 호출 제거, `checkAdmin2FA(ctx.session, ctx.prisma, ctx.siteId ?? 1)`로 일원화(siteId 미해석 엣지 케이스도 단일사이트 기본값 1로 폴백, fail-open 방지). `UNAUTHORIZED` → `FORBIDDEN` 2건.
+- `two-factor-gate.ts`: 검증 플래그를 `session.user.twoFactorVerified`로 정정(테스트 mock·`two-factor.ts`와 일치).
+- 부수 회귀 수정: `isAdminTwoFactorRequired`를 직접 mock해 2FA 체크를 우회하던 기존 admin 라우터 테스트(`spamfilter.test.ts` 7건, `stats.test.ts` 8건, 총 15건)가 함수 호출 제거로 mock 무력화되어 깨짐 — 각 mock Prisma에 `siteSetting.findFirst → null` 추가로 실제 로직(2FA 비활성 → pass)을 타도록 수정. `category.test.ts`/`document.test.ts`의 잔존 실패 3건은 baseline 대비 무관함을 git-checkout 비교로 확인(사전 존재, 카테고리 1/4 범위).
+- `trpc.two-factor.test.ts` 3개 전체 통과, `admin` 디렉토리 회귀 0건(202/205, 남은 3건은 사전 존재) 직접 재검증 완료.
 
 ### 4.4 카테고리 4 — 기타 고립 실패 (INVESTIGATE, 사례별)
 
@@ -236,5 +253,5 @@ REQ ID는 `REQ-TDEBT-XXX`. 본 SPEC의 요구사항은 (1) 평가 산출물의 �
 ---
 
 Version: 1.0.0
-Status: evaluated (평가 문서 — 구현 작업 없음)
-Next Action: 카테고리 3(2FA, FIX-NOW)부터 `/moai fix` 또는 개별 조사 착수 → 이후 카테고리 1(공유 Prisma mock 팩토리) → 카테고리 2(App Router 테스트 헬퍼) → 카테고리 4(사례별)
+Status: evaluated (카테고리 3은 2026-06-21 조사+수정 완료 — CRITICAL 보안 결함 확정, fail-closed 적용. 나머지 카테고리는 평가만, 구현 대기)
+Next Action: 카테고리 1(공유 Prisma mock 팩토리) → 카테고리 2(App Router 테스트 헬퍼) → 카테고리 4(사례별). 별도 후속: SPEC-ADMIN-2FA-OTP-001(가칭, 미작성) — TOTP 백엔드 실구현(현재 TwoFactorVerifyForm.tsx는 stub).

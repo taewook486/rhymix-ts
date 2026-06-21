@@ -94,9 +94,10 @@ export async function checkAdmin2FA(
   //   select: { twoFactorSecret: true },
   // });
 
-  // 4. 세션 검증 플래그 확인
-  const adminTwoFactorVerified = sess.adminTwoFactorVerified as boolean | undefined;
-  if (adminTwoFactorVerified !== true) {
+  // 4. 세션 검증 플래그 확인 — session.user.twoFactorVerified (user 객체 내부).
+  // 위에서 sess.user 를 userId 로 캐스팅했으므로 동일 변수를 재사용한다.
+  const twoFactorVerified = userId['twoFactorVerified'] === true;
+  if (!twoFactorVerified) {
     // 2FA 검증 필요
     return 'need-verify';
   }

@@ -14,7 +14,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { isAdminSession } from '@/lib/auth/admin-middleware';
-import { isAdminTwoFactorRequired, isSessionTwoFactorVerified } from '@/lib/auth/two-factor';
 import { checkIpAccess } from '@rhymix-ts/admin';
 import type { PrismaClient } from '@prisma/client';
 import type { Context } from './context';
@@ -175,41 +174,34 @@ const requireAdmin = t.middleware(async ({ ctx, next }) => {
 /**
  * 2FA 강제 미들웨어 — SPEC-ADMIN-001 Slice I (REQ-ADMIN-023) + SPEC-ADMIN-EXTRAS-001 Slice A.
  *
- * SiteSetting.requireAdminTwoFactor=true 이고 세션에 twoFactorVerified 플래그가
- * 없는 경우 FORBIDDEN 을 발생시킨다.
- * requireAdmin 이후에 체인되므로 ctx.session 은 보장됨.
+ * checkAdmin2FA() 가 내부에서 사이트별 2FA 정책 확인 + 세션 검증을 모두 수행한다.
+ * 정책이 비활성이면 'pass', 활성인데 미인증이면 'need-enroll'/'need-verify' 를 반환하며,
+ * 이 두 경우 FORBIDDEN 을 발생시킨다 (REQ-ADMIN-023, requireAdmin/IP 차단과 동일 코드).
  *
- * SPEC-ADMIN-EXTRAS-001: checkAdmin2FA() 사용하여 "need-enroll" vs "need-verify" 구분.
- * 에러 코드로 UNAUTHORIZED 사용하여 리다이렉트 가능하도록 함.
+ * requireAdmin 이후에 체인되므로 ctx.session 은 보장됨.
+ * siteId 는 ctx.siteId(hostname→domain 해석)를 사용하며, 미해석(undefined)인 엣지
+ * 케이스에서는 단일사이트 기본값 1 로 폴백한다 (정책이 siteId=1 에 저장됨).
  *
  * NOTE: 실제 OTP 검증 UI(/login/two-factor)는 SPEC-AUTH-001 후속 슬라이스에서 구현.
  *
  * @MX:SPEC: SPEC-ADMIN-EXTRAS-001 REQ-2FA-001~005
  */
 const requireAdmin2FAIfEnabled = t.middleware(async ({ ctx, next }) => {
-  const required = await isAdminTwoFactorRequired(ctx.prisma);
-  if (required) {
-    // siteId는 어떻게 가져올까? 현재 context에 siteId가 없음
-    // 임시: 첫 요청에서 siteId를 가져오지 못하면 skip (실제 구현에서는 context에 siteId 추가 필요)
-    const { checkAdmin2FA } = await import('@rhymix-ts/admin/security');
-    const result = await checkAdmin2FA(ctx.session, ctx.prisma, 0); // siteId는 context에서 가져와야 함
+  const { checkAdmin2FA } = await import('@rhymix-ts/admin/security');
+  const result = await checkAdmin2FA(ctx.session, ctx.prisma, ctx.siteId ?? 1);
 
-    if (result === 'need-enroll') {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: '2FA 등록이 필요합니다.',
-        // 추가 metadata로 redirect URL 제공 가능
-        // TODO: /admin/two-factor/enroll 로 리다이렉트
-      });
-    }
+  if (result === 'need-enroll') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: '2FA 등록이 필요합니다.',
+    });
+  }
 
-    if (result === 'need-verify') {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: '2FA 인증이 필요합니다.',
-        // TODO: /admin/two-factor/verify 로 리다이렉트
-      });
-    }
+  if (result === 'need-verify') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: '2FA 인증이 필요합니다.',
+    });
   }
 
   return next();

@@ -23,6 +23,9 @@ vi.mock('@/lib/db/prisma', () => ({
     document: { count: vi.fn() },
     comment: { count: vi.fn() },
     fileAttachment: { count: vi.fn() },
+    // checkAdmin2FA → getSiteAdminTwoFactorPolicy 가 findFirst 로 정책을 조회한다.
+    // null 반환 시 2FA 정책 비활성으로 간주되어 미들웨어를 통과한다.
+    siteSetting: { findFirst: vi.fn().mockResolvedValue(null) },
   },
 }))
 
