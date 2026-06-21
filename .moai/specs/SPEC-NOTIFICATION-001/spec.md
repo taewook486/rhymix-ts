@@ -4,7 +4,7 @@ title: 인앱 알림 센터 (Notification Center)
 version: 1.0.0
 status: in-progress
 created_at: 2026-06-20
-updated: 2026-06-20
+updated: 2026-06-21
 author: MoAI manager-spec
 priority: medium
 phase: 7
@@ -24,6 +24,7 @@ labels: [notification, comment, mention]
 - 2026-06-20 (plan-audit iteration 2): REQ-NOTIF-026(SHALL/MAY 혼용 EARS 라벨 모호성, plan-auditor D5)을 numbered REQ 목록에서 제거하고 비구속 가이드라인(§5.2.1)으로 이동.
 - 2026-06-20 (plan-audit iteration 3): frontmatter 결함 3건(labels 누락, created→created_at, priority enum) 수정 완료. plan-audit PASS(0.80). status: draft → approved.
 - 2026-06-20 (run, Slice A): 2단계 팀 실행으로 구현 완료. Phase 1(backend-core): packages/db/prisma/schema.prisma에 Notification/NotificationPreference 모델+enum 추가, packages/notification 패키지 신설(point 패턴), packages/comment/src/service.ts 댓글 훅 연동. Phase 2(ui-dev+test-dev 병렬): (member)/notifications, (member)/settings/notifications 라우트, packages/ui NotificationBell + GlobalHeader 연동(작업 항목 6), packages/notification 단위테스트 29건. 전체 105 테스트 통과, tsc 0 errors, expert-security IDOR 독립 리뷰 PASS(CRITICAL/HIGH 0건, .moai/reports/plan-audit/SPEC-NOTIFICATION-001-security-review-1.md). Quality Gate §3 item 3(e2e, REQ-NOTIF-065)는 SPEC-ADMIN-EXTRAS-001 패턴과 동일하게 별도 후속 작업으로 deferred — Slice A 핵심 구현/단위테스트/보안검토는 완료.
+- 2026-06-21 (run, Slice B): 단일 sub-agent(manager-tdd) 실행으로 구현 완료(--team 요청이 있었으나, 작업 범위가 backend 1개 도메인·4개 파일로 이 프로젝트의 팀 모드 자동 임계값(min_domains_for_team:3, min_files_for_team:10) 미달이며 llm.yaml team_mode가 cg인데 tmux/GLM 사전 조건을 이 세션에서 확인할 수 없어 사용자 확인 후 sub-agent 모드로 전환). `packages/notification/src/mention.ts` 신설(extractMentionCandidates 순수 함수, 정규식 `/@([\p{L}\p{N}_-]{1,80})/gu`로 HTML 인접 멘션도 정확히 추출), `hooks.ts`에 `onMentionDetected` 추가(자기-멘션 제외·중복 억제는 기존 `NotificationService.create` 가드에 위임, 신규 로직 미중복), `packages/comment/src/service.ts`의 `createComment` 트랜잭션에 무조건 호출 추가(문서 작성자 존재 여부와 무관). 신규 테스트 9건(mention.test.ts 4 + hooks.test.ts 5) 포함 전체 114 테스트(notification 38 + comment 76) 통과, `packages/comment` tsc 0 errors, `packages/notification`은 본 변경과 무관한 기존 service.test.ts 타입 오류 2건(TS2532, main 기준 사전 존재) 외 신규 오류 없음. e2e(REQ-NOTIF-065 멘션 케이스)는 Slice A와 동일한 선례로 후속 작업 deferred. Slice B 핵심 구현/단위테스트 완료.
 
 ---
 
@@ -338,8 +339,8 @@ REQ-MODBL-013은 "new comment/mention"을 명시하므로 멘션이 완전히 �
 ---
 
 Version: 1.0.0
-Status: approved (구현 대기 — Slice A/B 미착수)
+Status: in-progress (Slice A+B 구현 완료 — 114 tests, tsc 0 errors(comment) / e2e REQ-NOTIF-065 후속 deferred — full completion 전환은 e2e 보강 후 /moai sync에서 처리)
 Estimated REQ Count: 40 (5개 계층: 알림생성 10, 목록/읽음처리 7, 설정/구독해제 7, future-hook 4, 품질 6 — 일부 그룹 내 번호 여유)
-Estimated Slice Count: 2 (A: 모델+댓글알림+목록/읽음처리+설정/구독해제 MVP, B: 멘션감지)
+Estimated Slice Count: 2 (A: 모델+댓글알림+목록/읽음처리+설정/구독해제 MVP — ✅ 완료, B: 멘션감지 — ✅ 완료)
 Dependencies (upstream): SPEC-COMMENT-001 ✅, SPEC-DOCUMENT-001 ✅, SPEC-AUTH-001 ✅
-Next Action: `/moai run SPEC-NOTIFICATION-001` (Slice A 우선) — SPEC-MODULE-BACKLOG-001 KEEP 잔여는 본 SPEC 작성으로 poll/쪽지/알림센터 중 알림센터 완료, 쪽지(SPEC-MESSAGE-001)만 잔여
+Next Action: e2e(REQ-NOTIF-065, AC-NOTIF-A1/A4/B1) 후속 보강 후 `/moai sync SPEC-NOTIFICATION-001` — SPEC-MODULE-BACKLOG-001 KEEP 잔여는 poll 위젯·쪽지(SPEC-MESSAGE-001) 2종

@@ -27,6 +27,9 @@ describe('notificationHooks', () => {
     };
 
     mockTx = mockPrisma; // Same as prisma for simplicity
+
+    // SPEC-NOTIFICATION-001 Slice B: 닉네임 해석용 findFirst (citext 대소문자 무시)
+    mockPrisma.user.findFirst = vi.fn();
   });
 
   describe('onCommentCreated', () => {
@@ -333,6 +336,118 @@ describe('notificationHooks', () => {
         mockTx,
       );
 
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onMentionDetected', () => {
+    it('should create MENTION notification for a resolved member (AC-NOTIF-B1)', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({ id: 5 });
+      mockPrisma.notificationPreference.findUnique.mockResolvedValue(null);
+      mockPrisma.user.findUnique.mockResolvedValue({ id: 5 });
+      mockPrisma.notification.findUnique.mockResolvedValue(null);
+      mockPrisma.notification.create.mockResolvedValue({ id: 30 });
+
+      await notificationHooks.onMentionDetected(
+        mockPrisma as PrismaClient,
+        {
+          commentId: 100,
+          commentAuthorId: 2,
+          commentAuthorNickname: 'carol',
+          content: '@bob 확인해주세요',
+        },
+        mockTx,
+      );
+
+      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
+        where: { nickName: 'bob' },
+        select: { id: true },
+      });
+      expect(mockPrisma.notification.create).toHaveBeenCalledWith({
+        data: {
+          recipientId: 5,
+          category: 'MENTION',
+          sourceType: 'MENTION',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'carol',
+        },
+      });
+    });
+
+    it('should create only 1 notification for a duplicate mention of the same nickname in one comment (AC-NOTIF-B1)', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({ id: 5 });
+      mockPrisma.notificationPreference.findUnique.mockResolvedValue(null);
+      mockPrisma.user.findUnique.mockResolvedValue({ id: 5 });
+      mockPrisma.notification.findUnique.mockResolvedValue(null);
+      mockPrisma.notification.create.mockResolvedValue({ id: 30 });
+
+      await notificationHooks.onMentionDetected(
+        mockPrisma as PrismaClient,
+        {
+          commentId: 100,
+          commentAuthorId: 2,
+          commentAuthorNickname: 'carol',
+          content: '@bob 확인해주세요 @bob',
+        },
+        mockTx,
+      );
+
+      expect(mockPrisma.user.findFirst).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.notification.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not create a notification for a self-mention (AC-NOTIF-B2)', async () => {
+      // 멘션 대상(alice, id=2)이 댓글 작성자(id=2)와 동일 — NotificationService.create의
+      // 기존 self-notification guard(actorId === recipientId)가 그대로 적용된다.
+      mockPrisma.user.findFirst.mockResolvedValue({ id: 2 });
+
+      await notificationHooks.onMentionDetected(
+        mockPrisma as PrismaClient,
+        {
+          commentId: 100,
+          commentAuthorId: 2,
+          commentAuthorNickname: 'alice',
+          content: '@alice 참고용 메모',
+        },
+        mockTx,
+      );
+
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should not create a notification and not throw when the mentioned nickname does not resolve to a member (EC-5)', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+
+      await expect(
+        notificationHooks.onMentionDetected(
+          mockPrisma as PrismaClient,
+          {
+            commentId: 100,
+            commentAuthorId: 2,
+            commentAuthorNickname: 'carol',
+            content: '@nonexistent 안녕하세요',
+          },
+          mockTx,
+        ),
+      ).resolves.not.toThrow();
+
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    it('should return immediately without any db call when content has no mention candidates', async () => {
+      await notificationHooks.onMentionDetected(
+        mockPrisma as PrismaClient,
+        {
+          commentId: 100,
+          commentAuthorId: 2,
+          commentAuthorNickname: 'carol',
+          content: '멘션이 없는 일반 댓글',
+        },
+        mockTx,
+      );
+
+      expect(mockPrisma.user.findFirst).not.toHaveBeenCalled();
       expect(mockPrisma.notification.create).not.toHaveBeenCalled();
     });
   });

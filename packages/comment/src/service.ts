@@ -153,6 +153,15 @@ export async function createComment(
       );
     }
 
+    // SPEC-NOTIFICATION-001 Slice B REQ-NOTIF-007: 멘션 감지 알림 생성
+    // 문서 작성자 존재 여부와 무관하게 항상 실행 — 멘션 대상은 문서 작성자와 독립적임.
+    await notificationHooks.onMentionDetected(ctx.prisma, {
+      commentId: comment.id,
+      commentAuthorId: parsed.authorId,
+      commentAuthorNickname: parsed.nickName ?? 'unknown',
+      content: safeContent,
+    }, tx as unknown as import('@prisma/client').Prisma.TransactionClient);
+
     return comment;
   });
 }

@@ -176,10 +176,10 @@ EARS coverage: REQ-NOTIF-020, 025.
 - [x] AC-NOTIF-A1~A4 전체 통과 (단위/통합 테스트로 검증, e2e는 항목 3 참조)
 - [x] EC-1~EC-4, EC-6 전체 통과 (단위 테스트, EC-5는 Slice B 범위)
 - [x] Quality Gate §3 항목 1/2/4/5 통과, 항목 3(e2e, REQ-NOTIF-065)은 후속 작업으로 deferred(SPEC-ADMIN-EXTRAS-001 패턴과 동일)
-- [ ] Slice B(멘션, Milestone 7)는 별도 완료 조건(AC-NOTIF-B1, B2, EC-5) — Slice A 완료와 독립적으로 추적
+- [x] Slice B(멘션, Milestone 7) 완료 — AC-NOTIF-B1, B2, EC-5 단위테스트로 검증(`packages/notification/src/hooks.test.ts`, `mention.test.ts`). e2e 확장(AC-NOTIF-B1)은 Slice A와 동일하게 deferred.
 - [ ] `spec.md` HISTORY 절에 sync 완료 보고 추가(SPEC-FEED-001 패턴과 동일) — `/moai sync` 단계에서 처리
 
 ---
 
 Version: 1.0.0
-Status: draft (Slice A/B 미착수 — 시나리오 정의만 완료)
+Status: in-progress (Slice A+B 시나리오 단위테스트 검증 완료 — e2e 보강 후 completed 전환)
