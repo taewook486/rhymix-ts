@@ -175,11 +175,12 @@ EARS coverage: REQ-NOTIF-020, 025.
 - [x] Slice A(Milestone 1~6) 전체 작업 항목 완료
 - [x] AC-NOTIF-A1~A4 전체 통과 (단위/통합 테스트로 검증, e2e는 항목 3 참조)
 - [x] EC-1~EC-4, EC-6 전체 통과 (단위 테스트, EC-5는 Slice B 범위)
-- [x] Quality Gate §3 항목 1/2/4/5 통과, 항목 3(e2e, REQ-NOTIF-065)은 후속 작업으로 deferred(SPEC-ADMIN-EXTRAS-001 패턴과 동일)
-- [x] Slice B(멘션, Milestone 7) 완료 — AC-NOTIF-B1, B2, EC-5 단위테스트로 검증(`packages/notification/src/hooks.test.ts`, `mention.test.ts`). e2e 확장(AC-NOTIF-B1)은 Slice A와 동일하게 deferred.
+- [x] Quality Gate §3 항목 1/2/4/5 통과
+- [x] Slice B(멘션, Milestone 7) 완료 — AC-NOTIF-B1, B2, EC-5 단위테스트로 검증(`packages/notification/src/hooks.test.ts`, `mention.test.ts`)
+- [~] Quality Gate §3 항목 3(e2e, REQ-NOTIF-065 + AC-NOTIF-B1 확장) — `apps/web/e2e/notification.spec.ts` 작성 완료(2026-06-21), 단 이 세션의 sandbox에 Postgres/Docker 데몬이 없어(`/var/run/docker.sock` 부재) **실행은 되지 않았다**. `tsc --noEmit` 0 errors만 확인됨. Postgres가 가용한 환경(로컬 dev 또는 CI)에서 `pnpm --filter web test:e2e -- notification.spec.ts` 실행 후 실제 PASS 확인 필요 — completed 전환 전 필수.
 - [ ] `spec.md` HISTORY 절에 sync 완료 보고 추가(SPEC-FEED-001 패턴과 동일) — `/moai sync` 단계에서 처리
 
 ---
 
 Version: 1.0.0
-Status: in-progress (Slice A+B 시나리오 단위테스트 검증 완료 — e2e 보강 후 completed 전환)
+Status: in-progress (Slice A+B 구현+단위테스트 완료, e2e 작성 완료 — Postgres 가용 환경에서 실행 확인 후 completed 전환)
