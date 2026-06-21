@@ -2,7 +2,7 @@
 id: SPEC-NOTIFICATION-001
 title: 인앱 알림 센터 (Notification Center)
 version: 1.0.0
-status: in-progress
+status: completed
 created_at: 2026-06-20
 updated: 2026-06-21
 author: MoAI manager-spec
@@ -32,7 +32,8 @@ labels: [notification, comment, mention]
   4. `apps/web/server/api/trpc.ts`의 `requireAuth` 미들웨어가 `ctx.session.user.id`(NextAuth JWT `token.sub`, 항상 string)를 `typeof userId !== 'number'`로 검사해 실제 인증된 사용자의 모든 `protectedProcedure` 호출(content.comment.create 등)이 100% 401 처리됨(AdminSessionUser.id: number 타입 선언과 런타임 값 불일치, `auth()`의 unsafe cast로 타입 검사 우회). 문자열→숫자 정규화 후 narrowing하도록 수정.
   5. `packages/db/prisma/migrations/20260620000000_spec_notification_001_slice_a/migration.sql`이 `notifications.id`/`notification_preferences.id`를 `INTEGER NOT NULL`로 생성(house 컨벤션인 `SERIAL NOT NULL` 아님 — 시퀀스/default 누락)해 모든 INSERT가 NOT NULL 위반으로 실패. 신규 마이그레이션 `20260625000000_fix_notification_id_sequence`로 시퀀스+default retrofit.
   6. `apps/web/app/(member)/notifications/page.tsx`가 `'use server'` 지시어 없는 inline closure(`async () => { await markOneRead(notif.id); }`)를 `<form action>`에 전달해 미읽음 알림이 1건이라도 있으면 `/notifications` 페이지 전체가 500 에러(React: "Functions cannot be passed directly to Client Components"). `markOneRead.bind(null, notif.id)` 패턴으로 수정.
-  부가로 `apps/web/server/api/routers/content/comment.ts`가 인증된 사용자의 닉네임을 조회하지 않고 항상 `nickName: null`을 전달해 알림 메시지에 "unknown"이 표시되던 것도 수정(`ctx.prisma.user.findUnique`로 실제 닉네임 조회). 6건 수정 후 cold-start(Turbopack 첫 compile + jsdom 첫 로드 1회성 비용 수십 초)를 포함한 전체 재현 검증에서 `notification.spec.ts` 2개 테스트 모두 PASS 확인(2.8분, fresh dev server 기준). 관련 단위 테스트(document/comment/board/notification/content 라우터) 재실행 결과 신규 회귀 없음(실패 테스트는 모두 사전 존재하는 mock 불완전성 — `ctx.prisma.$transaction`/`findFirst`/`findUnique` 등 모킹 누락 — 본 세션 변경과 무관함을 개별 확인).
+  부가로 `apps/web/server/api/routers/content/comment.ts`가 인증된 사용자의 닉네임을 조회하지 않고 항상 `nickName: null`을 전달해 알림 메시지에 "unknown"이 표시되던 것도 수정(`ctx.prisma.user.findUnique`로 실제 닉네임 조회). 6건 수정 후 cold-start(Turbopack 첫 compile + jsdom 첫 로드 1회성 비용 수십 초)를 포함한 전체 재현 검증에서 `notification.spec.ts` 2개 테스트 모두 PASS 확인(2.8분, fresh dev server 기준). 관련 단위 테스트(document/comment/board/notification/content 라우터) 재실행 결과 신규 회귀 없음(실패 테스트는 모두 사전 존재하는 mock 불완전성 — `ctx.prisma.$transaction`/`findFirst`/`findUnique` 등 모킹 누락 — 본 세션 변경과 무관함을 개별 확인). 전체 커밋: `989fb65`.
+- 2026-06-21 (sync): `/moai sync SPEC-NOTIFICATION-001` 실행. Quality Gate §3 5개 항목 전체 통과 확인(항목 3 e2e는 위 항목에서 실측 PASS로 이미 만족). 경량 재검증으로 `packages/comment`/`packages/document`/`packages/board` typecheck 0 errors 재확인(`packages/notification`의 사전 존재 타입 오류 2건은 본 SPEC 무관, Slice A 시점부터 기록됨). 전체 repo 단위 테스트(`npx vitest run`, 1821개 중 1724 통과)에서 드러난 90건의 사전 존재 실패는 SPEC-NOTIFICATION-001과 무관함을 git-checkout 재현으로 개별 검증 완료 후 별도 triage SPEC(`SPEC-TEST-DEBT-001`)으로 분리·기록. Definition of Done 전체 항목 충족 확인. status: in-progress → completed.
 
 ---
 
@@ -347,8 +348,8 @@ REQ-MODBL-013은 "new comment/mention"을 명시하므로 멘션이 완전히 �
 ---
 
 Version: 1.0.0
-Status: in-progress (Slice A+B 구현 완료 + e2e 실행 검증 완료(REQ-NOTIF-065, AC-NOTIF-B1 모두 PASS) — full completion 전환은 /moai sync에서 처리)
+Status: completed (Slice A+B 구현 + e2e 실행 검증 + sync 전체 완료, 2026-06-21)
 Estimated REQ Count: 40 (5개 계층: 알림생성 10, 목록/읽음처리 7, 설정/구독해제 7, future-hook 4, 품질 6 — 일부 그룹 내 번호 여유)
 Estimated Slice Count: 2 (A: 모델+댓글알림+목록/읽음처리+설정/구독해제 MVP — ✅ 완료, B: 멘션감지 — ✅ 완료)
 Dependencies (upstream): SPEC-COMMENT-001 ✅, SPEC-DOCUMENT-001 ✅, SPEC-AUTH-001 ✅
-Next Action: `/moai sync SPEC-NOTIFICATION-001` (e2e 검증 완료, sync 단계에서 completed 전환) — SPEC-MODULE-BACKLOG-001 KEEP 잔여는 poll 위젯·쪽지(SPEC-MESSAGE-001) 2종
+Next Action: 없음(SPEC 완료) — SPEC-MODULE-BACKLOG-001 KEEP 잔여는 poll 위젯·쪽지(SPEC-MESSAGE-001) 2종, 별도 `/moai plan` 필요. 품질 부채는 `SPEC-TEST-DEBT-001` 참조.

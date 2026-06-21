@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-21 (SPEC-NOTIFICATION-001 Slice A+B 구현 완료 — 인앱 알림 센터 MVP + @mention 감지. e2e(REQ-NOTIF-065)만 후속 작업으로 deferred)
+> 마지막 갱신: 2026-06-21 (SPEC-NOTIFICATION-001 sync 완료, status: completed — e2e 실행 검증 포함 전체 완료. 검증 중 발견한 사전 존재 결함 6건은 수정, 무관한 90건은 SPEC-TEST-DEBT-001로 분리)
 
 ## 기술 스택 (확정)
 
@@ -98,8 +98,11 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | ID | 제목 | 우선순위 | 상태 |
 |---|---|---|---|
 | [SPEC-MODULE-BACKLOG-001](./SPEC-MODULE-BACKLOG-001/spec.md) | 미포팅 레거시 모듈 14종 평가 및 처분 (Triage) | P3 | ✅ SPEC 완료 (평가 문서 — 구현 없음) |
+| [SPEC-TEST-DEBT-001](./SPEC-TEST-DEBT-001/spec.md) | 사전 존재 단위 테스트 실패 90건 Triage | P2 | ✅ SPEC 완료 (평가 문서 — 구현 없음) |
 
 > MASTER-PLAN-002 §8.1·§5.13의 위임에 따라 미포팅 레거시 PHP 모듈 14종(poll/tag/trash/rss/counter/importer/krzip/editor/session/communication/message/ncenterlite/integration_search/autoinstall)을 1차 소스 직접 분석으로 triage. 결과: **KEEP 4** (poll→프론트 투표 위젯, rss→피드, communication→쪽지, ncenterlite→알림센터) · **DROP 8** (counter/editor/session/message/krzip/autoinstall + tag·trash 독립화 — 이미 구현됐거나 Auth.js/Next.js/Tiptap/npm으로 대체) · **NEEDS-RESEARCH 2** (importer→데이터 마이그레이션 SPEC 종속, integration_search→검색 백엔드 결정 선행). KEEP 4종 후속 SPEC 후보: SPEC-POLL-WIDGET-001 / SPEC-FEED-001 / SPEC-MESSAGE-001 / SPEC-NOTIFICATION-001 (모두 가칭, 미작성).
+>
+> 저장소 루트 전체 `npx vitest run`(24 파일 실패 / 199 통과, 90 테스트 실패 / 1724 통과 / 7 skip)에서 드러난 **사전 존재** 단위 테스트 실패 90건을 4개 근본 원인 카테고리로 triage(전수 최근 작업 무관 — git-checkout 재현·격리 실행으로 독립 검증). 결과: **카테고리 1 Prisma mock 불완전**(~50+건, 원인 확정, **FIX-LATER** — 공유 완전 mock 팩토리 권장) · **카테고리 2 Next.js 16 App Router 테스트 환경 비양립**(~39건, `headers()`/`useSearchParams()` 요청 스코프 부재, 원인 확정, **ACCEPT→FIX-LATER** — 공유 셋업 헬퍼/`next/jest` 권장) · **카테고리 3 2FA 미들웨어 특정 버그**(2건, `requireAdmin2FAIfEnabled`가 `FORBIDDEN` 대신 `UNAUTHORIZED` + 검증 세션 거부 — **실제 제품 버그 가능성**, **FIX-NOW·본 triage 1순위**) · **카테고리 4 기타 one-off**(나머지, 원인 미특정, **INVESTIGATE** 사례별). 권장 수정 순서: 3(2FA, 보안 관련) → 1(최다·최저난이도) → 2(공유 헬퍼) → 4(사례별). 본 SPEC은 코드 변경 0건.
 
 ### Phase 7: BACKLOG FOLLOW-UP (KEEP 모듈 후속 구현, P2~P3)
 
@@ -108,11 +111,11 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | ID | 제목 | 의존 | 우선순위 | 상태 |
 |---|---|---|---|---|
 | [SPEC-FEED-001](./SPEC-FEED-001/spec.md) | 게시판별 RSS 2.0 / Atom 1.0 피드 (Next.js Route Handler) | BOARD-CRUD, DOCUMENT, COMMENT | P2 | ✅ 구현 완료 (Slice A/B/C, 12/12 태스크) |
-| [SPEC-NOTIFICATION-001](./SPEC-NOTIFICATION-001/spec.md) | 인앱 알림 센터 (댓글 알림 + 목록/읽음처리 + 설정/구독해제 + 멘션) | COMMENT, DOCUMENT, AUTH | P2 | ✅ Slice A+B 구현 완료 (e2e만 후속 deferred) |
+| [SPEC-NOTIFICATION-001](./SPEC-NOTIFICATION-001/spec.md) | 인앱 알림 센터 (댓글 알림 + 목록/읽음처리 + 설정/구독해제 + 멘션) | COMMENT, DOCUMENT, AUTH | P2 | ✅ 구현 완료 (Slice A+B + e2e 실행 검증 + sync 전체 완료, status: completed) |
 
 > rss 레거시 모듈(SPEC-MODULE-BACKLOG-001 §1.4 KEEP)의 후속 구현. `app/[mid]/rss/route.ts` + `app/[mid]/atom/route.ts` 분리 라우트(공유 빌더), `listDocuments` PUBLIC-only 데이터 소스, 비밀글/임시저장/비공개 게시판 제외, `revalidate=300`+SWR+문서 이벤트 `revalidateTag` 3중 캐싱, `Board.feedConfig Json` additive 컬럼 + board admin 확장 설정 패널. 36개 REQ(REQ-FEED-001~066), 3개 슬라이스 전체 완료. `pnpm tsc --noEmit` 0 errors / vitest 67/67 통과 / expert-security 리뷰 CRITICAL·HIGH 0건. 통합 피드·팟캐스트 RSS·WebSub 명시 제외.
 >
-> ncenterlite 레거시 모듈(SPEC-MODULE-BACKLOG-001 §3.B KEEP)의 후속 구현. Slice A(MVP): `packages/notification` 패키지 신설(point 패턴) + Notification/NotificationPreference 스키마, `packages/comment/src/service.ts` 댓글 작성 훅 연동, `(member)/notifications` + `(member)/settings/notifications` 라우트, `NotificationBell`(GlobalHeader 연동). Slice B(@mention 감지, 2026-06-21): `packages/notification/src/mention.ts`의 정규식 기반 후보 추출 + `hooks.ts`의 `onMentionDetected`(자기-멘션·중복 억제는 기존 `NotificationService.create` 가드 재사용, 신규 로직 미중복) + `comment/src/service.ts` 트랜잭션 연동. Slice A+B 합산 114 tests 통과(comment 0 type errors) / expert-security IDOR 독립 리뷰 PASS(Slice A 시점, CRITICAL·HIGH 0건). e2e(REQ-NOTIF-065, 댓글+멘션 케이스)는 SPEC-ADMIN-EXTRAS-001 패턴과 동일하게 후속 작업으로 deferred. KEEP 나머지 2종(SPEC-POLL-WIDGET-001/SPEC-MESSAGE-001)은 미작성 백로그.
+> ncenterlite 레거시 모듈(SPEC-MODULE-BACKLOG-001 §3.B KEEP)의 후속 구현. Slice A(MVP): `packages/notification` 패키지 신설(point 패턴) + Notification/NotificationPreference 스키마, `packages/comment/src/service.ts` 댓글 작성 훅 연동, `(member)/notifications` + `(member)/settings/notifications` 라우트, `NotificationBell`(GlobalHeader 연동). Slice B(@mention 감지): `packages/notification/src/mention.ts`의 정규식 기반 후보 추출 + `hooks.ts`의 `onMentionDetected`(자기-멘션·중복 억제는 기존 `NotificationService.create` 가드 재사용, 신규 로직 미중복) + `comment/src/service.ts` 트랜잭션 연동. e2e 실행 검증(2026-06-21): 작성만 되어 있던 `notification.spec.ts`를 Postgres 가용 환경에서 실제 실행, REQ-NOTIF-065 + AC-NOTIF-B1 모두 cold-start 포함 재현 PASS 확인. 검증 과정에서 SPEC 범위 밖 사전 존재 결함 6건 발견·수정(Turbopack ESM `.js` import로 dev 서버 전체 부팅 실패, `sanitizeHtml`의 `require()` ESM 비호환, jsdom `__dirname` 가상화 ENOENT, `requireAuth`의 세션 id string/number 타입 불일치로 모든 인증 사용자 401, `notifications.id` 마이그레이션의 SERIAL 시퀀스 누락으로 INSERT 전부 실패, 알림 읽음처리 inline Server Action으로 페이지 전체 500) — 상세는 `spec.md` HISTORY 참조, 신규 마이그레이션 `20260625000000_fix_notification_id_sequence` 포함. 커밋 `989fb65`. 전체 단위테스트 재실행으로 신규 회귀 없음 확인(무관한 사전 존재 실패 90건은 `SPEC-TEST-DEBT-001`로 분리). status: completed. KEEP 나머지 2종(SPEC-POLL-WIDGET-001/SPEC-MESSAGE-001)은 미작성 백로그.
 
 ### Meta-Plan 문서 (참조)
 
@@ -166,9 +169,9 @@ SPEC-ADMIN-001 (Foundation, ✅)
 Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). Phase 7(backlog follow-up)도 핵심 구현이 완료되었다(2026-06-21 기준):
 
 1. **`SPEC-FEED-001`** (✅ 구현 완료) — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목의 첫 구현 SPEC, Slice A/B/C 전체 완료.
-2. **`SPEC-NOTIFICATION-001`** (✅ Slice A+B 구현 완료) — 인앱 알림 센터 MVP(댓글 알림/목록/읽음처리/설정/구독해제) + @mention 감지. 남은 항목은 e2e(REQ-NOTIF-065) 후속 보강뿐.
-3. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — KEEP 나머지 2종(poll 위젯·쪽지)은 미작성. 우선순위를 골라 `/moai plan` 호출(예: SPEC-MESSAGE-001).
-4. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증, REQ-NOTIF-065(댓글+멘션 알림 케이스) 포함
+2. **`SPEC-NOTIFICATION-001`** (✅ 구현+e2e+sync 전체 완료, status: completed) — 인앱 알림 센터(댓글 알림/목록/읽음처리/설정/구독해제) + @mention 감지. e2e(REQ-NOTIF-065, AC-NOTIF-B1) cold-start 재현 PASS 검증 완료.
+3. **`SPEC-TEST-DEBT-001`** (✅ 평가 완료) — 사전 존재 단위 테스트 실패 90건 triage. 1순위는 카테고리 3(2FA 미들웨어, 실제 버그 가능성) — 우선 조사 권장.
+4. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — KEEP 나머지 2종(poll 위젯·쪽지)은 미작성. 우선순위를 골라 `/moai plan` 호출(예: SPEC-MESSAGE-001).
 
 ### 완료된 전체 워크플로우
 

@@ -178,9 +178,9 @@ EARS coverage: REQ-NOTIF-020, 025.
 - [x] Quality Gate §3 항목 1/2/4/5 통과
 - [x] Slice B(멘션, Milestone 7) 완료 — AC-NOTIF-B1, B2, EC-5 단위테스트로 검증(`packages/notification/src/hooks.test.ts`, `mention.test.ts`)
 - [x] Quality Gate §3 항목 3(e2e, REQ-NOTIF-065 + AC-NOTIF-B1 확장) — `apps/web/e2e/notification.spec.ts` 2개 테스트 모두 실제 PASS 확인(2026-06-21, Postgres 가용 환경에서 cold-start 포함 재현 검증). 검증 과정에서 SPEC 범위 밖의 사전 존재 결함 6건을 발견·수정(상세는 spec.md HISTORY 참조): (1) `packages/board/src/feed/*.ts`의 `.js` 확장자 relative import가 Turbopack ESM에서 dev 서버 전체를 깨뜸, (2) `document.ts`/`comment/service.ts`의 `sanitizeHtml`이 `require()`를 사용해 동일한 ESM 문제로 문서/댓글 생성이 전부 실패, (3) `isomorphic-dompurify`(jsdom)가 Turbopack 번들링 시 `__dirname`을 가상 경로로 치환해 ENOENT 발생 → `serverExternalPackages`로 외부화, (4) `apps/web/server/api/trpc.ts`의 `requireAuth`가 `session.user.id`(NextAuth JWT, 항상 string)를 `typeof === 'number'`로 검사해 실제 사용자의 모든 `protectedProcedure` 호출을 401 처리, (5) `notifications`/`notification_preferences.id`가 마이그레이션에서 SERIAL이 아닌 plain INTEGER로 생성되어 모든 INSERT가 NOT NULL 위반(신규 마이그레이션 `20260625000000_fix_notification_id_sequence`로 수정), (6) `(member)/notifications/page.tsx`가 'use server' 없는 inline closure를 `<form action>`에 전달해 페이지 전체가 500. 부가로 `comment.ts` 라우터가 인증된 사용자의 닉네임을 조회하지 않고 항상 `nickName: null`을 전달하던 것도 수정(알림 표시 텍스트 정확성). 이 6+1건 모두 기존 단위 테스트(전부 mock 기반)로는 발견 불가능했던 항목 — 본 e2e 작업이 최초의 실제 스택 검증.
-- [ ] `spec.md` HISTORY 절에 sync 완료 보고 추가(SPEC-FEED-001 패턴과 동일) — `/moai sync` 단계에서 처리
+- [x] `spec.md` HISTORY 절에 sync 완료 보고 추가(SPEC-FEED-001 패턴과 동일) — 2026-06-21 `/moai sync` 단계에서 처리 완료
 
 ---
 
 Version: 1.0.0
-Status: in-progress (Slice A+B 구현+단위테스트 완료, e2e 작성 완료 — Postgres 가용 환경에서 실행 확인 후 completed 전환)
+Status: completed (2026-06-21, Slice A+B 구현+e2e 실행 검증+sync 전체 완료)
