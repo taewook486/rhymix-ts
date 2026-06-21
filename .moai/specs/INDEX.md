@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-20 (SPEC-FEED-001 구현 완료 — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목 첫 구현 SPEC 완료)
+> 마지막 갱신: 2026-06-21 (SPEC-NOTIFICATION-001 Slice A+B 구현 완료 — 인앱 알림 센터 MVP + @mention 감지. e2e(REQ-NOTIF-065)만 후속 작업으로 deferred)
 
 ## 기술 스택 (확정)
 
@@ -31,7 +31,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 4. EXTENSION + POLISH | hook system + theme admin UI | 2 | 2/2 | 🟢 구현 완료 |
 | 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 1/1 | 🟢 구현 완료 |
 | 6. ADMIN LEGACY PARITY | 레거시 분석 기반 admin 미구현 기능 완성 | 1 | 1/1 | 🟢 구현 완료 (M1~M3 전체, status: completed v1.3.0) |
-| 7. BACKLOG FOLLOW-UP | KEEP 레거시 모듈 후속 구현 (rss/poll/message/notification) | 1 | 0/1 | 📝 SPEC 작성 단계 (FEED-001 구현 대기) |
+| 7. BACKLOG FOLLOW-UP | KEEP 레거시 모듈 후속 구현 (rss/poll/message/notification) | 2 | 2/2 | 🟢 구현 완료 (FEED-001, NOTIFICATION-001 Slice A+B 모두 완료. e2e만 후속 deferred) |
 
 ---
 
@@ -108,8 +108,11 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | ID | 제목 | 의존 | 우선순위 | 상태 |
 |---|---|---|---|---|
 | [SPEC-FEED-001](./SPEC-FEED-001/spec.md) | 게시판별 RSS 2.0 / Atom 1.0 피드 (Next.js Route Handler) | BOARD-CRUD, DOCUMENT, COMMENT | P2 | ✅ 구현 완료 (Slice A/B/C, 12/12 태스크) |
+| [SPEC-NOTIFICATION-001](./SPEC-NOTIFICATION-001/spec.md) | 인앱 알림 센터 (댓글 알림 + 목록/읽음처리 + 설정/구독해제 + 멘션) | COMMENT, DOCUMENT, AUTH | P2 | ✅ Slice A+B 구현 완료 (e2e만 후속 deferred) |
 
-> rss 레거시 모듈(SPEC-MODULE-BACKLOG-001 §1.4 KEEP)의 후속 구현. `app/[mid]/rss/route.ts` + `app/[mid]/atom/route.ts` 분리 라우트(공유 빌더), `listDocuments` PUBLIC-only 데이터 소스, 비밀글/임시저장/비공개 게시판 제외, `revalidate=300`+SWR+문서 이벤트 `revalidateTag` 3중 캐싱, `Board.feedConfig Json` additive 컬럼 + board admin 확장 설정 패널. 36개 REQ(REQ-FEED-001~066), 3개 슬라이스 전체 완료. `pnpm tsc --noEmit` 0 errors / vitest 67/67 통과 / expert-security 리뷰 CRITICAL·HIGH 0건. 통합 피드·팟캐스트 RSS·WebSub 명시 제외. KEEP 나머지 3종(SPEC-POLL-WIDGET-001/SPEC-MESSAGE-001/SPEC-NOTIFICATION-001)은 미작성 백로그.
+> rss 레거시 모듈(SPEC-MODULE-BACKLOG-001 §1.4 KEEP)의 후속 구현. `app/[mid]/rss/route.ts` + `app/[mid]/atom/route.ts` 분리 라우트(공유 빌더), `listDocuments` PUBLIC-only 데이터 소스, 비밀글/임시저장/비공개 게시판 제외, `revalidate=300`+SWR+문서 이벤트 `revalidateTag` 3중 캐싱, `Board.feedConfig Json` additive 컬럼 + board admin 확장 설정 패널. 36개 REQ(REQ-FEED-001~066), 3개 슬라이스 전체 완료. `pnpm tsc --noEmit` 0 errors / vitest 67/67 통과 / expert-security 리뷰 CRITICAL·HIGH 0건. 통합 피드·팟캐스트 RSS·WebSub 명시 제외.
+>
+> ncenterlite 레거시 모듈(SPEC-MODULE-BACKLOG-001 §3.B KEEP)의 후속 구현. Slice A(MVP): `packages/notification` 패키지 신설(point 패턴) + Notification/NotificationPreference 스키마, `packages/comment/src/service.ts` 댓글 작성 훅 연동, `(member)/notifications` + `(member)/settings/notifications` 라우트, `NotificationBell`(GlobalHeader 연동). Slice B(@mention 감지, 2026-06-21): `packages/notification/src/mention.ts`의 정규식 기반 후보 추출 + `hooks.ts`의 `onMentionDetected`(자기-멘션·중복 억제는 기존 `NotificationService.create` 가드 재사용, 신규 로직 미중복) + `comment/src/service.ts` 트랜잭션 연동. Slice A+B 합산 114 tests 통과(comment 0 type errors) / expert-security IDOR 독립 리뷰 PASS(Slice A 시점, CRITICAL·HIGH 0건). e2e(REQ-NOTIF-065, 댓글+멘션 케이스)는 SPEC-ADMIN-EXTRAS-001 패턴과 동일하게 후속 작업으로 deferred. KEEP 나머지 2종(SPEC-POLL-WIDGET-001/SPEC-MESSAGE-001)은 미작성 백로그.
 
 ### Meta-Plan 문서 (참조)
 
@@ -160,11 +163,12 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ### 즉시 가능
 
-Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). Phase 7(backlog follow-up)이 진행 중이다:
+Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). Phase 7(backlog follow-up)도 핵심 구현이 완료되었다(2026-06-21 기준):
 
 1. **`SPEC-FEED-001`** (✅ 구현 완료) — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목의 첫 구현 SPEC, Slice A/B/C 전체 완료.
-2. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — KEEP 나머지 3종(poll 위젯·쪽지·알림센터)은 미작성. 우선순위를 골라 `/moai plan` 호출(예: SPEC-NOTIFICATION-001 또는 SPEC-MESSAGE-001).
-3. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증
+2. **`SPEC-NOTIFICATION-001`** (✅ Slice A+B 구현 완료) — 인앱 알림 센터 MVP(댓글 알림/목록/읽음처리/설정/구독해제) + @mention 감지. 남은 항목은 e2e(REQ-NOTIF-065) 후속 보강뿐.
+3. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — KEEP 나머지 2종(poll 위젯·쪽지)은 미작성. 우선순위를 골라 `/moai plan` 호출(예: SPEC-MESSAGE-001).
+4. **전체 E2E 스위트 실행** — Playwright 브라우저 통합 검증, REQ-NOTIF-065(댓글+멘션 알림 케이스) 포함
 
 ### 완료된 전체 워크플로우
 
