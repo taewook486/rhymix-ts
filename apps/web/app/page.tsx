@@ -1,14 +1,16 @@
 /**
- * 홈 페이지 — SPEC-LAYOUT-001 Slice C.
+ * 홈 페이지 — SPEC-LAYOUT-001 Slice C, SPEC-INSTALL-003 Groups 1-4.
  *
  * x-domain-id 헤더에서 domainId를 읽고, Domain.indexModuleInstanceId로
  * 모듈 인스턴스를 직접 dispatch한 뒤 renderModuleWithLayout으로 감싼다.
  *
  * - indexModuleInstanceId가 null이면 placeholder 페이지 렌더 (REQ-LAYOUT-041)
  * - x-domain-id 헤더 없음/비정상이면 기존 welcome 화면 유지 (REQ-LAYOUT-042)
+ * - 인증된 운영자이고 온보딩이 해제되지 않은 경우, 온보딩 표면을 prepend (REQ-INSTALL3-001)
  *
  * @MX:SPEC: SPEC-LAYOUT-001 REQ-LAYOUT-041, REQ-LAYOUT-042
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-013
+ * @MX:SPEC: SPEC-INSTALL-003 REQ-INSTALL3-001~006
  */
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -16,6 +18,8 @@ import { renderModuleWithLayout } from '@rhymix-ts/core';
 import { runPageView } from '@rhymix-ts/core/addons';
 import { prisma } from '@/lib/db/prisma';
 import { getModuleDefinition } from '@/lib/modules/registry';
+import { auth } from '@/lib/auth/config';
+import { OperatorOnboarding } from '@/components/onboarding/OperatorOnboarding';
 // 레이아웃 레지스트리 초기화 (정적 import — REQ-LAYOUT-009)
 import '@/lib/layout-init';
 
@@ -43,6 +47,7 @@ export default async function RootPage() {
   const domain = await prisma.domain.findUnique({
     where: { id: domainId },
     select: {
+      siteId: true,
       defaultLayoutId: true,
       indexModuleInstance: {
         include: { config: true },
@@ -89,5 +94,22 @@ export default async function RootPage() {
     domain: null
   }, controller.signal);
 
-  return rendered;
+  // SPEC-INSTALL-003 REQ-INSTALL3-001: 인증된 운영자에게 온보딩 표시
+  // 인증 상태 확인
+  const session = await auth();
+  const userId = session?.user?.id
+    ? (typeof session.user.id === 'string' ? Number.parseInt(session.user.id, 10) : session.user.id)
+    : null;
+
+  // 인증된 사용자이고 siteId가 있는 경우에만 온보딩 렌더
+  const onboarding = userId != null && domain.siteId != null
+    ? <OperatorOnboarding siteId={domain.siteId} />
+    : null;
+
+  return (
+    <>
+      {onboarding}
+      {rendered}
+    </>
+  );
 }

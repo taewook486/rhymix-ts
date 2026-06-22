@@ -52,6 +52,8 @@ export default defineConfig({
       // SPEC-THEME-POLISH-001: 다크모드 및 admin site design 컴포넌트 테스트
       ['apps/web/components/theme/**/*.test.tsx', 'jsdom'],
       ['apps/web/components/admin/site-design/**/*.test.tsx', 'jsdom'],
+      // SPEC-INSTALL-003: 온보딩 컴포넌트 테스트
+      ['apps/web/components/onboarding/**/*.test.tsx', 'jsdom'],
       ['packages/core/src/widgets/**/*.test.tsx', 'jsdom'],
       ['apps/web/lib/widgets/**/*.test.ts', 'jsdom'],
       ['apps/web/lib/widgets/**/*.test.tsx', 'jsdom'],
