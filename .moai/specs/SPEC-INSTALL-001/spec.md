@@ -8,6 +8,14 @@ domain: install
 related: [SPEC-ADMIN-001, SPEC-AUTH-001, SPEC-THEME-001]
 ---
 
+## HISTORY
+
+- 2026-05-10 (v0.1.0, completed): 최초 작성 및 구현. REQ-INSTALL-001~054, Slice A~D 완료(PR #19~#22, 859/868 tests passing). frontmatter에 `version` 필드 없음(원본 컨벤션 유지).
+- 2026-06-21 (v0.1.1, completed): **문서 추가 전용 변경(구현 미포함).** Playwright로 설치 마법사를 끝까지 실행해 레거시 PHP Rhymix와 비교한 결과 발견된 post-install 부트스트랩 갭을 메우기 위해 신규 Event-driven 요구사항 REQ-INSTALL-016(인덱스 모듈 지정)·REQ-INSTALL-017(기본 메뉴 생성)·REQ-INSTALL-018(샘플 콘텐츠, `seed_sample_content` Where 절)을 추가하고, 대응 수락 기준 AC-INSTALL-008~011 및 Traceability 행을 추가. `status`는 `completed` 유지하되, 신규 REQ는 코드 미구현 갭으로 `progress.md` "구현 갭(Implementation Gap)" 섹션에 기록(추후 manager-ddd/expert-backend가 `packages/db/src/install/seed.ts` 보완 시 참조). frontmatter `version` 필드는 원본 컨벤션 유지를 위해 추가하지 않음 — 버전은 본 HISTORY 항목으로만 추적.
+- 2026-06-22 (v0.1.2, completed): **구현 완료.** manager-tdd가 `packages/db/src/install/seed.ts`에 REQ-INSTALL-016~018을 구현(9~12단계: Board×3 생성 → Menu×1/MenuItem×3 생성 → Domain.update(indexModuleInstanceId, defaultMenuId) → 샘플 Document×2). `seed.test.ts`에 신규 테스트 추가, 7 tests 전부 통과(`pnpm vitest run packages/db/src/install/seed.test.ts`). `progress.md` "구현 갭" 섹션을 해소 완료로 갱신.
+
+---
+
 ## Overview
 
 Rhymix-TS의 **최초 설치 마법사**를 정의한다. 사용자가 빈 데이터베이스를 가진 새 인스턴스에 처음 접속했을 때, GPL 라이선스 동의 → 환경 진단 → 데이터베이스 설정 → 첫 관리자 계정 생성 → 사이트 락(SiteLock) 옵션 → 부트스트랩 완료까지의 4-단계 위저드를 제공한다. 원본 Rhymix v2.1.32의 4단계 인스톨러를 모티브로 하되, 다음을 현대화한다:
@@ -72,6 +80,13 @@ Rhymix-TS의 **최초 설치 마법사**를 정의한다. 사용자가 빈 데�
   6. If `use_sitelock=true`, persist the operator's request IP into `SiteSetting.sitelock_allowlist`.
   7. Issue an Auth.js session cookie for the new admin and redirect to `/admin/welcome`.
 - **REQ-INSTALL-015**: When migration fails at any point during `procInstall`, the system shall roll back the entire transaction, leave the database empty, and return the operator to `/install/db-config` with an error message identifying the failed migration.
+- **REQ-INSTALL-016**: When `procInstall` reaches the seed step (after the default `ModuleInstance` rows are created in REQ-INSTALL-014 sub-step 7), the system shall designate the `board` `ModuleInstance` as the default index module by setting `Domain.indexModuleInstanceId` of the default domain to that instance's `id`, within the same install transaction.
+  - Rationale: without this, the homepage of a freshly installed instance renders only "No index module configured for this domain." The schema already provides `Domain.indexModuleInstanceId` and the `IndexModule` relation (`schema.prisma:86`, `:95`, `:131`); the seed must populate it.
+- **REQ-INSTALL-017**: When `procInstall` reaches the seed step, the system shall create one default `Menu` for the default site, populate it with `MenuItem` rows linking to the seeded board modules (Welcome/Notice/Q&A/Board, mapping to the `board`, `notice`, and `qna` module instances), and set `Domain.defaultMenuId` of the default domain to that menu's `id`, within the same install transaction.
+  - Rationale: without this, `/admin/menu` shows "등록된 메뉴가 없습니다" and the site has no navigation. The schema already provides `Menu`/`MenuItem` (`schema.prisma:158`, `:177`) and `Domain.defaultMenuId` (`schema.prisma:84`); the seed must populate them. The legacy Rhymix installer seeds an equivalent default menu.
+- **REQ-INSTALL-018**: Where `seed_sample_content=true` (default `true`), when `procInstall` reaches the seed step, the system shall create at least one welcome/announcement sample `Document` in each of the `board` and `notice` board modules, within the same install transaction.
+  - Note: a `Document` requires a `boardId` referencing a `Board` row, and a `Board` requires a `moduleInstanceId`. The current seed creates `ModuleInstance` rows only (no `Board` rows). Therefore this requirement implicitly requires the seed to also create the corresponding `Board` rows (`schema.prisma:640`, FK `moduleInstanceId`) for the `board`/`notice`/`qna` module instances before inserting sample documents.
+  - Rationale: the legacy Rhymix installer seeds sample posts so a fresh site is not empty. Operators who want a blank site set `seed_sample_content=false`.
 
 ### State-driven (지속 상태)
 
@@ -139,6 +154,30 @@ Rhymix-TS의 **최초 설치 마법사**를 정의한다. 사용자가 빈 데�
 - **Given** two operators submit `procInstall` simultaneously from different sessions
 - **When** both reach the migration step
 - **Then** only one acquires `pg_advisory_lock`, the other waits, and upon receiving the lock detects `INSTALL_LOCK=1` and returns 410
+
+### AC-INSTALL-008 (REQ-INSTALL-016)
+
+- **Given** the operator completes all 4 steps and `procInstall` succeeds
+- **When** a visitor navigates to the site homepage `/`
+- **Then** the default `Domain.indexModuleInstanceId` is set to the `board` module instance's `id`, and the homepage renders the board module (not "No index module configured for this domain.")
+
+### AC-INSTALL-009 (REQ-INSTALL-017)
+
+- **Given** the operator completes installation successfully
+- **When** an admin opens `/admin/menu`
+- **Then** at least one `Menu` exists with `MenuItem` rows linking to the seeded board modules, the default `Domain.defaultMenuId` points to that menu, and the page does not show "등록된 메뉴가 없습니다"
+
+### AC-INSTALL-010 (REQ-INSTALL-018)
+
+- **Given** installation runs with the default `seed_sample_content=true`
+- **When** `procInstall` completes
+- **Then** each of the `board` and `notice` board modules has a backing `Board` row and contains at least one sample `Document`, and the homepage/board listing shows the welcome post
+
+### AC-INSTALL-011 (REQ-INSTALL-018, sample content opt-out)
+
+- **Given** the operator (or deployment config) sets `seed_sample_content=false`
+- **When** `procInstall` completes
+- **Then** no sample `Document` rows are created, while the index module (REQ-INSTALL-016) and default menu (REQ-INSTALL-017) are still configured
 
 ## Domain Model
 
@@ -369,6 +408,9 @@ export const installRouter = router({
 | REQ-INSTALL-001, 020 | AC-INSTALL-001 | Playwright: fresh DB → expect redirect |
 | REQ-INSTALL-013 | AC-INSTALL-002, 003 | Vitest: validateDbConfig with mock pg client |
 | REQ-INSTALL-014, 015 | AC-INSTALL-004 | Integration: real Postgres + intentional migration failure |
+| REQ-INSTALL-016 | AC-INSTALL-008 | Playwright: post-install homepage renders index module (not "No index module configured"); Integration: assert `Domain.indexModuleInstanceId` set to board instance |
+| REQ-INSTALL-017 | AC-INSTALL-009 | Playwright: `/admin/menu` shows seeded menu; Integration: assert `Menu`/`MenuItem` rows + `Domain.defaultMenuId` set |
+| REQ-INSTALL-018 | AC-INSTALL-010, 011 | Integration: `seed_sample_content` true → `Board` rows + sample `Document` per board/notice; false → zero sample docs but index+menu still set; Playwright: welcome post visible on fresh site |
 | REQ-INSTALL-023 | AC-INSTALL-005 | Playwright: post-install navigation to /install |
 | REQ-INSTALL-024 | AC-INSTALL-006 | Integration: middleware test with simulated IPs |
 | REQ-INSTALL-053 | AC-INSTALL-007 | Concurrent integration test with two HTTP clients |

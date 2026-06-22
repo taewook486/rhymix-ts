@@ -8,13 +8,17 @@
  *
  * 시퀀스:
  *   1) Site (installedAt=NOW, installedBy=null 임시)
- *   2) Domain
+ *   2) Domain (생성 id 보관 → 11단계에서 인덱스 모듈/메뉴 연결)
  *   3) MemberGroup × 2 (admin, member)
  *   4) admin User
  *   5) Site.installedBy ← admin user id
  *   6) MemberGroupMember (admin user → admin group)
- *   7) ModuleInstance × 3 (notice, qna, board)
+ *   7) ModuleInstance × 3 (notice, qna, board) — 생성 id 보관
  *   8) SiteSetting × 3 (sitelock_enabled, sitelock_allowlist, install_lock=true)
+ *   9) Board × 3 (board 모듈마다 backing Board; Document FK 선행 조건)
+ *  10) Menu × 1 + MenuItem × 3 (board/notice/qna → /{mid}) — REQ-INSTALL-017
+ *  11) Domain.update: indexModuleInstanceId=board(REQ-016), defaultMenuId=menu(REQ-017)
+ *  12) 샘플 Document (board/notice 각 1건) — REQ-INSTALL-018, seedSampleContent 기본 true
  *
  * 주의: `prisma migrate deploy`는 자체 트랜잭션 관리 때문에 본 트랜잭션
  * 안으로 이식할 수 없습니다. 본 시드는 스키마가 사전 적용된 상태(prisma db
@@ -22,7 +26,7 @@
  *
  * @MX:ANCHOR: 첫 영구 DB 변경의 단일 진입점 (fan_in: performInstall, 통합 테스트, 향후 admin re-seed tooling).
  * @MX:REASON: 본 함수가 부분 성공 시 중간 상태를 남기면 install lock과 결합되어 사이트 잠금이 발생한다.
- * @MX:SPEC: SPEC-INSTALL-001 REQ-INSTALL-014, REQ-INSTALL-015
+ * @MX:SPEC: SPEC-INSTALL-001 REQ-INSTALL-014, REQ-INSTALL-015, REQ-INSTALL-016, REQ-INSTALL-017, REQ-INSTALL-018
  */
 import type { PrismaClient } from '@prisma/client';
 
@@ -59,6 +63,12 @@ export interface SeedInput {
     enabled: boolean;
     allowlist: string[];
   };
+  /**
+   * REQ-INSTALL-018: 환영/공지 샘플 Document를 board/notice 보드에 시드할지 여부.
+   * 기본 true (레거시 Rhymix 설치 동작과 동일). false면 빈 사이트로 부트스트랩.
+   * 인덱스 모듈(REQ-016)·기본 메뉴(REQ-017) 설정은 이 값과 무관하게 항상 수행한다.
+   */
+  seedSampleContent?: boolean;
 }
 
 export interface SeedResult {
@@ -94,8 +104,8 @@ export async function seedInstall(
       },
     });
 
-    // 2) Domain
-    await tx.domain.create({
+    // 2) Domain — 인덱스 모듈/기본 메뉴 연결을 위해 생성된 id를 보관.
+    const domain = await tx.domain.create({
       data: {
         siteId: site.id,
         hostname: input.domain.hostname,
@@ -152,8 +162,14 @@ export async function seedInstall(
     });
 
     // 7) ModuleInstance × 3 — notice/qna/board, 모두 isDefault=false.
+    //    이후 단계에서 인덱스 모듈 지정·Board 행 생성에 쓰도록 id를 보관한다.
+    const moduleInstanceIds: Record<'notice' | 'qna' | 'board', number> = {
+      notice: 0,
+      qna: 0,
+      board: 0,
+    };
     for (const mid of ['notice', 'qna', 'board'] as const) {
-      await tx.moduleInstance.create({
+      const created = await tx.moduleInstance.create({
         data: {
           mid,
           moduleCode: 'board',
@@ -161,6 +177,7 @@ export async function seedInstall(
           siteId: site.id,
         },
       });
+      moduleInstanceIds[mid] = created.id;
     }
 
     // 8) SiteSetting × 3
@@ -186,6 +203,83 @@ export async function seedInstall(
         value: true,
       },
     });
+
+    // 9) Board 행 — board 모듈마다 backing Board가 있어야 정상 렌더된다.
+    //    REQ-INSTALL-018: Document.boardId → Board.id 이므로 Document보다 먼저 생성.
+    const boardIds: Record<'notice' | 'qna' | 'board', number> = {
+      notice: 0,
+      qna: 0,
+      board: 0,
+    };
+    for (const mid of ['notice', 'qna', 'board'] as const) {
+      const board = await tx.board.create({
+        data: {
+          moduleInstanceId: moduleInstanceIds[mid],
+          name: mid,
+        },
+      });
+      boardIds[mid] = board.id;
+    }
+
+    // 10) REQ-INSTALL-017: 기본 메뉴 1개 + board/notice/qna 연결 MenuItem.
+    const menu = await tx.menu.create({
+      data: { siteId: site.id, title: 'Main Menu' },
+    });
+    const menuItems: ReadonlyArray<{ title: string; mid: 'board' | 'notice' | 'qna' }> = [
+      { title: 'Board', mid: 'board' },
+      { title: 'Notice', mid: 'notice' },
+      { title: 'Q&A', mid: 'qna' },
+    ];
+    let listOrder = 0;
+    for (const item of menuItems) {
+      await tx.menuItem.create({
+        data: {
+          menuId: menu.id,
+          title: item.title,
+          url: `/${item.mid}`,
+          listOrder: listOrder++,
+        },
+      });
+    }
+
+    // 11) REQ-INSTALL-016 + REQ-INSTALL-017: 인덱스 모듈(board)·기본 메뉴를
+    //     기본 도메인에 연결한다. 본 트랜잭션 내에서 수행(부분 시드 방지).
+    await tx.domain.update({
+      where: { id: domain.id },
+      data: {
+        indexModuleInstanceId: moduleInstanceIds.board,
+        defaultMenuId: menu.id,
+      },
+    });
+
+    // 12) REQ-INSTALL-018: 환영/공지 샘플 Document(기본 활성).
+    //     board/notice 보드에 최소 1건씩. seedSampleContent=false면 건너뛴다.
+    if (input.seedSampleContent !== false) {
+      const samples: ReadonlyArray<{ mid: 'board' | 'notice'; title: string; content: string }> = [
+        {
+          mid: 'board',
+          title: 'Welcome to Rhymix-TS',
+          content: '<p>축하합니다! Rhymix-TS 설치가 완료되었습니다.</p>',
+        },
+        {
+          mid: 'notice',
+          title: 'Notice: Getting Started',
+          content: '<p>관리자 페이지에서 사이트 설정을 시작하세요.</p>',
+        },
+      ];
+      for (const sample of samples) {
+        await tx.document.create({
+          data: {
+            boardId: boardIds[sample.mid],
+            title: sample.title,
+            content: sample.content,
+            authorId: adminUser.id,
+            nickName: input.admin.nickName,
+            isNotice: sample.mid === 'notice',
+          },
+        });
+      }
+    }
 
     return {
       siteId: site.id,

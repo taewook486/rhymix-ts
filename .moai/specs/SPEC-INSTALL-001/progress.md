@@ -344,3 +344,48 @@ install 관련 테스트: 104 passed, 3 skipped (107 total)
 | C | 014, 015, 054 | +0 (기존 구현) | 완료 (PR #21) |
 | D | 023, 024, 040, 041, 042 | +16 | 완료 (PR #22) |
 | **전체** | **REQ-INSTALL-001~054** | **859/868** | **완료** |
+
+---
+
+## 구현 갭(Implementation Gap) — 2026-06-21 발견, 2026-06-22 해소 (post-install 부트스트랩)
+
+**상태**: 해소 완료. REQ-INSTALL-016~018은 `packages/db/src/install/seed.ts`에 구현되었고, `seed.test.ts`에 추가된 7개 테스트 모두 통과(`pnpm vitest run packages/db/src/install/seed.test.ts`). 아래는 발견 당시 기록(경위 보존용)이며, "현재 구현 상태"는 더 이상 최신이 아니다 — 실제 코드는 9~12단계(Board/Menu/MenuItem/Domain.update/샘플 Document)까지 포함한다.
+
+### 발견 경위
+
+Playwright로 설치 마법사를 끝까지 실행해 레거시 PHP Rhymix와 비교한 결과, `procInstall`(REQ-INSTALL-014) 완료 후 다음이 전혀 생성되지 않음:
+
+1. 어떤 `ModuleInstance`도 도메인의 인덱스 모듈로 지정되지 않음 → 홈페이지가 "No index module configured for this domain." 만 표시. 스키마에는 `Domain.indexModuleInstanceId` + `IndexModule` 관계가 이미 존재(`packages/db/prisma/schema.prisma:86`, `:95`, `:131`)하나 미채움.
+2. `Menu`/`MenuItem` 레코드 0건 → `/admin/menu`에서 "등록된 메뉴가 없습니다". `Menu`/`MenuItem` 모델 존재(`schema.prisma:158`, `:177`), `Domain.defaultMenuId` 필드 존재(`schema.prisma:84`)하나 미설정.
+3. 샘플 `Document` 0건. 레거시는 설치 시 환영/공지 메뉴 + 샘플 게시글을 자동 생성.
+
+### 현재 구현 상태 (seed.ts)
+
+`seedInstall()` (`packages/db/src/install/seed.ts:77-197`)는 다음만 수행:
+- Site, Domain, MemberGroup×2, admin User, MemberGroupMember (1~6단계)
+- `ModuleInstance × 3` (notice/qna/board) — `seed.ts:155-164`
+- `SiteSetting × 3` (sitelock_enabled, sitelock_allowlist, install_lock) — `seed.ts:167-188`
+- 그리고 즉시 return (`seed.ts:190-195`)
+
+→ 인덱스 모듈 연결 / 메뉴 생성 / 샘플 콘텐츠 생성이 **코드에도 SPEC에도 없었음**.
+
+### 신규 REQ → seed.ts 보완 필요 사항
+
+| REQ | 보완 내용 | 주의점 |
+|-----|-----------|--------|
+| REQ-INSTALL-016 | `Domain.indexModuleInstanceId` ← board 인스턴스 id | 트랜잭션 내, ModuleInstance 생성 직후 |
+| REQ-INSTALL-017 | `Menu` 1개 + `MenuItem` 행 생성, `Domain.defaultMenuId` 설정 | MenuItem이 board 모듈로 연결되도록 (url 또는 모듈 매핑) |
+| REQ-INSTALL-018 | board/notice에 샘플 `Document` ≥1건 (`seed_sample_content=true` 기본) | **`Document`는 `boardId`(→`Board`) 필요. 현재 seed는 `Board` 행을 만들지 않음.** 따라서 board/notice(필요시 qna) ModuleInstance에 대한 `Board` 행(`schema.prisma:640`, FK `moduleInstanceId`)을 먼저 생성해야 샘플 문서 삽입 가능 |
+
+### 미해결 결정 사항 → 확정 결과 (2026-06-22, seed.ts 구현 기준)
+
+1. **메뉴/메뉴아이템 명칭·구성**: Board/Notice/Q&A 3개로 확정(`seed.ts` 10단계 `menuItems`). Welcome 별도 메뉴는 만들지 않음 — 대신 board 모듈에 샘플 Document로 환영 글을 넣는 방식(REQ-018) 채택.
+2. **MenuItem → 모듈 링크 방식**: `MenuItem.url = '/{mid}'` 문자열 방식으로 확정. 별도 모듈 참조 컬럼은 추가하지 않음(스키마 변경 없음).
+3. **`seed_sample_content` 플래그 전달 경로**: `SeedInput.seedSampleContent?: boolean` 필드로 확정, 기본값 `true`(미지정 시). 설치 옵션/env 경로는 채택하지 않음.
+4. **`Board` 행 생성 범위**: board/notice/qna 3개 모두 생성하는 것으로 확정(9단계) — qna도 게시판 모듈이라 비어 있어도 Board 행이 필요하다는 판단을 따름. 샘플 Document는 board/notice 2곳에만 삽입.
+
+### 구현 완료 요약 (REQ-INSTALL-016~018)
+
+- `packages/db/src/install/seed.ts`: 9~12단계 추가 — Board×3 생성 → Menu×1 + MenuItem×3 생성 → `Domain.update`(indexModuleInstanceId, defaultMenuId) → 샘플 Document×2(board/notice).
+- `packages/db/src/install/seed.test.ts`: 신규 케이스 포함 총 7 tests, 전부 통과.
+- 트랜잭션 범위: 9~12단계 모두 기존 `seedInstall` 트랜잭션 내부에 위치 — 부분 시드로 인한 install_lock 불일치 위험 없음.
