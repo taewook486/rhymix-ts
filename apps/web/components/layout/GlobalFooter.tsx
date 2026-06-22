@@ -6,7 +6,7 @@
  * REQ-INSTALL3-042: 온보딩 해제 상태와 무관하게 항상 렌더
  */
 
-export function GlobalFooter(): JSX.Element {
+export function GlobalFooter() {
   return (
     <footer data-testid="global-footer" className="border-t py-6 mt-12">
       <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">

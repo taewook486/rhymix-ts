@@ -23,8 +23,14 @@ export interface OperatorOnboardingProps {
 /**
  * SiteSetting에서 온보딩 해제 상태를 읽어옵니다.
  * 요청 단위 메모이제이션으로 중복 쿼리를 방지합니다.
+ *
+ * export하는 이유: OperatorOnboarding 자체는 async Server Component라
+ * RTL로 직접 렌더링할 수 없다("async/await is not yet supported in
+ * Client Components" — Next.js RSC 런타임 밖에서는 불가능, SPEC-TEST-DEBT-001
+ * NextJS-AppRouter 카테고리와 동일한 제약). 이 분기 로직만 분리해 일반
+ * vitest 단위 테스트로 REQ-INSTALL3-002/003을 검증한다.
  */
-async function getOnboardingDismissed(siteId: number): Promise<boolean> {
+export async function getOnboardingDismissed(siteId: number): Promise<boolean> {
   try {
     const setting = await prisma.siteSetting.findFirst({
       where: {
