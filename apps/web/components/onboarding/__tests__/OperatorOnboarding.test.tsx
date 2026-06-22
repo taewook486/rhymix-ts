@@ -17,6 +17,15 @@ vi.mock('@rhymix-ts/db', () => ({
   },
 }));
 
+// OperatorOnboarding은 모듈 최상단에서 DismissButton -> app/actions/onboarding ->
+// @/lib/auth/config -> 실제 next-auth를 import 체인으로 끌고 온다. 실제 next-auth는
+// 이 환경에서 "next/server" 모듈 해석에 실패하는 사전 존재 이슈가 있다
+// (SPEC-TEST-DEBT-001 참조) — 이 테스트는 getOnboardingDismissed()만 검증하므로
+// auth 관련 모듈을 mock해 그 체인을 차단한다.
+vi.mock('@/lib/auth/config', () => ({
+  auth: vi.fn(),
+}));
+
 import { getOnboardingDismissed } from '../OperatorOnboarding';
 
 describe('getOnboardingDismissed', () => {
