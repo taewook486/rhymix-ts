@@ -9,6 +9,7 @@ import { auth } from '@/lib/auth/config';
 import { createNotificationService } from '@rhymix-ts/notification';
 import { NotificationBell } from '@rhymix-ts/ui/components';
 import { markOneRead, markAllRead } from '@/app/(member)/notifications/actions';
+import { UserAuthSection } from '@/components/layout/UserAuthSection';
 
 export async function GlobalHeader() {
   const h = await headers();
@@ -82,9 +83,14 @@ export async function GlobalHeader() {
             />
           )}
           <DarkModeToggle />
-          <Link href="/login" className="text-sm text-gray-500 hover:text-blue-600">
-            로그인
-          </Link>
+          {/* @MX:NOTE: [AUTO] 인증 상태에 따른 UI 분기 — SPEC-INSTALL-002 Group 1 */}
+          {/* @MX:REASON: Server Component에서 계산한 userId/사용자 정보를 Client Component로 전달하여 조건부 렌더링 */}
+          <UserAuthSection
+            userId={userId}
+            userName={session?.user?.name ?? null}
+            userEmail={session?.user?.email ?? null}
+            userIdString={session?.user?.id ?? null}
+          />
         </div>
       </div>
     </header>

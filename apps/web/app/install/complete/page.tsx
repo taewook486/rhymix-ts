@@ -34,9 +34,27 @@ export default async function InstallCompletePage() {
           <section className="mt-8 rounded-md border bg-white/50 p-4 text-sm">
             <h2 className="font-semibold">다음 단계 안내</h2>
             <ul className="mt-2 list-disc pl-5 leading-7">
-              <li>관리자 대시보드에서 첫 모듈 인스턴스를 생성하세요. (SPEC-ADMIN-001)</li>
-              <li>회원 그룹 권한을 설정하세요. (SPEC-AUTH-001)</li>
-              <li>로그인 페이지에서 방금 만든 관리자 계정으로 로그인하세요.</li>
+              <li>
+                기본 모듈(board, notice, qna), 기본 메뉴, 샘플 문서가 이미 생성되어 있습니다.{' '}
+                <Link href="/admin/modules" className="text-[rgb(var(--color-primary))] underline">
+                  모듈 관리
+                </Link>{' '}
+               에서 기존 모듈을 편집하거나 새 모듈을 추가하세요.
+              </li>
+              <li>
+                회원 그룹 권한을 설정하세요.{' '}
+                <Link href="/admin/members/settings" className="text-[rgb(var(--color-primary))] underline">
+                  회원 설정
+                </Link>
+               에서 권한을 관리할 수 있습니다.
+              </li>
+              <li>
+                사이트 제목과 기본 설정을 변경하세요.{' '}
+                <Link href="/admin/settings" className="text-[rgb(var(--color-primary))] underline">
+                  일반 설정
+                </Link>
+               에서 사이트 정보를 커스터마이징할 수 있습니다.
+              </li>
             </ul>
           </section>
         </>
