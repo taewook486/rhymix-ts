@@ -12,18 +12,6 @@ expect.extend(matchers);
 // server-only 모듈 mock — vitest 환경에서는 항상 유효한 것으로 처리
 vi.mock('server-only', () => ({}));
 
-// Next.js server-only 모듈 mock
-vi.mock('next/server', () => ({
-  cookies: vi.fn(),
-  headers: vi.fn(),
-}));
-
-// @MX:NOTE: [AUTO] Auth.js v5 beta에서 next/server import 오류 방지를 위한 mock
-// vitest 환경에서는 Auth.js 모듈 자체를 mock 처리
-vi.mock('@/lib/auth/config', () => ({
-  auth: vi.fn(() => Promise.resolve(null)),
-}));
-
 // window.matchMedia mock — jsdom 기본 미지원
 // @MX:NOTE: [AUTO] node 환경에서는 window 객체가 없으므로 jsdom 환경에서만 mock
 if (typeof window !== 'undefined') {
