@@ -5,6 +5,7 @@ import { AutoLoginRefresher } from '@/components/auth/AutoLoginRefresher';
 import { SessionProviderWrapper } from '@/components/auth/SessionProviderWrapper';
 import { TRPCProvider } from '@/providers/TRPCProvider';
 import { GlobalHeader } from '@/components/layout/GlobalHeader';
+import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { ColorSchemeProvider } from '@/components/theme/ColorSchemeProvider';
 import { colorSchemeScript } from '@/lib/theme/color-scheme-script';
 
@@ -34,6 +35,7 @@ export default function RootLayout({
               <AutoLoginRefresher />
               <GlobalHeader />
               <main>{children}</main>
+              <GlobalFooter />
             </SessionProviderWrapper>
           </TRPCProvider>
         </ColorSchemeProvider>
