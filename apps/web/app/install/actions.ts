@@ -36,6 +36,7 @@ import {
 import { type ActionState } from '@/lib/install/action-state';
 import { getWizardSession } from '@/lib/install/wizard-session';
 import { requireWizardStep } from '@/lib/install/wizard-guards';
+import { signIn } from '@/lib/auth/config';
 
 /** Zod issues를 fieldErrors 맵으로 변환. */
 function zodToFieldErrors(error: {
@@ -288,6 +289,19 @@ export async function performInstall(
         where: { hostname },
         data: { forceHttps: sslEnabled },
       });
+
+      // REQ-INSTALL2-010: 설치 완료 후 자동 로그인 — Auth.js 세션 발급
+      // 레거시 PHP Rhymix와 동일하게 설치 직후 관리자가 로그인된 상태로 진입한다.
+      try {
+        await signIn('credentials', {
+          identifier: admin.userId,
+          password: admin.password,
+          redirect: false,
+        });
+      } catch {
+        // REQ-INSTALL2-013: signIn 실패 시에도 install은 완료된 것으로 처리
+        // 운영자가 수동으로 로그인할 수 있도록 graceful degradation
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return {

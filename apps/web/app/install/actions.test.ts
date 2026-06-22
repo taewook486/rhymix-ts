@@ -17,6 +17,8 @@ const {
   isDisposableMock,
   headersMock,
   clearSessionMock,
+  signInMock,
+  authMock,
 } = vi.hoisted(() => {
   const state = {
     licenseAccepted: false,
@@ -40,6 +42,8 @@ const {
     isDisposableMock: vi.fn(),
     headersMock: vi.fn(),
     clearSessionMock: vi.fn(),
+    signInMock: vi.fn(),
+    authMock: vi.fn(),
   };
 });
 
@@ -59,12 +63,19 @@ vi.mock('@/lib/install/wizard-session', () => ({
   },
 }));
 
-vi.mock('@rhymix-ts/db', () => ({
-  validateDbConnection: validateMock,
-  acquireInstallLock: acquireLockMock,
-  seedInstall: seedInstallMock,
-  prisma: {} as Record<string, never>,
-}));
+vi.mock('@rhymix-ts/db', () => {
+  const prismaMock = {
+    domain: {
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+  };
+  return {
+    validateDbConnection: validateMock,
+    acquireInstallLock: acquireLockMock,
+    seedInstall: seedInstallMock,
+    prisma: prismaMock,
+  };
+});
 
 vi.mock('@rhymix-ts/auth', () => ({
   hashPassword: hashPasswordMock,
@@ -75,6 +86,11 @@ vi.mock('@rhymix-ts/auth', () => ({
 vi.mock('next/headers', () => ({
   headers: headersMock,
   cookies: vi.fn(),
+}));
+
+vi.mock('@/lib/auth/config', () => ({
+  signIn: signInMock,
+  auth: authMock,
 }));
 
 import {
@@ -100,6 +116,8 @@ beforeEach(() => {
   isDisposableMock.mockReset();
   headersMock.mockReset();
   clearSessionMock.mockReset();
+  signInMock.mockReset();
+  authMock.mockReset();
   // CSRF mock 기본값: 유효한 토큰
   csrfValid = true;
   // 기본값: production이 아닌 dev 환경(performInstall에서 disposable check 우회).
@@ -114,6 +132,11 @@ beforeEach(() => {
       ['host', 'example.com'],
     ]),
   );
+  // 기본 signIn/auth 모의: 성공적인 로그인
+  signInMock.mockResolvedValue({ ok: true, error: undefined });
+  authMock.mockResolvedValue({
+    user: { id: '1', name: 'admin', email: 'admin@example.com' },
+  });
 });
 
 describe('agreeLicense', () => {
@@ -443,5 +466,97 @@ describe('performInstall', () => {
       /__REDIRECT__:\/install/,
     );
     expect(seedInstallMock).not.toHaveBeenCalled();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group 2 — Auto-login after install (REQ-INSTALL2-010, 011, 012, 013)
+  // ---------------------------------------------------------------------------
+
+  it('AC-INSTALL2-005: after successful install, the system shall establish an authenticated session (REQ-INSTALL2-010, 011)', async () => {
+    wizardReady();
+    isDisposableMock.mockReturnValue(false);
+    const release = vi.fn();
+    acquireLockMock.mockResolvedValue({ acquired: true, release });
+    hashPasswordMock.mockResolvedValue('$argon2id$v=19$hashed');
+    seedInstallMock.mockResolvedValue({
+      siteId: 1,
+      userId: 1,
+      adminGroupId: 1,
+      memberGroupId: 2,
+    });
+
+    await expect(performInstall({ ok: true }, adminForm())).rejects.toThrow(
+      /__REDIRECT__:\/install\/complete$/,
+    );
+
+    // signIn이 호출되어야 함
+    expect(signInMock).toHaveBeenCalledTimes(1);
+    expect(signInMock).toHaveBeenCalledWith('credentials', {
+      identifier: 'admin', // admin.userId from form
+      password: 'sufficiently-long-password', // original password from form
+      redirect: false,
+    });
+    // lock은 정확히 한 번만 해제되어야 함
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('AC-INSTALL2-006: if signIn fails after successful seed, install shall still complete (REQ-INSTALL2-013)', async () => {
+    wizardReady();
+    isDisposableMock.mockReturnValue(false);
+    const release = vi.fn();
+    acquireLockMock.mockResolvedValue({ acquired: true, release });
+    hashPasswordMock.mockResolvedValue('$argon2id$v=19$hashed');
+    seedInstallMock.mockResolvedValue({
+      siteId: 1,
+      userId: 1,
+      adminGroupId: 1,
+      memberGroupId: 2,
+    });
+
+    // signIn 실패 모의 (throw)
+    signInMock.mockRejectedValue(new Error('Auth.js service unavailable'));
+
+    // install은 여전히 완료되어야 함 (redirect가 throw됨)
+    await expect(performInstall({ ok: true }, adminForm())).rejects.toThrow(
+      /__REDIRECT__:\/install\/complete$/,
+    );
+
+    // seed는 성공했어야 함
+    expect(seedInstallMock).toHaveBeenCalledTimes(1);
+    // lock은 정확히 한 번 해제되어야 함
+    expect(release).toHaveBeenCalledTimes(1);
+    // session.step은 'finish'로 설정되어야 함
+    expect(sessionState.step).toBe('finish');
+  });
+
+  it('AC-INSTALL2-007: password shall not be logged and lock shall be released exactly once (REQ-INSTALL2-012)', async () => {
+    wizardReady();
+    isDisposableMock.mockReturnValue(false);
+    const release = vi.fn();
+    acquireLockMock.mockResolvedValue({ acquired: true, release });
+    hashPasswordMock.mockResolvedValue('$argon2id$v=19$hashed');
+    seedInstallMock.mockResolvedValue({
+      siteId: 1,
+      userId: 1,
+      adminGroupId: 1,
+      memberGroupId: 2,
+    });
+
+    // console.log 스파이 설치
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    await expect(performInstall({ ok: true }, adminForm())).rejects.toThrow(
+      /__REDIRECT__:\/install\/complete$/,
+    );
+
+    // lock은 정확히 한 번만 해제되어야 함
+    expect(release).toHaveBeenCalledTimes(1);
+
+    // 패스워드가 평문으로 로그되지 않았는지 확인
+    const logCalls = consoleLogSpy.mock.calls.flat().join(' ');
+    expect(logCalls).not.toContain('sufficiently-long-password');
+    expect(logCalls).not.toContain('password:'); // 구글 콘솔 로그의 password 필드
+
+    consoleLogSpy.mockRestore();
   });
 });

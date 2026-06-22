@@ -9,6 +9,9 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 // jest-dom 매처 확장 — toBeInTheDocument 등
 expect.extend(matchers);
 
+// server-only 모듈 mock — vitest 환경에서는 항상 유효한 것으로 처리
+vi.mock('server-only', () => ({}));
+
 // window.matchMedia mock — jsdom 기본 미지원
 // @MX:NOTE: [AUTO] node 환경에서는 window 객체가 없으므로 jsdom 환경에서만 mock
 if (typeof window !== 'undefined') {
