@@ -1,6 +1,6 @@
 # SPEC-INSTALL-003 — Progress
 
-**날짜**: 2026-06-23 (plan 작성 + 구현 완료, 최종 회귀 검증 1회 미완료 — 다음 세션에서 이어감)
+**날짜**: 2026-06-23 (plan 작성 + 구현 + 최종 회귀 검증 완료 — Task #7 통합 품질 검증 종료)
 **방법론**: TDD (quality.yaml `development_mode: tdd`)
 **베이스라인**: SPEC-INSTALL-001 완료 시점 (859/868 tests passing)
 **선행 SPEC**: SPEC-INSTALL-001 (REQ-INSTALL-016~018 시드 구현 완료), SPEC-LAYOUT-001 (인덱스 모듈 dispatch), SPEC-ADMIN-001 (/admin 라우트)
@@ -9,13 +9,12 @@
 
 ---
 
-## 다음 세션 시작 시 먼저 할 일 (재개 체크리스트)
+## 재개 체크리스트 (완료 — 2026-06-23 후속 세션에서 처리)
 
-1. `git -C /mnt/d/project/rhymix-ts log --oneline -8` 로 아래 커밋들이 모두 있는지 확인:
-   `98808a9 fix(test) OperatorOnboarding mock` → `fa5e227 fix(test) vitest.setup.ts 전역 mock 제거` → `a161a91`/`2ac2875 fixup!` → `510427b feat(install) Groups 1-4` → `ff827a8 feat(layout) Group 5`.
-2. `git -C /mnt/d/project/rhymix-ts status --short`에 `apps/web/**` 관련 미커밋 변경이 없어야 정상(있다면 onboarding-surface 에이전트가 또 무언가를 남겼을 가능성 — 내용 검토 후 처리).
-3. **마지막으로 못 끝낸 일**: `pnpm vitest run apps/web` 전체 재실행 1회가 명령 도중 중단됨(시간이 늦어 사용자 요청으로 정리). 직전(중단 전) 실행 결과는 모두 정상이었음(`## 테스트 결과` 섹션 참조) — 재실행해서 동일하게 나오는지만 재확인하면 Task #7(통합 품질 검증)을 공식 종료할 수 있음.
-4. dev 서버/vitest 백그라운드 프로세스는 세션 종료 시 모두 정리됨(`pkill -f "next dev"`, `pkill -f "vitest run"`) — 새로 띄워야 함.
+1. 커밋 체인 확인 완료: `98808a9` → `fa5e227` → `a161a91`/`2ac2875` → `510427b` → `ff827a8` 모두 `git log`에 존재.
+2. `git status --short` 확인: `apps/web/**` 관련 미커밋 변경 없음(미커밋 항목은 무관한 agent 정의/설정 파일 및 세션 리포트뿐).
+3. **Task #7 통합 품질 검증 종료**: `pnpm vitest run apps/web` 전체 재실행 완료. 결과 12 failed/92 passed(104 파일), 66 failed/587 passed(653 테스트) — 직전 중단 전 마지막 완전 실행(14 failed/91 passed, 71 failed/584 passed)보다 동등하거나 개선됨. 실패 목록 전수 확인 결과 전부 SPEC-TEST-DEBT-001 기존 카탈로그(middleware/proxy/login/admin-layout/install-actions(실DB)/widgets-render/tRPC document·comment·attachment 라우터)와 1:1 매칭, 신규 회귀 0건. 온보딩/푸터 신규 컴포넌트(OperatorOnboarding/WelcomeHero/OnboardingPanel/DismissButton/GlobalFooter) 관련 실패 없음.
+4. dev 서버/vitest 백그라운드 프로세스 정리 불필요(foreground 1회 실행으로 처리).
 
 ---
 
@@ -107,7 +106,7 @@ SPEC-INSTALL-002 완료 시점. `apps/web` vitest: 98 파일/636 테스트 중 1
 
 ### 진행 중인 작업
 
-없음 — 코드/테스트는 모두 커밋 완료. 남은 것은 최종 전체 회귀 재확인 1회뿐(아래 "다음 세션 시작 시 먼저 할 일" 참조).
+없음 — 코드/테스트 모두 커밋 완료, 최종 전체 회귀 재확인도 완료(아래 "테스트 결과" 섹션 참조). SPEC-INSTALL-003 통합 품질 검증 종료.
 
 ---
 
@@ -133,10 +132,12 @@ SPEC-INSTALL-002 완료 시점. `apps/web` vitest: 98 파일/636 테스트 중 1
 - AC-INSTALL3-008: "Powered by Rhymix-TS" 노출(인증/익명 모두), Terms/Privacy 링크 없음, 온보딩 상태와 무관하게 항상 노출 ✓
 - 부가 확인: SPEC-INSTALL-002의 자동 로그인 + 헤더 세션 동기화도 함께 정상 동작(헤더에 "admin"/로그아웃 표시)
 
-**전체 회귀 검사** (`pnpm vitest run apps/web`, 마지막 완전 종료 확인된 1회 — 회귀 수정 직전 버전):
-- 105 파일 중 14 failed/91 passed, 655 테스트 중 71 failed/584 passed
-- 실패 전부 SPEC-TEST-DEBT-001 카탈로그와 1:1 매칭(middleware ~18, proxy ~14, login 5, admin/layout 2, lib/auth/actions.test.ts, feed page 2, widgets/render 1, tRPC document/comment/attachment 라우터 다수) — 신규 회귀 0건
-- 회귀 수정(vitest.setup.ts 정리 + OperatorOnboarding mock 보강) 적용 후 재실행은 시간 관계로 중단됨 — **다음 세션에서 1회 재실행하여 동일 결과(또는 그 이상) 확인 필요**
+**전체 회귀 검사** (`pnpm vitest run apps/web`):
+- (회귀 수정 직전, 중단된 1회) 105 파일 중 14 failed/91 passed, 655 테스트 중 71 failed/584 passed — 카탈로그 매칭, 신규 회귀 0건
+- **(회귀 수정 적용 후, 완전 종료 — 2026-06-23 최종 확인)** 104 파일 중 12 failed/92 passed, 653 테스트 중 66 failed/587 passed
+  - 실패 파일: `app/(auth)/login/page.test.tsx`, `app/admin/layout.test.tsx`, `app/install/actions.test.ts`(3건, 실DB 연결 사전 이슈), `lib/widgets/render.test.ts`(1건), `middleware.test.ts`, `proxy.test.ts`, `server/api/routers/admin/document.test.ts`, `server/api/routers/content/attachment.test.ts`, `server/api/routers/content/comment.test.ts`, `server/api/routers/content/document.test.ts`
+  - 전부 SPEC-TEST-DEBT-001 기존 카탈로그와 1:1 매칭 — 신규 회귀 0건, 직전 실행 대비 동등하거나 개선됨
+  - 온보딩/푸터 신규 컴포넌트(OperatorOnboarding/WelcomeHero/OnboardingPanel/DismissButton/GlobalFooter) 관련 실패 없음 — **Task #7(통합 품질 검증) 공식 종료**
 
 ---
 
@@ -145,4 +146,5 @@ SPEC-INSTALL-002 완료 시점. `apps/web` vitest: 98 파일/636 테스트 중 1
 | 반복 | 충족 AC 수 | 에러 delta | 비고 |
 |------|-----------|-----------|------|
 | (초기) | 0 / 8 | — | plan 단계 |
-| (1차 구현) | 8 / 8 | 0(신규 회귀 없음) | Playwright 실브라우저로 8개 AC 전부 검증 완료. 전체 vitest 회귀 재확인만 다음 세션으로 이연 |
+| (1차 구현) | 8 / 8 | 0(신규 회귀 없음) | Playwright 실브라우저로 8개 AC 전부 검증 완료 |
+| (최종 검증) | 8 / 8 | 0(신규 회귀 없음, 오히려 개선) | 전체 vitest 재실행 완료(12 failed/92 passed, 66 failed/587 passed) — SPEC-INSTALL-003 종료 |
