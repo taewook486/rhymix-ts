@@ -27,6 +27,11 @@ import {
   createJwtCallback,
   createSessionCallback,
 } from './callbacks';
+import {
+  registerTwoFactorVerifiedMarker,
+  consumeTwoFactorVerifiedMarker,
+  __clearTwoFactorVerifiedMarkersForTests,
+} from '@rhymix-ts/auth/two-factor';
 
 const isSessionRevokedMock = vi.fn(
   async (
@@ -41,6 +46,7 @@ const fakePrisma = { __mock: true } as any;
 
 beforeEach(() => {
   isSessionRevokedMock.mockReset();
+  __clearTwoFactorVerifiedMarkersForTests();
 });
 
 // ---------------------------------------------------------------------------
@@ -244,5 +250,117 @@ describe('authConfig.callbacks.session — Slice D1', () => {
     })) as { user?: { id?: string; isAdmin?: boolean; groups?: unknown[] } };
     expect(result.user?.isAdmin).toBe(false);
     expect(result.user?.groups).toEqual([]);
+  });
+
+  it('M5-S1) session callback copies twoFactorVerified from token (REQ-2OTP-047)', async () => {
+    const session = { user: {} } as { user: Record<string, unknown> };
+    const result = (await sessionCb({
+      session,
+      token: {
+        sub: '42',
+        iat: Math.floor(Date.now() / 1000),
+        twoFactorVerified: true,
+      },
+    })) as { user?: { twoFactorVerified?: boolean } };
+    expect(result.user?.twoFactorVerified).toBe(true);
+  });
+
+  it('M5-S2) session callback defaults twoFactorVerified to false when token missing it', async () => {
+    const session = { user: {} } as { user: Record<string, unknown> };
+    const result = (await sessionCb({
+      session,
+      token: {
+        sub: '42',
+        iat: Math.floor(Date.now() / 1000),
+      },
+    })) as { user?: { twoFactorVerified?: boolean } };
+    expect(result.user?.twoFactorVerified).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-ADMIN-2FA-OTP-001 M4 — jwt callback 2FA marker 처리
+// ---------------------------------------------------------------------------
+
+describe('authConfig.callbacks.jwt — M4 two-factor marker (REQ-2OTP-046/047)', () => {
+  it('M4-J1) sign-in: token.twoFactorVerified = false 로 초기화', async () => {
+    const result = (await jwtCb({
+      token: {},
+      user: { id: '42' },
+    })) as Record<string, unknown> | null;
+
+    expect(result).not.toBeNull();
+    expect(result!.twoFactorVerified).toBe(false);
+  });
+
+  it('M4-J2) 서버측 marker 존재 시 token.twoFactorVerified = true 로 승격', async () => {
+    isSessionRevokedMock.mockResolvedValue(false);
+    registerTwoFactorVerifiedMarker(42);
+
+    const result = (await jwtCb({
+      token: { sub: '42', iat: Math.floor(Date.now() / 1000) },
+    })) as Record<string, unknown> | null;
+
+    expect(result).not.toBeNull();
+    expect(result!.twoFactorVerified).toBe(true);
+    // marker 는 one-shot 소비되어야 한다.
+    expect(consumeTwoFactorVerifiedMarker(42)).toBe(false);
+  });
+
+  it('M4-J3) marker 미존재 시 token.twoFactorVerified 는 그대로 미설정', async () => {
+    isSessionRevokedMock.mockResolvedValue(false);
+
+    const result = (await jwtCb({
+      token: { sub: '42', iat: Math.floor(Date.now() / 1000) },
+    })) as Record<string, unknown> | null;
+
+    expect(result).not.toBeNull();
+    expect(result!.twoFactorVerified).not.toBe(true);
+  });
+
+  it('M4-J4 / AC-4b: trigger==="update" + 클라이언트가 twoFactorVerified=true 주입 → 무시', async () => {
+    isSessionRevokedMock.mockResolvedValue(false);
+    // marker 미등록 — 서버측 진실의 소스가 없다.
+
+    const result = (await jwtCb({
+      token: { sub: '42', iat: Math.floor(Date.now() / 1000) },
+      trigger: 'update',
+      // 클라이언트가 update({ twoFactorVerified: true }) 로 주입한 값.
+      session: { twoFactorVerified: true },
+    } as never)) as Record<string, unknown> | null;
+
+    expect(result).not.toBeNull();
+    // marker 없으면 true 로 승격되지 않는다 (우회 차단).
+    expect(result!.twoFactorVerified).not.toBe(true);
+  });
+
+  it('M4-J5: trigger==="update" + 서버측 marker 존재 → 클라이언트 페이로드 무시하고 marker 로만 승격', async () => {
+    isSessionRevokedMock.mockResolvedValue(false);
+    registerTwoFactorVerifiedMarker(42);
+
+    const result = (await jwtCb({
+      token: { sub: '42', iat: Math.floor(Date.now() / 1000) },
+      trigger: 'update',
+      session: { twoFactorVerified: false }, // 클라이언트가 false 보냄
+    } as never)) as Record<string, unknown> | null;
+
+    expect(result).not.toBeNull();
+    // 클라이언트 false 무시, 서버 marker 로 true 승격.
+    expect(result!.twoFactorVerified).toBe(true);
+  });
+
+  it('M4-J6) 이미 true 인 토큰은 marker 가 없어도 true 유지 (재소비 방지)', async () => {
+    isSessionRevokedMock.mockResolvedValue(false);
+
+    const result = (await jwtCb({
+      token: {
+        sub: '42',
+        iat: Math.floor(Date.now() / 1000),
+        twoFactorVerified: true,
+      },
+    })) as Record<string, unknown> | null;
+
+    expect(result).not.toBeNull();
+    expect(result!.twoFactorVerified).toBe(true);
   });
 });

@@ -15,7 +15,8 @@
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth/config'
-import { isAdminSession, isAdminTwoFactorRequired, isSessionTwoFactorVerified } from '@/lib/auth/admin-middleware'
+import { isAdminSession } from '@/lib/auth/admin-middleware'
+import { checkAdmin2FA } from '@rhymix-ts/admin/security'
 import { prisma } from '@rhymix-ts/db'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
 import { AdminTopbar } from '@/components/admin/AdminTopbar'
@@ -40,19 +41,22 @@ export default async function AdminLayout({
     redirect('/login?callbackUrl=/admin')
   }
 
-  // 2FA 강제 게이트 (REQ-ADMIN-023)
+  // 2FA 강제 게이트 (REQ-ADMIN-023, REQ-2OTP-060~062)
   // proxy.ts가 x-pathname 요청 헤더를 주입하므로 여기서 현재 경로를 읽을 수 있다.
   const headersList = await headers()
   const currentPathname = headersList.get('x-pathname') ?? ''
-  const twoFactorRequired = await isAdminTwoFactorRequired(prisma)
-  if (
-    twoFactorRequired &&
-    !isSessionTwoFactorVerified(session) &&
-    !TWO_FACTOR_EXCEPT_PATHS.has(currentPathname)
-  ) {
-    // TODO: 사용자가 TOTP 등록했는지 확인하여 enroll/verify 분기
-    // 현재는 enroll로 기본 이동 (등록 후 verify로 변경 필요)
-    redirect('/admin/2fa/enroll?callbackUrl=/admin')
+  if (!TWO_FACTOR_EXCEPT_PATHS.has(currentPathname)) {
+    // @MX:ANCHOR: [AUTO] checkAdmin2FA 가 need-enroll/need-verify 를 구분하는
+    //   canonical 게이트 — 등록 여부와 무관하게 enroll로만 보내던 이전 동작(TODO)을
+    //   대체한다.
+    // @MX:REASON: 이미 등록된 관리자를 다시 enroll로 보내면 새 시크릿이 발급되어
+    //   기존 등록(및 백업코드)을 덮어쓰는 사고로 이어질 수 있다 (REQ-2OTP-061/062).
+    const result = await checkAdmin2FA(session, prisma, 1)
+    if (result === 'need-enroll') {
+      redirect('/admin/2fa/enroll?callbackUrl=/admin')
+    } else if (result === 'need-verify') {
+      redirect('/admin/2fa/verify?callbackUrl=/admin')
+    }
   }
 
   const userName = session.user.id ? String(session.user.id) : '관리자'

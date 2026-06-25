@@ -28,6 +28,7 @@
 import type { PrismaClient } from '@rhymix-ts/db';
 
 import { isSessionRevoked as defaultIsSessionRevoked } from '@rhymix-ts/auth';
+import { consumeTwoFactorVerifiedMarker } from '@rhymix-ts/auth/two-factor';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -59,6 +60,19 @@ export interface CallbackDeps {
 interface JwtCallbackArgs {
   token: Record<string, unknown>;
   user?: { id?: string } | null;
+  /**
+   * NextAuth v5 가 전달하는 트리거. 'signIn' | 'signUp' | 'update' | undefined.
+   * SPEC-ADMIN-2FA-OTP-001 REQ-2OTP-047: 'update' 트리거에서 들어오는
+   * session payload는 절대 신뢰하지 않는다 (클라이언트가 임의로 보낼 수 있음).
+   * marker store 만이 twoFactorVerified 를 true 로 만들 수 있는 출처다.
+   */
+  trigger?: 'signIn' | 'signUp' | 'update' | string;
+  /**
+   * useSession().update(data) 호출 시 data 가 전달되는 필드. 본 콜백은 이 값을
+   * 신뢰하지 않으므로 타입만 선언하고 읽지 않는다 (REQ-2OTP-047, AC-4b).
+   */
+  session?: unknown;
+  isNewUser?: boolean;
 }
 
 interface SessionCallbackArgs {
@@ -120,6 +134,10 @@ export function createJwtCallback(deps: CallbackDeps) {
         token.iat = Math.floor(Date.now() / 1000);
       }
 
+      // SPEC-ADMIN-2FA-OTP-001 REQ-ADMIN-EXTRAS-046: 모든 새 세션은 2FA 재챌린지.
+      // sign-in 시점에는 항상 false 로 시작하며, marker 기반으로만 true 로 승격된다.
+      token.twoFactorVerified = false;
+
       // Slice E-5: RBAC claims enrichment — isAdmin + groups 를 토큰에 주입.
       const userId = Number.parseInt(String(user.id), 10);
       if (Number.isFinite(userId) && userId > 0) {
@@ -164,6 +182,27 @@ export function createJwtCallback(deps: CallbackDeps) {
     if (revoked) {
       return null;
     }
+
+    // @MX:WARN: [AUTO] trigger==='update' 분기 — 클라이언트 페이로드 불신.
+    //   아래 marker 조회 이전에 args.session / args.newSession 등 클라이언트가 보낸
+    //   값을 twoFactorVerified 에 반대로 덮어쓰는 일이 없도록, 본 분기에서는
+    //   어떤 클라이언트 입력도 읽지 않는다.
+    // @MX:REASON: useSession().update({ twoFactorVerified: true }) 한 호출로 OTP 검증을
+    //   건너뛰는 우회 경로가 생기면 2FA 게이트 전체가 무력화된다 (AC-4b). 오직
+    //   서버측 marker만이 유일한 진실의 소스다. REVOCATION 검사와 상호작용하지 않도록
+    //   revocation 통과 후에만 marker 를 소비한다.
+    // @MX:SPEC: SPEC-ADMIN-2FA-OTP-001 REQ-2OTP-046, REQ-2OTP-047, AC-4b
+
+    // REQ-2OTP-047: token.twoFactorVerified 가 아직 true 가 아니면
+    // 서버측 marker store 를 조회. 유효한 marker가 있으면 소비(one-shot)하고 true로 승격.
+    // 이 로직은 trigger==='update' 인지 여부와 무관하게 모든 요청에서 동작한다
+    // (AC-4 "다음 요청의 jwt callback이 marker를 조회"를 만족).
+    if (token.twoFactorVerified !== true) {
+      if (consumeTwoFactorVerifiedMarker(userId)) {
+        token.twoFactorVerified = true;
+      }
+    }
+
     return token;
   };
 }
@@ -192,6 +231,11 @@ export function createSessionCallback() {
         (token.isAdmin as boolean) ?? false;
       (session.user as Record<string, unknown>).groups =
         (token.groups as unknown[]) ?? [];
+      // SPEC-ADMIN-2FA-OTP-001 REQ-2OTP-047: jwt callback이 채운 플래그를
+      // session.user.twoFactorVerified 로 복사. 이 필드는 checkAdmin2FA 와
+      // apps/web/lib/auth/two-factor.ts 양쪽이 읽는 canonical 필드다.
+      (session.user as Record<string, unknown>).twoFactorVerified =
+        (token.twoFactorVerified as boolean) === true;
     }
     return session;
   };

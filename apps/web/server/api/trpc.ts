@@ -278,6 +278,21 @@ export const protectedAdminProcedure = publicProcedure
   .use(requireAdmin2FAIfEnabled)
   .use(auditLogger);
 
+/**
+ * admin2FAProcedure — SPEC-ADMIN-2FA-OTP-001 M3 (REQ-2OTP-045).
+ *
+ * `requireAdmin`만 통과한 절차. `requireAdmin2FAIfEnabled`는 의도적으로 생략한다.
+ * 이유: enroll/verify mutation 자체가 2FA 게이트에 막히면 닭-달걀 문제가 발생한다
+ * (미인증 관리자가 2FA를 통과할 방법이 없음). auditLogger도 생략 — 이 mutation들은
+ * 보안 민감 행위이므로 별도 감사 필요시 추가한다 (REQ-2OTP-045 범위 밖).
+ *
+ * 비관리자 세션은 `requireAdmin`에서 FORBIDDEN으로 차단된다.
+ *
+ * @MX:NOTE [AUTO] 2FA 게이트 미적용 — 닭-달걀 회피. REQ-2OTP-045 참고.
+ * @MX:SPEC: SPEC-ADMIN-2FA-OTP-001 REQ-2OTP-045
+ */
+export const admin2FAProcedure = publicProcedure.use(requireAdmin);
+
 // ---------------------------------------------------------------------------
 // SPEC-CONTENT-001 Slice B — protectedProcedure
 // ---------------------------------------------------------------------------

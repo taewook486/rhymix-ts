@@ -1,0 +1,2 @@
+-- SPEC-ADMIN-2FA-OTP-001 M1: Seed script (empty for additive migration)
+-- This migration only adds columns, no seed data needed.

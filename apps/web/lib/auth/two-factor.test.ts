@@ -51,8 +51,11 @@ describe('isAdminTwoFactorRequired (Slice I — REQ-ADMIN-023)', () => {
     const result = await isAdminTwoFactorRequired(mockPrisma as any);
 
     expect(result).toBe(false);
+    // SPEC-ADMIN-2FA-OTP-001 M5: canonical getSiteAdminTwoFactorPolicy 위임.
+    // siteId=1 기본값 + select.value 로 조회된다.
     expect(mockSiteSettingFindFirst).toHaveBeenCalledWith({
-      where: { key: 'requireAdminTwoFactor' },
+      where: { siteId: 1, key: 'requireAdminTwoFactor' },
+      select: { value: true },
     });
   });
 

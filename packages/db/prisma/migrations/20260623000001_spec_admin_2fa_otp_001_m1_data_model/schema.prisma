@@ -1,0 +1,13 @@
+// SPEC-ADMIN-2FA-OTP-001 M1: 2FA User 컬럼 추가
+//
+// User 모델에 TOTP 2FA 관련 컬럼 추가 (REQ-2OTP-001)
+
+model User {
+  // ... existing fields ...
+
+  // SPEC-ADMIN-2FA-OTP-001 REQ-2OTP-001: 2FA TOTP secret + status
+  twoFactorSecret      String?   @db.Text   // AES-256-GCM 암호문 (base64 인코딩된 IV+tag+ciphertext)
+  twoFactorEnabled     Boolean   @default(false)
+  twoFactorConfirmedAt DateTime? @db.Timestamptz
+  twoFactorBackupCodes Json      @default("[]")  // SHA-256 해시 배열 (1회용 백업 코드)
+}

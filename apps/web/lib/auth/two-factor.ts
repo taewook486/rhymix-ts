@@ -1,38 +1,39 @@
 /**
- * 2FA 강제 게이트 헬퍼 — SPEC-ADMIN-001 Slice I (REQ-ADMIN-023).
+ * 2FA 헬퍼 — thin wrapper (SPEC-ADMIN-2FA-OTP-001 M5 / REQ-2OTP-061).
  *
- * 관리자 2FA 필요 여부 및 세션 검증 플래그를 확인한다.
+ * 본 파일의 두 함수는 packages/admin/src/security/two-factor-gate.ts 의
+ * canonical 구현에 위임한다. 단일 진실 원천을 확보하기 위해 로직을 직접
+ * 유지하지 않는다.
  *
- * @MX:ANCHOR: [AUTO] REQ-ADMIN-023 의 2FA 게이트 단일 진입점.
- * @MX:REASON: isAdminTwoFactorRequired + isSessionTwoFactorVerified 두 함수가
- *             layout.tsx 와 tRPC 미들웨어 양쪽에서 호출됨 (fan_in >= 2).
- *             이 파일이 없으면 2FA 강제 기능 전체가 무력화됨.
- * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-023
+ * NOTE: layout.tsx 및 기타 프로덕션 코드는 실제로 apps/web/lib/auth/admin-middleware.ts
+ *       의 동일 이름 함수를 사용한다. 본 파일의 호출자는 현재 테스트 mock 뿉이므로
+ *       위임으로 전환해도 프로덕션 동작은 변하지 않는다. 함수 시그니처는
+ *       기존 호출처(테스트 포함)를 깨뜨리지 않도록 그대로 유지한다.
  *
- * NOTE: 실제 OTP 흐름(TOTP 시크릿 발급/검증)은 SPEC-AUTH-001 후속 슬라이스로 이월.
- *       본 슬라이스는 게이트 로직(SiteSetting 조회 + session 플래그 확인)만 도입한다.
+ * @MX:ANCHOR: [AUTO] 2FA 게이트 헬퍼 — canonical 게이트로 위임.
+ * @MX:REASON: 두 헬퍼(isAdminTwoFactorRequired/isSessionTwoFactorVerified)가
+ *             packages/admin 의 canonical 구현과 병렬로 존재하면 stub 이나 누락으로
+ *             보안이 무력화될 수 있다. 본 파일은 thin wrapper 로만 존재한다.
+ * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-023, SPEC-ADMIN-2FA-OTP-001 REQ-2OTP-061
  */
 import type { PrismaClient } from '@rhymix-ts/db';
 
 /**
- * SiteSetting.key='requireAdminTwoFactor' 의 boolean value 를 읽는다.
- * 키가 없으면 false (기본 비활성).
+ * 사이트 2FA 정책 조회 — canonical getSiteAdminTwoFactorPolicy 로 위임.
+ * 단일 사이트 기본값(siteId=1)을 사용한다 (기존 시그니처 유지).
  */
 export async function isAdminTwoFactorRequired(
   prisma: Pick<PrismaClient, 'siteSetting'>,
 ): Promise<boolean> {
-  const setting = await prisma.siteSetting.findFirst({
-    where: { key: 'requireAdminTwoFactor' },
-  });
-  if (!setting) return false;
-  return setting.value === true;
+  const { getSiteAdminTwoFactorPolicy } = await import('@rhymix-ts/admin/security');
+  // PrismaClient subset 을 넘기되, canonical 쪽에서 필요한 siteSetting 접근은
+  // Pick<PrismaClient,'siteSetting'> 로도 동작한다.
+  return getSiteAdminTwoFactorPolicy(prisma as PrismaClient, 1);
 }
 
 /**
  * session 에 twoFactorVerified === true 가 있을 때만 통과.
- *
- * SPEC-AUTH-001 의 실제 OTP 흐름이 구현되면 이 플래그를 채운다.
- * 현재는 기본 false (플래그 없음 = 미인증).
+ * canonical 필드(session.user.twoFactorVerified)를 그대로 읽는다.
  */
 export function isSessionTwoFactorVerified(session: unknown): boolean {
   if (!session || typeof session !== 'object') return false;

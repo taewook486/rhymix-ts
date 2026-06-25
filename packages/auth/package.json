@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./config": "./src/config.ts"
+    "./config": "./src/config.ts",
+    "./two-factor": "./src/two-factor/index.ts"
   },
   "scripts": {
     "lint": "echo 'no lint'",

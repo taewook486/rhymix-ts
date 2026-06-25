@@ -28,6 +28,9 @@ const mockSiteSettingFindFirst = vi.fn();
 const mockModuleFindMany = vi.fn();
 const mockModuleInstanceFindMany = vi.fn();
 const mockAdminLogCreate = vi.fn();
+// SPEC-ADMIN-2FA-OTP-001 M5: checkAdmin2FA 가 실제 User.twoFactorEnabled/secret
+// 컬럼을 조회하므로 user.findUnique 도 mock 해야 한다.
+const mockUserFindUnique = vi.fn();
 
 const mockPrisma = {
   siteSetting: {
@@ -41,6 +44,9 @@ const mockPrisma = {
   },
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
+  },
+  user: {
+    findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
   },
 };
 
@@ -70,6 +76,12 @@ describe('protectedAdminProcedure 2FA 미들웨어 (Slice I — REQ-ADMIN-023)',
   beforeEach(() => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    // SPEC-ADMIN-2FA-OTP-001 M5: 등록된 관리자로 가정(두 필드 모두 채워짐).
+    // policy on 케이스에서 checkAdmin2FA 가 userlookup 을 수행하므로 기본값 제공.
+    mockUserFindUnique.mockResolvedValue({
+      twoFactorEnabled: true,
+      twoFactorSecret: 'enc-blob',
+    });
   });
 
   it('I-1-5: 2FA 활성 + 미인증 관리자 → FORBIDDEN (REQ-ADMIN-023)', async () => {
