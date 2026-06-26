@@ -28,6 +28,20 @@ vi.mock('@/lib/auth/two-factor', () => ({
   isSessionTwoFactorVerified: vi.fn().mockReturnValue(true),
 }))
 
+// layout.tsx가 next/headers의 headers()를 사용하므로 request scope 외부 오류 방지
+vi.mock('next/headers', () => ({
+  headers: vi.fn(() => new Headers()),
+  cookies: vi.fn(() => ({
+    get: vi.fn(),
+    getAll: vi.fn(() => []),
+    has: vi.fn(() => false),
+    set: vi.fn(),
+    delete: vi.fn(),
+    forEach: vi.fn(),
+    toString: vi.fn(() => ''),
+  })),
+}))
+
 // DB mock
 vi.mock('@rhymix-ts/db', () => ({
   prisma: {},
@@ -45,6 +59,17 @@ vi.mock('@/components/admin/AdminTopbar', () => ({
 
 vi.mock('@rhymix-ts/ui/components', () => ({
   Toaster: () => React.createElement('div', { 'data-testid': 'toaster' }),
+}))
+
+// AdminFooter는 layout-actions → trpc/server → appRouter 체인을 임포트해 hang 유발.
+vi.mock('@/components/admin/AdminFooter', () => ({
+  AdminFooter: () => React.createElement('footer', { 'data-testid': 'footer' }),
+}))
+
+// layout.tsx가 checkAdmin2FA를 직접 호출 (@/lib/auth/two-factor 가 아닌 @rhymix-ts/admin/security).
+vi.mock('@rhymix-ts/admin/security', () => ({
+  checkAdmin2FA: vi.fn().mockResolvedValue('pass'),
+  getSiteAdminTwoFactorPolicy: vi.fn().mockResolvedValue('disabled'),
 }))
 
 import { auth } from '@/lib/auth/config'

@@ -50,9 +50,12 @@ vi.mock('./lib/db/prisma', () => ({
   },
 }));
 
-// sitelock.ts 는 @rhymix-ts/db 에서 직접 prisma 를 import 하므로 별도 모킹 필요.
+// sitelock.ts, site-status.ts 는 @rhymix-ts/db 에서 직접 prisma 를 import 하므로 별도 모킹 필요.
 vi.mock('@rhymix-ts/db', () => ({
   prisma: {
+    site: {
+      findFirst: (...args: unknown[]) => mockSiteFindFirst(...args),
+    },
     siteSetting: {
       findMany: (...args: unknown[]) => mockSiteSettingFindMany(...args),
       findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
@@ -67,7 +70,11 @@ vi.mock('@rhymix-ts/db', () => ({
 function createReq(pathname: string, _isLoggedIn: boolean) {
   // _isLoggedIn 은 더 이상 req.auth 로 주입하지 않는다.
   // 인증 상태는 mockAuthFn 반환값으로 제어된다 (beforeEach 또는 개별 테스트에서 설정).
-  const nextUrl = new URL(`http://localhost:3000${pathname}`);
+  const rawUrl = new URL(`http://localhost:3000${pathname}`);
+  // proxy.ts가 nextUrl.clone()을 호출하므로 clone 메서드 추가.
+  const nextUrl = Object.assign(rawUrl, {
+    clone: () => new URL(rawUrl.toString()),
+  });
   const headers = new Headers({ host: 'localhost:3000' });
   return { nextUrl, headers };
 }

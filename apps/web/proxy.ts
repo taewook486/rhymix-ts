@@ -51,9 +51,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   // ---------------------------------------------------------------------------
-  // (1) 진단 echo 라우트 + 헬스체크는 항상 통과 (REQ-INSTALL-012).
+  // (1) 정적 자산 + 진단 echo 라우트 + 헬스체크는 항상 통과.
+  // config.matcher가 /_next/* 등을 제외하지만 방어적으로 명시.
   // ---------------------------------------------------------------------------
-  if (pathname.startsWith(REWRITE_TEST_PREFIX) || pathname === '/api/health') {
+  if (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith(REWRITE_TEST_PREFIX) ||
+    pathname === '/api/health'
+  ) {
     return NextResponse.next();
   }
 
@@ -110,7 +115,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   ) {
     const url = request.nextUrl.clone();
     url.pathname = '/install';
-    return NextResponse.redirect(url);
+    // REQ-INSTALL-001: 302 Temporary Redirect (임시 리다이렉트, 설치 후 복귀 가능).
+    return NextResponse.redirect(url, 302);
   }
 
   // ---------------------------------------------------------------------------
