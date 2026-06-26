@@ -528,5 +528,5 @@
   "effortLevel": "medium",
   "includeGitInstructions": true,
   "plansDirectory": ".moai/plans",
-  "disableBypassPermissionsMode": true
+  "disableBypassPermissionsMode": false
 }
