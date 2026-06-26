@@ -4,6 +4,7 @@
  * CC-1 ~ CC-2: content.category.tree tRPC 라우터 검증.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { createMockPrismaClient } from '@rhymix-ts/test-utils';
 
 // NextAuth + DB mock
 vi.mock('next-auth', () => ({
@@ -27,9 +28,9 @@ vi.mock('@rhymix-ts/board', async (importOriginal) => {
   };
 });
 
-const mockPrisma = {
-  siteSetting: { findFirst: vi.fn() },
-};
+// Create complete mock Prisma client
+const mockPrisma = createMockPrismaClient();
+mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
 
 const publicCtx = {
   session: null,

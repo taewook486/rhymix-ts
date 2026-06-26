@@ -9,6 +9,7 @@
  * B-12: admin 세션 + module.delete 정상 → { ok: true, deletedId }.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { createMockPrismaClient } from '@rhymix-ts/test-utils';
 
 // ---------------------------------------------------------------------------
 // Service mock
@@ -74,20 +75,12 @@ vi.mock('@/lib/db/prisma', () => ({
   prisma: {},
 }));
 
-// ---------------------------------------------------------------------------
-// Prisma mock
-// ---------------------------------------------------------------------------
+// @MX:NOTE: Shared Prisma mock factory from @rhymix-ts/test-utils (SPEC-TEST-PRISMA-MOCK-001)
+const mockPrisma = createMockPrismaClient();
 
-const mockModuleInstanceFindMany = vi.fn();
-const mockSiteSettingFindFirst = vi.fn();
-const mockPrisma = {
-  siteSetting: {
-    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
-  },
-  moduleInstance: {
-    findMany: (...args: unknown[]) => mockModuleInstanceFindMany(...args),
-  },
-};
+// Set up defaults for audit logger and 2FA check (REQ-PMOCK-004, REQ-PMOCK-021)
+mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
+mockPrisma.adminLog.create.mockResolvedValue({ id: BigInt(1) });
 
 // ---------------------------------------------------------------------------
 // Context fixtures
@@ -114,7 +107,6 @@ const guestCtx = {
 describe('admin.module tRPC router (Slice B)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
   });
 
   it('B-7: admin 세션 + module.create → createModuleInstance 호출 및 결과 반환 (REQ-ADMIN-020)', async () => {
@@ -166,7 +158,7 @@ describe('admin.module tRPC router (Slice B)', () => {
 
   it('B-10: admin 세션 + module.list → prisma.moduleInstance.findMany 결과 반환', async () => {
     const rows = [{ id: 1, siteId: 1, moduleCode: 'board', mid: 'notice', name: 'Notice' }];
-    mockModuleInstanceFindMany.mockResolvedValueOnce(rows);
+    mockPrisma.moduleInstance.findMany.mockResolvedValueOnce(rows);
 
     const { adminModuleRouter } = await import('./module');
     const { createCallerFactory } = await import('../../trpc');
@@ -175,7 +167,7 @@ describe('admin.module tRPC router (Slice B)', () => {
     const caller = createCaller(adminCtx as any);
     const result = await caller.list({ siteId: 1 });
 
-    expect(mockModuleInstanceFindMany).toHaveBeenCalledOnce();
+    expect(mockPrisma.moduleInstance.findMany).toHaveBeenCalledOnce();
     expect(result).toEqual(rows);
   });
 

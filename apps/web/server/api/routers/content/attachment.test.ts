@@ -10,6 +10,7 @@
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
+import { createMockPrismaClient } from '@rhymix-ts/test-utils';
 
 // Domain mocks
 const mockRequestUpload = vi.fn();
@@ -19,14 +20,21 @@ const mockListAttachments = vi.fn();
 const mockCheckRateLimit = vi.fn();
 const mockRecordAttempt = vi.fn();
 
-vi.mock('@rhymix-ts/board', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@rhymix-ts/board')>();
+vi.mock('@rhymix-ts/file', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@rhymix-ts/file')>();
   return {
     ...actual,
     requestUpload: (...args: unknown[]) => mockRequestUpload(...args),
     completeUpload: (...args: unknown[]) => mockCompleteUpload(...args),
     deleteAttachment: (...args: unknown[]) => mockDeleteAttachment(...args),
     listAttachments: (...args: unknown[]) => mockListAttachments(...args),
+  };
+});
+
+vi.mock('@rhymix-ts/board', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@rhymix-ts/board')>();
+  return {
+    ...actual,
     checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
     recordAttempt: (...args: unknown[]) => mockRecordAttempt(...args),
   };
@@ -36,15 +44,12 @@ vi.mock('next-auth', () => ({ default: () => ({ auth: vi.fn() }) }));
 vi.mock('@/lib/auth/config', () => ({ authConfig: { providers: [] } }));
 vi.mock('@/lib/db/prisma', () => ({ prisma: {} }));
 
-const mockPrisma = {
-  siteSetting: { findFirst: vi.fn().mockResolvedValue(null) },
-  adminLog: { create: vi.fn() },
-  contentRateLimit: {
-    count: vi.fn().mockResolvedValue(0),
-    create: vi.fn().mockResolvedValue({}),
-    findFirst: vi.fn().mockResolvedValue(null),
-  },
-};
+// Create complete mock Prisma client
+const mockPrisma = createMockPrismaClient();
+mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
+mockPrisma.contentRateLimit.count.mockResolvedValue(0);
+mockPrisma.contentRateLimit.create.mockResolvedValue({});
+mockPrisma.contentRateLimit.findFirst.mockResolvedValue(null);
 
 const mockStorage = {
   getUploadPresignedUrl: vi.fn(),
@@ -76,15 +81,25 @@ const guestCtx = {
 describe('content.attachment tRPC router (Slice E)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset Prisma mocks
+    mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
+    mockPrisma.contentRateLimit.count.mockResolvedValue(0);
+    mockPrisma.contentRateLimit.create.mockResolvedValue({});
+    mockPrisma.contentRateLimit.findFirst.mockResolvedValue(null);
+    // Reset domain mocks
+    mockRequestUpload.mockReset();
+    mockCompleteUpload.mockReset();
+    mockDeleteAttachment.mockReset();
+    mockListAttachments.mockReset();
+    mockCheckRateLimit.mockReset();
+    mockRecordAttempt.mockReset();
+    // Set up safe defaults
     mockCheckRateLimit.mockResolvedValue(undefined);
     mockRecordAttempt.mockResolvedValue(undefined);
   });
 
   // C-1: requestUpload 정상
   it('C-1: requestUpload 정상 → { url, uploadToken, storageKey } 반환', async () => {
-    const { createCallerFactory } = await import('../../trpc');
-    const { contentAttachmentRouter } = await import('./attachment');
-
     mockRequestUpload.mockResolvedValue({
       url: 'https://s3.example.com/put/test',
       method: 'PUT',
@@ -93,6 +108,9 @@ describe('content.attachment tRPC router (Slice E)', () => {
       uploadToken: 'token.payload.sig',
       expiresAt: new Date(),
     });
+
+    const { createCallerFactory } = await import('../../trpc');
+    const { contentAttachmentRouter } = await import('./attachment');
 
     const caller = createCallerFactory(contentAttachmentRouter)(memberCtx as never);
     const result = await caller.requestUpload({

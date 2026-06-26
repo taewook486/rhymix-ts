@@ -8,34 +8,52 @@
  * B-805: BoardPermissionDeniedError → FORBIDDEN.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { createMockPrismaClient } from '@rhymix-ts/test-utils';
 
 const mockListComments = vi.fn();
 const mockCreateComment = vi.fn();
 const mockDeleteComment = vi.fn();
 
-class BoardPermissionDeniedError extends Error {
-  readonly code = 'BOARD_PERMISSION_DENIED';
-}
-class DocumentOwnershipError extends Error {
-  readonly code = 'DOCUMENT_OWNERSHIP';
-}
+// Mock @rhymix-ts/document properly to preserve all exports
+vi.mock('@rhymix-ts/document', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@rhymix-ts/document')>();
+  return {
+    ...actual,
+    // Keep all original exports including canPerformAction
+  };
+});
 
-vi.mock('@rhymix-ts/board', () => ({
+// Mock @rhymix-ts/comment domain functions
+vi.mock('@rhymix-ts/comment', () => ({
   listComments: (...args: unknown[]) => mockListComments(...args),
   createComment: (...args: unknown[]) => mockCreateComment(...args),
   deleteComment: (...args: unknown[]) => mockDeleteComment(...args),
-  BoardPermissionDeniedError,
-  DocumentOwnershipError,
+  voteComment: vi.fn(),
+  reportComment: vi.fn(),
+  CommentDepthExceededError: class extends Error {
+    readonly code = 'COMMENT_DEPTH_EXCEEDED';
+  },
+  SelfVoteNotAllowedError: class extends Error {
+    readonly code = 'SELF_VOTE_NOT_ALLOWED';
+  },
+  CommentAlreadyReportedError: class extends Error {
+    readonly code = 'COMMENT_ALREADY_REPORTED';
+  },
 }));
 
 vi.mock('next-auth', () => ({ default: () => ({ auth: vi.fn() }) }));
 vi.mock('@/lib/auth/config', () => ({ authConfig: { providers: [] } }));
 vi.mock('@/lib/db/prisma', () => ({ prisma: {} }));
 
-const mockPrisma = {
-  siteSetting: { findFirst: vi.fn().mockResolvedValue(null) },
-  adminLog: { create: vi.fn() },
-};
+// Create complete mock Prisma client with all models and methods
+const mockPrisma = createMockPrismaClient();
+
+// Set up defaults for spam-filter helper chain (REQ-PMOCK-004)
+mockPrisma.site.findFirst.mockResolvedValue(null);
+mockPrisma.spamDeniedWord.findMany.mockResolvedValue([]);
+mockPrisma.spamDeniedIp.findMany.mockResolvedValue([]);
+mockPrisma.spamRule.findFirst.mockResolvedValue(null);
+mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
 
 const memberCtx = {
   session: { user: { id: 42, isAdmin: false, groups: [{ id: 1 }] } },
@@ -53,11 +71,43 @@ const guestCtx = {
 describe('content.comment tRPC router (Slice B)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset spam-filter mocks to safe defaults for each test
+    mockPrisma.site.findFirst.mockResolvedValue(null);
+    mockPrisma.spamDeniedWord.findMany.mockResolvedValue([]);
+    mockPrisma.spamDeniedIp.findMany.mockResolvedValue([]);
+    mockPrisma.spamRule.findFirst.mockResolvedValue(null);
+    mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
+    // Reset Prisma comment mocks
+    mockPrisma.comment.findMany.mockResolvedValue([]);
+    mockPrisma.comment.findUniqueOrThrow.mockResolvedValue(null);
+    // Reset Prisma user mock (needed for create comment)
+    mockPrisma.user.findUnique.mockResolvedValue({ id: 42, nickName: 'test' });
+    // Reset Prisma document mocks (needed for create comment)
+    // Default document with board for permission checks
+    const defaultDocument = {
+      id: 10,
+      boardId: 1,
+      title: 'Test',
+      content: 'Test content',
+      authorId: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      extraVars: {},
+      board: { id: 1, pointPerDocument: 0 },
+    };
+    mockPrisma.document.findUnique.mockResolvedValue(defaultDocument as never);
+    mockPrisma.document.findUniqueOrThrow.mockResolvedValue(defaultDocument as never);
+    // Reset domain mocks
+    mockListComments.mockReset();
+    mockCreateComment.mockReset();
+    mockDeleteComment.mockReset();
   });
 
   it('B-801: content.comment.list (public) → listComments 호출', async () => {
-    const comments = [{ id: 1 }];
-    mockListComments.mockResolvedValueOnce(comments);
+    const comments = [{ id: 1, documentId: 10, content: 'test', authorId: 1, createdAt: new Date(), deletedAt: null }];
+    // The router calls listComments, so we mock the domain function directly
+    mockListComments.mockResolvedValueOnce(comments as never);
 
     const { contentCommentRouter } = await import('./comment');
     const { createCallerFactory } = await import('../../trpc');
@@ -85,7 +135,11 @@ describe('content.comment tRPC router (Slice B)', () => {
   });
 
   it('B-803: content.comment.create (protected) → createComment 호출 + actor 주입', async () => {
-    mockCreateComment.mockResolvedValueOnce({ id: 1 });
+    // Mock the domain service
+    mockCreateComment.mockResolvedValueOnce({
+      id: 1,
+      board: { id: 1 }, // Required for permission check in service
+    } as never);
 
     const { contentCommentRouter } = await import('./comment');
     const { createCallerFactory } = await import('../../trpc');
@@ -107,7 +161,24 @@ describe('content.comment tRPC router (Slice B)', () => {
   });
 
   it('B-804: content.comment.delete (protected) → deleteComment 호출 + actor 주입', async () => {
-    mockDeleteComment.mockResolvedValueOnce({ id: 1, deletedAt: new Date() });
+    // The domain service needs to check comment.authorId for ownership
+    const comment = {
+      id: 1,
+      documentId: 10,
+      content: 'test comment',
+      authorId: 42, // Must match memberCtx.user.id for ownership check
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    };
+
+    // Mock findUniqueOrThrow to return the comment
+    mockPrisma.comment.findUniqueOrThrow.mockResolvedValueOnce(comment as never);
+
+    mockDeleteComment.mockResolvedValueOnce({
+      id: 1,
+      deletedAt: new Date(),
+    } as never);
 
     const { contentCommentRouter } = await import('./comment');
     const { createCallerFactory } = await import('../../trpc');
@@ -126,6 +197,8 @@ describe('content.comment tRPC router (Slice B)', () => {
   });
 
   it('B-805: BoardPermissionDeniedError → TRPCError FORBIDDEN', async () => {
+    // Import the actual error class from the module (not mocked)
+    const { BoardPermissionDeniedError } = await import('@rhymix-ts/document');
     mockCreateComment.mockRejectedValueOnce(new BoardPermissionDeniedError('write_comment'));
 
     const { contentCommentRouter } = await import('./comment');

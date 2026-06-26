@@ -6,19 +6,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { createMockPrismaClient } from '@rhymix-ts/test-utils';
 
 /** 공통 픽스처 — getDocument 반환값 */
 const FIXED_DOC = {
   id: 42,
   title: '테스트 문서 제목',
   content: '<p>안전한 HTML 콘텐츠</p>',
-  authorId: 7,
-  nickName: '홍길동',
+  regdate: new Date('2024-01-15T09:00:00Z'),
   createdAt: new Date('2024-01-15T09:00:00Z'),
   updatedAt: new Date('2024-01-15T09:00:00Z'),
   commentCount: 3,
   tags: ['react', 'typescript'],
   status: 'PUBLIC',
+  authorId: 7,
+  boardId: 1,
+  deletedAt: null,
   author: { id: 7, userId: 'hong', nickName: '홍길동' },
 };
 
@@ -31,7 +34,7 @@ function makeFakeProps(overrides: {
     instance: { id: 1, moduleCode: 'board', mid: 'free', name: '자유게시판', config: null },
     params: { mid: 'free' },
     searchParams: {},
-    prisma: {} as never,
+    prisma: createMockPrismaClient(),
     documentId: overrides.documentId ?? 42,
     session: overrides.session !== undefined ? overrides.session : null,
   };
@@ -43,15 +46,20 @@ describe('BoardViewPage', () => {
   });
 
   it('VP-1: 문서 제목이 <h1>에 렌더됨', async () => {
-    vi.doMock('../document.js', () => ({
+    // Mock at the actual package level
+    vi.doMock('@rhymix-ts/document', () => ({
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      listDocuments: vi.fn(),
+      createDocument: vi.fn(),
     }));
-    vi.doMock('../comment.js', () => ({
+    vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
     }));
-    vi.doMock('../attachment.js', () => ({
+    vi.doMock('@rhymix-ts/file', () => ({
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
+
+    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -64,15 +72,19 @@ describe('BoardViewPage', () => {
   });
 
   it('VP-2: 문서 content가 dangerouslySetInnerHTML로 렌더됨', async () => {
-    vi.doMock('../document.js', () => ({
+    vi.doMock('@rhymix-ts/document', () => ({
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      listDocuments: vi.fn(),
+      createDocument: vi.fn(),
     }));
-    vi.doMock('../comment.js', () => ({
+    vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
     }));
-    vi.doMock('../attachment.js', () => ({
+    vi.doMock('@rhymix-ts/file', () => ({
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
+
+    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -85,15 +97,19 @@ describe('BoardViewPage', () => {
   });
 
   it('VP-3: 태그가 /<mid>?tag=<tagname> 링크로 렌더됨', async () => {
-    vi.doMock('../document.js', () => ({
+    vi.doMock('@rhymix-ts/document', () => ({
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      listDocuments: vi.fn(),
+      createDocument: vi.fn(),
     }));
-    vi.doMock('../comment.js', () => ({
+    vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
     }));
-    vi.doMock('../attachment.js', () => ({
+    vi.doMock('@rhymix-ts/file', () => ({
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
+
+    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -106,15 +122,19 @@ describe('BoardViewPage', () => {
   });
 
   it('VP-4: 글 목록으로 돌아가는 back 링크가 /<mid>임', async () => {
-    vi.doMock('../document.js', () => ({
+    vi.doMock('@rhymix-ts/document', () => ({
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      listDocuments: vi.fn(),
+      createDocument: vi.fn(),
     }));
-    vi.doMock('../comment.js', () => ({
+    vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
     }));
-    vi.doMock('../attachment.js', () => ({
+    vi.doMock('@rhymix-ts/file', () => ({
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
+
+    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -127,15 +147,19 @@ describe('BoardViewPage', () => {
   });
 
   it('VP-5: session.user.id === document.authorId 이면 수정 링크가 표시됨', async () => {
-    vi.doMock('../document.js', () => ({
+    vi.doMock('@rhymix-ts/document', () => ({
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      listDocuments: vi.fn(),
+      createDocument: vi.fn(),
     }));
-    vi.doMock('../comment.js', () => ({
+    vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
     }));
-    vi.doMock('../attachment.js', () => ({
+    vi.doMock('@rhymix-ts/file', () => ({
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
+
+    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -151,15 +175,19 @@ describe('BoardViewPage', () => {
   });
 
   it('VP-6: session이 null이면 수정 링크가 표시되지 않음', async () => {
-    vi.doMock('../document.js', () => ({
+    vi.doMock('@rhymix-ts/document', () => ({
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      listDocuments: vi.fn(),
+      createDocument: vi.fn(),
     }));
-    vi.doMock('../comment.js', () => ({
+    vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
     }));
-    vi.doMock('../attachment.js', () => ({
+    vi.doMock('@rhymix-ts/file', () => ({
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
+
+    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -173,15 +201,19 @@ describe('BoardViewPage', () => {
   });
 
   it('VP-7: 댓글 수가 페이지 어딘가에 표시됨', async () => {
-    vi.doMock('../document.js', () => ({
+    vi.doMock('@rhymix-ts/document', () => ({
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      listDocuments: vi.fn(),
+      createDocument: vi.fn(),
     }));
-    vi.doMock('../comment.js', () => ({
+    vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
     }));
-    vi.doMock('../attachment.js', () => ({
+    vi.doMock('@rhymix-ts/file', () => ({
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
+
+    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 

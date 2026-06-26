@@ -10,6 +10,7 @@
  * B-707: BoardPermissionDeniedError → FORBIDDEN.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { createMockPrismaClient } from '@rhymix-ts/test-utils';
 
 // Domain mocks
 const mockListDocuments = vi.fn();
@@ -18,28 +19,18 @@ const mockCreateDocument = vi.fn();
 const mockUpdateDocument = vi.fn();
 const mockDeleteDocument = vi.fn();
 
-class BoardPermissionDeniedError extends Error {
-  readonly code = 'BOARD_PERMISSION_DENIED';
-}
-class DocumentOwnershipError extends Error {
-  readonly code = 'DOCUMENT_OWNERSHIP';
-}
-
-vi.mock('@rhymix-ts/document', () => ({
-  listDocuments: (...args: unknown[]) => mockListDocuments(...args),
-  getDocument: (...args: unknown[]) => mockGetDocument(...args),
-  createDocument: (...args: unknown[]) => mockCreateDocument(...args),
-  updateDocument: (...args: unknown[]) => mockUpdateDocument(...args),
-  deleteDocument: (...args: unknown[]) => mockDeleteDocument(...args),
-  BoardPermissionDeniedError,
-  DocumentOwnershipError,
-  ExtraVarsRequiredError: class ExtraVarsRequiredError extends Error {
-    readonly code = 'EXTRA_VARS_REQUIRED';
-  },
-  ExtraVarsNotConfiguredError: class ExtraVarsNotConfiguredError extends Error {
-    readonly code = 'EXTRA_VARS_NOT_CONFIGURED';
-  },
-}));
+// Preserve actual exports including error classes
+vi.mock('@rhymix-ts/document', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@rhymix-ts/document')>();
+  return {
+    ...actual,
+    listDocuments: (...args: unknown[]) => mockListDocuments(...args),
+    getDocument: (...args: unknown[]) => mockGetDocument(...args),
+    createDocument: (...args: unknown[]) => mockCreateDocument(...args),
+    updateDocument: (...args: unknown[]) => mockUpdateDocument(...args),
+    deleteDocument: (...args: unknown[]) => mockDeleteDocument(...args),
+  };
+});
 
 // NextAuth + DB mock
 vi.mock('next-auth', () => ({
@@ -54,10 +45,9 @@ vi.mock('@/lib/db/prisma', () => ({
   prisma: {},
 }));
 
-const mockPrisma = {
-  siteSetting: { findFirst: vi.fn().mockResolvedValue(null) },
-  adminLog: { create: vi.fn() },
-};
+// Create complete mock Prisma client
+const mockPrisma = createMockPrismaClient();
+mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
 
 const memberCtx = {
   session: { user: { id: 42, isAdmin: false, groups: [{ id: 1 }] } },
@@ -75,6 +65,12 @@ const guestCtx = {
 describe('content.document tRPC router (Slice B)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset all domain service mocks to default implementations
+    mockListDocuments.mockReset();
+    mockGetDocument.mockReset();
+    mockCreateDocument.mockReset();
+    mockUpdateDocument.mockReset();
+    mockDeleteDocument.mockReset();
   });
 
   it('B-701: content.document.list (public) → listDocuments 호출, 결과 반환', async () => {
@@ -179,6 +175,8 @@ describe('content.document tRPC router (Slice B)', () => {
   });
 
   it('B-707: BoardPermissionDeniedError → TRPCError FORBIDDEN', async () => {
+    // Import the error class from the module
+    const { BoardPermissionDeniedError } = await import('@rhymix-ts/document');
     mockCreateDocument.mockRejectedValueOnce(new BoardPermissionDeniedError('write_document'));
     const { contentDocumentRouter } = await import('./document');
     const { createCallerFactory } = await import('../../trpc');

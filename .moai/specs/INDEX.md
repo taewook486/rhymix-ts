@@ -125,6 +125,9 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | ID | 제목 | 의존 | 우선순위 | 상태 |
 |---|---|---|---|---|
 | [SPEC-ADMIN-2FA-OTP-001](./SPEC-ADMIN-2FA-OTP-001/spec.md) | 관리자 2단계 인증(TOTP) 실제 백엔드 구현 (시크릿 발급/암호화/검증 + 세션 플래그) | AUTH-001, ADMIN-001, ADMIN-EXTRAS-001 | P1 | 📝 SPEC 작성 (draft) |
+| [SPEC-TEST-PRISMA-MOCK-001](./SPEC-TEST-PRISMA-MOCK-001/spec.md) | 공유 완전 Prisma mock 팩토리 도입 (TEST-DEBT 카테고리 1 ~50+건 해소, 테스트 인프라 전용) | TEST-DEBT-001 | P2 | 📝 SPEC 작성 (draft) |
+
+> SPEC-TEST-DEBT-001 triage 카테고리 1(Prisma mock 불완전, ~50+건, 원인 확정·재유도 금지)의 후속 **수정** SPEC. 테스트별 부분 hand-rolled mock(`vi.fn()` 모델 스텁 / 주입형 `mockPrisma`)을 Prisma 클라이언트 형태에서 완전성이 파생되는 **공유 mock 팩토리**(REQ-TDEBT-011 권고)로 대체해 `undefined` accessor / `$transaction is not a function` / TRPCError 래핑 시그니처를 0건으로 만든다. **production/소스 코드 변경 0건, 테스트 대상 동작 불변** — mock 완전성만 채운다. 라이브러리(예: `vitest-mock-extended` `mockDeep<PrismaClient>()`)·팩토리 위치는 run phase 결정. 23개 REQ(REQ-PMOCK-001~023). 카테고리 2(App Router)/3(2FA, RESOLVED)/4(one-off) 미접촉. 영향 파일 9종 enumerate(비전수 — 동일 시그니처 전수가 진짜 경계).
 
 > SPEC-TEST-DEBT-001 triage 중 발견한 admin 2FA enforcement CRITICAL 우회 취약점(siteId 하드코딩 → production 상시 우회, CVSS≈8.8, OWASP A07:2021)을 fail-closed로 긴급 수정(`b220fd1`)한 뒤, 그 과정에서 드러난 더 근본적 gap을 메우는 신규 구현 SPEC. **현재 2FA verify 흐름 전체가 미구현 stub**(시크릿 발급=하드코딩 `JBSWY3DPEHPK3PXP`, enroll/verify=`setTimeout` 시뮬레이션, 세션 플래그 `twoFactorVerified`를 채우는 코드 0건, `checkAdmin2FA`의 등록여부 확인=skip)이라, 운영자가 `requireAdminTwoFactor=true`를 켜면 모든 관리자가 영구 lockout 된다(fail-closed의 의도된 결과). 본 SPEC은 Prisma 2FA 컬럼(시크릿 AES-256-GCM 암호화·백업코드 해시) + `otplib`/`qrcode` 도입 + enroll/verify tRPC mutation(닭-달걀 방지 `admin2FAProcedure`) + Auth.js v5 `update()` 경유 세션 플래그 set + `checkAdmin2FA` 등록여부 실제 확인 + 중복 헬퍼(`two-factor.ts` vs `two-factor-gate.ts`) 일원화를 다룬다. **게이트 미들웨어·enroll/verify 페이지 골격·정책 저장은 이미 존재하므로 제외.** Open Questions 7건(세션 플래그 set 메커니즘 등)은 best-judgment로 confidence와 함께 spec.md §6에 확정. **운영 경고: 본 SPEC 배포 완료 전까지 `requireAdminTwoFactor`를 켜면 안 됨.**
 

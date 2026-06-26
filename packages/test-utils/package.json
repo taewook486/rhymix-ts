@@ -1,0 +1,26 @@
+{
+  "name": "@rhymix-ts/test-utils",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "echo 'no lint'",
+    "clean": "rimraf node_modules .turbo"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.0.0",
+    "@types/node": "^22.10.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.0",
+    "vitest": "^2.1.8",
+    "vitest-mock-extended": "^2.0.0"
+  }
+}

@@ -39,6 +39,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@rhymix-ts/test-utils": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.10.0",

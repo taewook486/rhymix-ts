@@ -4,6 +4,19 @@
  * AC-1 ~ AC-6: admin.category.list/create/update/delete tRPC 라우터 검증.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { createMockPrismaClient } from '@rhymix-ts/test-utils';
+
+const mockListCategoryTree = vi.fn();
+const mockCreateCategory = vi.fn();
+const mockUpdateCategory = vi.fn();
+const mockDeleteCategory = vi.fn();
+
+class CategoryHasChildrenError extends Error {
+  constructor(public categoryId: number) {
+    super('Category has children');
+    this.name = 'CategoryHasChildrenError';
+  }
+}
 
 // NextAuth + DB mock
 vi.mock('next-auth', () => ({
@@ -19,25 +32,20 @@ vi.mock('@/lib/db/prisma', () => ({
 }));
 
 // Board domain mock
-vi.mock('@rhymix-ts/board', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@rhymix-ts/board')>();
-  return {
-    ...actual,
-    createCategory: vi.fn(),
-    listCategoryTree: vi.fn(),
-    updateCategory: vi.fn(),
-    deleteCategory: vi.fn(),
-    CategoryHasChildrenError: actual.CategoryHasChildrenError,
-  };
-});
+vi.mock('@rhymix-ts/board', () => ({
+  listCategoryTree: (...args: unknown[]) => mockListCategoryTree(...args),
+  createCategory: (...args: unknown[]) => mockCreateCategory(...args),
+  updateCategory: (...args: unknown[]) => mockUpdateCategory(...args),
+  deleteCategory: (...args: unknown[]) => mockDeleteCategory(...args),
+  CategoryHasChildrenError,
+}));
 
-const mockSiteSettingFindFirst = vi.fn();
-const mockAdminLogCreate = vi.fn();
+// @MX:NOTE: Shared Prisma mock factory from @rhymix-ts/test-utils (SPEC-TEST-PRISMA-MOCK-001)
+const mockPrisma = createMockPrismaClient();
 
-const mockPrisma = {
-  siteSetting: { findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args) },
-  adminLog: { create: (...args: unknown[]) => mockAdminLogCreate(...args) },
-};
+// Set up defaults for audit logger (REQ-PMOCK-004, REQ-PMOCK-021)
+mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
+mockPrisma.adminLog.create.mockResolvedValue({ id: BigInt(1) });
 
 const adminCtx = {
   session: { user: { id: 1, isAdmin: true, groups: [] } },
@@ -56,17 +64,14 @@ const guestCtx = {
 describe('admin.category tRPC router (Slice C)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSiteSettingFindFirst.mockResolvedValue(null);
-    mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
   });
 
   it('AC-1: admin.category.list — boardId 로 tree 반환', async () => {
-    const { listCategoryTree } = await import('@rhymix-ts/board');
     const { adminCategoryRouter } = await import('./category');
     const { createCallerFactory } = await import('../../trpc');
 
     const fakeTree = [{ id: 1, title: '자유', children: [] }];
-    vi.mocked(listCategoryTree).mockResolvedValueOnce(fakeTree as never);
+    mockListCategoryTree.mockResolvedValueOnce(fakeTree);
 
     const createCaller = createCallerFactory(adminCategoryRouter);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,17 +79,16 @@ describe('admin.category tRPC router (Slice C)', () => {
 
     const result = await caller.list({ boardId: 5 });
 
-    expect(listCategoryTree).toHaveBeenCalledWith(5, expect.anything());
+    expect(mockListCategoryTree).toHaveBeenCalledWith(5, expect.anything());
     expect(result).toEqual(fakeTree);
   });
 
   it('AC-2: admin.category.create — 정상 생성', async () => {
-    const { createCategory } = await import('@rhymix-ts/board');
     const { adminCategoryRouter } = await import('./category');
     const { createCallerFactory } = await import('../../trpc');
 
     const fakeCategory = { id: 1, boardId: 5, title: '공지', parentId: null };
-    vi.mocked(createCategory).mockResolvedValueOnce(fakeCategory as never);
+    mockCreateCategory.mockResolvedValueOnce(fakeCategory);
 
     const createCaller = createCallerFactory(adminCategoryRouter);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,7 +96,7 @@ describe('admin.category tRPC router (Slice C)', () => {
 
     const result = await caller.create({ boardId: 5, title: '공지' });
 
-    expect(createCategory).toHaveBeenCalledOnce();
+    expect(mockCreateCategory).toHaveBeenCalledOnce();
     expect(result).toMatchObject({ id: 1, title: '공지' });
   });
 
@@ -110,12 +114,11 @@ describe('admin.category tRPC router (Slice C)', () => {
   });
 
   it('AC-4: admin.category.update — title 변경', async () => {
-    const { updateCategory } = await import('@rhymix-ts/board');
     const { adminCategoryRouter } = await import('./category');
     const { createCallerFactory } = await import('../../trpc');
 
     const updated = { id: 1, boardId: 5, title: '변경됨' };
-    vi.mocked(updateCategory).mockResolvedValueOnce(updated as never);
+    mockUpdateCategory.mockResolvedValueOnce(updated);
 
     const createCaller = createCallerFactory(adminCategoryRouter);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,31 +126,29 @@ describe('admin.category tRPC router (Slice C)', () => {
 
     const result = await caller.update({ id: 1, title: '변경됨' });
 
-    expect(updateCategory).toHaveBeenCalledOnce();
+    expect(mockUpdateCategory).toHaveBeenCalledOnce();
     expect(result).toMatchObject({ id: 1, title: '변경됨' });
   });
 
   it('AC-5: admin.category.delete — 자식 없음 → 성공', async () => {
-    const { deleteCategory } = await import('@rhymix-ts/board');
     const { adminCategoryRouter } = await import('./category');
     const { createCallerFactory } = await import('../../trpc');
 
-    vi.mocked(deleteCategory).mockResolvedValueOnce(undefined);
+    mockDeleteCategory.mockResolvedValueOnce(undefined);
 
     const createCaller = createCallerFactory(adminCategoryRouter);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const caller = createCaller(adminCtx as any);
 
     await expect(caller.delete({ id: 1 })).resolves.not.toThrow();
-    expect(deleteCategory).toHaveBeenCalledWith(1, expect.anything());
+    expect(mockDeleteCategory).toHaveBeenCalledWith(1, expect.anything());
   });
 
   it('AC-6: admin.category.delete — 자식 있음 → CONFLICT (CategoryHasChildrenError → HTTP 409)', async () => {
-    const { deleteCategory, CategoryHasChildrenError } = await import('@rhymix-ts/board');
     const { adminCategoryRouter } = await import('./category');
     const { createCallerFactory } = await import('../../trpc');
 
-    vi.mocked(deleteCategory).mockRejectedValueOnce(new CategoryHasChildrenError(1));
+    mockDeleteCategory.mockRejectedValueOnce(new CategoryHasChildrenError(1));
 
     const createCaller = createCallerFactory(adminCategoryRouter);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
