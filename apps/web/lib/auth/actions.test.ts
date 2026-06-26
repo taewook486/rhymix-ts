@@ -71,6 +71,12 @@ vi.mock('next/headers', () => ({
   cookies: () => Promise.resolve(cookieStore),
 }));
 
+// loginAction이 성공 시 redirect()를 호출(throw)하므로 no-op으로 교체.
+// 교체 후 loginAction은 { ok: true }를 반환하게 됨.
+vi.mock('next/navigation', () => ({
+  redirect: vi.fn(),
+}));
+
 vi.mock('@rhymix-ts/auth', () => ({
   signup: signupMock,
   verifyEmail: verifyEmailMock,
@@ -83,6 +89,8 @@ vi.mock('@rhymix-ts/auth', () => ({
       /* noop */
     }
   },
+  // SPEC-MAIL-001에서 추가된 export — actions.ts가 import하지 않더라도 mock에 포함해야 함
+  createMailDispatcher: vi.fn(),
 }));
 
 vi.mock('@rhymix-ts/db', () => ({

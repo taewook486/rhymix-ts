@@ -52,6 +52,22 @@ vi.mock('next/headers', () => ({
   ),
 }));
 
+// @rhymix-ts/board/feed → resolve-feed.ts → @rhymix-ts/document(무거운 패키지) 를 임포트해서 타임아웃.
+// boardFeedConfigSchema만 인라인 스텁으로 제공해 전체 패키지 로드 방지.
+vi.mock('@rhymix-ts/board/feed', async () => {
+  const { z } = await import('zod');
+  const boardFeedConfigSchema = z.object({
+    enabled: z.boolean().default(false),
+    itemCount: z.number().int().min(1).max(1000).default(20),
+    fullContent: z.boolean().default(false),
+    excerptLength: z.number().int().positive().default(400),
+    description: z.string().optional(),
+    imageUrl: z.string().url().optional(),
+    copyright: z.string().optional(),
+  });
+  return { boardFeedConfigSchema };
+});
+
 describe('FeedSettingsPage (SPEC-FEED-001 Slice C / T-011)', () => {
   afterEach(() => {
     cleanup();

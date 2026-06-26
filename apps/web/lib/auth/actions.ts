@@ -171,6 +171,9 @@ export async function loginAction(
       }
     }
     redirect(callbackUrl);
+    // 프로덕션에서는 redirect()가 NEXT_REDIRECT를 throw해 여기 도달 불가.
+    // 테스트에서는 redirect가 mock(no-op)되므로 이 return이 { ok: true }를 반환.
+    return { ok: true };
   } catch (err) {
     // CredentialsSignin 등 Auth.js 가 throw 하는 인증 실패를 일관 응답으로 변환.
     // REQ-AUTH-051: 어떤 단계에서 실패했는지 노출하지 않는다.

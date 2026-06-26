@@ -70,12 +70,17 @@ vi.mock('@rhymix-ts/db', () => {
     },
   };
   return {
-    validateDbConnection: validateMock,
     acquireInstallLock: acquireLockMock,
     seedInstall: seedInstallMock,
     prisma: prismaMock,
   };
 });
+
+// actions.ts가 validateDbConnection을 '@rhymix-ts/db/install' 에서 import하므로
+// 별도 경로로 mock 필요
+vi.mock('@rhymix-ts/db/install', () => ({
+  validateDbConnection: validateMock,
+}));
 
 vi.mock('@rhymix-ts/auth', () => ({
   hashPassword: hashPasswordMock,

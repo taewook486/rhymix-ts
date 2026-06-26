@@ -5,10 +5,10 @@
  * parseWidgetTokens와 renderBodyWithWidgets 동작을 검증한다.
  * Prisma mock은 최소한으로 구성한다.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { z } from 'zod'
 import React from 'react'
-import { render } from '@testing-library/react'
+import { render, cleanup } from '@testing-library/react'
 import { registerWidget, resetWidgetRegistry } from '@rhymix-ts/core/widgets'
 import type { WidgetRenderContext } from '@rhymix-ts/core/widgets'
 import { parseWidgetTokens, renderBodyWithWidgets } from './render'
@@ -104,6 +104,10 @@ describe('parseWidgetTokens — Slice B', () => {
 describe('renderBodyWithWidgets — Slice B', () => {
   beforeEach(() => {
     resetWidgetRegistry()
+  })
+
+  afterEach(() => {
+    cleanup()
   })
 
   it('B-RENDER-1: 미등록 위젯 + isAdmin=false → data-widget-empty', async () => {

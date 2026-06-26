@@ -288,7 +288,7 @@ async function checkMiddlewareRewrite(io: DiagnosticsIO): Promise<EnvCheckResult
   return {
     category: 'middleware',
     key: 'middleware.rewrite',
-    status: 'warn',
+    status: 'error',
     message: 'rewrite 테스트 응답 헤더가 일치하지 않습니다. 서버 재시작 후 자동 해결될 수 있습니다.',
     remediation: 'install.middleware.rewrite',
   };
