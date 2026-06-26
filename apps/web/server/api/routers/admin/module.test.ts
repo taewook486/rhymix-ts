@@ -61,6 +61,12 @@ vi.mock('@rhymix-ts/core/modules', () => ({
   },
 }));
 
+// @rhymix-ts/admin/security mock — protectedAdminProcedure middleware가 동적 import로 로드하는 패키지.
+vi.mock('@rhymix-ts/admin/security', () => ({
+  checkAdmin2FA: vi.fn().mockResolvedValue('pass'),
+  getSiteAdminTwoFactorPolicy: vi.fn().mockResolvedValue('disabled'),
+}));
+
 // NextAuth + authConfig mock (trpc.ts 가 의존)
 vi.mock('next-auth', () => ({
   default: () => ({ auth: vi.fn() }),

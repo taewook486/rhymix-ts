@@ -23,15 +23,11 @@ vi.mock('@/lib/db/prisma', () => ({
   prisma: {},
 }));
 
-// Board domain mock
-vi.mock('@rhymix-ts/board', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@rhymix-ts/board')>();
-  return {
-    ...actual,
-    searchDocuments: (...args: unknown[]) => mockSearchDocuments(...args),
-    searchTags: (...args: unknown[]) => mockSearchTags(...args),
-  };
-});
+// Board domain mock — importOriginal 없이 필요한 함수만 제공 (전체 패키지 로드 방지)
+vi.mock('@rhymix-ts/board', () => ({
+  searchDocuments: (...args: unknown[]) => mockSearchDocuments(...args),
+  searchTags: (...args: unknown[]) => mockSearchTags(...args),
+}));
 
 // Create complete mock Prisma client
 const mockPrisma = createMockPrismaClient();

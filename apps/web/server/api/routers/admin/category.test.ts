@@ -18,6 +18,13 @@ class CategoryHasChildrenError extends Error {
   }
 }
 
+// @rhymix-ts/admin/security mock — protectedAdminProcedure middleware가 동적 import로 로드하는 패키지.
+// 로드하지 않으면 requireAdmin2FAIfEnabled 미들웨어가 느린 초기화로 첫 테스트를 timeout 시킴.
+vi.mock('@rhymix-ts/admin/security', () => ({
+  checkAdmin2FA: vi.fn().mockResolvedValue('pass'),
+  getSiteAdminTwoFactorPolicy: vi.fn().mockResolvedValue('disabled'),
+}));
+
 // NextAuth + DB mock
 vi.mock('next-auth', () => ({
   default: () => ({ auth: vi.fn() }),

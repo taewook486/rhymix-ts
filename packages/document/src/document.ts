@@ -264,33 +264,32 @@ export async function createDocument(
     });
   }
 
-  return ctx.prisma.$transaction(async (tx) => {
-    const doc = await tx.document.create({
-      data: {
-        boardId: board.id,
-        authorId: parsed.authorId,
-        nickName: parsed.nickName,
-        title: parsed.title,
-        content: safeContent,
-        contentText: safeContentText,
-        status: parsed.status,
-        tags: parsed.tags,
-        extraVars: validatedExtraVars as Prisma.InputJsonValue | undefined,
-      },
-    });
-
-    // SPEC-POINT-001 REQ-POINT-041: 게시글 작성 포인트 지급
-    if (parsed.authorId != null && board.pointPerDocument !== 0) {
-      await pointHooks.onDocumentCreated(ctx.prisma, {
-        documentId: doc.id,
-        authorId: parsed.authorId,
-        boardId: board.id,
-        pointPerDocument: board.pointPerDocument ?? 0,
-      }, tx as Prisma.TransactionClient);
-    }
-
-    return doc;
+  // categoryId === null: 트랜잭션 불필요 (documentCount 증가 없음)
+  const doc = await ctx.prisma.document.create({
+    data: {
+      boardId: board.id,
+      authorId: parsed.authorId,
+      nickName: parsed.nickName,
+      title: parsed.title,
+      content: safeContent,
+      contentText: safeContentText,
+      status: parsed.status,
+      tags: parsed.tags,
+      extraVars: validatedExtraVars as Prisma.InputJsonValue | undefined,
+    },
   });
+
+  // SPEC-POINT-001 REQ-POINT-041: 게시글 작성 포인트 지급 (best-effort, 트랜잭션 외부)
+  if (parsed.authorId != null && (board.pointPerDocument ?? 0) !== 0) {
+    await pointHooks.onDocumentCreated(ctx.prisma, {
+      documentId: doc.id,
+      authorId: parsed.authorId,
+      boardId: board.id,
+      pointPerDocument: board.pointPerDocument ?? 0,
+    });
+  }
+
+  return doc;
 }
 
 // ---------------------------------------------------------------------------

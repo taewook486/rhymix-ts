@@ -20,25 +20,75 @@ const mockListAttachments = vi.fn();
 const mockCheckRateLimit = vi.fn();
 const mockRecordAttempt = vi.fn();
 
-vi.mock('@rhymix-ts/file', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@rhymix-ts/file')>();
-  return {
-    ...actual,
-    requestUpload: (...args: unknown[]) => mockRequestUpload(...args),
-    completeUpload: (...args: unknown[]) => mockCompleteUpload(...args),
-    deleteAttachment: (...args: unknown[]) => mockDeleteAttachment(...args),
-    listAttachments: (...args: unknown[]) => mockListAttachments(...args),
-  };
-});
+// attachment.ts 라우터가 instanceof 로 검사하는 에러 클래스 스텁.
+// importOriginal 없이 인라인 스텁으로 전체 패키지 로드 방지.
+class UnsupportedMimeTypeError extends Error {
+  constructor(
+    public mimeType: string,
+    public allowedTypes: string[],
+  ) {
+    super(`Unsupported MIME type: ${mimeType}`);
+    this.name = 'UnsupportedMimeTypeError';
+  }
+}
+class FileTooLargeError extends Error {
+  constructor(size?: number) {
+    super(String(size));
+    this.name = 'FileTooLargeError';
+  }
+}
+class InvalidUploadTokenError extends Error {
+  constructor(msg?: string) {
+    super(msg);
+    this.name = 'InvalidUploadTokenError';
+  }
+}
+class UploadHeadMismatchError extends Error {
+  constructor(msg?: string) {
+    super(msg);
+    this.name = 'UploadHeadMismatchError';
+  }
+}
+class VirusDetectedError extends Error {
+  constructor(msg?: string) {
+    super(msg);
+    this.name = 'VirusDetectedError';
+  }
+}
+class AttachmentOwnershipError extends Error {
+  constructor(msg?: string) {
+    super(msg);
+    this.name = 'AttachmentOwnershipError';
+  }
+}
+class RateLimitedError extends Error {
+  constructor(
+    public key: string,
+    public retryAfter?: number,
+  ) {
+    super(`Rate limited: ${key}`);
+    this.name = 'RateLimitedError';
+  }
+}
 
-vi.mock('@rhymix-ts/board', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@rhymix-ts/board')>();
-  return {
-    ...actual,
-    checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
-    recordAttempt: (...args: unknown[]) => mockRecordAttempt(...args),
-  };
-});
+vi.mock('@rhymix-ts/file', () => ({
+  requestUpload: (...args: unknown[]) => mockRequestUpload(...args),
+  completeUpload: (...args: unknown[]) => mockCompleteUpload(...args),
+  deleteAttachment: (...args: unknown[]) => mockDeleteAttachment(...args),
+  listAttachments: (...args: unknown[]) => mockListAttachments(...args),
+  UnsupportedMimeTypeError,
+  FileTooLargeError,
+  InvalidUploadTokenError,
+  UploadHeadMismatchError,
+  VirusDetectedError,
+  AttachmentOwnershipError,
+}));
+
+vi.mock('@rhymix-ts/board', () => ({
+  checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
+  recordAttempt: (...args: unknown[]) => mockRecordAttempt(...args),
+  RateLimitedError,
+}));
 
 vi.mock('next-auth', () => ({ default: () => ({ auth: vi.fn() }) }));
 vi.mock('@/lib/auth/config', () => ({ authConfig: { providers: [] } }));

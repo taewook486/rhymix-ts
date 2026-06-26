@@ -19,18 +19,39 @@ const mockCreateDocument = vi.fn();
 const mockUpdateDocument = vi.fn();
 const mockDeleteDocument = vi.fn();
 
-// Preserve actual exports including error classes
-vi.mock('@rhymix-ts/document', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@rhymix-ts/document')>();
-  return {
-    ...actual,
-    listDocuments: (...args: unknown[]) => mockListDocuments(...args),
-    getDocument: (...args: unknown[]) => mockGetDocument(...args),
-    createDocument: (...args: unknown[]) => mockCreateDocument(...args),
-    updateDocument: (...args: unknown[]) => mockUpdateDocument(...args),
-    deleteDocument: (...args: unknown[]) => mockDeleteDocument(...args),
-  };
-});
+// document.ts 라우터가 instanceof 로 검사하는 에러 클래스 스텁.
+// importOriginal 대신 인라인 스텁으로 전체 패키지 로드 방지.
+class BoardPermissionDeniedError extends Error {
+  constructor(type?: string) {
+    super(type ?? 'Board permission denied');
+    this.name = 'BoardPermissionDeniedError';
+  }
+}
+class DocumentOwnershipError extends Error {
+  constructor(userId?: number) {
+    super(String(userId ?? 0));
+    this.name = 'DocumentOwnershipError';
+  }
+}
+// ExtraVars 에러: 라우터가 `code` 프로퍼티 OR instanceof 로 검사 — code 프로퍼티로 충분.
+class ExtraVarsRequiredError extends Error {
+  readonly code = 'EXTRA_VARS_REQUIRED';
+}
+class ExtraVarsNotConfiguredError extends Error {
+  readonly code = 'EXTRA_VARS_NOT_CONFIGURED';
+}
+
+vi.mock('@rhymix-ts/document', () => ({
+  listDocuments: (...args: unknown[]) => mockListDocuments(...args),
+  getDocument: (...args: unknown[]) => mockGetDocument(...args),
+  createDocument: (...args: unknown[]) => mockCreateDocument(...args),
+  updateDocument: (...args: unknown[]) => mockUpdateDocument(...args),
+  deleteDocument: (...args: unknown[]) => mockDeleteDocument(...args),
+  BoardPermissionDeniedError,
+  DocumentOwnershipError,
+  ExtraVarsRequiredError,
+  ExtraVarsNotConfiguredError,
+}));
 
 // NextAuth + DB mock
 vi.mock('next-auth', () => ({
@@ -195,15 +216,8 @@ describe('content.document tRPC router (Slice B)', () => {
 // SPEC-CONTENT-001 Slice F — CT-1 ~ CT-3: extraVars tRPC 통합
 // ---------------------------------------------------------------------------
 
-// Slice F 에러 클래스 추가 (vi.mock 은 파일 상단의 mock 블록에서 이미 @rhymix-ts/board 를 mock 함)
-class ExtraVarsRequiredError extends Error {
-  readonly code = 'EXTRA_VARS_REQUIRED';
-}
-class ExtraVarsNotConfiguredError extends Error {
-  readonly code = 'EXTRA_VARS_NOT_CONFIGURED';
-}
-
 // @rhymix-ts/board mock 에 Slice F 에러 클래스도 추가해야 하므로 별도 describe 블록
+// ExtraVarsRequiredError/ExtraVarsNotConfiguredError 는 파일 상단 스텁 재사용
 // vi.mock 은 hoist 되어 상단 블록만 유효 → 여기서는 domain mock 을 직접 확인
 describe('content.document tRPC router (Slice F — CT-1 ~ CT-3)', () => {
   beforeEach(() => {

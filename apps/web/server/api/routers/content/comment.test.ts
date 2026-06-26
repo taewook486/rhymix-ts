@@ -14,14 +14,25 @@ const mockListComments = vi.fn();
 const mockCreateComment = vi.fn();
 const mockDeleteComment = vi.fn();
 
-// Mock @rhymix-ts/document properly to preserve all exports
-vi.mock('@rhymix-ts/document', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@rhymix-ts/document')>();
-  return {
-    ...actual,
-    // Keep all original exports including canPerformAction
-  };
-});
+// comment.ts 라우터가 instanceof 로 검사하는 에러 클래스 스텁.
+// importOriginal 대신 인라인 스텁으로 전체 패키지 로드 방지.
+class BoardPermissionDeniedError extends Error {
+  constructor(type?: string) {
+    super(type ?? 'Board permission denied');
+    this.name = 'BoardPermissionDeniedError';
+  }
+}
+class DocumentOwnershipError extends Error {
+  constructor(userId?: number) {
+    super(String(userId ?? 0));
+    this.name = 'DocumentOwnershipError';
+  }
+}
+
+vi.mock('@rhymix-ts/document', () => ({
+  BoardPermissionDeniedError,
+  DocumentOwnershipError,
+}));
 
 // Mock @rhymix-ts/comment domain functions
 vi.mock('@rhymix-ts/comment', () => ({
