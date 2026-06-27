@@ -25,7 +25,7 @@ export function validateWidgetProps<P>(
   def: WidgetDefinition<P>,
   rawProps: Record<string, unknown>,
 ): { ok: true; props: P } | { ok: false; error: ZodError } {
-  // defaultProps가 fallback: rawProps가 우선, defaultProps는 누락된 키만 채운다
+  // rawProps가 우선, defaultProps는 누락된 키만 채운다
   const merged: Record<string, unknown> = {
     ...(def.defaultProps ?? {}),
     ...rawProps,

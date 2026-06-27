@@ -55,6 +55,12 @@ vi.mock('@rhymix-ts/core', () => ({
 // layout-init import를 mock (DefaultLayout 등록 side-effect 방지)
 vi.mock('@/lib/layout-init', () => ({}));
 
+// runPageView가 실제 prisma.addonConfig에 접근하는 것을 방지
+vi.mock('@rhymix-ts/core/addons', () => ({
+  runPageView: vi.fn().mockResolvedValue(undefined),
+  runAdminAction: vi.fn().mockResolvedValue(undefined),
+}));
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

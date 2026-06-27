@@ -25,6 +25,18 @@ vi.mock('next/headers', () => ({
   }),
 }))
 
+vi.mock('@rhymix-ts/core/addons', () => ({
+  runAdminAction: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('@/lib/admin/site-context', () => ({
+  getCurrentSiteId: vi.fn().mockResolvedValue(1),
+}))
+
+vi.mock('@/lib/db/prisma', () => ({
+  prisma: {},
+}))
+
 import { getServerCaller } from '@/lib/trpc/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'

@@ -36,8 +36,8 @@ describe('validateWidgetProps — Slice A', () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.props.name).toBe('Alice')
-      // defaultProps({ count: 1 })가 rawProps를 덮어씀 (A-VAL-3과 동일 계약)
-      expect(result.props.count).toBe(1)
+      // rawProps가 defaultProps보다 우선: count=3이 유지됨
+      expect(result.props.count).toBe(3)
     }
   })
 
@@ -51,14 +51,14 @@ describe('validateWidgetProps — Slice A', () => {
     }
   })
 
-  it('A-VAL-3: rawProps의 값이 defaultProps보다 우선하지 않는다 (defaultProps가 덮어씀)', () => {
-    // 구현: merged = { ...rawProps, ...defaultProps }
-    // rawProps에 count:5를 전달해도 defaultProps.count=1이 덮어씀
+  it('A-VAL-3: rawProps의 값이 defaultProps보다 우선한다 (rawProps가 덮어씀)', () => {
+    // 구현: merged = { ...defaultProps, ...rawProps }
+    // rawProps에 count:5를 전달하면 defaultProps.count=1을 덮어씀
     const result = validateWidgetProps(greetDef, { name: 'Carol', count: 5 })
-    // defaultProps가 덮어쓰므로 count는 1
+    // rawProps가 덮어쓰므로 count는 5
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.props.count).toBe(1)
+      expect(result.props.count).toBe(5)
     }
   })
 

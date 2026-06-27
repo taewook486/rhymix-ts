@@ -21,6 +21,16 @@ vi.mock('@/lib/db/prisma', () => ({
   prisma: {},
 }));
 
+// @rhymix-ts/document 인라인 stub — 첫 import 속도가 느려 DOCUMENT-CONFIG-001/002가
+// 15s 타임아웃에 걸리는 현상을 방지 (getConfig/updateConfig는 document 함수를 사용하지 않음)
+vi.mock('@rhymix-ts/document', () => ({
+  listDocumentsAcrossAllBoards: vi.fn(),
+  bulkUpdateDocuments: vi.fn(),
+  BulkOperationFailedError: class BulkOperationFailedError extends Error {},
+  restoreDocument: vi.fn(),
+  purgeDocument: vi.fn(),
+}));
+
 // Prisma mock
 const mockSiteFindFirst = vi.fn();
 const mockSiteSettingFindFirst = vi.fn();
