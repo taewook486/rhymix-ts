@@ -295,3 +295,48 @@ describe('login rate limiting (E-1)', () => {
     expect(Object.keys(result).sort()).toEqual(['code', 'ok']);
   });
 });
+
+// ---------------------------------------------------------------------------
+// REQ-AUTH-032: password force-change-after-days
+// ---------------------------------------------------------------------------
+
+describe('login password force change (REQ-AUTH-032)', () => {
+  it('1) passwordForceChangeDays 초과 → needsPasswordChange:true', async () => {
+    const oldDate = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000); // 91일 전
+    const staleUser = await makeUser({ passwordChangedAt: oldDate });
+    const { prisma } = buildFakePrisma({ preexistingUsers: [staleUser] });
+
+    const result = await login(
+      { identifier: 'alice', password: PLAIN, ip: IP },
+      { prisma, config: baseConfig({ passwordForceChangeDays: 90 }) },
+    );
+
+    expect(result).toMatchObject({ ok: true, needsPasswordChange: true });
+  });
+
+  it('2) passwordForceChangeDays 미초과 → needsPasswordChange:false', async () => {
+    const recentDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10일 전
+    const freshUser = await makeUser({ passwordChangedAt: recentDate });
+    const { prisma } = buildFakePrisma({ preexistingUsers: [freshUser] });
+
+    const result = await login(
+      { identifier: 'alice', password: PLAIN, ip: IP },
+      { prisma, config: baseConfig({ passwordForceChangeDays: 90 }) },
+    );
+
+    expect(result).toMatchObject({ ok: true, needsPasswordChange: false });
+  });
+
+  it('3) passwordForceChangeDays 미설정 → needsPasswordChange:false', async () => {
+    const oldDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000); // 1년 전
+    const staleUser = await makeUser({ passwordChangedAt: oldDate });
+    const { prisma } = buildFakePrisma({ preexistingUsers: [staleUser] });
+
+    const result = await login(
+      { identifier: 'alice', password: PLAIN, ip: IP },
+      { prisma, config: baseConfig() }, // passwordForceChangeDays 없음
+    );
+
+    expect(result).toMatchObject({ ok: true, needsPasswordChange: false });
+  });
+});

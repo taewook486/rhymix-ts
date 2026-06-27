@@ -21,7 +21,7 @@
  *
  * @MX:ANCHOR: 로그인 단일 진입점 — Auth.js authorize()/Server Action 모두 본 함수를 통과한다.
  * @MX:REASON: 비밀번호 검증/재해싱/감사 로그가 한 곳에 모여야 한 우회로 보안이 무너지지 않는다.
- * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-013, REQ-AUTH-014, REQ-AUTH-015, REQ-AUTH-051, REQ-AUTH-052, REQ-AUTH-055
+ * @MX:SPEC: SPEC-AUTH-001 REQ-AUTH-013, REQ-AUTH-014, REQ-AUTH-015, REQ-AUTH-032, REQ-AUTH-051, REQ-AUTH-052, REQ-AUTH-055
  */
 
 import type { PrismaClient } from '@rhymix-ts/db';
@@ -47,6 +47,8 @@ export interface LoginConfig {
   maxErrorCount?: number;
   /** REQ-AUTH-033: rate-limit window 길이 (분, 기본 10). */
   windowMinutes?: number;
+  /** REQ-AUTH-032: 비밀번호 갱신 주기(일). 미설정(undefined)이면 강제 변경 없음. */
+  passwordForceChangeDays?: number;
 }
 
 /** Public-facing user payload — never includes passwordHash. */
@@ -63,6 +65,12 @@ export interface LoginResult {
   user: LoginUser;
   /** True iff REQ-AUTH-014 transparent rehash kicked in during this login. */
   rehashed: boolean;
+  /**
+   * REQ-AUTH-032: 비밀번호가 `passwordForceChangeDays`를 초과한 경우 true.
+   * 호출자(Auth.js callback / Server Action)는 이 플래그를 보고
+   * 비밀번호 변경 페이지로 리다이렉트해야 한다.
+   */
+  needsPasswordChange: boolean;
 }
 
 export interface LoginFailure {
@@ -228,6 +236,14 @@ export async function login(
     });
   });
 
+  // REQ-AUTH-032: 비밀번호 갱신 주기 초과 여부 계산.
+  // rehash 시에는 passwordChangedAt이 방금 갱신되었으므로 강제 변경 불필요.
+  const forceDays = ctx.config.passwordForceChangeDays;
+  const needsPasswordChange =
+    forceDays != null && !rehashed
+      ? user.passwordChangedAt < new Date(Date.now() - forceDays * 24 * 60 * 60 * 1000)
+      : false;
+
   return {
     ok: true,
     user: {
@@ -238,6 +254,7 @@ export async function login(
       isAdmin: user.isAdmin,
     },
     rehashed,
+    needsPasswordChange,
   };
 }
 

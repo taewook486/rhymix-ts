@@ -1,9 +1,10 @@
 ---
 id: SPEC-AUTH-001
 title: Authentication & Member System
-status: draft
+status: completed
 priority: P0
 created: 2026-05-10
+updated: 2026-06-27
 domain: auth
 related: [SPEC-CONTENT-001, SPEC-ADMIN-001]
 ---
