@@ -32,7 +32,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 5. ADMIN COMPLETION | export/import + 잔여 REQ | 1 | 1/1 | 🟢 구현 완료 |
 | 6. ADMIN LEGACY PARITY | 레거시 분석 기반 admin 미구현 기능 완성 | 1 | 1/1 | 🟢 구현 완료 (M1~M3 전체, status: completed v1.3.0) |
 | 7. BACKLOG FOLLOW-UP | KEEP 레거시 모듈 후속 구현 (rss/poll/message/notification) | 2 | 2/2 | 🟢 구현 완료 (FEED-001, NOTIFICATION-001 Slice A+B 모두 완료. e2e만 후속 deferred) |
-| 8. ADMIN SECURITY HARDENING | 보안 리뷰에서 파생된 후속 구현 (2FA TOTP 백엔드 등) | 1 | 0/1 | 🟡 SPEC 작성 (ADMIN-2FA-OTP-001 draft) |
+| 8. ADMIN SECURITY HARDENING | 보안 리뷰에서 파생된 후속 구현 (2FA TOTP 백엔드 등) | 2 | 2/2 | 🟢 구현 완료 (ADMIN-2FA-OTP-001 + TEST-PRISMA-MOCK-001 전체 완료) |
 
 ---
 
@@ -124,8 +124,8 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 | ID | 제목 | 의존 | 우선순위 | 상태 |
 |---|---|---|---|---|
-| [SPEC-ADMIN-2FA-OTP-001](./SPEC-ADMIN-2FA-OTP-001/spec.md) | 관리자 2단계 인증(TOTP) 실제 백엔드 구현 (시크릿 발급/암호화/검증 + 세션 플래그) | AUTH-001, ADMIN-001, ADMIN-EXTRAS-001 | P1 | 📝 SPEC 작성 (draft) |
-| [SPEC-TEST-PRISMA-MOCK-001](./SPEC-TEST-PRISMA-MOCK-001/spec.md) | 공유 완전 Prisma mock 팩토리 도입 (TEST-DEBT 카테고리 1 ~50+건 해소, 테스트 인프라 전용) | TEST-DEBT-001 | P2 | 📝 SPEC 작성 (draft) |
+| [SPEC-ADMIN-2FA-OTP-001](./SPEC-ADMIN-2FA-OTP-001/spec.md) | 관리자 2단계 인증(TOTP) 실제 백엔드 구현 (시크릿 발급/암호화/검증 + 세션 플래그) | AUTH-001, ADMIN-001, ADMIN-EXTRAS-001 | P1 | ✅ 구현 완료 |
+| [SPEC-TEST-PRISMA-MOCK-001](./SPEC-TEST-PRISMA-MOCK-001/spec.md) | 공유 완전 Prisma mock 팩토리 도입 (TEST-DEBT 카테고리 1 ~50+건 해소, 테스트 인프라 전용) | TEST-DEBT-001 | P2 | ✅ 구현 완료 |
 
 > SPEC-TEST-DEBT-001 triage 카테고리 1(Prisma mock 불완전, ~50+건, 원인 확정·재유도 금지)의 후속 **수정** SPEC. 테스트별 부분 hand-rolled mock(`vi.fn()` 모델 스텁 / 주입형 `mockPrisma`)을 Prisma 클라이언트 형태에서 완전성이 파생되는 **공유 mock 팩토리**(REQ-TDEBT-011 권고)로 대체해 `undefined` accessor / `$transaction is not a function` / TRPCError 래핑 시그니처를 0건으로 만든다. **production/소스 코드 변경 0건, 테스트 대상 동작 불변** — mock 완전성만 채운다. 라이브러리(예: `vitest-mock-extended` `mockDeep<PrismaClient>()`)·팩토리 위치는 run phase 결정. 23개 REQ(REQ-PMOCK-001~023). 카테고리 2(App Router)/3(2FA, RESOLVED)/4(one-off) 미접촉. 영향 파일 9종 enumerate(비전수 — 동일 시그니처 전수가 진짜 경계).
 
@@ -178,14 +178,23 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ## 다음 단계
 
-### 즉시 가능
+### 현황 (2026-06-27 기준)
 
-Phase 1~6의 모든 SPEC이 구현 완료 상태다(2026-06-20 기준). Phase 7(backlog follow-up)도 핵심 구현이 완료되었다(2026-06-21 기준):
+Phase 1~8의 **모든 SPEC이 구현 완료** 상태다. 미구현 SPEC은 0건이다.
 
-1. **`SPEC-FEED-001`** (✅ 구현 완료) — 게시판별 RSS 2.0/Atom 1.0 피드. SPEC-MODULE-BACKLOG-001 KEEP 항목의 첫 구현 SPEC, Slice A/B/C 전체 완료.
-2. **`SPEC-NOTIFICATION-001`** (✅ 구현+e2e+sync 전체 완료, status: completed) — 인앱 알림 센터(댓글 알림/목록/읽음처리/설정/구독해제) + @mention 감지. e2e(REQ-NOTIF-065, AC-NOTIF-B1) cold-start 재현 PASS 검증 완료.
-3. **`SPEC-TEST-DEBT-001`** (✅ 평가 완료) — 사전 존재 단위 테스트 실패 90건 triage. 1순위는 카테고리 3(2FA 미들웨어, 실제 버그 가능성) — 우선 조사 권장.
-4. **`SPEC-MODULE-BACKLOG-001`** (✅ 평가 완료) — KEEP 나머지 2종(poll 위젯·쪽지)은 미작성. 우선순위를 골라 `/moai plan` 호출(예: SPEC-MESSAGE-001).
+완료 이력:
+1. Phase 1~6 구현 완료 (2026-06-20 기준)
+2. Phase 7 (SPEC-FEED-001, SPEC-NOTIFICATION-001) 구현 완료 (2026-06-21 기준)
+3. Phase 8 전체 완료 (2026-06-27 기준):
+   - **`SPEC-ADMIN-2FA-OTP-001`** (✅ 구현 완료) — 관리자 TOTP 2FA: Prisma 마이그레이션, AES-256-GCM 암호화, otplib 검증, Auth.js v5 세션 플래그, 중복 헬퍼 일원화
+   - **`SPEC-TEST-PRISMA-MOCK-001`** (✅ 구현 완료) — vitest-mock-extended 기반 공유 Prisma mock 팩토리. `$transaction`, `$queryRaw`, 전 모델 accessor 완전 구현. TEST-DEBT 카테고리 1 해소
+
+### 다음 백로그 (선택적)
+
+미작성 SPEC 2건 (우선순위 낮음):
+
+- **SPEC-POLL-WIDGET-001** — SPEC-MODULE-BACKLOG-001 KEEP 항목. `/moai plan`으로 SPEC 작성 필요
+- **SPEC-MESSAGE-001** — 쪽지(PM) 기능. `/moai plan`으로 SPEC 작성 필요
 
 ### 완료된 전체 워크플로우
 
