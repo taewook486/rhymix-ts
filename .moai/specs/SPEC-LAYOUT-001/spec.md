@@ -2,9 +2,9 @@
 id: SPEC-LAYOUT-001
 title: Layout System — Phase 1 P0 Visible UI Foundation
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-05-25
-updated: 2026-05-25
+updated: 2026-06-27
 author: MoAI manager-spec
 priority: P0
 phase: 1
