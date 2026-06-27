@@ -10,7 +10,7 @@
  * adminPassword 설정 시 argon2id로 해시하여 로그인 가능한 계정을 생성.
  */
 import { Client } from 'pg';
-import { argon2id } from 'hash-wasm';
+import { hashPassword } from '@rhymix-ts/auth';
 
 function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL;
@@ -18,20 +18,6 @@ function getDatabaseUrl(): string {
     throw new Error('DATABASE_URL이 설정되어 있지 않습니다.');
   }
   return url;
-}
-
-async function hashAdminPassword(password: string): Promise<string> {
-  const salt = new Uint8Array(16);
-  crypto.getRandomValues(salt);
-  return argon2id({
-    password,
-    salt,
-    iterations: 3,
-    memorySize: 65536,
-    hashLength: 32,
-    parallelism: 4,
-    outputType: 'encoded',
-  });
 }
 
 export interface SeedInstalledOptions {
@@ -57,7 +43,7 @@ export async function seedInstalledSite(opts: SeedInstalledOptions = {}): Promis
   const email = opts.adminEmail ?? 'admin@e2e.local';
   const userId = opts.adminUserId ?? 'admin';
   const passwordHash = opts.adminPassword
-    ? await hashAdminPassword(opts.adminPassword)
+    ? await hashPassword(opts.adminPassword)
     : 'e2e-placeholder-not-a-real-hash';
 
   const client = new Client({ connectionString: getDatabaseUrl() });
