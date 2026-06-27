@@ -19,6 +19,15 @@ vi.mock('@/lib/db/prisma', () => ({
   prisma: {},
 }));
 
+// generateTotpQrCode 는 실제 QR 라이브러리를 호출해 타임아웃 유발 — 경량 stub 사용
+vi.mock('@rhymix-ts/auth/two-factor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@rhymix-ts/auth/two-factor')>();
+  return {
+    ...actual,
+    generateTotpQrCode: vi.fn().mockResolvedValue('data:image/svg+xml;base64,stub'),
+  };
+});
+
 // ---------------------------------------------------------------------------
 // TWO_FACTOR_ENC_KEY — encryptSecret/decryptSecret 가 동작하도록 설정.
 // ---------------------------------------------------------------------------
