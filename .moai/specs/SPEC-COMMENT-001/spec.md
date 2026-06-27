@@ -2,9 +2,9 @@
 id: SPEC-COMMENT-001
 title: 댓글 도메인 독립 패키지
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-05-27
-updated: 2026-05-27
+updated: 2026-06-27
 author: MoAI manager-spec
 priority: P0
 phase: 2
