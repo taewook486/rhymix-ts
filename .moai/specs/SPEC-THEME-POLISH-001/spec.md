@@ -2,9 +2,9 @@
 id: SPEC-THEME-POLISH-001
 title: Theme Polish — Phase 4 Admin Theme UI + Dark Mode
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-05-30
-updated: 2026-05-30
+updated: 2026-06-27
 author: MoAI manager-spec
 priority: P1
 phase: 4
