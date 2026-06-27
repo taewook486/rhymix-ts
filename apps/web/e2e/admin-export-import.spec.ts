@@ -31,6 +31,9 @@ import { resetDb } from './support/db-reset';
  * 각 테스트는 이 함수를 호출하여 준비 완료 상태를 확보합니다.
  */
 async function setupInstalledAdminSession(page: import('@playwright/test').Page): Promise<void> {
+  // 이전 테스트가 남긴 인증 쿠키를 제거 — 세션 없는 상태에서 설치를 시작해야 함
+  await page.context().clearCookies();
+
   // 1. 루트 진입 → /install 리다이렉트
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Rhymix-TS 설치' })).toBeVisible();
@@ -70,13 +73,8 @@ async function setupInstalledAdminSession(page: import('@playwright/test').Page)
   // 완료 화면 대기
   await expect(page).toHaveURL(/\/install\/complete/, { timeout: 60_000 });
 
-  // /admin 진입 — 설치 후 세션 없으므로 /login 으로 리다이렉트됨
+  // /admin 진입 — SPEC-INSTALL-002: 설치 완료 후 자동 로그인되므로 /login 거치지 않음
   await page.getByRole('link', { name: '관리자 대시보드로 이동' }).click();
-  await expect(page).toHaveURL(/\/login/);
-  // callbackUrl=%2Fadmin 보존 상태로 로그인 (로그인 후 /admin 으로 자동 이동)
-  await page.locator('input[name="identifier"]').fill('admin');
-  await page.locator('input[name="password"]').fill('e2e-password-1234');
-  await page.getByRole('button', { name: '로그인' }).click();
   await expect(page).toHaveURL(/\/admin/, { timeout: 15_000 });
 }
 

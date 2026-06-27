@@ -12,7 +12,9 @@ import { expect, test } from '@playwright/test';
 
 import { resetDb } from './support/db-reset';
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ page }) => {
+  // 이전 테스트가 남긴 인증 쿠키를 제거 — 세션 없는 상태에서 설치를 시작해야 함
+  await page.context().clearCookies();
   await resetDb();
 });
 
@@ -62,12 +64,8 @@ test('the system shall complete a fresh install through all four steps', async (
   await expect(page).toHaveURL(/\/install\/complete/, { timeout: 60_000 });
   await expect(page.getByRole('heading', { name: '설치가 완료되었습니다.' })).toBeVisible();
 
-  // /admin placeholder 도달 (설치 후 로그인 필요)
+  // /admin 진입 — SPEC-INSTALL-002: 설치 완료 후 자동 로그인되므로 /login 거치지 않음
   await page.getByRole('link', { name: '관리자 대시보드로 이동' }).click();
-  await expect(page).toHaveURL(/\/login/);
-  await page.locator('input[name="identifier"]').fill('admin');
-  await page.locator('input[name="password"]').fill('e2e-password-1234');
-  await page.getByRole('button', { name: '로그인' }).click();
   await expect(page).toHaveURL(/\/admin/, { timeout: 15_000 });
   await expect(page.locator('h1').filter({ hasText: '대시보드' })).toBeVisible();
 });
