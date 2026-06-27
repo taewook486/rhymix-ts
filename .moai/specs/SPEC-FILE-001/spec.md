@@ -2,9 +2,9 @@
 id: SPEC-FILE-001
 title: 파일 업로드/관리 독립 패키지 (File Upload & Management Standalone Package)
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-05-27
-updated: 2026-05-27
+updated: 2026-06-27
 author: MoAI manager-spec
 priority: P1
 phase: 3
