@@ -2,9 +2,9 @@
 id: SPEC-ADDON-001
 title: Addon System — Phase 4 P1 Declarative Hook Registry + Admin UI
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-05-30
-updated: 2026-05-30
+updated: 2026-06-27
 author: MoAI manager-spec
 priority: P1
 phase: 4
