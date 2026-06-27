@@ -27,6 +27,12 @@ export interface WidgetDefinition<P = Record<string, unknown>> {
   description?: string
   /** 위젯 카테고리 (선택적) */
   category?: string
+  /**
+   * 렌더 컨텍스트(인증 상태 등)에서 동적 props를 추출한다.
+   * 토큰 속성에서 파싱된 props보다 우선순위가 높다(오버라이드).
+   * 세션 기반 위젯(login_info 등)이 인증 상태를 주입받을 때 사용한다.
+   */
+  resolveContextProps?: (ctx: WidgetRenderContext) => Partial<P>
 }
 
 /**

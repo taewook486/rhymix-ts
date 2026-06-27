@@ -6,10 +6,11 @@
  * /install 410 동작을 검증하기 위한 최소 시드이며, 실제 install이 만드는
  * MemberGroup / ModuleInstance까지는 만들지 않습니다 (해당 시나리오에 불필요).
  *
- * 비밀번호 해시는 placeholder 문자열 — 본 헬퍼로 시드된 사용자로는 로그인이
- * 동작하지 않습니다 (의도적). 로그인 시나리오는 happy-path에 포함되어 있습니다.
+ * adminPassword 미설정 시 로그인 불가 placeholder 해시를 사용.
+ * adminPassword 설정 시 argon2id로 해시하여 로그인 가능한 계정을 생성.
  */
 import { Client } from 'pg';
+import { argon2id } from 'hash-wasm';
 
 function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL;
@@ -19,11 +20,27 @@ function getDatabaseUrl(): string {
   return url;
 }
 
+async function hashAdminPassword(password: string): Promise<string> {
+  const salt = new Uint8Array(16);
+  crypto.getRandomValues(salt);
+  return argon2id({
+    password,
+    salt,
+    iterations: 3,
+    memorySize: 65536,
+    hashLength: 32,
+    parallelism: 4,
+    outputType: 'encoded',
+  });
+}
+
 export interface SeedInstalledOptions {
   hostname?: string;
   scheme?: 'http' | 'https';
   adminEmail?: string;
   adminUserId?: string;
+  /** 설정 시 argon2id 해시를 생성하여 로그인 가능한 계정을 만든다. */
+  adminPassword?: string;
 }
 
 /**
@@ -39,6 +56,9 @@ export async function seedInstalledSite(opts: SeedInstalledOptions = {}): Promis
   const scheme = opts.scheme ?? 'http';
   const email = opts.adminEmail ?? 'admin@e2e.local';
   const userId = opts.adminUserId ?? 'admin';
+  const passwordHash = opts.adminPassword
+    ? await hashAdminPassword(opts.adminPassword)
+    : 'e2e-placeholder-not-a-real-hash';
 
   const client = new Client({ connectionString: getDatabaseUrl() });
   await client.connect();
@@ -65,10 +85,10 @@ export async function seedInstalledSite(opts: SeedInstalledOptions = {}): Promis
       `INSERT INTO users
         ("userId", "emailAddress", "passwordHash", "passwordVersion", "nickName",
          status, "isAdmin", denied, "updatedAt")
-       VALUES ($1, $2, 'e2e-placeholder-not-a-real-hash', 'argon2id-v1', $1,
+       VALUES ($1, $2, $3, 'argon2id-v1', $1,
          'APPROVED', true, false, NOW())
        RETURNING id`,
-      [userId, email],
+      [userId, email, passwordHash],
     );
     const adminId = userRes.rows[0]!.id;
 

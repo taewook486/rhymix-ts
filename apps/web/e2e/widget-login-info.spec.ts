@@ -52,9 +52,9 @@ async function seedPageWithLoginInfoWidget(siteId: number): Promise<{ moduleInst
 
     // Layout upsert
     const layoutRes = await client.query<{ id: string }>(
-      `INSERT INTO layouts (id, "themeId", name, title, "layoutPath", "layoutType", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'default', 'Default Layout', 'themes/default/layouts/default', 'DESKTOP', NOW())
-       ON CONFLICT ("themeId", name, "layoutType") DO UPDATE SET title = EXCLUDED.title, "updatedAt" = NOW()
+      `INSERT INTO layouts (id, "themeId", name, title, "layoutPath", "layoutType")
+       VALUES (gen_random_uuid()::text, $1, 'default', 'Default Layout', 'themes/default/layouts/default', 'DESKTOP')
+       ON CONFLICT ("themeId", name, "layoutType") DO UPDATE SET title = EXCLUDED.title
        RETURNING id`,
       [themeId],
     );
@@ -117,11 +117,12 @@ test('login_info 위젯: 익명 사용자에게 로그인 폼 또는 링크 렌�
 });
 
 test('login_info 위젯: 인증 사용자에게 닉네임 렌더 (AC-WIDGET-C1)', async ({ page }) => {
-  // 1. 설치된 site + domain + admin 사용자 시드
+  // 1. 설치된 site + domain + admin 사용자 시드 (로그인 가능한 해시 사용)
   const { siteId } = await seedInstalledSite({
     hostname: 'localhost',
     adminUserId: 'testadmin',
     adminEmail: 'testadmin@e2e.local',
+    adminPassword: 'password',
   });
 
   // 2. login_info 위젯이 포함된 page 모듈 인스턴스 시드

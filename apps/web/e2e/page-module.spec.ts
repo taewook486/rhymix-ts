@@ -50,9 +50,9 @@ async function seedPageModuleInstance(siteId: number): Promise<{ moduleInstanceI
 
     // Layout upsert
     const layoutRes = await client.query<{ id: string }>(
-      `INSERT INTO layouts (id, "themeId", name, title, "layoutPath", "layoutType", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'default', 'Default Layout', 'themes/default/layouts/default', 'DESKTOP', NOW())
-       ON CONFLICT ("themeId", name, "layoutType") DO UPDATE SET title = EXCLUDED.title, "updatedAt" = NOW()
+      `INSERT INTO layouts (id, "themeId", name, title, "layoutPath", "layoutType")
+       VALUES (gen_random_uuid()::text, $1, 'default', 'Default Layout', 'themes/default/layouts/default', 'DESKTOP')
+       ON CONFLICT ("themeId", name, "layoutType") DO UPDATE SET title = EXCLUDED.title
        RETURNING id`,
       [themeId],
     );

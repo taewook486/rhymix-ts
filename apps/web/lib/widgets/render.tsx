@@ -189,8 +189,12 @@ export async function renderBodyWithWidgets(
       // React.createElement는 컴포넌트를 즉시 실행하지 않으므로,
       // 함수로 직접 호출하여 동기 throw를 잡는다.
       try {
+        // resolveContextProps가 있으면 컨텍스트 파생 props를 토큰 props에 병합한다.
+        // 컨텍스트 props(인증 상태 등)가 토큰 속성 기본값을 오버라이드한다.
+        const ctxProps = def.resolveContextProps ? def.resolveContextProps(ctx) : {}
         const fn = def.Component as (props: Record<string, unknown>) => React.ReactNode
-        const element = fn(validation.props as Record<string, unknown>)
+        const finalProps = { ...(validation.props as Record<string, unknown>), ...ctxProps }
+        const element = fn(finalProps)
         return <React.Fragment key={idx}>{element}</React.Fragment>
       } catch {
         return (

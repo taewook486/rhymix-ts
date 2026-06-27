@@ -12,6 +12,7 @@
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-013
  * @MX:SPEC: SPEC-INSTALL-003 REQ-INSTALL3-001~006
  */
+import React from 'react';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { renderModuleWithLayout } from '@rhymix-ts/core';
@@ -20,6 +21,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getModuleDefinition } from '@/lib/modules/registry';
 import { auth } from '@/lib/auth/config';
 import { OperatorOnboarding } from '@/components/onboarding/OperatorOnboarding';
+import { renderBodyWithWidgets } from '@/lib/widgets/render';
 // 레이아웃 레지스트리 초기화 (정적 import — REQ-LAYOUT-009)
 import '@/lib/layout-init';
 
@@ -70,13 +72,33 @@ export default async function RootPage() {
     notFound();
   }
 
-  // 모듈 인덱스 라우트 호출
-  const moduleOutput = await def.routes.index({
-    instance,
-    params: {},
-    searchParams: {},
-    prisma,
-  });
+  // 인증 상태 확인 (모듈 렌더 전에 세션을 가져와 위젯 컨텍스트에 주입)
+  const session = await auth();
+  const userId = session?.user?.id
+    ? (typeof session.user.id === 'string' ? Number.parseInt(session.user.id, 10) : session.user.id)
+    : null;
+  const sessionUser = userId != null
+    ? { id: userId, nickname: session?.user?.name ?? '' }
+    : null;
+
+  // 모듈 인덱스 라우트 호출.
+  // page 모듈은 mcontent를 renderBodyWithWidgets로 렌더하여 rx-widget 토큰을 치환한다.
+  let moduleOutput: React.ReactNode;
+  if (instance.moduleCode === 'page') {
+    moduleOutput = await renderBodyWithWidgets(instance.mcontent ?? '', {
+      isAdmin: Boolean(session?.user?.isAdmin),
+      user: sessionUser,
+      prisma,
+      domainId,
+    });
+  } else {
+    moduleOutput = await def.routes.index({
+      instance,
+      params: {},
+      searchParams: {},
+      prisma,
+    });
+  }
 
   // REQ-LAYOUT-041: renderModuleWithLayout으로 레이아웃 감싸기
   const rendered = renderModuleWithLayout({
@@ -93,13 +115,6 @@ export default async function RootPage() {
     request: { mid: instance.mid },
     domain: null
   }, controller.signal);
-
-  // SPEC-INSTALL-003 REQ-INSTALL3-001: 인증된 운영자에게 온보딩 표시
-  // 인증 상태 확인
-  const session = await auth();
-  const userId = session?.user?.id
-    ? (typeof session.user.id === 'string' ? Number.parseInt(session.user.id, 10) : session.user.id)
-    : null;
 
   // 인증된 사용자이고 siteId가 있는 경우에만 온보딩 렌더
   const onboarding = userId != null && domain.siteId != null

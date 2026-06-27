@@ -48,9 +48,9 @@ async function seedDefaultThemeAndModule(siteId: number): Promise<{ moduleInstan
 
     // Layout upsert
     const layoutRes = await client.query<{ id: string }>(
-      `INSERT INTO layouts (id, "themeId", name, title, "layoutPath", "layoutType", "updatedAt")
-       VALUES (gen_random_uuid()::text, $1, 'default', 'Default Layout', 'themes/default/layouts/default', 'DESKTOP', NOW())
-       ON CONFLICT ("themeId", name, "layoutType") DO UPDATE SET title = EXCLUDED.title, "updatedAt" = NOW()
+      `INSERT INTO layouts (id, "themeId", name, title, "layoutPath", "layoutType")
+       VALUES (gen_random_uuid()::text, $1, 'default', 'Default Layout', 'themes/default/layouts/default', 'DESKTOP')
+       ON CONFLICT ("themeId", name, "layoutType") DO UPDATE SET title = EXCLUDED.title
        RETURNING id`,
       [themeId],
     );
@@ -103,5 +103,5 @@ test('default layout renders on domain home', async ({ page }) => {
   await expect(page.locator('[data-rhymix-layout="default"]')).toBeVisible();
 
   // 6. footer 텍스트 존재 확인 (AC-LAYOUT-C1)
-  await expect(page.locator('footer')).toContainText('Powered by Rhymix-TS');
+  await expect(page.locator('[data-testid="global-footer"]')).toContainText('Powered by Rhymix-TS');
 });

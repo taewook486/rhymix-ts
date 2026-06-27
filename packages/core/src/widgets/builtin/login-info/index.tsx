@@ -7,7 +7,7 @@
  */
 import React from 'react'
 import { z } from 'zod'
-import type { WidgetDefinition } from '../../types'
+import type { WidgetDefinition, WidgetRenderContext } from '../../types'
 
 // 위젯 props 스키마
 const loginInfoSchema = z.object({
@@ -77,4 +77,9 @@ export const loginInfoWidget: WidgetDefinition<LoginInfoProps> = {
     isAuthenticated: false,
     nickname: '',
   },
+  // 렌더 컨텍스트의 인증 상태를 토큰 props 기본값보다 우선하여 주입한다.
+  resolveContextProps: (ctx: WidgetRenderContext): Partial<LoginInfoProps> => ({
+    isAuthenticated: ctx.user != null,
+    nickname: ctx.user?.nickname ?? '',
+  }),
 }
