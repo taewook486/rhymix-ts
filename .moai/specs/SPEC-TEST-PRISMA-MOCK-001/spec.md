@@ -2,9 +2,9 @@
 id: SPEC-TEST-PRISMA-MOCK-001
 title: 공유 완전 Prisma mock 팩토리 도입 (사전 존재 테스트 실패 카테고리 1 해소)
 version: 0.1.0
-status: draft
+status: completed
 created: 2026-06-25
-updated: 2026-06-25
+updated: 2026-06-27
 author: MoAI manager-spec
 priority: P2
 phase: 9
