@@ -24,6 +24,8 @@ import { OperatorOnboarding } from '@/components/onboarding/OperatorOnboarding';
 import { renderBodyWithWidgets } from '@/lib/widgets/render';
 // 레이아웃 레지스트리 초기화 (정적 import — REQ-LAYOUT-009)
 import '@/lib/layout-init';
+// 위젯 레지스트리 초기화 — [app-rsc] 컨텍스트 (instrumentation과 별도 싱글톤)
+import '@/lib/widget-init';
 
 export default async function RootPage() {
   const h = await headers();
