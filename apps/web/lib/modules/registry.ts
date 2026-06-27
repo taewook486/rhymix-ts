@@ -14,12 +14,15 @@
  * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-001
  */
 import { boardModule } from '@rhymix-ts/board';
+import { pageModuleDefinition } from '@rhymix-ts/page';
 import type { ModuleDefinition } from '@rhymix-ts/core/modules';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const REGISTRY = new Map<string, ModuleDefinition<any>>();
 
 REGISTRY.set(boardModule.code, boardModule);
+// SPEC-PAGE-001 REQ-PAGE-010: page 모듈 정적 등록
+REGISTRY.set(pageModuleDefinition.code, pageModuleDefinition);
 
 /**
  * moduleCode 로 ModuleDefinition 을 조회한다.

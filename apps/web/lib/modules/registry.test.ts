@@ -27,4 +27,18 @@ describe('module registry (apps/web)', () => {
     const codes = listRegisteredModules().map((m) => m.code);
     expect(codes).toContain('board');
   });
+
+  // SPEC-PAGE-001 REQ-PAGE-010
+  it('B-104: getModuleDefinition("page") → pageModuleDefinition 반환', async () => {
+    const { getModuleDefinition } = await import('./registry');
+    const def = getModuleDefinition('page');
+    expect(def).toBeDefined();
+    expect(def?.code).toBe('page');
+  });
+
+  it('B-105: listRegisteredModules() 결과에 "page" 가 포함됨', async () => {
+    const { listRegisteredModules } = await import('./registry');
+    const codes = listRegisteredModules().map((m) => m.code);
+    expect(codes).toContain('page');
+  });
 });
