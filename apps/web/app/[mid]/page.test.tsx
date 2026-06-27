@@ -61,6 +61,12 @@ vi.mock('@rhymix-ts/core/addons', () => ({
   runAdminAction: vi.fn().mockResolvedValue(undefined),
 }));
 
+// @rhymix-ts/board/feed 배럴 import 지연 방지 (첫 동적 import 시 ~37s 소요)
+vi.mock('@rhymix-ts/board/feed', () => ({
+  boardFeedConfigSchema: { parse: vi.fn() },
+  resolveFeedAlternates: vi.fn().mockReturnValue([]),
+}));
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
