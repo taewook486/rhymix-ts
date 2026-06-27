@@ -23,6 +23,7 @@ vi.mock('../actions', () => ({
 
 describe('AdminConfigForm — SiteLock 확인 모달 (REQ-INSTALL-041)', () => {
   beforeEach(async () => {
+    cleanup(); // resetModules 전에 DOM 정리 — 모듈 교체 후 afterEach cleanup이 이전 트리를 놓치는 문제 방지
     vi.resetModules();
     vi.clearAllMocks();
     const { useActionState } = await import('react');
