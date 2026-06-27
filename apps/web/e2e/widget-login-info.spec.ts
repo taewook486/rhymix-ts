@@ -142,6 +142,6 @@ test('login_info 위젯: 인증 사용자에게 닉네임 렌더 (AC-WIDGET-C1)'
 
   // 5. 닉네임 표시 확인 (REQ-WIDGET-032 인증 분기)
   await expect(
-    page.locator('[data-widget="login_info"] >> text=testadmin, text=testadmin').first(),
+    page.locator('[data-widget="login_info"]').filter({ hasText: 'testadmin' }),
   ).toBeVisible({ timeout: 10_000 });
 });

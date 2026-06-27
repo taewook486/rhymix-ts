@@ -8,7 +8,12 @@ import React from 'react'
 import { getWidget } from '@rhymix-ts/core/widgets'
 import { validateWidgetProps } from '@rhymix-ts/core/widgets'
 import type { WidgetRenderContext, WidgetToken } from '@rhymix-ts/core/widgets'
+import { registerBuiltinWidgets } from '@rhymix-ts/core/widgets/builtin'
 import { sanitizeHtmlSegment } from './sanitize'
+
+// [app-rsc] 컨텍스트에서 위젯 등록 보장 — instrumentation 컨텍스트와 별도 싱글톤
+// @MX:NOTE: [AUTO] render.tsx 로컬 등록 — Turbopack 멀티컨텍스트 모듈 격리 우회
+registerBuiltinWidgets()
 
 // ─── 토큰 파서 ───────────────────────────────────────────────────────────────
 
