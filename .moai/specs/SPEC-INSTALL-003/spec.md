@@ -1,10 +1,10 @@
 ---
 id: SPEC-INSTALL-003
 title: Post-Install Operator Onboarding Landing Experience
-status: planned
+status: completed
 priority: P2
 created: 2026-06-23
-updated: 2026-06-23
+updated: 2026-06-27
 author: manager-spec
 domain: install
 issue_number: null
