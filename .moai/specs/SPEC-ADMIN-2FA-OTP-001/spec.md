@@ -1,9 +1,9 @@
 ---
 id: SPEC-ADMIN-2FA-OTP-001
 version: 0.3.0
-status: draft
+status: completed
 created: 2026-06-21
-updated: 2026-06-21
+updated: 2026-06-27
 author: manager-spec
 priority: P1
 issue_number: null
