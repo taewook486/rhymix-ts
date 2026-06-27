@@ -85,7 +85,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
             ) : (
               <Link
                 key={tab.value}
-                href={href}
+                href={href ?? ''}
                 className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-900"
               >
                 {tab.label}

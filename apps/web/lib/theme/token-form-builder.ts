@@ -153,7 +153,7 @@ function toTitleCase(input: string): string {
   // 각 단어를 Title Case로 변환
   words = words.map((word) => {
     if (word.length === 0) return '';
-    return word[0].toUpperCase() + word.slice(1).toLowerCase();
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
   });
 
   return words.join(' ');

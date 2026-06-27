@@ -33,7 +33,7 @@ export function DuplicateInstanceDialog({
 
     startTransition(async () => {
       const result = await duplicateLayoutInstanceAction(instanceId, newRefId);
-      if (result.ok) {
+      if ('ok' in result) {
         setIsOpen(false);
         setNewRefId('');
         onSuccess?.();

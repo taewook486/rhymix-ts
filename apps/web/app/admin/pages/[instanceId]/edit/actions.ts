@@ -17,7 +17,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
 import { isAdminSession } from '@/lib/auth/admin-middleware';
-import { prisma } from '@rhymix-ts/db';
+import { prisma, Prisma } from '@rhymix-ts/db';
 import { savePageContent } from '@rhymix-ts/page';
 import { revalidatePath } from 'next/cache';
 
@@ -75,7 +75,11 @@ export async function updatePageSettingsAction(
       browserTitle: settings.browserTitle,
       layoutId: settings.layoutId,
       config: {
-        grant: settings.grant,
+        // ModuleConfig.config JSON 필드에 grant 저장 (Prisma 중첩 업데이트)
+        upsert: {
+          create: { config: { grant: settings.grant } as Prisma.InputJsonObject },
+          update: { config: { grant: settings.grant } as Prisma.InputJsonObject },
+        },
       },
     },
   });

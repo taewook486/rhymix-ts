@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 const initialActionState: ActionState = {};
 
-type CaptchaSettings = {
+export type CaptchaSettings = {
   provider: 'none' | 'recaptcha' | 'turnstile' | 'simple_math';
   triggers: string[];
   siteKey: string | null;

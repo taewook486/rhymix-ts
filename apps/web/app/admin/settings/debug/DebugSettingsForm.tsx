@@ -8,6 +8,32 @@ import { updateDebugSettingsAction, type ActionState } from './actions';
 
 const initialActionState: ActionState = {};
 
+export type DebugFormSettings = {
+  enabled: boolean;
+  slowQueryThreshold: number;
+  slowTriggerThreshold: number;
+  slowWidgetThreshold: number;
+  slowExternalThreshold: number;
+  displayMethods: ('html_comment' | 'screen_panel' | 'file_log')[];
+  contentTypes: (
+    | 'request_response'
+    | 'debug_message'
+    | 'error'
+    | 'query'
+    | 'slow_query'
+    | 'slow_trigger'
+    | 'slow_widget'
+    | 'slow_external'
+  )[];
+  logFilePath: string;
+  displayTarget: 'admin_only' | 'allowed_ips' | 'all';
+  allowedIps: string[];
+  addQueryComment: boolean;
+  showFullCallStack: boolean;
+  deduplicateErrors: boolean;
+  errorLogLevel: 'all_errors_warnings' | 'critical_only';
+};
+
 export function DebugSettingsForm({
   initialSettings,
 }: {

@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
 import { isAdminSession } from '@/lib/auth/admin-middleware';
 import { getServerCaller } from '@/lib/trpc/server';
-import { CaptchaForm } from './CaptchaForm';
+import { CaptchaForm, type CaptchaSettings } from './CaptchaForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +28,8 @@ export default async function CaptchaSettingsPage() {
       <p className="text-muted-foreground mb-6">
         스팸 방지를 위해 캡차 공급자 및 트리거 조건을 설정합니다.
       </p>
-      <CaptchaForm initialSettings={settings} />
+      {/* tRPC 반환 타입(string)과 폼 기대 타입(literal union)의 차이 — Zod 검증으로 런타임 안전 */}
+      <CaptchaForm initialSettings={settings as unknown as CaptchaSettings} />
     </section>
   );
 }
