@@ -2,9 +2,9 @@
 id: SPEC-MAIL-001
 title: SMTP 메일 디스패처 (SmtpMailDispatcher Replacing NoopMailDispatcher)
 version: 1.0.0
-status: draft
+status: completed
 created_at: 2026-05-27
-updated_at: 2026-05-27
+updated_at: 2026-06-27
 author: MoAI manager-spec
 priority: P1
 labels: [mail, smtp, phase3]
