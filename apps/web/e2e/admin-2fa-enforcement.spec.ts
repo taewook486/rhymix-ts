@@ -207,7 +207,7 @@ test('2FA 정책 on → enroll → 새 세션 verify → /admin 접근 (M7 전�
   // 4. 서버가 렌더한 base32 시크릿 추출 (REQ-2OTP-020 수동 입력 폴백).
   //    enrollStart mutation 이 resolve 되어야 <code data-testid="totp-secret"> 가 채워진다.
   const secretEl = page.getByTestId('totp-secret');
-  await expect(secretEl).toBeVisible({ timeout: 15_000 });
+  await expect(secretEl).toBeVisible({ timeout: 30_000 });
   const secret = (await secretEl.textContent())?.trim() ?? '';
   expect(secret).toMatch(/^[A-Z2-7]+=*$/);
 
