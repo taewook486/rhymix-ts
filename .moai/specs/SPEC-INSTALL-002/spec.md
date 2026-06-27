@@ -1,9 +1,10 @@
 ---
 id: SPEC-INSTALL-002
 title: Post-Install Session Bootstrap & Header Session Sync Fixes
-status: planned
+status: completed
 priority: P1
 created: 2026-06-22
+updated: 2026-06-27
 domain: install
 related: [SPEC-INSTALL-001, SPEC-AUTH-001, SPEC-NOTIFICATION-001]
 ---
