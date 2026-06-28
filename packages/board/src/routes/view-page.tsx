@@ -13,6 +13,20 @@ import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
 import { getDocument } from '@rhymix-ts/document';
 import { listComments } from '@rhymix-ts/comment';
 import { listAttachments } from '@rhymix-ts/file';
+import { sanitize } from '../components/sanitize';
+
+/** 바이트 크기를 사람이 읽기 쉬운 문자열로 변환 (예: 2048 → "2 KB") */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let size = bytes / 1024;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size.toFixed(size >= 10 || Number.isInteger(size) ? 0 : 1)} ${units[unitIndex]}`;
+}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -42,10 +56,11 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
   const { instance, documentId, prisma, session } = props;
   const mid = instance.mid;
 
-  // 병렬 데이터 로드
-  const [doc, comments] = await Promise.all([
+  // 병렬 데이터 로드 — 문서/댓글/첨부파일
+  const [doc, comments, attachments] = await Promise.all([
     getDocument(documentId, { prisma }),
     listComments({ documentId }, { prisma }),
+    listAttachments({ documentId }, { prisma }),
   ]);
 
   // 수정 권한 판단: 작성자 본인 또는 admin
@@ -87,12 +102,36 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
         </div>
       )}
 
-      {/* 문서 본문 — 서버에서 이미 DOMPurify로 sanitize된 HTML */}
+      {/* 문서 본문 — 렌더 직전 DOMPurify 로 sanitize (SPEC-EDITOR-001 REQ-EDITOR-004) */}
       {/* eslint-disable-next-line react/no-danger */}
       <div
         className="prose max-w-none mb-8"
-        dangerouslySetInnerHTML={{ __html: doc.content }}
+        dangerouslySetInnerHTML={{ __html: sanitize(doc.content) }}
       />
+
+      {/* 첨부파일 다운로드 목록 (SPEC-EDITOR-001 REQ-EDITOR-003, AC-EDITOR-006) */}
+      {attachments.length > 0 && (
+        <div className="attachments mb-8 border-t pt-4">
+          <h2 className="text-sm font-semibold mb-2 text-gray-700">
+            첨부파일 {attachments.length}개
+          </h2>
+          <ul className="space-y-1">
+            {attachments.map((file) => (
+              <li key={file.id} className="flex items-center gap-2 text-sm">
+                <a
+                  href={`/api/files/${file.id}/download`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {file.sourceFilename}
+                </a>
+                <span className="text-gray-400">
+                  ({formatFileSize(Number(file.fileSize))})
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* 댓글 섹션 — CommentList는 apps/web 레이어에서 주입됨 */}
       <div id="comments" className="mb-8">
