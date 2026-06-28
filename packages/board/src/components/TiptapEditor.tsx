@@ -18,6 +18,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { TextStyle, Color } from '@tiptap/extension-text-style';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Image } from '@tiptap/extension-image';
+import { Underline } from '@tiptap/extension-underline';
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight';
 import { createLowlight, common } from 'lowlight';
 
@@ -127,6 +128,7 @@ export function TiptapEditor({
       TextStyle,
       Color,
       Highlight,
+      Underline,
       Image.configure({ inline: false, allowBase64: false }),
       CodeBlockLowlight.configure({ lowlight }),
     ],

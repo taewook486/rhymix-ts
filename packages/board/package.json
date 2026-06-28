@@ -18,6 +18,7 @@
   },
   "scripts": {
     "lint": "echo 'no lint'",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist .turbo"
   },
