@@ -200,6 +200,50 @@ describe('BoardViewPage', () => {
     expect(html).not.toContain('/free/write?id=42');
   });
 
+  it('VP-8: 첨부파일이 다운로드 목록으로 렌더됨 (SPEC-EDITOR-001 AC-EDITOR-006)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      listDocuments: vi.fn(),
+      createDocument: vi.fn(),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([
+        {
+          id: 101,
+          sourceFilename: '보고서.pdf',
+          fileSize: 2048n,
+          mimeType: 'application/pdf',
+          storageKey: '2024/01/abc',
+          downloadCount: 0,
+        },
+        {
+          id: 102,
+          sourceFilename: 'image.png',
+          fileSize: 5120n,
+          mimeType: 'image/png',
+          storageKey: '2024/01/def',
+          downloadCount: 0,
+        },
+      ]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(makeFakeProps({}) as any);
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 파일명이 표시되어야 함
+    expect(html).toContain('보고서.pdf');
+    expect(html).toContain('image.png');
+    // 다운로드 링크: /api/files/<id>/download
+    expect(html).toContain('/api/files/101/download');
+    expect(html).toContain('/api/files/102/download');
+  });
+
   it('VP-7: 댓글 수가 페이지 어딘가에 표시됨', async () => {
     vi.doMock('@rhymix-ts/document', () => ({
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
