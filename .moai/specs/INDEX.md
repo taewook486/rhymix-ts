@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-06-21 (SPEC-NOTIFICATION-001 sync 완료, status: completed — e2e 실행 검증 포함 전체 완료. 검증 중 발견한 사전 존재 결함 6건은 수정, 무관한 90건은 SPEC-TEST-DEBT-001로 분리)
+> 마지막 갱신: 2026-06-28 (SPEC-EDITOR-001 sync 완료 — Tiptap v3 WYSIWYG 에디터 통합, 143 tests, status: completed)
 
 ## 기술 스택 (확정)
 
@@ -131,6 +131,24 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 > SPEC-TEST-DEBT-001 triage 중 발견한 admin 2FA enforcement CRITICAL 우회 취약점(siteId 하드코딩 → production 상시 우회, CVSS≈8.8, OWASP A07:2021)을 fail-closed로 긴급 수정(`b220fd1`)한 뒤, 그 과정에서 드러난 더 근본적 gap을 메우는 신규 구현 SPEC. **현재 2FA verify 흐름 전체가 미구현 stub**(시크릿 발급=하드코딩 `JBSWY3DPEHPK3PXP`, enroll/verify=`setTimeout` 시뮬레이션, 세션 플래그 `twoFactorVerified`를 채우는 코드 0건, `checkAdmin2FA`의 등록여부 확인=skip)이라, 운영자가 `requireAdminTwoFactor=true`를 켜면 모든 관리자가 영구 lockout 된다(fail-closed의 의도된 결과). 본 SPEC은 Prisma 2FA 컬럼(시크릿 AES-256-GCM 암호화·백업코드 해시) + `otplib`/`qrcode` 도입 + enroll/verify tRPC mutation(닭-달걀 방지 `admin2FAProcedure`) + Auth.js v5 `update()` 경유 세션 플래그 set + `checkAdmin2FA` 등록여부 실제 확인 + 중복 헬퍼(`two-factor.ts` vs `two-factor-gate.ts`) 일원화를 다룬다. **게이트 미들웨어·enroll/verify 페이지 골격·정책 저장은 이미 존재하므로 제외.** Open Questions 7건(세션 플래그 set 메커니즘 등)은 best-judgment로 confidence와 함께 spec.md §6에 확정. **운영 경고: 본 SPEC 배포 완료 전까지 `requireAdminTwoFactor`를 켜면 안 됨.**
 
+### Phase 9: GAP ANALYSIS REMEDIATION (레거시 대비 실측 GAP 해소, 2026-06-27)
+
+> 2026-06-27 Playwright MCP 실측 비교 결과 도출. 레거시 Rhymix PHP와 뉴버전을 동시 설치하여 화면/기능 직접 비교. 보고서: `.moai/reports/gap-analysis-legacy-vs-ts-2026-06-27.md`
+
+| ID | 제목 | 의존 | 우선순위 | 상태 |
+|---|---|---|---|---|
+| [SPEC-EDITOR-001](./SPEC-EDITOR-001/spec.md) | WYSIWYG 에디터 통합 (Tiptap 기반 리치 텍스트) | BOARD-CRUD, FILE | P0 | ✅ 구현 완료 (Slice A+B, 143 tests, `ec64e6c`) |
+| [SPEC-BOARD-UI-001](./SPEC-BOARD-UI-001/spec.md) | 게시판 목록 UI 완성 (테이블/페이지네이션/검색/정렬/공지/비밀) | BOARD-CRUD, EDITOR | P0 | 📝 draft |
+| [SPEC-SEARCH-001](./SPEC-SEARCH-001/spec.md) | 통합 검색 (PostgreSQL 전문 검색, 게시판별 그룹핑) | DOCUMENT, BOARD-UI | P1 | 📝 draft |
+| [SPEC-SOCIAL-LOGIN-001](./SPEC-SOCIAL-LOGIN-001/spec.md) | 소셜 로그인 통합 (카카오 / 구글 OAuth2) | AUTH | P1 | 📝 draft |
+| [SPEC-CAPTCHA-001](./SPEC-CAPTCHA-001/spec.md) | CAPTCHA + 이용약관 동의 (Turnstile, 가입/로그인 봇 방지) | AUTH | P1 | 📝 draft |
+| [SPEC-TAG-001](./SPEC-TAG-001/spec.md) | 태그 시스템 (게시물 태그 입력/클라우드/연관글) | DOCUMENT, EDITOR | P2 | 📝 draft |
+| [SPEC-SEO-001](./SPEC-SEO-001/spec.md) | SEO 기반 구축 (sitemap.xml / robots.txt / Open Graph / JSON-LD) | DOCUMENT, BOARD-UI | P2 | 📝 draft |
+| [SPEC-STATS-001](./SPEC-STATS-001/spec.md) | 접속 통계 (일별/월별 방문자 차트, 인기 게시물 TOP 10) | ADMIN, DOCUMENT | P2 | 📝 draft |
+| [SPEC-POLL-001](./SPEC-POLL-001/spec.md) | 설문(투표) 모듈 (게시물 연동 + 독립 위젯) | DOCUMENT, WIDGET | P3 | 📝 draft |
+| [SPEC-MESSAGE-001](./SPEC-MESSAGE-001/spec.md) | 쪽지(DM) 시스템 (회원간 1:1 개인 메시지) | AUTH, NOTIFICATION | P3 | 📝 draft |
+| [SPEC-SPAM-001](./SPEC-SPAM-001/spec.md) | 스팸 필터 (금지어/URL 블랙리스트/신고 임계치 자동 숨김) | DOCUMENT, COMMENT | P3 | 📝 draft |
+
 ### Meta-Plan 문서 (참조)
 
 | 문서 | 역할 | 상태 |
@@ -189,12 +207,28 @@ Phase 1~8의 **모든 SPEC이 구현 완료** 상태다. 미구현 SPEC은 0건�
    - **`SPEC-ADMIN-2FA-OTP-001`** (✅ 구현 완료) — 관리자 TOTP 2FA: Prisma 마이그레이션, AES-256-GCM 암호화, otplib 검증, Auth.js v5 세션 플래그, 중복 헬퍼 일원화
    - **`SPEC-TEST-PRISMA-MOCK-001`** (✅ 구현 완료) — vitest-mock-extended 기반 공유 Prisma mock 팩토리. `$transaction`, `$queryRaw`, 전 모델 accessor 완전 구현. TEST-DEBT 카테고리 1 해소
 
-### 다음 백로그 (선택적)
+### 다음 백로그 — Phase 9 (Gap Analysis 기반, 2026-06-27 신규)
 
-미작성 SPEC 2건 (우선순위 낮음):
+2026-06-27 레거시 실측 비교로 도출한 신규 SPEC 11건:
 
-- **SPEC-POLL-WIDGET-001** — SPEC-MODULE-BACKLOG-001 KEEP 항목. `/moai plan`으로 SPEC 작성 필요
-- **SPEC-MESSAGE-001** — 쪽지(PM) 기능. `/moai plan`으로 SPEC 작성 필요
+**P0 (즉시):**
+- **SPEC-EDITOR-001** — WYSIWYG 에디터 통합 (현재 plain textarea — CMS 핵심 기능 불가)
+- **SPEC-BOARD-UI-001** — 게시판 목록 UI 완성 (테이블/페이지네이션/검색/정렬 전무)
+
+**P1 (단기):**
+- **SPEC-SEARCH-001** — 통합 검색
+- **SPEC-SOCIAL-LOGIN-001** — 소셜 로그인 (카카오/구글)
+- **SPEC-CAPTCHA-001** — CAPTCHA + 이용약관 동의
+
+**P2 (중기):**
+- **SPEC-TAG-001** — 태그 시스템
+- **SPEC-SEO-001** — SEO (sitemap/robots/OG)
+- **SPEC-STATS-001** — 접속 통계 차트
+
+**P3 (장기):**
+- **SPEC-POLL-001** — 설문 모듈
+- **SPEC-MESSAGE-001** — 쪽지(DM) 시스템
+- **SPEC-SPAM-001** — 스팸 필터
 
 ### 완료된 전체 워크플로우
 
