@@ -1,8 +1,9 @@
 #!/bin/bash
 # MoAI WorktreeCreate Hook — Claude Code v2.1.49+
 #
-# 역할: agent용 git worktree를 생성하고 경로를 JSON {"worktreePath":"..."} 으로 반환한다.
-# stdout에는 JSON만 출력 — git의 informational 메시지도 완전히 억제.
+# 역할: agent용 git worktree를 생성하고 절대경로 문자열을 stdout에 출력한다.
+# Claude Code 계약: stdout = 절대경로 한 줄 (JSON 형식 금지).
+# git informational 메시지는 stderr로 억제.
 
 temp_file=$(mktemp)
 trap 'rm -f "$temp_file"' EXIT
@@ -63,15 +64,16 @@ if [ -d "$worktree_dir" ]; then
     rm -rf "$worktree_dir" 2>/dev/null || true
 fi
 
-# worktree 생성 — stdout + stderr 모두 억제 (JSON만 출력)
+# worktree 생성 — stderr 억제, stdout에는 절대경로 한 줄만 출력
+# Claude Code WorktreeCreate 계약: stdout = 절대경로 문자열 (JSON 금지)
 if git -C "$project_dir" worktree add -b "$branch_name" "$worktree_dir" >/dev/null 2>&1; then
-    printf '{"worktreePath":"%s"}\n' "$worktree_dir"
+    printf '%s\n' "$worktree_dir"
     exit 0
 fi
 
 # 브랜치 이름 충돌 시 detach 모드로 재시도
 if git -C "$project_dir" worktree add --detach "$worktree_dir" >/dev/null 2>&1; then
-    printf '{"worktreePath":"%s"}\n' "$worktree_dir"
+    printf '%s\n' "$worktree_dir"
     exit 0
 fi
 
