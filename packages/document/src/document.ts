@@ -450,17 +450,32 @@ const ListDocumentsSchema = z.object({
   // Slice C 추가
   categoryId: z.number().int().positive().optional(),
   tags: z.array(z.string()).max(10).optional(),
-  sort: z.enum(['list_order', 'update_order']).default('list_order'),
+  // SPEC-BOARD-UI-001: sort 확장 (latest, recommend, views 추가)
+  sort: z.enum(['list_order', 'update_order', 'latest', 'recommend', 'views']).default('list_order'),
   cursor: z.string().optional(),
   limit: z.number().int().min(1).max(100).optional(),
+  // SPEC-BOARD-UI-001: offset pagination (page 모드)
+  page: z.number().int().min(1).optional(),
+  pageSize: z.number().int().refine((val) => val === undefined || [10, 20, 30, 50].includes(val), {
+    message: 'pageSize must be one of 10, 20, 30, 50',
+  }).optional(),
+  // SPEC-BOARD-UI-001: search 필드 구분
+  searchField: z.enum(['title', 'content', 'author']).optional(),
 });
 
 export type ListDocumentsInput = z.input<typeof ListDocumentsSchema>;
 
+// @MX:NOTE [AUTO]: offset pagination 모드에서는 totalCount, totalPages, currentPage, pageSize 추가
+// @MX:REASON: page 파라미터 있으면 offset 모드, 없으면 cursor 모드 (기존 호환성 유지)
 export interface DocumentListResult {
   notices: Document[];
   items: Document[];
   nextCursor: string | null;
+  // SPEC-BOARD-UI-001: offset pagination 필드 (page 모드 시에만 존재)
+  totalCount?: number;
+  totalPages?: number;
+  currentPage?: number;
+  pageSize?: number;
 }
 
 export async function listDocuments(
@@ -469,6 +484,10 @@ export async function listDocuments(
 ): Promise<DocumentListResult> {
   const parsed = ListDocumentsSchema.parse(input);
 
+  // page 모드와 cursor 모드 분기
+  const isOffsetMode = parsed.page !== undefined;
+  const pageSize = parsed.pageSize ?? 20; // page 모드 기본값 20
+
   const board = await ctx.prisma.board.findUnique({
     where: { moduleInstanceId: parsed.moduleInstanceId },
   });
@@ -476,29 +495,144 @@ export async function listDocuments(
     return { notices: [], items: [], nextCursor: null };
   }
 
-  const limit = parsed.limit ?? (board.listCount ?? 20);
+  // @MX:NOTE [AUTO]: searchField 없이 search만 있으면 기본값 'title'
+  // @MX:REASON: 기존 FTS 검색(content)은 searchField='content'로 명시해야 유지됨
+  const searchField = parsed.searchField ?? (parsed.search ? 'title' : undefined);
 
-  // cursor 디코딩
-  let cursorDecoded: { listOrder: bigint; id: number } | null = null;
-  if (parsed.cursor) {
-    cursorDecoded = decodeCursor(parsed.cursor);
-  }
+  // sort 필드 매핑
+  const sortFieldMap: Record<string, 'listOrder' | 'updateOrder' | 'votedCount' | 'readedCount'> = {
+    list_order: 'listOrder',
+    update_order: 'updateOrder',
+    latest: 'listOrder', // latest는 listOrder와 동일
+    recommend: 'votedCount',
+    views: 'readedCount',
+  };
+  const sortField = sortFieldMap[parsed.sort] ?? 'listOrder';
 
-  // FTS 검색 분기 — search 가 있으면 notices 쿼리 생략 (검색 결과는 공지 구분 없음)
+  // ---------------------------------------------------------------------------
+  // 검색 처리 (searchField에 따라 분기)
+  // ---------------------------------------------------------------------------
+
   if (parsed.search) {
-    const docs = await ctx.prisma.$queryRaw<Document[]>`
-      SELECT * FROM "documents"
-      WHERE "board_id" = ${board.id}
-        AND "deleted_at" IS NULL
-        AND "status" = ${parsed.status}::text::"DocumentStatus"
-        AND "search_vector" @@ plainto_tsquery('simple', ${parsed.search})
-      ORDER BY "regdate" DESC
-      LIMIT ${limit}
-    `;
-    return { notices: [], items: docs, nextCursor: null };
+    const searchWhere: Record<string, unknown> = {
+      boardId: board.id,
+      status: parsed.status,
+      deletedAt: null,
+      isNotice: false, // 검색 시 공지 제외
+    };
+
+    if (parsed.categoryId !== undefined) {
+      searchWhere.categoryId = parsed.categoryId;
+    }
+    if (parsed.tags && parsed.tags.length > 0) {
+      searchWhere.tags = { hasEvery: parsed.tags };
+    }
+
+    // searchField별 처리
+    if (searchField === 'content') {
+      // FTS 검색 (기존 방식 유지)
+      if (isOffsetMode) {
+        // offset pagination with FTS
+        const offset = (parsed.page! - 1) * pageSize;
+        const docs = await ctx.prisma.$queryRaw<Document[]>`
+          SELECT * FROM "documents"
+          WHERE "board_id" = ${board.id}
+            AND "deleted_at" IS NULL
+            AND "status" = ${parsed.status}::text::"DocumentStatus"
+            AND "is_notice" = false
+            AND "search_vector" @@ plainto_tsquery('simple', ${parsed.search})
+          ORDER BY "regdate" DESC
+          LIMIT ${pageSize}
+          OFFSET ${offset}
+        `;
+
+        // totalCount 조회 (FTS)
+        const countResult = await ctx.prisma.$queryRaw<Array<{ count: bigint }>>`
+          SELECT COUNT(*) as count FROM "documents"
+          WHERE "board_id" = ${board.id}
+            AND "deleted_at" IS NULL
+            AND "status" = ${parsed.status}::text::"DocumentStatus"
+            AND "is_notice" = false
+            AND "search_vector" @@ plainto_tsquery('simple', ${parsed.search})
+        `;
+        const totalCount = Number(countResult[0]?.count ?? 0);
+        const totalPages = Math.ceil(totalCount / pageSize);
+
+        return {
+          notices: [],
+          items: docs,
+          nextCursor: null,
+          totalCount,
+          totalPages,
+          currentPage: parsed.page,
+          pageSize,
+        };
+      } else {
+        // cursor mode (기존 동작)
+        const limit = parsed.limit ?? (board.listCount ?? 20);
+        const docs = await ctx.prisma.$queryRaw<Document[]>`
+          SELECT * FROM "documents"
+          WHERE "board_id" = ${board.id}
+            AND "deleted_at" IS NULL
+            AND "status" = ${parsed.status}::text::"DocumentStatus"
+            AND "is_notice" = false
+            AND "search_vector" @@ plainto_tsquery('simple', ${parsed.search})
+          ORDER BY "regdate" DESC
+          LIMIT ${limit}
+        `;
+        return { notices: [], items: docs, nextCursor: null };
+      }
+    } else if (searchField === 'title') {
+      // 제목 검색 (contains insensitive)
+      searchWhere.title = { contains: parsed.search, mode: 'insensitive' };
+    } else if (searchField === 'author') {
+      // 작성자 검색 (nickName OR userIdSnapshot)
+      searchWhere.OR = [
+        { nickName: { contains: parsed.search, mode: 'insensitive' } },
+        { userIdSnapshot: { contains: parsed.search, mode: 'insensitive' } },
+      ];
+    }
+
+    // title/author 검색 실행
+    if (isOffsetMode) {
+      const offset = (parsed.page! - 1) * pageSize;
+      const [items, totalCount] = await Promise.all([
+        ctx.prisma.document.findMany({
+          where: searchWhere,
+          orderBy: [{ [sortField]: 'desc' }, { id: 'desc' }],
+          skip: offset,
+          take: pageSize,
+        }),
+        ctx.prisma.document.count({ where: searchWhere }),
+      ]);
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      return {
+        notices: [],
+        items,
+        nextCursor: null,
+        totalCount,
+        totalPages,
+        currentPage: parsed.page,
+        pageSize,
+      };
+    } else {
+      // cursor mode (title/author 검색도 cursor 미지원 시 전체 반환)
+      const limit = parsed.limit ?? (board.listCount ?? 20);
+      const items = await ctx.prisma.document.findMany({
+        where: searchWhere,
+        orderBy: [{ [sortField]: 'desc' }, { id: 'desc' }],
+        take: limit,
+      });
+      return { notices: [], items, nextCursor: null };
+    }
   }
 
-  // 공지 쿼리 — exceptNotice=false 일 때만 (FTS 검색이 아닌 경우)
+  // ---------------------------------------------------------------------------
+  // 비검색 모드 (공지 + 일반 목록)
+  // ---------------------------------------------------------------------------
+
+  // 공지 쿼리 (검색 아닌 경우에만)
   let notices: Document[] = [];
   if (!board.exceptNotice) {
     const baseNoticeWhere: Record<string, unknown> = {
@@ -520,7 +654,7 @@ export async function listDocuments(
     });
   }
 
-  // 일반 목록 쿼리
+  // 일반 목록 where 조건
   const baseItemWhere: Record<string, unknown> = {
     boardId: board.id,
     status: parsed.status,
@@ -531,9 +665,49 @@ export async function listDocuments(
   if (parsed.categoryId !== undefined) {
     baseItemWhere.categoryId = parsed.categoryId;
   }
-
   if (parsed.tags && parsed.tags.length > 0) {
     baseItemWhere.tags = { hasEvery: parsed.tags };
+  }
+
+  // offset pagination mode
+  if (isOffsetMode) {
+    const offset = (parsed.page! - 1) * pageSize;
+
+    const [items, totalCount] = await Promise.all([
+      ctx.prisma.document.findMany({
+        where: baseItemWhere,
+        orderBy: [{ [sortField]: 'desc' }, { id: 'desc' }],
+        skip: offset,
+        take: pageSize,
+      }),
+      ctx.prisma.document.count({ where: baseItemWhere }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    // @MX:NOTE [AUTO]: notices는 totalCount에 포함되지 않음 (공지는 매 페이지 반복)
+    // @MX:REASON: 레거시 Rhymix 동작 — 공지는 목록 상단 고정으로 페이지네이션에서 제외
+    return {
+      notices,
+      items,
+      nextCursor: null,
+      totalCount,
+      totalPages,
+      currentPage: parsed.page,
+      pageSize,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // cursor pagination mode (기존 동작 유지)
+  // ---------------------------------------------------------------------------
+
+  const limit = parsed.limit ?? (board.listCount ?? 20);
+
+  // cursor 디코딩
+  let cursorDecoded: { listOrder: bigint; id: number } | null = null;
+  if (parsed.cursor) {
+    cursorDecoded = decodeCursor(parsed.cursor);
   }
 
   // cursor 조건
@@ -544,8 +718,6 @@ export async function listDocuments(
       { listOrder: { equals: listOrder }, id: { lt: id } },
     ];
   }
-
-  const sortField = parsed.sort === 'update_order' ? 'updateOrder' : 'listOrder';
 
   // take limit+1 으로 다음 페이지 존재 여부 확인
   const rawItems = await ctx.prisma.document.findMany({

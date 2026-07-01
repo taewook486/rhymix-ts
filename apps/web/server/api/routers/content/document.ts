@@ -21,6 +21,8 @@ import {
   createDocument,
   updateDocument,
   deleteDocument,
+  getAdjacentDocuments,
+  voteDocument,
   BoardPermissionDeniedError,
   DocumentOwnershipError,
   ExtraVarsRequiredError,
@@ -83,6 +85,7 @@ export const contentDocumentRouter = router({
   /**
    * 게시판 글 목록 조회 — 누구나 호출 가능 (게시판 권한은 도메인에서 처리).
    * Slice C: cursor pagination, categoryId, tags, sort 파라미터 추가.
+   * SPEC-BOARD-UI-001: offset pagination (page, pageSize), searchField, sort 확장.
    */
   list: publicProcedure
     .input(
@@ -92,9 +95,17 @@ export const contentDocumentRouter = router({
         search: z.string().min(1).optional(),
         categoryId: z.number().int().positive().optional(),
         tags: z.array(z.string()).max(10).optional(),
-        sort: z.enum(['list_order', 'update_order']).default('list_order'),
+        // SPEC-BOARD-UI-001: sort 확장
+        sort: z.enum(['list_order', 'update_order', 'latest', 'recommend', 'views']).default('list_order'),
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(100).optional(),
+        // SPEC-BOARD-UI-001: offset pagination
+        page: z.number().int().min(1).optional(),
+        pageSize: z.number().int().refine((val) => val === undefined || [10, 20, 30, 50].includes(val), {
+          message: 'pageSize must be one of 10, 20, 30, 50',
+        }).optional(),
+        // SPEC-BOARD-UI-001: search field
+        searchField: z.enum(['title', 'content', 'author']).optional(),
       }),
     )
     .query(async ({ ctx, input }) => listDocuments(input, { prisma: ctx.prisma })),
@@ -196,6 +207,46 @@ export const contentDocumentRouter = router({
       try {
         return await deleteDocument(
           { id: input.id, actor: buildActorWithId(ctx.session) },
+          { prisma: ctx.prisma },
+        );
+      } catch (err) {
+        mapDomainError(err);
+      }
+    }),
+
+  /**
+   * 이전글/다음글 조회 — 누구나 호출 가능.
+   * SPEC-BOARD-UI-001: 이전글/다음글 네비게이션.
+   */
+  adjacent: publicProcedure
+    .input(
+      z.object({
+        documentId: z.number().int().positive(),
+        boardId: z.number().int().positive(),
+        sort: z.enum(['list_order', 'update_order']).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => getAdjacentDocuments(input, { prisma: ctx.prisma })),
+
+  /**
+   * 투표 — 인증 필수.
+   * SPEC-BOARD-UI-001: 추천/비추천/신고 기능.
+   */
+  vote: protectedProcedure
+    .input(
+      z.object({
+        documentId: z.number().int().positive(),
+        voteType: z.enum(['UP', 'DOWN', 'BLAME']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await voteDocument(
+          {
+            documentId: input.documentId,
+            voterId: String(ctx.session.user.id),
+            voteType: input.voteType,
+          },
           { prisma: ctx.prisma },
         );
       } catch (err) {

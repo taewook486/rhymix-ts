@@ -20,3 +20,6 @@ export * from './admin';
 export * from './secret';
 export * from './draft';
 export * from './events';
+
+// SPEC-BOARD-UI-001: adjacent documents
+export * from './adjacent';

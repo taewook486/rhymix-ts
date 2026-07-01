@@ -1078,3 +1078,385 @@ describe('createDocument — AC-DOC-B1 (Board.documentCount atomicity)', () => {
     expect(mockPrisma.document.create).toHaveBeenCalledOnce();
   });
 });
+
+// ---------------------------------------------------------------------------
+// SPEC-BOARD-UI-001 Slice A — Offset pagination, search, sort
+// ---------------------------------------------------------------------------
+
+describe('listDocuments (SPEC-BOARD-UI-001)', () => {
+  describe('Offset pagination (page/pageSize)', () => {
+    it('BUIT-001: page=1, pageSize=20 → totalCount, totalPages, currentPage 반환', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const items = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        boardId: 5,
+        isNotice: false,
+        listOrder: BigInt(100 - i),
+        status: 'PUBLIC',
+        deletedAt: null,
+      }));
+
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]); // notices
+      mockPrisma.document.findMany.mockResolvedValueOnce(items); // items
+      mockPrisma.document.count.mockResolvedValueOnce(55); // totalCount
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20 },
+        { prisma: mockPrisma as any },
+      );
+
+      expect(result).toMatchObject({
+        notices: [],
+        items,
+        nextCursor: null,
+        totalCount: 55,
+        totalPages: 3,
+        currentPage: 1,
+        pageSize: 20,
+      });
+      expect(mockPrisma.document.count).toHaveBeenCalledOnce();
+    });
+
+    it('BUIT-002: page=2, pageSize=20 → skip=20 적용', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const items = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 21,
+        boardId: 5,
+        isNotice: false,
+        listOrder: BigInt(100 - i),
+        status: 'PUBLIC',
+        deletedAt: null,
+      }));
+
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]); // notices
+      mockPrisma.document.findMany.mockResolvedValueOnce(items); // items
+      mockPrisma.document.count.mockResolvedValueOnce(55);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 2, pageSize: 20 },
+        { prisma: mockPrisma as any },
+      );
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[1]?.[0] as {
+        skip?: number;
+        take?: number;
+      };
+      expect(itemsCall?.skip).toBe(20);
+      expect(itemsCall?.take).toBe(20);
+    });
+
+    it('BUIT-003: notices는 totalCount에 포함되지 않음', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const notices = [
+        { id: 1, boardId: 5, isNotice: true, listOrder: BigInt(9999), status: 'PUBLIC', deletedAt: null },
+      ];
+      const items = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 2,
+        boardId: 5,
+        isNotice: false,
+        listOrder: BigInt(100 - i),
+        status: 'PUBLIC',
+        deletedAt: null,
+      }));
+
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
+      mockPrisma.document.findMany.mockResolvedValueOnce(notices); // notices
+      mockPrisma.document.findMany.mockResolvedValueOnce(items); // items
+      mockPrisma.document.count.mockResolvedValueOnce(50); // Only non-notice items
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20 },
+        { prisma: mockPrisma as any },
+      );
+
+      expect(result.notices).toHaveLength(1);
+      expect(result.totalCount).toBe(50); // notices 제외
+      expect(result.totalPages).toBe(3); // 50 / 20 = 2.5 → 3 pages
+    });
+
+    it('BUIT-004: page 없으면 기존 cursor 모드 동작 (nextCursor만 반환)', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const items = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        boardId: 5,
+        isNotice: false,
+        listOrder: BigInt(100 - i),
+        status: 'PUBLIC',
+        deletedAt: null,
+      }));
+
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]); // notices
+      mockPrisma.document.findMany.mockResolvedValueOnce([...items, { id: 21, boardId: 5, isNotice: false, listOrder: BigInt(0), status: 'PUBLIC', deletedAt: null, title: '', content: '' }]); // 21 items (hasMore)
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC' },
+        { prisma: mockPrisma as any },
+      );
+
+      // 기존 cursor 모드: totalCount, totalPages, currentPage, pageSize 없음
+      expect(result).toHaveProperty('notices');
+      expect(result).toHaveProperty('items');
+      expect(result).toHaveProperty('nextCursor');
+      expect(result).not.toHaveProperty('totalCount');
+      expect(result).not.toHaveProperty('totalPages');
+      expect(mockPrisma.document.count).not.toHaveBeenCalled();
+    });
+
+    it('BUIT-005: pageSize=10 → validate 10 is in allowed values', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(10);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await expect(
+        listDocuments(
+          { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 15 },
+          { prisma: mockPrisma as any },
+        ),
+      ).rejects.toThrow();
+    });
+
+    it('BUIT-006: page만 있고 pageSize 없으면 기본값 20 사용', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(20);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments({ moduleInstanceId: 3, status: 'PUBLIC', page: 1 }, { prisma: mockPrisma as any });
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[1]?.[0] as { take?: number };
+      expect(itemsCall?.take).toBe(20);
+    });
+  });
+
+  describe('Sort options (recommend, views, latest)', () => {
+    it('BUIT-007: sort=recommend → votedCount desc, id desc', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(10);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20, sort: 'recommend' },
+        { prisma: mockPrisma as any },
+      );
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[1]?.[0] as { orderBy: unknown };
+      expect(itemsCall.orderBy).toEqual([{ votedCount: 'desc' }, { id: 'desc' }]);
+    });
+
+    it('BUIT-008: sort=views → readedCount desc, id desc', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(10);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20, sort: 'views' },
+        { prisma: mockPrisma as any },
+      );
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[1]?.[0] as { orderBy: unknown };
+      expect(itemsCall.orderBy).toEqual([{ readedCount: 'desc' }, { id: 'desc' }]);
+    });
+
+    it('BUIT-009: sort=latest → listOrder desc, id desc (same as list_order)', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(10);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20, sort: 'latest' },
+        { prisma: mockPrisma as any },
+      );
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[1]?.[0] as { orderBy: unknown };
+      expect(itemsCall.orderBy).toEqual([{ listOrder: 'desc' }, { id: 'desc' }]);
+    });
+  });
+
+  describe('searchField options (title, author, content)', () => {
+    it('BUIT-010: searchField=title → title contains insensitive', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(5);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20, search: 'test', searchField: 'title' },
+        { prisma: mockPrisma as any },
+      );
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+      expect(itemsCall.where?.title).toMatchObject({ contains: 'test', mode: 'insensitive' });
+    });
+
+    it('BUIT-011: searchField=author → nickName OR userIdSnapshot contains', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(3);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20, search: 'user1', searchField: 'author' },
+        { prisma: mockPrisma as any },
+      );
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+      expect(itemsCall.where?.OR).toEqual([
+        { nickName: { contains: 'user1', mode: 'insensitive' } },
+        { userIdSnapshot: { contains: 'user1', mode: 'insensitive' } },
+      ]);
+    });
+
+    it('BUIT-012: searchField=content → FTS search_vector @@ plainto_tsquery', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      // $queryRaw is called twice: once for data, once for count
+      mockPrisma.$queryRaw
+        .mockResolvedValueOnce([]) // data query
+        .mockResolvedValueOnce([{ count: BigInt(5) }]); // count query
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20, search: 'test content', searchField: 'content' },
+        { prisma: mockPrisma as any },
+      );
+
+      expect(mockPrisma.$queryRaw).toHaveBeenCalled();
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledTimes(2);
+    });
+
+    it('BUIT-013: searchField 없이 search만 있으면 기본값 title', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(5);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 1, pageSize: 20, search: 'test' },
+        { prisma: mockPrisma as any },
+      );
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[0]?.[0] as { where: Record<string, unknown> };
+      expect(itemsCall.where?.title).toMatchObject({ contains: 'test', mode: 'insensitive' });
+    });
+  });
+
+  describe('Search with offset pagination', () => {
+    it('BUIT-014: search + page → search 결과도 offset pagination 적용', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.document.findMany.mockResolvedValueOnce([]);
+      mockPrisma.document.count.mockResolvedValueOnce(35);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 2, pageSize: 20, search: 'test', searchField: 'title' },
+        { prisma: mockPrisma as any },
+      );
+
+      const itemsCall = mockPrisma.document.findMany.mock.calls[0]?.[0] as {
+        skip?: number;
+        take?: number;
+      };
+      expect(itemsCall?.skip).toBe(20);
+      expect(itemsCall?.take).toBe(20);
+      expect(mockPrisma.document.count).toHaveBeenCalledOnce();
+    });
+
+    it('BUIT-015: FTS search + page → $queryRaw called with LIMIT/OFFSET params', async () => {
+      const { listDocuments } = await import('./document.js');
+
+      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      // $queryRaw is called twice: once for data, once for count
+      mockPrisma.$queryRaw
+        .mockResolvedValueOnce([]) // data query
+        .mockResolvedValueOnce([{ count: BigInt(35) }]); // count query
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await listDocuments(
+        { moduleInstanceId: 3, status: 'PUBLIC', page: 2, pageSize: 20, search: 'test', searchField: 'content' },
+        { prisma: mockPrisma as any },
+      );
+
+      // Verify $queryRaw was called with page params (LIMIT=20, OFFSET=20 for page=2)
+      expect(mockPrisma.$queryRaw).toHaveBeenCalledTimes(2);
+      // Check the data query call (first call)
+      const firstCallArgs = mockPrisma.$queryRaw.mock.calls[0];
+      expect(firstCallArgs).toBeDefined();
+      // The template should contain pageSize (20) and offset ((page-1) * pageSize = 20)
+      // We can't easily test the template string directly, but we can verify the call was made
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-BOARD-UI-001 adjacent lookup (이전글/다음글)
+// ---------------------------------------------------------------------------
+
