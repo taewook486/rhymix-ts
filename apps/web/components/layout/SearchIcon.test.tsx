@@ -7,8 +7,8 @@
  * - Type keyword and press Enter → navigates to /search?q={keyword}
  * - Click submit button → navigates to /search?q={keyword}
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SearchIcon } from './SearchIcon';
 
@@ -17,6 +17,15 @@ describe('SearchIcon interaction — SPEC-SEARCH-001', () => {
     // Reset window.location before each test
     delete (window as any).location;
     (window as any).location = { href: '' };
+  });
+
+  // This project does not rely on RTL's global auto-cleanup (see GlobalHeader.test.tsx
+  // for the established convention) — without this, `document.querySelector` in later
+  // tests matches stale elements left over from earlier tests' un-unmounted renders,
+  // e.g. typing into a leftover expanded input from a prior test instead of the
+  // current test's freshly rendered one.
+  afterEach(() => {
+    cleanup();
   });
 
   it('S-ICON-1: search icon renders correctly', () => {
@@ -74,8 +83,8 @@ describe('SearchIcon interaction — SPEC-SEARCH-001', () => {
     // Press Enter
     await user.keyboard('{Enter}');
 
-    // Should navigate to /search with encoded query
-    expect(capturedHref).toBe('/search?q=test+query');
+    // Should navigate to /search with encoded query (component uses encodeURIComponent, not +)
+    expect(capturedHref).toBe('/search?q=test%20query');
   });
 
   it('S-ICON-4: clicking submit button navigates to /search?q=keyword (AC-SEARCH-001)', async () => {
@@ -110,8 +119,8 @@ describe('SearchIcon interaction — SPEC-SEARCH-001', () => {
 
     await user.click(submitButton);
 
-    // Should navigate to /search with encoded query
-    expect(capturedHref).toBe('/search?q=%ED%95%9C%EA%B8%80%EA%B2%80%EA%B2%80');
+    // Should navigate to /search with encoded query (encodeURIComponent('한글검색'))
+    expect(capturedHref).toBe('/search?q=%ED%95%9C%EA%B8%80%EA%B2%80%EC%83%89');
   });
 
   it('S-ICON-5: empty query does not navigate', async () => {
