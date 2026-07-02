@@ -62,33 +62,34 @@ export const authConfig: NextAuthConfig = {
     error: '/login',
   },
   providers: [
-    // SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-001/002: Kakao/Google OAuth providers
+    // SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-001/002: Kakao/Google OAuth providers.
     //
-    // Client ID/Secret are loaded from environment variables OR admin-configurable
-    // SiteSettings (REQ-SOCIAL-005). The socialAuth helper in packages/auth
-    // resolves the actual values at runtime, falling back to env vars.
+    // Client ID/Secret are read from environment variables. NextAuth's `providers`
+    // array must be synchronous (both here and in proxy.ts's separate edge-runtime
+    // `NextAuth(authConfig)` call), so the DB-backed admin override from
+    // packages/auth's `socialAuth({ prisma })` helper (REQ-SOCIAL-005: change keys
+    // without redeploy) is NOT wired in here — that would require converting to
+    // next-auth v5's async config-factory pattern (`NextAuth(async (req) => ...)`),
+    // which has a large blast radius (proxy.ts's edge-runtime instance, ~40 test
+    // files importing authConfig as a static object) and needs its own dedicated
+    // change with edge-runtime DB-access review, not bundled into this fix.
     //
-    // @MX:NOTE: [AUTO] OAuth providers are configured via socialAuth helper.
-    //   This allows admin panel to override env vars without code deployment.
-    // @MX:SPEC: SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-005
-
-    ...(async () => {
-      const { socialAuth } = await import('@rhymix-ts/auth');
-      const config = await socialAuth({ prisma });
-
-      return [
-        Kakao({
-          clientId: config.kakao?.clientId ?? process.env.KAKAO_CLIENT_ID ?? '',
-          clientSecret: config.kakao?.clientSecret ?? process.env.KAKAO_CLIENT_SECRET ?? '',
-          allowDangerousAccountAccountLinking: true, // REQ-SOCIAL-004: account linking
-        }),
-        Google({
-          clientId: config.google?.clientId ?? process.env.GOOGLE_CLIENT_ID ?? '',
-          clientSecret: config.google?.clientSecret ?? process.env.GOOGLE_CLIENT_SECRET ?? '',
-          allowDangerousAccountAccountLinking: true, // REQ-SOCIAL-004: account linking
-        }),
-      ];
-    })(),
+    // The admin enable/disable toggle (AC-SOCIAL-004) still works independently of
+    // this: the login page hides the button based on a query to the admin settings,
+    // regardless of whether the provider below is registered with env-var creds.
+    //
+    // @MX:TODO: [AUTO] REQ-SOCIAL-005's "no redeploy needed" client ID/secret override
+    //   is not implemented — only the enable/disable toggle is live. Wiring DB-backed
+    //   credentials requires the async config-factory refactor described above.
+    // @MX:SPEC: SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-001, REQ-SOCIAL-002, REQ-SOCIAL-004
+    Kakao({
+      clientId: process.env.KAKAO_CLIENT_ID ?? '',
+      clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
+    }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    }),
 
     Credentials({
       name: 'credentials',
