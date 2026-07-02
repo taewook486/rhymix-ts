@@ -130,3 +130,7 @@ export type {
   SoftDeleteInput,
   SoftDeleteResult,
 } from './admin';
+
+// SPEC-SOCIAL-LOGIN-001 — Social OAuth configuration (REQ-SOCIAL-005).
+export { socialAuth } from './social-auth';
+export type { SocialAuthConfig, SocialAuthContext } from './social-auth';

@@ -73,6 +73,11 @@ interface JwtCallbackArgs {
    */
   session?: unknown;
   isNewUser?: boolean;
+  /**
+   * SPEC-SOCIAL-LOGIN-001: OAuth provider 정보 (signIn 콜백에서만 제공).
+   * account.provider (kakao/google)와 account.providerAccountId가 포함된다.
+   */
+  account?: Record<string, unknown> | null;
 }
 
 interface SessionCallbackArgs {

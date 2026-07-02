@@ -1,5 +1,6 @@
 /**
  * 글로벌 헤더 — 도메인 기본 메뉴를 읽어 GNB를 렌더링하는 Server Component.
+ * SPEC-SEARCH-001: 헤더 검색 UI 추가
  */
 import Link from 'next/link';
 import { headers } from 'next/headers';
@@ -10,6 +11,7 @@ import { createNotificationService } from '@rhymix-ts/notification';
 import { NotificationBell } from '@rhymix-ts/ui/components';
 import { markOneRead, markAllRead } from '@/app/(member)/notifications/actions';
 import { UserAuthSection } from '@/components/layout/UserAuthSection';
+import { SearchIcon } from './SearchIcon';
 
 export async function GlobalHeader() {
   const h = await headers();
@@ -74,6 +76,7 @@ export async function GlobalHeader() {
           </ul>
         </nav>
         <div className="ml-auto flex items-center gap-3">
+          <SearchIcon />
           {userId != null && (
             <NotificationBell
               unreadCount={unreadCount}

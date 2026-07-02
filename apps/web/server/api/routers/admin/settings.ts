@@ -1089,4 +1089,76 @@ export const adminSettingsRouter = router({
 
       return { success: true };
     }),
+
+  // ==========================================================================
+  // Social Login Settings (REQ-SOCIAL-005)
+  // ==========================================================================
+
+  /**
+   * 소셜 로그인 설정 조회 (REQ-SOCIAL-005).
+   */
+  getSocial: protectedAdminProcedure.query(async ({ ctx }) => {
+    const settings = {
+      kakao: {
+        enabled: await getSiteSetting(ctx, 'social.kakao.enabled', false),
+        clientId: await getSiteSetting(ctx, 'social.kakao.clientId', ''),
+        clientSecret: await getSiteSetting(ctx, 'social.kakao.clientSecret', ''),
+      },
+      google: {
+        enabled: await getSiteSetting(ctx, 'social.google.enabled', false),
+        clientId: await getSiteSetting(ctx, 'social.google.clientId', ''),
+        clientSecret: await getSiteSetting(ctx, 'social.google.clientSecret', ''),
+      },
+    };
+
+    return settings;
+  }),
+
+  /**
+   * 소셜 로그인 설정 업데이트 (REQ-SOCIAL-005).
+   *
+   * 여러 SiteSetting 키를 하나의 트랜잭션으로 묶어 원자적으로 적용한다.
+   */
+  updateSocial: protectedAdminProcedure
+    .input(
+      z.object({
+        kakao: z.object({
+          enabled: z.boolean(),
+          clientId: z.string().optional(),
+          clientSecret: z.string().optional(),
+        }),
+        google: z.object({
+          enabled: z.boolean(),
+          clientId: z.string().optional(),
+          clientSecret: z.string().optional(),
+        }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        // Kakao settings
+        await setSiteSetting(txCtx, 'social.kakao.enabled', input.kakao.enabled, actorId);
+        if (input.kakao.clientId !== undefined) {
+          await setSiteSetting(txCtx, 'social.kakao.clientId', input.kakao.clientId, actorId);
+        }
+        if (input.kakao.clientSecret !== undefined) {
+          await setSiteSetting(txCtx, 'social.kakao.clientSecret', input.kakao.clientSecret, actorId);
+        }
+
+        // Google settings
+        await setSiteSetting(txCtx, 'social.google.enabled', input.google.enabled, actorId);
+        if (input.google.clientId !== undefined) {
+          await setSiteSetting(txCtx, 'social.google.clientId', input.google.clientId, actorId);
+        }
+        if (input.google.clientSecret !== undefined) {
+          await setSiteSetting(txCtx, 'social.google.clientSecret', input.google.clientSecret, actorId);
+        }
+      });
+
+      return { success: true };
+    }),
 });

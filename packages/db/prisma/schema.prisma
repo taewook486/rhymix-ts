@@ -321,6 +321,7 @@ model User {
   agreements        MemberAgreement[]
   revocations       SessionRevocation[]
   adminFavorites    AdminFavorite[]
+  socialAccounts    SocialAccount[]
   // SPEC-CONTENT-001 Slice A: 게시판 모듈 역참조
   documentsAuthored Document[]          @relation("DocumentAuthor")
   commentsAuthored  Comment[]           @relation("CommentAuthor")
@@ -542,6 +543,27 @@ model SessionRevocation {
 
   @@index([userId, revokedAt])
   @@map("session_revocations")
+}
+
+// =====================================================================
+// SPEC-SOCIAL-LOGIN-001: Social Account Linkage
+// =====================================================================
+
+// REQ-SOCIAL-006: Social account linkage table (custom, NOT Auth.js's Account model).
+// This model stores the link between a User and their social OAuth provider accounts.
+// One User can have multiple linked social accounts (1:N).
+model SocialAccount {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  provider          String   // 'kakao' | 'google' (future: 'naver', 'facebook')
+  providerAccountId String   // Provider-specific unique user ID
+  createdAt         DateTime @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("social_accounts")
 }
 
 // =====================================================================
