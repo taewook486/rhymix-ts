@@ -29,7 +29,7 @@ import Google from 'next-auth/providers/google';
 import { consumeAutoLoginMarker, login } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
 
-import { createJwtCallback, createSessionCallback } from './callbacks';
+import { createJwtCallback, createSessionCallback, createSignInCallback } from './callbacks';
 
 /**
  * Best-effort IP/User-Agent 추출 — Auth.js Credentials authorize() 의 두 번째
@@ -173,127 +173,13 @@ export const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     /**
-     * SPEC-SOCIAL-LOGIN-001: OAuth sign-in callback for account linking (REQ-SOCIAL-003/004).
-     *
-     * This callback is invoked during OAuth sign-in flow (Kakao/Google) AFTER the
-     * user has authenticated with the provider but BEFORE a session is issued.
-     *
-     * Flow:
-     * 1. Check if SocialAccount exists for (provider, providerAccountId) → return existing user
-     * 2. If no SocialAccount, check if User exists with the same email → account linking (REQ-SOCIAL-004)
-     * 3. If no existing user either, create new User + SocialAccount → new social signup (REQ-SOCIAL-003)
-     *
-     * @MX:ANCHOR: OAuth sign-in 계정 연결/생성의 유일한 진입점.
-     * @MX:REASON: OAuth provider 인증 후 세션 발급 전에 계정 생성/연결을 결정해야 한다.
-     * @MX:SPEC: SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-003, REQ-SOCIAL-004, REQ-SOCIAL-006
+     * SPEC-SOCIAL-LOGIN-001: OAuth sign-in callback for account linking.
+     * Body factored out to ./callbacks (createSignInCallback) for unit testability,
+     * matching the jwt/session callback pattern (Slice D1).
      */
-    async signIn({ account, user, profile }: { account: Record<string, unknown> | null; user: { id?: string } | null; profile?: Record<string, unknown> | null }) {
-      // Skip OAuth handling if no account info (credentials login)
-      if (!account || !user?.id) {
-        return true;
-      }
-
-      const provider = account.provider as string; // 'kakao' | 'google'
-      const providerAccountId = account.providerAccountId as string;
-
-      // Only handle Kakao/Google providers
-      if (provider !== 'kakao' && provider !== 'google') {
-        return true;
-      }
-
-      const email = (user.email as string) || (profile?.email as string) || '';
-      const nickname = (user.name as string) || (profile?.name as string) || '';
-
-      // REQ-SOCIAL-003/004: Check for existing SocialAccount or User with same email
-      const userId = Number.parseInt(String(user.id), 10);
-
-      try {
-        // 1. Check if SocialAccount already exists → return existing user
-        const existingSocialAccount = await prisma.socialAccount.findUnique({
-          where: {
-            provider_providerAccountId: {
-              provider,
-              providerAccountId,
-            },
-          },
-        });
-
-        if (existingSocialAccount) {
-          // Account already linked → proceed with sign-in
-          return true;
-        }
-
-        // 2. Check if User exists with same email → account linking (REQ-SOCIAL-004)
-        const existingUserByEmail = email
-          ? await prisma.user.findUnique({
-              where: { emailAddress: email },
-            })
-          : null;
-
-        if (existingUserByEmail) {
-          // Create SocialAccount link to existing user (auto-link policy)
-          // TODO: REQ-SOCIAL-004 requires explicit confirmation UI, but for MVP we auto-link
-          // and inform via post-login toast/banner
-          await prisma.socialAccount.create({
-            data: {
-              userId: existingUserByEmail.id,
-              provider,
-              providerAccountId,
-            },
-          });
-
-          // Update user.id to point to the existing user
-          user.id = String(existingUserByEmail.id);
-          return true;
-        }
-
-        // 3. New social signup (REQ-SOCIAL-003) → create User + SocialAccount
-        // Handle nickname collision (REQ-SOCIAL-003)
-        let finalNickname = nickname || `user_${provider}_${providerAccountId.slice(0, 8)}`;
-
-        // Check for nickname collision and append suffix if needed
-        const existingNickname = await prisma.user.findUnique({
-          where: { nickName: finalNickname },
-        });
-
-        if (existingNickname) {
-          // Simple collision handling: append random suffix
-          // TODO: REQ-SOCIAL-003 requires nickname picker UI; for MVP we auto-generate
-          const randomSuffix = Math.floor(Math.random() * 1000);
-          finalNickname = `${finalNickname}_${randomSuffix}`;
-        }
-
-        // Create new user
-        const newUser = await prisma.user.create({
-          data: {
-            userId: `${provider}_${providerAccountId}`, // TEMP: userId 컬럼은 deprecated 예정
-            emailAddress: email || `${provider}_${providerAccountId}@temp.local`, // TEMP: email 없는 경우 임시값
-            passwordHash: '', // OAuth 사용자는 비밀번호 없음 (SOCIAL_USER 패밀리아?)
-            nickName: finalNickname,
-            status: 'APPROVED', // REQ-SOCIAL-003: 이메일 인증 없이 즉시 승인
-            // OAuth 기본정보로 자동 채우기 (profile.image, etc.)
-            userName: finalNickname,
-          },
-        });
-
-        // Create SocialAccount link
-        await prisma.socialAccount.create({
-          data: {
-            userId: newUser.id,
-            provider,
-            providerAccountId,
-          },
-        });
-
-        // Update user.id to point to the new user
-        user.id = String(newUser.id);
-        return true;
-      } catch (error) {
-        // Log error but don't block sign-in (fallback to provider default behavior)
-        console.error('OAuth account linking error:', error);
-        return true;
-      }
-    },
+    signIn: createSignInCallback({ prisma }) as unknown as NonNullable<
+      NextAuthConfig['callbacks']
+    >['signIn'],
     /**
      * /admin 경로 보호. 본 콜백은 middleware.ts 에서도 사용 가능하지만, Slice C 는
      * Auth.js 기본 미들웨어 통합만 제공하고 세분화된 RBAC 는 Slice D 에서 다룬다.
