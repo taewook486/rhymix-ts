@@ -5,7 +5,7 @@
  * prisma 는 apps/web 레이어에서 주입됨 — 직접 import 금지.
  *
  * @MX:NOTE [AUTO]: BoardViewPage는 BoardIndexPage 와 동일한 prisma 주입 패턴을 따름.
- * @MX:SPEC: SPEC-CONTENT-001
+ * @MX:SPEC: SPEC-CONTENT-001, SPEC-BOARD-UI-001 REQ-BUI-006, REQ-BUI-007
  */
 import React from 'react';
 import type { PrismaClient } from '@prisma/client';
@@ -50,7 +50,7 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
  *
  * @MX:ANCHOR [AUTO]: 문서 상세 보기 — apps/web 라우터 + boardModule.routes.view 에서 호출.
  * @MX:REASON: fan_in >= 3 (apps/web/app/[mid]/[id]/page.tsx, boardModule.routes, 테스트).
- * @MX:SPEC: SPEC-CONTENT-001
+ * @MX:SPEC: SPEC-CONTENT-001, SPEC-BOARD-UI-001 REQ-BUI-006, REQ-BUI-007
  */
 export async function BoardViewPage(props: BoardViewPageProps): Promise<React.ReactElement> {
   const { instance, documentId, prisma, session } = props;

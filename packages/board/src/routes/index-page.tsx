@@ -175,7 +175,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
                 <span className="ml-1" aria-label="비밀글">🔒</span>
               )}
             </td>
-            <td>{doc.nickName ?? (doc.author as { nickName?: string } | null)?.nickName ?? '-'}</td>
+            <td>{doc.nickName ?? '-'}</td>
             <td>{formatDate(new Date(doc.regdate))}</td>
             <td>{doc.readedCount}</td>
             <td>{doc.votedCount}</td>
@@ -202,7 +202,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
                   <span className="ml-1" aria-label="비밀글">🔒</span>
                 )}
               </td>
-              <td>{doc.nickName ?? (doc.author as { nickName?: string } | null)?.nickName ?? '-'}</td>
+              <td>{doc.nickName ?? '-'}</td>
               <td>{formatDate(new Date(doc.regdate))}</td>
               <td>{doc.readedCount}</td>
               <td>{doc.votedCount}</td>
@@ -235,7 +235,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
             )}
           </div>
           <div className="text-gray-600 text-sm mt-1">
-            {doc.nickName ?? (doc.author as { nickName?: string } | null)?.nickName ?? '-'} | {formatDate(new Date(doc.regdate))} | 조회 {doc.readedCount} | 추천 {doc.votedCount}
+            {doc.nickName ?? '-'} | {formatDate(new Date(doc.regdate))} | 조회 {doc.readedCount} | 추천 {doc.votedCount}
           </div>
         </div>
       ))}
@@ -261,7 +261,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
               )}
             </div>
             <div className="text-gray-600 text-sm mt-1 ml-10">
-              {doc.nickName ?? (doc.author as { nickName?: string } | null)?.nickName ?? '-'} | {formatDate(new Date(doc.regdate))} | 조회 {doc.readedCount} | 추천 {doc.votedCount}
+              {doc.nickName ?? '-'} | {formatDate(new Date(doc.regdate))} | 조회 {doc.readedCount} | 추천 {doc.votedCount}
             </div>
           </div>
         );

@@ -44,15 +44,12 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({
             id: 1,
             listCount: 20,
             pageCount: 10,
-          }),
-        },
-      });
+          } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -100,11 +97,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -151,11 +145,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -211,11 +202,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -260,11 +248,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -309,11 +294,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -349,11 +331,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -386,11 +365,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -423,11 +399,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 5 }), // pageCount=5
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 5 } as never); // pageCount=5
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -442,10 +415,13 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
       const node = await BoardIndexPage(fakeProps as any);
       const html = renderToStaticMarkup(node as React.ReactElement);
 
-      // pageCount=5 이므로 페이지네이션이 표시되어야 함
-      // 모든 페이지(1-10)가 다 표시되는지 확인하지 않고, page 네비게이션이 존재하는지만 확인
-      expect(html).toContain('data-testid="pagination"'); // pagination 존재
-      expect(html).toContain('href="/board?page=2"'); // 적어도 page=2 링크는 있어야 함
+      // pageCount=5, currentPage=5 이므로 [3,4,5,6,7] 슬라이딩 윈도가 렌더되어야 함
+      // 윈도 밖의 page=2, page=9 링크는 없어야 하고, 윈도 내부의 page=3/7 링크는 있어야 함
+      expect(html).toContain('data-testid="pagination"');
+      expect(html).toContain('href="/board?page=3"');
+      expect(html).toContain('href="/board?page=7"');
+      expect(html).not.toContain('href="/board?page=2"');
+      expect(html).not.toContain('href="/board?page=9"');
     });
   });
 
@@ -465,11 +441,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -505,11 +478,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -541,11 +511,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -583,11 +550,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -621,11 +585,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -657,11 +618,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -699,11 +657,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         ]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -738,11 +693,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -789,11 +741,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -871,11 +820,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -916,11 +862,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 30, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 30, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
@@ -954,11 +897,8 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
         listCategoryTree: vi.fn().mockResolvedValue([]),
       }));
 
-      const mockPrisma = createMockPrismaClient({
-        board: {
-          findUnique: vi.fn().mockResolvedValue({ listCount: 20, pageCount: 10 }),
-        },
-      });
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
 
       const { BoardIndexPage } = await import('./index-page.js');
 
