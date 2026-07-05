@@ -242,3 +242,6 @@ coverage/
 
 # Playwright MCP debug artifacts (console logs, screenshots)
 .playwright-mcp/
+
+# Legacy vs new comparison screenshots (reference only, not versioned)
+screenshots/
