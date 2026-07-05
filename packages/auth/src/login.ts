@@ -27,6 +27,15 @@
 import type { PrismaClient } from '@rhymix-ts/db';
 
 import { hashPassword, verifyPassword } from './password';
+// SPEC-CAPTCHA-001 REQ-CAPTCHA-004: Turnstile verification
+import { verifyTurnstileToken } from './captcha';
+
+/**
+ * ISSUE #1 FIX: CustomException for CAPTCHA_REQUIRED so authorize can distinguish it
+ */
+class CAPTCHARequiredException extends Error {
+  code = 'CAPTCHA_REQUIRED';
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,6 +47,8 @@ export interface LoginInput {
   password: string;
   ip: string;
   userAgent?: string;
+  /** SPEC-CAPTCHA-001 REQ-CAPTCHA-004: CAPTCHA token (required after N failures) */
+  captchaToken?: string;
 }
 
 export interface LoginConfig {
@@ -49,6 +60,12 @@ export interface LoginConfig {
   windowMinutes?: number;
   /** REQ-AUTH-032: 비밀번호 갱신 주기(일). 미설정(undefined)이면 강제 변경 없음. */
   passwordForceChangeDays?: number;
+  /** SPEC-CAPTCHA-001 REQ-CAPTCHA-004: 로그인 CAPTCHA 활성화 여부 */
+  captchaEnabled?: boolean;
+  /** SPEC-CAPTCHA-001 REQ-CAPTCHA-004: Turnstile secret key */
+  captchaSecretKey?: string;
+  /** SPEC-CAPTCHA-001 REQ-CAPTCHA-004: 실패 횟수 기준 CAPTCHA 요구 (기본 5) */
+  captchaThreshold?: number;
 }
 
 /** Public-facing user payload — never includes passwordHash. */
@@ -73,9 +90,16 @@ export interface LoginResult {
   needsPasswordChange: boolean;
 }
 
+/**
+ * 로그인 실패 코드 — 소비 측(apps/web auth-state/actions)이 CAPTCHA_REQUIRED를
+ * 포함한 전체 유니온을 타입 안전하게 참조할 수 있도록 명명된 별칭으로 노출한다.
+ * SPEC-CAPTCHA-001 REQ-CAPTCHA-004.
+ */
+export type LoginErrorCode = 'INVALID_CREDENTIALS' | 'RATE_LIMITED' | 'CAPTCHA_REQUIRED';
+
 export interface LoginFailure {
   ok: false;
-  code: 'INVALID_CREDENTIALS' | 'RATE_LIMITED';
+  code: LoginErrorCode;
   // 의도적으로 추가 필드 없음 — REQ-AUTH-051.
 }
 
@@ -125,8 +149,8 @@ export async function login(
   const ip = rawInput.ip;
   const userAgent = rawInput.userAgent ?? '';
 
-  // 0.5) Rate-limit gate — REQ-AUTH-033, AC-AUTH-033.
-  //   window 내 INVALID_CREDENTIALS 실패 횟수가 maxErrorCount 이상이면 즉시 차단.
+  // 0.5) SPEC-CAPTCHA-001 REQ-CAPTCHA-004: 연속 실패 기반 CAPTCHA 요구 (우선 검사).
+  //   ISSUE #2 FIX: CAPTCHA 검사를 rate-limit hard block 이전에 실행하여 CAPTCHA_REQUIRED 도달 가능하게 함.
   const maxErrorCount = ctx.config.maxErrorCount ?? 5;
   const windowMinutes = ctx.config.windowMinutes ?? 10;
   const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000);
@@ -137,6 +161,63 @@ export async function login(
       createdAt: { gt: windowStart },
     } as never,
   });
+
+  const captchaEnabled = ctx.config.captchaEnabled && ctx.config.captchaSecretKey;
+  const captchaThreshold = ctx.config.captchaThreshold ?? 5;
+
+  // CAPTCHA 활성화 + 실패 횟수 도달 시 CAPTCHA 검증 우선 시도
+  if (captchaEnabled && failCount >= captchaThreshold) {
+    if (!rawInput.captchaToken) {
+      await ctx.prisma.loginAttempt.create({
+        data: {
+          ip,
+          identifier,
+          result: 'RATE_LIMITED',
+        } as never,
+      });
+      // ISSUE #1 FIX: CustomException 던징으로 authorize에서 CAPTCHA_REQUIRED 식별 가능
+      throw new CAPTCHARequiredException();
+    }
+
+    // CAPTCHA 토큰 검증
+    try {
+      const captchaResult = await verifyTurnstileToken({
+        token: rawInput.captchaToken,
+        secretKey: ctx.config.captchaSecretKey!,
+        remoteIp: ip,
+      });
+      if (!captchaResult.success) {
+        await ctx.prisma.loginAttempt.create({
+          data: {
+            ip,
+            identifier,
+            result: 'RATE_LIMITED',
+          } as never,
+        });
+        // ISSUE #1 FIX: CustomException 던징
+        throw new CAPTCHARequiredException();
+      }
+      // CAPTCHA 성공 → 로그인 시도 계속 진행 (아래 rate-limit gate 통과 가능)
+    } catch (err) {
+      // 이미 CAPTCHA_REQUIRED 로 판정되어 던져진 예외는 그대로 전파 (fail-closed 중복 처리 방지).
+      if (err instanceof CAPTCHARequiredException) {
+        throw err;
+      }
+      // Turnstile API 호출 실패(네트워크 오류 등) → fail-closed
+      await ctx.prisma.loginAttempt.create({
+        data: {
+          ip,
+          identifier,
+          result: 'RATE_LIMITED',
+        } as never,
+      });
+      throw new CAPTCHARequiredException();
+    }
+  }
+
+  // 0.75) Rate-limit hard block — REQ-AUTH-033, AC-AUTH-033.
+  //   window 내 INVALID_CREDENTIALS 실패 횟수가 maxErrorCount 이상이면 즉시 차단.
+  //   NOTE: CAPTCHA 검증이 성공했더라도 여전히 별도 검사 수행 (이중 보안)
   if (failCount >= maxErrorCount) {
     await ctx.prisma.loginAttempt.create({
       data: {

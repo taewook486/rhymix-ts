@@ -30,6 +30,7 @@ import { consumeAutoLoginMarker, login } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
 
 import { createJwtCallback, createSessionCallback, createSignInCallback } from './callbacks';
+import { resolveDefaultSiteId } from './site';
 
 /**
  * Best-effort IP/User-Agent 추출 — Auth.js Credentials authorize() 의 두 번째
@@ -98,6 +99,8 @@ export const authConfig: NextAuthConfig = {
         password: { label: 'Password', type: 'password' },
         autologinUserId: { label: 'AutoLoginUserId', type: 'text' },
         autologinNonce: { label: 'AutoLoginNonce', type: 'text' },
+        // ISSUE #1 FIX: captchaToken 필드 추가 (Turnstile 위젯에서 전송)
+        captchaToken: { label: 'CaptchaToken', type: 'text' },
       },
       // @MX:ANCHOR: NextAuth Credentials Provider 의 유일한 인증 진입점.
       //   autologin (Branch A, Slice H) / password (Branch B, Slice C) 두 경로가
@@ -156,9 +159,33 @@ export const authConfig: NextAuthConfig = {
           return null;
         }
         const { ip, userAgent } = extractClientHints(req as Request);
+
+        // ISSUE #1 FIX: captchaToken 추출
+        const captchaToken =
+          typeof credentials?.captchaToken === 'string' ? credentials.captchaToken : undefined;
+
+        // ISSUE #1 FIX: SiteSettings에서 CAPTCHA 설정 동적으로 로드
+        const siteId = await resolveDefaultSiteId(prisma);
+        const [captchaLoginEnabled, captchaSecretKey, captchaThreshold] = await Promise.all([
+          prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.login.enabled' } } }),
+          prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.turnstile.secretKey' } } }),
+          prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.login.captchaThreshold' } } }),
+        ]);
+
+        const captchaEnabled = Boolean(captchaLoginEnabled?.value) && Boolean(captchaSecretKey?.value);
+
         const result = await login(
-          { identifier, password, ip, userAgent },
-          { prisma, config: { passwordPolicy: 'normal' } },
+          { identifier, password, ip, userAgent, captchaToken },
+          {
+            prisma,
+            config: {
+              passwordPolicy: 'normal',
+              // ISSUE #1 FIX: CAPTCHA 설정 주입
+              captchaEnabled,
+              captchaSecretKey: captchaSecretKey?.value as string,
+              captchaThreshold: (captchaThreshold?.value as number) ?? 5,
+            },
+          },
         );
         if (!result.ok) {
           return null;

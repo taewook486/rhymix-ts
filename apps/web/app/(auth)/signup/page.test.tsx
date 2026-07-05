@@ -3,7 +3,7 @@
  */
 
 /**
- * Specification tests for Signup Page — SPEC-AUTH-001 Slice F.
+ * Specification tests for Signup Page — SPEC-AUTH-001 Slice F + SPEC-CAPTCHA-001.
  *
  * SignupForm 컴포넌트의 렌더링 및 에러 상태를 검증한다.
  */
@@ -35,11 +35,61 @@ vi.mock('@/lib/auth/actions', () => ({
   initialAuthActionState: { ok: true },
 }));
 
+// Mock tRPC provider - provide captcha config and terms list mock data
+vi.mock('@/providers/TRPCProvider', () => ({
+  trpc: {
+    public: {
+      captcha: {
+        getConfig: {
+          useQuery: () => ({
+            data: {
+              signupEnabled: true,
+              loginEnabled: false,
+              siteKey: 'test-site-key',
+            },
+          }),
+        },
+      },
+      terms: {
+        listActive: {
+          useQuery: () => ({
+            data: [
+              {
+                id: 1,
+                type: 'terms',
+                title: '이용약관',
+                content: '이용약관 내용',
+                required: true,
+              },
+            ],
+          }),
+        },
+      },
+    },
+  },
+}));
+
 vi.mock('next/link', () => ({
   default: (props: { href: string; children: React.ReactNode; className?: string }) => {
     const { href, children, ...rest } = props;
     return React.createElement('a', { href, ...rest }, children);
   },
+}));
+
+// Mock child components
+vi.mock('./TermsConsent', () => ({
+  TermsConsent: ({ selectedAgreements, onToggleAgreement }: any) => (
+    <div data-testid="terms-consent">
+      <button onClick={() => onToggleAgreement({ id: 1, type: 'terms', required: true })}>Toggle Term 1</button>
+    </div>
+  ),
+}));
+
+vi.mock('./TurnstileWidget', () => ({
+  TurnstileWidget: React.forwardRef(({ onSuccess }: any, ref: any) => {
+    React.useImperativeHandle(ref, () => ({ reset: vi.fn() }));
+    return <div data-testid="turnstile-widget" />;
+  }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -55,8 +105,11 @@ describe('SignupPage', () => {
 
   function setupNormalState() {
     useActionStateMock.mockReturnValue([{ ok: true }, vi.fn(), false]);
-    // useState: submitted = false, setSubmitted = noop
-    useStateMock.mockReturnValue([false, vi.fn()]);
+    // useState mocks: submitted=false, agreements=empty array, captchaToken=null, requiredTermsCount=0
+    useStateMock.mockReturnValueOnce([false, vi.fn()]); // submitted
+    useStateMock.mockReturnValueOnce([[], vi.fn()]); // agreements (changed from Set to Array)
+    useStateMock.mockReturnValueOnce([null, vi.fn()]); // captchaToken
+    useStateMock.mockReturnValueOnce([0, vi.fn()]); // requiredTermsCount (4th useState added)
   }
 
   it('userId, email, password, nickName 입력 필드를 렌더링', async () => {
@@ -68,6 +121,23 @@ describe('SignupPage', () => {
     expect(screen.getByLabelText(/이메일/i)).toBeDefined();
     expect(screen.getByLabelText(/비밀번호/i)).toBeDefined();
     expect(screen.getByLabelText(/닉네임/i)).toBeDefined();
+  });
+
+  it('이용약관 동의 컴포넌트를 렌더링', async () => {
+    setupNormalState();
+    const { default: SignupPage } = await import('./page');
+    render(React.createElement(SignupPage));
+
+    expect(screen.getByTestId('terms-consent')).toBeDefined();
+  });
+
+  it('CAPTCHA 활성화 시 Turnstile 위젯을 렌더링', async () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'test-site-key';
+    setupNormalState();
+    const { default: SignupPage } = await import('./page');
+    render(React.createElement(SignupPage));
+
+    expect(screen.getByTestId('turnstile-widget')).toBeDefined();
   });
 
   it('회원가입 버튼을 렌더링', async () => {
@@ -94,7 +164,10 @@ describe('SignupPage', () => {
       vi.fn(),
       false,
     ]);
-    useStateMock.mockReturnValue([false, vi.fn()]);
+    useStateMock.mockReturnValueOnce([false, vi.fn()]); // submitted
+    useStateMock.mockReturnValueOnce([[], vi.fn()]); // agreements (changed from Set to Array)
+    useStateMock.mockReturnValueOnce([null, vi.fn()]); // captchaToken
+    useStateMock.mockReturnValueOnce([0, vi.fn()]); // requiredTermsCount (4th useState added)
 
     const { default: SignupPage } = await import('./page');
     render(React.createElement(SignupPage));
@@ -107,7 +180,10 @@ describe('SignupPage', () => {
   it('성공 제출 후 이메일 확인 메시지 표시', async () => {
     useActionStateMock.mockReturnValue([{ ok: true }, vi.fn(), false]);
     // submitted = true
-    useStateMock.mockReturnValue([true, vi.fn()]);
+    useStateMock.mockReturnValueOnce([true, vi.fn()]); // submitted
+    useStateMock.mockReturnValueOnce([[], vi.fn()]); // agreements (changed from Set to Array)
+    useStateMock.mockReturnValueOnce([null, vi.fn()]); // captchaToken
+    useStateMock.mockReturnValueOnce([0, vi.fn()]); // requiredTermsCount (4th useState added)
 
     const { default: SignupPage } = await import('./page');
     render(React.createElement(SignupPage));

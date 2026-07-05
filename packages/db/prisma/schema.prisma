@@ -46,6 +46,7 @@ model Site {
   spamDeniedIps   SpamDeniedIp[]
   spamRules       SpamRule[]
   polls           Poll[]
+  terms           Terms[]
 
   @@map("sites")
 }
@@ -564,6 +565,29 @@ model SocialAccount {
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@map("social_accounts")
+}
+
+// =====================================================================
+// SPEC-CAPTCHA-001: Terms of Service / Privacy Policy Management
+// =====================================================================
+
+// REQ-CAPTCHA-002: 약관 내용 관리를 위한 Terms 모델
+// 사이트별로 이용약관, 개인정보처리방침, 선택 약관을 관리한다
+model Terms {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  type      String   // 'terms' | 'privacy' | 'custom'
+  title     String
+  content   String   @db.Text
+  required  Boolean  @default(true)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, type, active])
+  @@map("terms")
 }
 
 // =====================================================================

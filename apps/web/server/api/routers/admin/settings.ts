@@ -637,6 +637,99 @@ export const adminSettingsRouter = router({
     }),
 
   // ==========================================================================
+  // CAPTCHA Settings (SPEC-CAPTCHA-001 REQ-CAPTCHA-005)
+  // ==========================================================================
+
+  /**
+   * CAPTCHA 설정 조회.
+   */
+  getCaptcha: protectedAdminProcedure.query(async ({ ctx }) => {
+    const settings = {
+      signupEnabled: await getSiteSetting(ctx, 'security.captcha.signup.enabled', false),
+      loginEnabled: await getSiteSetting(ctx, 'security.captcha.login.enabled', false),
+      turnstileSiteKey: await getSiteSetting(ctx, 'security.captcha.turnstile.siteKey', ''),
+      turnstileSecretKey: await getSiteSetting(ctx, 'security.captcha.turnstile.secretKey', ''),
+      loginCaptchaThreshold: await getSiteSetting(ctx, 'security.login.captchaThreshold', 5),
+    };
+
+    return z
+      .object({
+        signupEnabled: z.boolean(),
+        loginEnabled: z.boolean(),
+        turnstileSiteKey: z.string(),
+        turnstileSecretKey: z.string(),
+        loginCaptchaThreshold: z.number().int().min(1).max(10),
+      })
+      .parse(settings);
+  }),
+
+  /**
+   * CAPTCHA 설정 업데이트.
+   */
+  updateCaptcha: protectedAdminProcedure
+    .input(
+      z
+        .object({
+          signupEnabled: z.boolean().default(false),
+          loginEnabled: z.boolean().default(false),
+          turnstileSiteKey: z.string().optional(),
+          turnstileSecretKey: z.string().optional(),
+          loginCaptchaThreshold: z.number().int().min(1).max(10).default(5),
+        })
+        .refine(
+          (data) => {
+            // ISSUE #4 FIX: Cannot enable captcha without keys
+            if (data.signupEnabled || data.loginEnabled) {
+              const hasSiteKey = data.turnstileSiteKey !== undefined && data.turnstileSiteKey.length > 0;
+              const hasSecretKey = data.turnstileSecretKey !== undefined && data.turnstileSecretKey.length > 0;
+              return hasSiteKey && hasSecretKey;
+            }
+            return true;
+          },
+          {
+            message: 'CAPTCHA를 활성화하려면 Turnstile Site Key와 Secret Key를 모두 입력해야 합니다.',
+            path: ['turnstileSiteKey', 'turnstileSecretKey'],
+          },
+        ),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        await setSiteSetting(txCtx, 'security.captcha.signup.enabled', input.signupEnabled, actorId);
+        await setSiteSetting(txCtx, 'security.captcha.login.enabled', input.loginEnabled, actorId);
+
+        // ISSUE #3 FIX: Only update keys if explicitly provided (undefined means keep existing)
+        if (input.turnstileSiteKey !== undefined) {
+          await setSiteSetting(
+            txCtx,
+            'security.captcha.turnstile.siteKey',
+            input.turnstileSiteKey,
+            actorId,
+          );
+        }
+        if (input.turnstileSecretKey !== undefined) {
+          await setSiteSetting(
+            txCtx,
+            'security.captcha.turnstile.secretKey',
+            input.turnstileSecretKey,
+            actorId,
+          );
+        }
+        await setSiteSetting(
+          txCtx,
+          'security.login.captchaThreshold',
+          input.loginCaptchaThreshold,
+          actorId,
+        );
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
   // Design Settings (REQ-ADMIN2-053)
   // ==========================================================================
 

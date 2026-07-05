@@ -102,3 +102,49 @@ export async function updateIpControlSettingsAction(
   revalidatePath('/admin/settings/security');
   return {};
 }
+
+/**
+ * CAPTCHA 설정 Server Action — SPEC-CAPTCHA-001 REQ-CAPTCHA-005.
+ *
+ * @MX:SPEC: SPEC-CAPTCHA-001 REQ-CAPTCHA-005
+ */
+const UpdateCaptchaSchema = z.object({
+  captchaSignupEnabled: z.boolean().default(false),
+  captchaLoginEnabled: z.boolean().default(false),
+  captchaSiteKey: z.string().default(''),
+  captchaSecretKey: z.string().default(''),
+  captchaLoginThreshold: z.coerce.number().int().min(1).max(10),
+});
+
+export async function updateCaptchaSettingsAction(
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = UpdateCaptchaSchema.safeParse({
+    captchaSignupEnabled: formData.get('captchaSignupEnabled') === 'on',
+    captchaLoginEnabled: formData.get('captchaLoginEnabled') === 'on',
+    captchaSiteKey: formData.get('captchaSiteKey'),
+    captchaSecretKey: formData.get('captchaSecretKey'),
+    captchaLoginThreshold: formData.get('captchaLoginThreshold'),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  try {
+    const caller = await getServerCaller();
+
+    // TODO: Replace with actual tRPC call when backend is ready
+    // await caller.admin.settings.updateCaptcha(parsed.data);
+
+    // Mock: just log for now
+    console.log('[Mock] Update CAPTCHA settings:', parsed.data);
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message };
+    }
+    return { error: 'CAPTCHA 설정 저장 중 오류가 발생했습니다.' };
+  }
+  revalidatePath('/admin/settings/security');
+  return {};
+}

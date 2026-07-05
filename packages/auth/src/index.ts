@@ -54,6 +54,7 @@ export type {
   LoginUser,
   LoginResult,
   LoginFailure,
+  LoginErrorCode,
 } from './login';
 
 // SPEC-AUTH-001 Slice C — email verification (REQ-AUTH-012, AC-AUTH-012).
@@ -134,3 +135,7 @@ export type {
 // SPEC-SOCIAL-LOGIN-001 — Social OAuth configuration (REQ-SOCIAL-005).
 export { socialAuth } from './social-auth';
 export type { SocialAuthConfig, SocialAuthContext } from './social-auth';
+
+// SPEC-CAPTCHA-001 — Cloudflare Turnstile verification (REQ-CAPTCHA-003).
+export { verifyTurnstileToken, TURNSTILE_TEST_KEYS } from './captcha';
+export type { TurnstileVerifyOptions, TurnstileVerifyResult } from './captcha';

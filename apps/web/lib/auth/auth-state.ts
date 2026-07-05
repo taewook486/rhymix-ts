@@ -12,7 +12,7 @@ export type AuthActionState =
       ok: false;
       formError?: string;
       fieldErrors?: Record<string, string>;
-      code?: SignupErrorCode | VerifyEmailErrorCode | 'INVALID_CREDENTIALS' | 'TOKEN_INVALID' | 'TOKEN_EXPIRED' | 'WEAK_PASSWORD';
+      code?: SignupErrorCode | VerifyEmailErrorCode | 'INVALID_CREDENTIALS' | 'TOKEN_INVALID' | 'TOKEN_EXPIRED' | 'WEAK_PASSWORD' | 'CAPTCHA_REQUIRED';
     };
 
 export const initialAuthActionState: AuthActionState = { ok: true };

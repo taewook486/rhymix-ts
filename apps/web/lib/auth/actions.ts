@@ -31,9 +31,17 @@ import { mailDispatcher } from '@/lib/mail/dispatcher';
 
 import { signIn, auth } from './config';
 import { cookies } from 'next/headers';
+import { z } from 'zod';
 
+import { resolveDefaultSiteId } from './site';
 import type { AuthActionState } from './auth-state';
 export type { AuthActionState } from './auth-state';
+
+// SPEC-CAPTCHA-001: 가입 폼에서 넘어오는 약관 동의 목록 형태 검증 — signup() 내부의
+// SignupInput.agreements 와 동일한 shape. 실패 시 빈 배열로 폴백(약관 미동의 취급).
+const AgreementsSchema = z
+  .array(z.object({ key: z.string(), version: z.string() }))
+  .default([]);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -66,6 +74,38 @@ export async function signupAction(
   formData: FormData,
 ): Promise<AuthActionState> {
   const { ip, userAgent } = await readClientHints();
+
+  // SPEC-CAPTCHA-001: agreements와 captchaToken 추출
+  const agreementsRaw = formData.get('agreements');
+  const captchaToken = formData.get('captchaToken');
+
+  let agreements: Array<{ key: string; version: string }> = [];
+  if (typeof agreementsRaw === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(agreementsRaw);
+      const validated = AgreementsSchema.safeParse(parsed);
+      agreements = validated.success ? validated.data : [];
+    } catch {
+      // JSON 파싱 실패 시 빈 배열 사용
+      agreements = [];
+    }
+  }
+
+  // ISSUE #1 FIX: SiteSettings에서 CAPTCHA 및 Terms 설정 동적으로 로드
+  const siteId = await resolveDefaultSiteId(prisma);
+  const [captchaSignupEnabled, captchaLoginEnabled, captchaSecretKey, requiredTerms] = await Promise.all([
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.signup.enabled' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.login.enabled' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.turnstile.secretKey' } } }),
+    prisma.terms.findMany({
+      where: { siteId, required: true, active: true },
+      select: { id: true },
+    }),
+  ]);
+
+  const captchaEnabled = Boolean(captchaSignupEnabled?.value) && Boolean(captchaSecretKey?.value);
+  const requiredTermsIds = requiredTerms.map((t) => t.id);
+
   const result = await signup(
     {
       userId: String(formData.get('userId') ?? ''),
@@ -74,6 +114,8 @@ export async function signupAction(
       nickName: String(formData.get('nickName') ?? ''),
       ip,
       userAgent,
+      agreements,
+      captchaToken: captchaToken ? String(captchaToken) : undefined,
     },
     {
       prisma,
@@ -82,6 +124,10 @@ export async function signupAction(
         enableConfirm: true,
         signupTokenTtlHours: 24,
         passwordPolicy: 'normal',
+        // ISSUE #1 FIX: CAPTCHA 및 Terms 설정 주입
+        captchaEnabled,
+        captchaSecretKey: captchaSecretKey?.value as string,
+        requiredTermsIds,
       },
     },
   );
@@ -105,6 +151,10 @@ function signupErrorMessage(code: SignupErrorCode): string {
       return '사용할 수 없는 아이디 또는 닉네임입니다.';
     case 'WEAK_PASSWORD':
       return '비밀번호가 너무 약합니다. 다른 비밀번호를 사용하세요.';
+    case 'CAPTCHA_FAILED':
+      return '로봇 확인에 실패했습니다. 다시 시도해주세요.';
+    case 'TERMS_REQUIRED':
+      return '필수 약관에 동의해주세요.';
   }
 }
 
@@ -175,9 +225,17 @@ export async function loginAction(
     // 테스트에서는 redirect가 mock(no-op)되므로 이 return이 { ok: true }를 반환.
     return { ok: true };
   } catch (err) {
-    // CredentialsSignin 등 Auth.js 가 throw 하는 인증 실패를 일관 응답으로 변환.
-    // REQ-AUTH-051: 어떤 단계에서 실패했는지 노출하지 않는다.
+    // ISSUE #1 FIX: CAPTCHA_REQUIRED 에러 코드 처리 추가
     if (isCredentialsError(err)) {
+      // packages/auth/login.ts가 throw한 CustomException인 경우
+      const e = err as { code?: string };
+      if (e.code === 'CAPTCHA_REQUIRED') {
+        return {
+          ok: false,
+          code: 'CAPTCHA_REQUIRED',
+          formError: 'CAPTCHA 확인이 필요합니다.',
+        };
+      }
       return {
         ok: false,
         code: 'INVALID_CREDENTIALS',
@@ -191,9 +249,15 @@ export async function loginAction(
 
 function isCredentialsError(err: unknown): boolean {
   if (err === null || typeof err !== 'object') return false;
-  const t = (err as { type?: unknown; name?: unknown }).type;
-  const n = (err as { name?: unknown }).name;
+  const e = err as { type?: string; name?: string; code?: string };
+  // ISSUE #1 FIX: CAPTCHA_REQUIRED를 CredentialsError로 간주하여 loginAction에서 잡지하도록 처리
+  if (e.code === 'CAPTCHA_REQUIRED') {
+    return true;
+  }
+  const t = e.type;
+  const n = e.name;
   return (
+    t === 'CredentialsSignin' ||
     t === 'CredentialsSignin' ||
     n === 'CredentialsSignin' ||
     n === 'AuthError'

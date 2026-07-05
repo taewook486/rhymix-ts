@@ -18,14 +18,47 @@ import { useSearchParams } from 'next/navigation';
 import { loginAction } from '@/lib/auth/actions';
 import { initialAuthActionState, type AuthActionState } from '@/lib/auth/auth-state';
 import { signIn } from 'next-auth/react';
+import { trpc } from '@/providers/TRPCProvider';
+import type { TurnstileWidgetRef } from '../signup/TurnstileWidget';
+import { TurnstileWidget } from '../signup/TurnstileWidget';
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') ?? '/';
+  const turnstileRef = React.useRef<TurnstileWidgetRef>(null);
+  const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
+  const [captchaRequired, setCaptchaRequired] = React.useState(false);
+
+  const wrappedAction = async (
+    prev: AuthActionState,
+    formData: FormData,
+  ): Promise<AuthActionState> => {
+    // CAPTCHA 토큰 추가
+    if (captchaToken) {
+      formData.append('captchaToken', captchaToken);
+    }
+
+    const result = await loginAction(prev, formData);
+
+    // CAPTCHA_REQUIRED 오류 시 CAPTCHA 표시
+    if (!result.ok && result.code === 'CAPTCHA_REQUIRED') {
+      setCaptchaRequired(true);
+    } else if (!result.ok) {
+      // 실패 시 Turnstile 위젯 재설정
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
+    }
+
+    return result;
+  };
+
   const [state, formAction, isPending] = useActionState(
-    loginAction,
+    wrappedAction,
     initialAuthActionState,
   );
+
+  // Real tRPC query to public.captcha.getConfig
+  const { data: captchaConfig } = trpc.public.captcha.getConfig.useQuery();
 
   return (
     <>
@@ -82,9 +115,20 @@ function LoginForm() {
           </label>
         </div>
 
+        {/* SPEC-CAPTCHA-001 REQ-CAPTCHA-004: 로그인 실패 시 CAPTCHA 요구 */}
+        {(captchaRequired || captchaConfig?.loginEnabled) && (
+          <div className="space-y-2">
+            <TurnstileWidget
+              ref={turnstileRef}
+              siteKey={captchaConfig?.siteKey || ''}
+              onSuccess={setCaptchaToken}
+            />
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || (captchaRequired && !captchaToken)}
           className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {isPending ? '로그인 중...' : '로그인'}
