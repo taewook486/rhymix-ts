@@ -3,8 +3,14 @@
  * jsdom 환경에서 필요한 mock들을 설정
  */
 
-import { expect, vi } from 'vitest';
+import { afterEach, expect, vi } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { cleanup } from '@testing-library/react';
+
+// 각 테스트 후 자동 정리
+afterEach(() => {
+  cleanup();
+});
 
 // jest-dom 매처 확장 — toBeInTheDocument 등
 expect.extend(matchers);

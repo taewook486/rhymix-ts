@@ -24,6 +24,7 @@
     "@rhymix-ts/db": "workspace:*",
     "@rhymix-ts/auth": "workspace:*",
     "@rhymix-ts/point": "workspace:*",
+    "@rhymix-ts/tag": "workspace:*",
     "@trpc/server": "^11.0.0",
     "hash-wasm": "^4.12.0",
     "isomorphic-dompurify": "^2.16.0",
