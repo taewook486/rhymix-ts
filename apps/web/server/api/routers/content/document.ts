@@ -176,6 +176,8 @@ export const contentDocumentRouter = router({
         title: z.string().min(1).max(200).optional(),
         content: z.string().min(1).optional(),
         status: z.enum(['PUBLIC', 'SECRET', 'TEMP']).optional(),
+        // SPEC-TAG-001 REQ-TAG-002: 태그 업데이트 지원
+        tags: z.array(z.string().max(50)).max(20).optional(),
         // Slice F 추가 (PUT semantics: 전달하면 전체 교체)
         extraVars: z.record(z.string(), z.unknown()).optional(),
       }),
@@ -188,6 +190,7 @@ export const contentDocumentRouter = router({
             ...(input.title !== undefined ? { title: input.title } : {}),
             ...(input.content !== undefined ? { content: input.content } : {}),
             ...(input.status !== undefined ? { status: input.status } : {}),
+            ...(input.tags !== undefined ? { tags: input.tags } : {}),
             ...(input.extraVars !== undefined ? { extraVars: input.extraVars } : {}),
             actor: buildActorWithId(ctx.session),
           },

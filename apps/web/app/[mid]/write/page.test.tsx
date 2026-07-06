@@ -35,6 +35,14 @@ vi.mock('@rhymix-ts/board/actions', () => ({
   handleCreateDocumentForm: vi.fn(),
 }));
 
+// SPEC-TAG-001: page.tsx imports TagInput from @rhymix-ts/board.
+// @rhymix-ts/board 의 실제 모듈을 로드하면 @rhymix-ts/document → @rhymix-ts/tag → @rhymix-ts/db
+// 트랜지티브 import 가 발생해 테스트 환경이 오염됨 (PrismaClient 인스턴스화 등).
+// 이 테스트는 auth guard 가 대상이므로 TagInput 을 stub 처리.
+vi.mock('@rhymix-ts/board', () => ({
+  TagInput: () => null,
+}));
+
 vi.mock('next/headers', () => ({
   headers: vi.fn(() => ({
     get: (key: string) => mockHeadersGet(key),

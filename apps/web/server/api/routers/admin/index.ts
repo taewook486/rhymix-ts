@@ -53,6 +53,7 @@ import { adminSpamfilterRouter } from './spamfilter';
 import { adminTermsRouter } from './terms';
 import { adminPollRouter } from './poll';
 import { adminTwoFactorRouter } from './two-factor';
+import { adminTagRouter } from './tag';
 
 export const adminRouter = router({
   module:          adminModuleRouter,
@@ -86,4 +87,5 @@ export const adminRouter = router({
   terms:            adminTermsRouter,
   poll:             adminPollRouter,
   twoFactor:        adminTwoFactorRouter,
+  tag:              adminTagRouter,
 });

@@ -14,6 +14,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 import { getModuleDefinition } from '@/lib/modules/registry';
 import { handleCreateDocumentForm } from '@rhymix-ts/board/actions';
+import { TagInput } from '@rhymix-ts/board';
 
 interface WritePageProps {
   params: Promise<{ mid: string }>;
@@ -77,6 +78,18 @@ export default async function WritePage({ params }: WritePageProps) {
           <label htmlFor="content">내용</label>
           <textarea id="content" name="content" required rows={10} />
         </div>
+
+        {/* REQ-TAG-001: 태그 입력 UI */}
+        <div>
+          <label htmlFor="tags">태그</label>
+          <TagInput
+            name="tags"
+            maxTags={10}
+            maxTagLength={30}
+            suggestions={[]} // TODO: tRPC로 자동완성 데이터 가져오기
+          />
+        </div>
+
         <button type="submit">작성</button>
         <a href={`/${mid}`}>취소</a>
       </form>
