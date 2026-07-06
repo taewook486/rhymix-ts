@@ -55,6 +55,12 @@ export * from '@rhymix-ts/comment';
 
 // permissions, category: 이미 export * from '@rhymix-ts/document'로 re-export됨
 
+// SPEC-TAG-001 — 태그 시스템 컴포넌트 re-export
+export { TagInput } from './components/TagInput';
+export { TagDisplay } from './components/TagDisplay';
+export { TagListPage } from './components/TagListPage';
+export type { TagListPageProps } from './components/TagListPage';
+
 // SPEC-CONTENT-001 Slice E — File Attachments + Rate Limiting
 // Moved to @rhymix-ts/file package (SPEC-FILE-001 Slice A)
 

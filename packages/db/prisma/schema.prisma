@@ -766,7 +766,6 @@ model Document {
   langCode        String         @default("ko")
   allowTrackback  Boolean        @default(false)
   notifyMessage   Boolean        @default(false)
-  tags            String[]       @default([])
   // SPEC-ADMIN-002 Slice 3B REQ-ADMIN2-073: 문서 별칭(URL alias). 1문서당 1개, 전역 유니크.
   alias           String?        @unique @db.VarChar(200)
   extraVars       Json           @default("{}")
@@ -786,12 +785,12 @@ model Document {
   votes      DocumentVote[]
   reports    DocumentReport[]
   trash      Trash?
+  documentTags DocumentTag[]
 
   @@index([boardId, status, regdate(sort: Desc)])
   @@index([boardId, isNotice, listOrder(sort: Desc)])
   @@index([boardId, categoryId, listOrder(sort: Desc)])
   @@index([authorId])
-  @@index([tags], type: Gin)
   @@index([extraVars], type: Gin)
   @@map("documents")
 }
@@ -978,6 +977,32 @@ model Trash {
 
   @@index([expiresAt])
   @@map("document_trash")
+}
+
+// =====================================================================
+// SPEC-TAG-001: 태그 시스템 — Tag + DocumentTag 모델
+// =====================================================================
+
+model Tag {
+  id        Int              @id @default(autoincrement())
+  name      String           @unique
+  count     Int              @default(0)
+  createdAt DateTime         @default(now()) @db.Timestamptz
+  documents DocumentTag[]
+
+  @@index([count(sort: Desc)])
+  @@map("tags")
+}
+
+model DocumentTag {
+  documentId Int
+  tagId      Int
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, tagId])
+  @@index([tagId])
+  @@map("document_tags")
 }
 
 // =====================================================================
@@ -1173,6 +1198,56 @@ model DailyVisit {
   @@unique([siteId, date])
   @@index([date])
   @@map("daily_visits")
+}
+
+// =====================================================================
+// SPEC-STATS-001: Page View Statistics (REQ-STATS-001, REQ-STATS-002)
+// =====================================================================
+
+/**
+ * PageView — 개별 페이지 뷰 로그
+ *
+ * REQ-STATS-001: Next.js middleware에서 모든 페이지 요청을 인터셉트하여 저장
+ * - 봇 User-Agent는 제외
+ * - /api/*, /admin/* 경로는 제외
+ * - visitorId는 세션 기반 해시 (UV 중복 제거용)
+ */
+model PageView {
+  id        BigInt   @id @default(autoincrement())
+  date      DateTime @db.Date
+  hour      Int      // 0-23
+  path      String   @db.VarChar(500)
+  visitorId String   @db.VarChar(64) // 세션 기반 해시
+  isMobile  Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([date, path])
+  @@index([date, hour])
+  @@index([visitorId])
+  @@map("page_views")
+}
+
+/**
+ * DailyStat — 일별 통계 집계
+ *
+ * REQ-STATS-002: 매일 00:05 UTC에 전일 통계 집계 (cron job)
+ * - uv: 일별 순방문자 수
+ * - pv: 일별 페이지뷰
+ * - newMembers: 신규 가입자 수
+ * - newDocuments: 게시물 작성 수
+ * - newComments: 댓글 작성 수
+ */
+model DailyStat {
+  date         DateTime @id @db.Date
+  uv           Int      @default(0)
+  pv           Int      @default(0)
+  newMembers   Int      @default(0)
+  newDocuments Int      @default(0)
+  newComments  Int      @default(0)
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  @@map("daily_stats")
 }
 
 // =====================================================================

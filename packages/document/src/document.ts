@@ -40,6 +40,8 @@ import { buildExtraVarsSchema } from './extra-vars-schema';
 import { emitDocumentDeleted } from './events';
 // SPEC-POINT-001 REQ-POINT-041: 포인트 훅 연동
 import { pointHooks } from '@rhymix-ts/point';
+// SPEC-TAG-001 REQ-TAG-002: 태그 upsert 연동
+import { upsertTagsOnDocument } from '@rhymix-ts/tag';
 
 // ---------------------------------------------------------------------------
 // Slice F: extraVars 관련 에러 클래스
@@ -243,12 +245,19 @@ export async function createDocument(
           contentText: safeContentText,
           status: parsed.status,
           categoryId: parsed.categoryId,
-          tags: parsed.tags,
           extraVars: validatedExtraVars as Prisma.InputJsonValue | undefined,
         },
       });
 
       await incrementDocumentCount(parsed.categoryId!, 1, tx as unknown as PrismaClient);
+
+      // SPEC-TAG-001 REQ-TAG-002: 태그 upsert
+      if (parsed.tags.length > 0) {
+        await upsertTagsOnDocument(
+          { documentId: doc.id, tags: parsed.tags },
+          { prisma: tx as unknown as PrismaClient },
+        );
+      }
 
       // SPEC-POINT-001 REQ-POINT-041: 게시글 작성 포인트 지급
       if (parsed.authorId != null && board.pointPerDocument !== 0) {
@@ -274,10 +283,17 @@ export async function createDocument(
       content: safeContent,
       contentText: safeContentText,
       status: parsed.status,
-      tags: parsed.tags,
       extraVars: validatedExtraVars as Prisma.InputJsonValue | undefined,
     },
   });
+
+  // SPEC-TAG-001 REQ-TAG-002: 태그 upsert (best-effort)
+  if (parsed.tags.length > 0) {
+    await upsertTagsOnDocument(
+      { documentId: doc.id, tags: parsed.tags },
+      { prisma: ctx.prisma },
+    );
+  }
 
   // SPEC-POINT-001 REQ-POINT-041: 게시글 작성 포인트 지급 (best-effort, 트랜잭션 외부)
   if (parsed.authorId != null && (board.pointPerDocument ?? 0) !== 0) {
@@ -301,6 +317,7 @@ const UpdateDocumentSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   content: z.string().min(1).optional(),
   status: z.enum(['PUBLIC', 'SECRET', 'TEMP']).optional(),
+  tags: z.array(z.string().max(50)).max(20).optional(),
   actor: AuthorActorSchema,
   // Slice F 추가 (PUT semantics: 전달하면 전체 교체)
   extraVars: z.record(z.string(), z.unknown()).optional(),
@@ -379,17 +396,37 @@ export async function updateDocument(
         },
         tx as unknown as PrismaClient,
       );
-      return (tx as unknown as PrismaClient).document.update({
+      const updated = await (tx as unknown as PrismaClient).document.update({
         where: { id: parsed.id },
         data,
       });
+
+      // SPEC-TAG-001 REQ-TAG-002: 태그 upsert
+      if (parsed.tags !== undefined) {
+        await upsertTagsOnDocument(
+          { documentId: doc.id, tags: parsed.tags },
+          { prisma: tx as unknown as PrismaClient },
+        );
+      }
+
+      return updated;
     });
   }
 
-  return ctx.prisma.document.update({
+  const updated = await ctx.prisma.document.update({
     where: { id: parsed.id },
     data,
   });
+
+  // SPEC-TAG-001 REQ-TAG-002: 태그 upsert (best-effort)
+  if (parsed.tags !== undefined) {
+    await upsertTagsOnDocument(
+      { documentId: doc.id, tags: parsed.tags },
+      { prisma: ctx.prisma },
+    );
+  }
+
+  return updated;
 }
 
 // ---------------------------------------------------------------------------
@@ -745,8 +782,12 @@ export async function listDocuments(
 export async function getDocument(
   id: number,
   ctx: { prisma: PrismaClient },
-): Promise<Document & { author: { id: number; userId: string; nickName: string } | null }> {
-  return ctx.prisma.document.findUniqueOrThrow({
+): Promise<Document & {
+  author: { id: number; userId: string; nickName: string } | null;
+  // SPEC-TAG-001 REQ-TAG-003: tags 는 DocumentTag 조인을 통해 매핑된 string[]
+  tags: string[];
+}> {
+  const doc = await ctx.prisma.document.findUniqueOrThrow({
     where: { id },
     include: {
       author: {
@@ -756,6 +797,21 @@ export async function getDocument(
           nickName: true,
         },
       },
+      // SPEC-TAG-001: DocumentTag 조인 테이블을 통해 태그 이름만 select
+      documentTags: {
+        select: {
+          tag: { select: { name: true } },
+        },
+      },
     },
-  });
+  }) as Document & {
+    author: { id: number; userId: string; nickName: string } | null;
+    documentTags: Array<{ tag: { name: string } }>;
+  };
+
+  // DocumentTag[] → string[] 매핑 (REQ-TAG-003 게시물 상세 뷰 태그 표시)
+  // @MX:NOTE [AUTO]: 테스트 더미 데이터(documentTags 누락) 호환성을 위해 방어적 기본값 사용.
+  // @MX:REASON: 실제 Prisma 호출에서는 항상 채워지지만, document.test.ts A-12 의 가짜 fixture 는 누락.
+  const tags = (doc.documentTags ?? []).map((dt) => dt.tag.name);
+  return { ...doc, tags };
 }
