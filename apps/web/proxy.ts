@@ -31,6 +31,16 @@ import { HSTS_HEADER_VALUE } from './lib/install/headers';
 import { getInstallStatus } from './lib/install/site-status';
 import { getSiteLockStatus } from './lib/install/sitelock';
 
+// SPEC-STATS-001 REQ-STATS-001: Page view logging imports
+import {
+  getCurrentDateTime,
+  logPageView,
+  shouldExcludePath,
+  shouldLogRequest,
+} from './lib/stats/page-view-logger';
+import { getVisitorIdFromRequest } from './lib/stats/visitor-id';
+import { isMobile } from './lib/stats/bot-detector';
+
 // next-auth v5 beta31 + TS 5.9: default import resolves as namespace; cast needed
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { auth } = (NextAuth as any)(authConfig);
@@ -217,6 +227,29 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // REQ-INSTALL-040: site.scheme === 'https' 이면 HSTS 헤더 추가.
   if (status.installed && status.site?.scheme === 'https') {
     response.headers.set('strict-transport-security', HSTS_HEADER_VALUE);
+  }
+
+  // ---------------------------------------------------------------------------
+  // (9) SPEC-STATS-001 REQ-STATS-001: PageView 로깅 (fire-and-forget).
+  //     /api/*, /admin/*, /install/* 경로와 봇 UA는 제외.
+  //     비동기로 호출하되 await 하지 않아 응답을 차단하지 않는다.
+  //
+  // @MX:WARN: [AUTO] fire-and-forget 패턴 — proxy 응답 지연을 방지하기 위해 await 생략.
+  // @MX:REASON: REQ-STATS-001 통계 수집이 사용자 페이지 렌더링을 차단하면 안 된다.
+  // ---------------------------------------------------------------------------
+  const userAgent = request.headers.get('user-agent') ?? '';
+  if (status.installed && !shouldExcludePath(pathname) && shouldLogRequest(userAgent)) {
+    const { date, hour } = getCurrentDateTime();
+    const visitorId = getVisitorIdFromRequest(request);
+    const fullPath = pathname + request.nextUrl.search;
+    // @MX:NOTE: [AUTO] void 연산자로 의도적으로 promise를 무시한다. logPageView 내부에서 에러를 삼킨다.
+    void logPageView({
+      date,
+      hour,
+      path: fullPath,
+      visitorId,
+      isMobile: isMobile(userAgent),
+    });
   }
 
   return response;

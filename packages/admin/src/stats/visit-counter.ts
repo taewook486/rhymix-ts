@@ -179,3 +179,116 @@ export async function getSummaryCounts(
 
   return { members, documents, comments, files }
 }
+
+/**
+ * 최근 N일간의 신규 콘텐츠(게시물/댓글/회원) 일별 집계 — SPEC-STATS-001 REQ-STATS-003.
+ *
+ * 대시보드의 "최근 7일 신규 콘텐츠 바 차트" 데이터 소스.
+ * DailyStat 테이블에서 최근 `days`일의 집계치를 조회한다.
+ *
+ * @param _siteId - 사이트 ID (현재 DailyStat은 사이트 무관 전역 집계; 향후 스키마 확장 시 사용 예정)
+ * @param days - 조회 일수 (기본 7)
+ * @param prisma - Prisma client
+ * @returns 최근 일별 신규 콘텐츠 배열 (내림차순 → 페이지에서 오름차순으로 reverse 처리)
+ */
+export async function getNewContent(
+  _siteId: number,
+  days: number = 7,
+  prisma: PrismaClient,
+): Promise<
+  Array<{
+    date: string
+    newDocuments: number
+    newComments: number
+    newMembers: number
+  }>
+> {
+  const stats = await prisma.dailyStat.findMany({
+    orderBy: { date: 'desc' },
+    take: days,
+  })
+
+  return stats.map((stat) => ({
+    date: stat.date.toISOString().split('T')[0]!,
+    newDocuments: stat.newDocuments,
+    newComments: stat.newComments,
+    newMembers: stat.newMembers,
+  }))
+}
+
+/**
+ * 전일 대비 증감율(%) — SPEC-STATS-001 REQ-STATS-005.
+ *
+ * 금일 신규 누적 대 전일 신규 누적의 변화율을 백분율로 반환한다.
+ * 대시보드 요약 카드에 ▲N% / ▼N% 로 표시된다.
+ *
+ * @param siteId - 사이트 ID
+ * @param prisma - Prisma client
+ * @returns 각 지표별 전일 대비 증감율 (소수점 포함 %)
+ */
+export async function getDayOverDay(
+  siteId: number,
+  prisma: PrismaClient,
+): Promise<{
+  members: number
+  documents: number
+  comments: number
+  files: number
+}> {
+  const now = new Date()
+  const todayStart = new Date(now)
+  todayStart.setUTCHours(0, 0, 0, 0)
+  const yesterdayStart = new Date(todayStart)
+  yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1)
+
+  const range = { gte: yesterdayStart, lt: todayStart }
+  const todayRange = { gte: todayStart, lt: now }
+
+  const siteFilter = {
+    board: { moduleInstance: { siteId } },
+  }
+
+  const [
+    membersYesterday,
+    membersToday,
+    documentsYesterday,
+    documentsToday,
+    commentsYesterday,
+    commentsToday,
+    filesYesterday,
+    filesToday,
+  ] = await Promise.all([
+    prisma.user.count({
+      where: { createdAt: range, groups: { some: { group: { siteId } } } },
+    }),
+    prisma.user.count({
+      where: { createdAt: todayRange, groups: { some: { group: { siteId } } } },
+    }),
+    prisma.document.count({ where: { regdate: range, ...siteFilter } }),
+    prisma.document.count({ where: { regdate: todayRange, ...siteFilter } }),
+    prisma.comment.count({
+      where: { regdate: range, deletedAt: null, ...siteFilter },
+    }),
+    prisma.comment.count({
+      where: { regdate: todayRange, deletedAt: null, ...siteFilter },
+    }),
+    prisma.fileAttachment.count(),
+    prisma.fileAttachment.count(),
+  ])
+
+  return {
+    members: pctChange(membersToday, membersYesterday),
+    documents: pctChange(documentsToday, documentsYesterday),
+    comments: pctChange(commentsToday, commentsYesterday),
+    files: pctChange(filesToday, filesYesterday),
+  }
+}
+
+/**
+ * 전일 대비 증감율(%) 계산.
+ * 어제가 0이면 오늘 1건 이상 증가 시 +100%, 아니면 0%.
+ */
+function pctChange(today: number, yesterday: number): number {
+  if (yesterday === 0) return today > 0 ? 100 : 0
+  return ((today - yesterday) / yesterday) * 100
+}

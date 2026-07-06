@@ -16,6 +16,7 @@ import { getServerCaller } from '@/lib/trpc/server'
 import { getCurrentSiteId } from '@/lib/admin/site-context'
 import { VisitStatsWidget, RecentDocumentsWidget, RecentCommentsWidget, UpdateNotificationWidget, SummaryCounterStrip } from './_components/DashboardWidgets'
 import { WidgetSettingsButton } from './_components/WidgetSettings'
+import { VisitorChart, NewContentChart } from './_components/DashboardCharts'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,11 +30,13 @@ export default async function AdminDashboardPage() {
   // REQ-ADMIN2-007: 각 위젯의 데이터를 병렬로 fetch하면서도 위젯별 장애를 격리한다.
   // Promise.all이 아닌 Promise.allSettled를 사용해 한 위젯의 실패가 다른 위젯의
   // 결과를 막지 않도록 한다.
-  const [visitStatsResult, recentDocumentsResult, recentCommentsResult, summaryCountsResult] = await Promise.allSettled([
+  const [visitStatsResult, recentDocumentsResult, recentCommentsResult, summaryCountsResult, newContentResult, dayOverDayResult] = await Promise.allSettled([
     caller.admin.dashboard.getVisitStats({ siteId }),
     caller.admin.dashboard.getRecentDocuments({ siteId }),
     caller.admin.dashboard.getRecentComments({ siteId }),
     caller.admin.stats.getSummaryCounts({ siteId }),
+    caller.admin.stats.getNewContent({ siteId, days: 7 }),
+    caller.admin.stats.getDayOverDay({ siteId }),
   ])
 
   let visitStatsData
@@ -72,6 +75,24 @@ export default async function AdminDashboardPage() {
     summaryCountsError = true
   }
 
+  let newContentData
+  let newContentError = false
+  if (newContentResult.status === 'fulfilled') {
+    newContentData = newContentResult.value
+  } else {
+    console.error('Failed to fetch new content:', newContentResult.reason)
+    newContentError = true
+  }
+
+  let dayOverDayData
+  let dayOverDayError = false
+  if (dayOverDayResult.status === 'fulfilled') {
+    dayOverDayData = dayOverDayResult.value
+  } else {
+    console.error('Failed to fetch day-over-day:', dayOverDayResult.reason)
+    dayOverDayError = true
+  }
+
   // 모듈 인스턴스 데이터 (기존 기능)
   const instances = await caller.admin.module.list({ siteId })
 
@@ -81,13 +102,35 @@ export default async function AdminDashboardPage() {
       <div className="space-y-4">
         {/* REQ-ADMIN2-006: Summary counter strip - full width */}
         {widgetPrefs.summaryCounterStrip && (
-          <SummaryCounterStrip counts={summaryCountsData} error={summaryCountsError} />
+          <SummaryCounterStrip
+            counts={summaryCountsData}
+            dayOverDay={dayOverDayData}
+            error={summaryCountsError}
+          />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* REQ-ADMIN2-004/005: Update notification widget */}
           {widgetPrefs.updateNotification && (
             <UpdateNotificationWidget currentVersion="0.1.0" />
+          )}
+
+          {/* REQ-STATS-003: Visitor chart (last 30 days) */}
+          {widgetPrefs.visitStats && (
+            <div className="md:col-span-2 lg:col-span-2">
+              <VisitorChart
+                data={visitStatsData?.daily || []}
+                error={visitStatsError}
+              />
+            </div>
+          )}
+
+          {/* REQ-STATS-003: New content chart (last 7 days) */}
+          {widgetPrefs.visitStats && (
+            <NewContentChart
+              data={newContentData || []}
+              error={newContentError}
+            />
           )}
 
           {/* 방문자 통계 위젯 */}
