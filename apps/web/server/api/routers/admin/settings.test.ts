@@ -470,6 +470,226 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     expect(mockSiteSettingUpsert).toHaveBeenCalled();
   });
 
+  // ==========================================================================
+  // SEO Settings (REQ-ADMIN2-118/119) - SPEC-SEO-001 AC-SEO-005, AC-SEO-006
+  // ==========================================================================
+
+  it('SETTINGS-SEO-003: getSeo → returns all SEO fields with defaults', async () => {
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.getSeo();
+
+    // Basic SEO fields
+    expect(result.defaultMetaTitle).toBe('');
+    expect(result.defaultMetaDescription).toBe('');
+    expect(result.ogTitle).toBe('');
+    expect(result.ogDescription).toBe('');
+    expect(result.ogImageUrl).toBe('');
+    expect(result.canonicalUrlPolicy).toBe('none');
+    expect(result.sitemapEnabled).toBe(false);
+
+    // REQ-SEO-006: Additional fields
+    expect(result.googleAnalyticsId).toBe('');
+    expect(result.naverSiteVerificationCode).toBe('');
+    expect(result.robotsTxtCustomContent).toBe('');
+  });
+
+  it('SETTINGS-SEO-004: updateSeo → persists all basic SEO fields (AC-SEO-005)', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateSeo({
+      defaultMetaTitle: 'Test Site',
+      defaultMetaDescription: 'Test Description',
+      ogTitle: 'Test OG Title',
+      ogDescription: 'Test OG Description',
+      ogImageUrl: 'https://example.com/og.jpg',
+      canonicalUrlPolicy: 'default',
+      sitemapEnabled: true,
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockSiteSettingUpsert).toHaveBeenCalled();
+  });
+
+  it('SETTINGS-SEO-005: updateSeo → persists Google Analytics ID (AC-SEO-006, REQ-SEO-006)', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateSeo({
+      defaultMetaTitle: 'Test Site',
+      canonicalUrlPolicy: 'none',
+      sitemapEnabled: false,
+      googleAnalyticsId: 'UA-12345678-1',
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockSiteSettingUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          value: expect.objectContaining({ googleAnalyticsId: 'UA-12345678-1' }),
+        }),
+        update: expect.objectContaining({
+          value: expect.objectContaining({ googleAnalyticsId: 'UA-12345678-1' }),
+        }),
+      }),
+    );
+  });
+
+  it('SETTINGS-SEO-006: updateSeo → persists Naver verification code (AC-SEO-006, REQ-SEO-006)', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateSeo({
+      defaultMetaTitle: 'Test Site',
+      canonicalUrlPolicy: 'none',
+      sitemapEnabled: false,
+      naverSiteVerificationCode: 'naver123456',
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockSiteSettingUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          value: expect.objectContaining({ naverSiteVerificationCode: 'naver123456' }),
+        }),
+        update: expect.objectContaining({
+          value: expect.objectContaining({ naverSiteVerificationCode: 'naver123456' }),
+        }),
+      }),
+    );
+  });
+
+  it('SETTINGS-SEO-007: updateSeo → persists robots.txt custom content (AC-SEO-006, REQ-SEO-006)', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const customRobotsContent = 'User-agent: *\nDisallow: /private\nAllow: /public';
+
+    const result = await caller.updateSeo({
+      defaultMetaTitle: 'Test Site',
+      canonicalUrlPolicy: 'none',
+      sitemapEnabled: false,
+      robotsTxtCustomContent: customRobotsContent,
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(mockSiteSettingUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          value: expect.objectContaining({ robotsTxtCustomContent: customRobotsContent }),
+        }),
+        update: expect.objectContaining({
+          value: expect.objectContaining({ robotsTxtCustomContent: customRobotsContent }),
+        }),
+      }),
+    );
+  });
+
+  it('SETTINGS-SEO-008: updateSeo → validates OG image URL format', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    // Should accept valid URL
+    const result1 = await caller.updateSeo({
+      defaultMetaTitle: 'Test Site',
+      canonicalUrlPolicy: 'none',
+      sitemapEnabled: false,
+      ogImageUrl: 'https://example.com/og.jpg',
+    });
+
+    expect(result1).toEqual({ success: true });
+
+    // Should accept empty string
+    const result2 = await caller.updateSeo({
+      defaultMetaTitle: 'Test Site',
+      canonicalUrlPolicy: 'none',
+      sitemapEnabled: false,
+      ogImageUrl: '',
+    });
+
+    expect(result2).toEqual({ success: true });
+  });
+
+  it('SETTINGS-SEO-009: updateSeo → enforces field length limits', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    // Test max length constraints
+    const longTitle = 'a'.repeat(201); // Exceeds 200 char limit
+    const longDescription = 'a'.repeat(501); // Exceeds 500 char limit
+    const longGaId = 'a'.repeat(51); // Exceeds 50 char limit
+    const longNaverCode = 'a'.repeat(201); // Exceeds 200 char limit
+    const longRobotsContent = 'a'.repeat(5001); // Exceeds 5000 char limit
+
+    // Should reject or truncate fields exceeding max length
+    await expect(
+      caller.updateSeo({
+        defaultMetaTitle: longTitle,
+        canonicalUrlPolicy: 'none',
+        sitemapEnabled: false,
+      }),
+    ).rejects.toThrow();
+
+    await expect(
+      caller.updateSeo({
+        defaultMetaTitle: 'Test',
+        defaultMetaDescription: longDescription,
+        canonicalUrlPolicy: 'none',
+        sitemapEnabled: false,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('SETTINGS-SEO-010: updateSeo → accepts all valid canonicalUrlPolicy values', async () => {
+    mockSiteSettingUpsert.mockResolvedValue({});
+    const { adminSettingsRouter } = await import('./settings');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminSettingsRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const policies = ['none', 'default', 'custom'] as const;
+
+    for (const policy of policies) {
+      const result = await caller.updateSeo({
+        defaultMetaTitle: 'Test Site',
+        canonicalUrlPolicy: policy,
+        sitemapEnabled: false,
+      });
+
+      expect(result).toEqual({ success: true });
+    }
+  });
+
   it('SETTINGS-ADV-ROUTE-001: getAdvancedRouting → returns defaults', async () => {
     const { adminSettingsRouter } = await import('./settings');
     const { createCallerFactory } = await import('../../trpc');

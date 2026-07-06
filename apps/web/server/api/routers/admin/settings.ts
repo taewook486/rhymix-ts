@@ -810,6 +810,10 @@ export const adminSettingsRouter = router({
         ogImageUrl: z.string().url().optional().or(z.literal('')),
         canonicalUrlPolicy: z.enum(['none', 'default', 'custom']),
         sitemapEnabled: z.boolean(),
+        // REQ-SEO-006: Additional SEO fields
+        googleAnalyticsId: z.string().max(50).optional(),
+        naverSiteVerificationCode: z.string().max(200).optional(),
+        robotsTxtCustomContent: z.string().max(5000).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
