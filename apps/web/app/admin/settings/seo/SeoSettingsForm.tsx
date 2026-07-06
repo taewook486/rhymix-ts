@@ -18,6 +18,10 @@ export function SeoSettingsForm({
     ogImageUrl?: string | null;
     canonicalUrlPolicy: 'none' | 'default' | 'custom';
     sitemapEnabled: boolean;
+    // REQ-SEO-006: 추가 SEO 설정 필드
+    googleAnalyticsId?: string | null;
+    naverSiteVerificationCode?: string | null;
+    robotsTxtCustomContent?: string | null;
   };
 }) {
   const [state, formAction, isPending] = useActionState(
@@ -179,6 +183,68 @@ export function SeoSettingsForm({
           활성화 시 /sitemap.xml 경로로 공개 문서/페이지 목록을 제공합니다.
           검색 엔진에 사이트 구조를 알리는 데 도움이 됩니다.
         </p>
+      </div>
+
+      {/* @MX:NOTE: [AUTO] REQ-SEO-006 — GA/Naver/robots.txt 추가 SEO 설정 */}
+      {/* 외부 서비스 연동 및 크롤러 제어 */}
+      <div className="border rounded bg-white p-6">
+        <h2 className="text-lg font-semibold mb-4">추가 SEO 설정</h2>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="googleAnalyticsId" className="block text-sm font-medium mb-1">
+              Google Analytics ID
+            </label>
+            <input
+              id="googleAnalyticsId"
+              name="googleAnalyticsId"
+              type="text"
+              className="w-full border rounded px-3 py-2"
+              defaultValue={initial.googleAnalyticsId ?? ''}
+              placeholder="G-XXXXXXXXXX 또는 UA-XXXXX-Y"
+              maxLength={50}
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              입력 시 모든 페이지에 GA 스크립트가 삽입됩니다 (REQ-SEO-006).
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="naverSiteVerificationCode" className="block text-sm font-medium mb-1">
+              Naver 사이트 인증 코드
+            </label>
+            <input
+              id="naverSiteVerificationCode"
+              name="naverSiteVerificationCode"
+              type="text"
+              className="w-full border rounded px-3 py-2"
+              defaultValue={initial.naverSiteVerificationCode ?? ''}
+              placeholder="naver_site_verification_code"
+              maxLength={200}
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Naver Search Advisor 사이트 인증 메타 태그용 코드입니다 (REQ-SEO-006).
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="robotsTxtCustomContent" className="block text-sm font-medium mb-1">
+              robots.txt 사용자 정의 내용
+            </label>
+            <textarea
+              id="robotsTxtCustomContent"
+              name="robotsTxtCustomContent"
+              className="w-full border rounded px-3 py-2 font-mono text-sm"
+              defaultValue={initial.robotsTxtCustomContent ?? ''}
+              placeholder={'User-agent: *\nAllow: /\nDisallow: /admin'}
+              rows={6}
+              maxLength={5000}
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              /robots.txt 의 사용자 정의 내용입니다. 비워도 기본 규칙이 제공됩니다 (REQ-SEO-006).
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-2">

@@ -33,6 +33,11 @@ export async function updateSeoSettingsAction(
       ogImageUrl: formData.get('ogImageUrl') as string | undefined,
       canonicalUrlPolicy: formData.get('canonicalUrlPolicy') as 'none' | 'default' | 'custom',
       sitemapEnabled: formData.get('sitemapEnabled') === 'true',
+      // @MX:NOTE: [AUTO] REQ-SEO-006 — GA/Naver/robots.txt 필드를 formData 에서 읽어 라우터로 전달.
+      // @MX:SPEC: SPEC-SEO-001 REQ-SEO-006
+      googleAnalyticsId: formData.get('googleAnalyticsId') as string | undefined,
+      naverSiteVerificationCode: formData.get('naverSiteVerificationCode') as string | undefined,
+      robotsTxtCustomContent: formData.get('robotsTxtCustomContent') as string | undefined,
     });
 
     revalidatePath('/admin/settings/seo');
