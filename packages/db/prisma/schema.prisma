@@ -42,10 +42,11 @@ model Site {
   menus           Menu[]
   moduleInstances ModuleInstance[]
   dailyVisits     DailyVisit[]
-  spamDeniedWords SpamDeniedWord[]
-  spamDeniedIps   SpamDeniedIp[]
-  spamRules       SpamRule[]
-  polls           Poll[]
+  spamDeniedWords  SpamDeniedWord[]
+  spamDeniedIps    SpamDeniedIp[]
+  spamRules        SpamRule[]
+  spamUrlBlacklists SpamUrlBlacklist[]
+  polls            Poll[]
   terms           Terms[]
 
   @@map("sites")
@@ -334,6 +335,9 @@ model User {
   // SPEC-NOTIFICATION-001 REQ-NOTIF-001: 알림 시스템
   notifications            Notification[]           @relation("UserNotifications")
   notificationPreferences  NotificationPreference[] @relation("UserNotificationPreferences")
+  // SPEC-MESSAGE-001 REQ-MSG-001: 쪽지 시스템
+  messagesSent             Message[]               @relation("MessageSender")
+  messagesReceived         Message[]               @relation("MessageReceiver")
   // SPEC-ADMIN-002 Slice 3B REQ-ADMIN2-056/057: 닉네임 변경 이력
   nicknameChangeLogs NicknameChangeLog[] @relation("NicknameChangeLogUser")
   // SPEC-ADMIN-2FA-OTP-001 REQ-2OTP-001: 2FA TOTP secret + status
@@ -782,10 +786,11 @@ model Document {
   comments   Comment[]
   files      FileAttachment[]     @relation("DocumentFiles")
   updateLogs DocumentUpdateLog[]
-  votes      DocumentVote[]
-  reports    DocumentReport[]
-  trash      Trash?
-  documentTags DocumentTag[]
+  votes          DocumentVote[]
+  reports        DocumentReport[]
+  trash          Trash?
+  documentTags   DocumentTag[]
+  documentPolls  DocumentPoll[]
 
   @@index([boardId, status, regdate(sort: Desc)])
   @@index([boardId, isNotice, listOrder(sort: Desc)])
@@ -1314,6 +1319,50 @@ model SpamRule {
   @@map("spam_rules")
 }
 
+/**
+ * SpamUrlBlacklist — URL 블랙리스트
+ *
+ * SPEC-SPAM-001 REQ-SPAM-002: 게시물/댓글 내 URL을 추출하여 차단 도메인 목록과 비교
+ */
+model SpamUrlBlacklist {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  domain    String   @db.VarChar(200) // 차단 도메인 (e.g., "spam.com", "*.spam.com")
+  isRegex   Boolean  @default(false) // 정규식 지원 여부
+  reason    String?  @db.Text // 차단 사유 (관리자 메모)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, domain])
+  @@index([siteId])
+  @@map("spam_url_blacklists")
+}
+
+/**
+ * SpamReviewQueue — 스팸 의심 콘텐츠 검토 큐
+ *
+ * SPEC-SPAM-001 REQ-SPAM-005: 관리자 검토 큐 페이지 제공
+ */
+model SpamReviewQueue {
+  id         Int      @id @default(autoincrement())
+  siteId     Int
+  type       String   @db.VarChar(20) // 'document' | 'comment'
+  contentId  Int // Document.id 또는 Comment.id
+  reason     String   @db.VarChar(100) // 'forbidden_word' | 'blacklist_url' | 'report_threshold' | 'akismet' | 'duplicate_content'
+  status     String   @default("pending") @db.VarChar(20) // 'pending' | 'approved' | 'deleted' | 'banned'
+  metadata   Json?    @default("{}") // 추가 정보 (matchedWord, matchedDomain, reporterCount 등)
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  reviewedAt DateTime? @db.Timestamptz
+  reviewerId Int?
+
+  @@index([siteId, status])
+  @@index([type, contentId])
+  @@index([createdAt])
+  @@map("spam_review_queues")
+}
+
 // =====================================================================
 // SPEC-ADMIN-002 Slice 3A: 설문(Poll) 시스템
 // =====================================================================
@@ -1339,9 +1388,10 @@ model Poll {
   createdAt            DateTime @default(now()) @db.Timestamptz
   updatedAt            DateTime @updatedAt @db.Timestamptz
 
-  site    Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  options PollOption[]
-  votes   PollVote[]
+  site          Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  options       PollOption[]
+  votes         PollVote[]
+  documentPolls DocumentPoll[]
 
   @@index([siteId])
   @@map("polls")
@@ -1389,6 +1439,26 @@ model PollVote {
   @@index([pollOptionId])
   @@index([pollId, voterIp])
   @@map("poll_votes")
+}
+
+/**
+ * DocumentPoll — 게시물-설문 연결 (SPEC-POLL-001)
+ *
+ * 하나의 게시물에 하나의 설문을 첨부할 수 있다.
+ * REQ-POLL-001: 글쓰기 폼에서 설문 첨부 기능
+ */
+model DocumentPoll {
+  documentId Int     @default(0)
+  pollId     Int
+  sortKey    Int     @default(0)
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  poll     Poll      @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, pollId])
+  @@index([pollId])
+  @@map("document_polls")
 }
 
 /**
@@ -1489,4 +1559,36 @@ model NotificationPreference {
   @@unique([memberId, category])
   @@index([memberId])
   @@map("notification_preferences")
+}
+
+// =====================================================================
+// SPEC-MESSAGE-001: 1:1 개인 메시지 (쪽지) 시스템
+// =====================================================================
+
+/**
+ * Message — 개인 쪽지
+ *
+ * SPEC-MESSAGE-001 REQ-MSG-001: 1:1 쪽지 발송 및 수신
+ * - senderId/receiverId: 발신자/수신자 ID
+ * - senderDel/receiverDel: 양측 독립 삭제 (REQ-MSG-004)
+ * - readAt: 읽음 상태 (REQ-MSG-003)
+ */
+model Message {
+  id           Int      @id @default(autoincrement())
+  senderId     Int
+  receiverId   Int
+  subject      String   @db.VarChar(200)
+  content      String   @db.Text
+  readAt       DateTime? @db.Timestamptz
+  senderDel    Boolean  @default(false)
+  receiverDel  Boolean  @default(false)
+  createdAt    DateTime @default(now()) @db.Timestamptz
+
+  sender   User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId, readAt])
+  @@index([senderId])
+  @@index([createdAt(sort: Desc)])
+  @@map("messages")
 }
