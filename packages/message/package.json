@@ -1,0 +1,30 @@
+{
+  "name": "@rhymix-ts/message",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "echo 'no lint'",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist .turbo",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@rhymix-ts/db": "workspace:*",
+    "@rhymix-ts/notification": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "*",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.0",
+    "vitest": "^3.0.0",
+    "@types/node": "*"
+  }
+}
