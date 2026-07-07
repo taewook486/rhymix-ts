@@ -1,9 +1,9 @@
 'use client';
 /**
- * 보안 설정 폼 (Client Component) — SPEC-ADMIN-002 Slice 1F + Slice 2G (REQ-ADMIN2-113, REQ-ADMIN2-114, REQ-ADMIN2-115).
+ * 보안 설정 폼 (Client Component) — SPEC-ADMIN-002 Slice 1F + Slice 2G (REQ-ADMIN2-113, REQ-ADMIN2-114, REQ-ADMIN2-115) + SPEC-CAPTCHA-001 REQ-CAPTCHA-005.
  */
 import { useActionState } from 'react';
-import { updateSecuritySettingsAction, updateIpControlSettingsAction, type ActionState } from './actions';
+import { updateSecuritySettingsAction, updateIpControlSettingsAction, updateCaptchaSettingsAction, type ActionState } from './actions';
 
 const initialActionState: ActionState = {};
 
@@ -17,6 +17,12 @@ interface InitialSettings {
   ipControlEnabled: boolean;
   ipControlAllowList: string;
   ipControlDenyList: string;
+  // CAPTCHA settings (SPEC-CAPTCHA-001 REQ-CAPTCHA-005)
+  captchaSignupEnabled: boolean;
+  captchaLoginEnabled: boolean;
+  captchaSiteKey: string;
+  captchaSecretKey: string;
+  captchaLoginThreshold: number;
 }
 
 export function SecuritySettingsForm({
@@ -31,6 +37,11 @@ export function SecuritySettingsForm({
 
   const [ipState, ipFormAction, ipPending] = useActionState(
     updateIpControlSettingsAction,
+    initialActionState,
+  );
+
+  const [captchaState, captchaFormAction, captchaPending] = useActionState(
+    updateCaptchaSettingsAction,
     initialActionState,
   );
 
@@ -237,6 +248,124 @@ export function SecuritySettingsForm({
             className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
           >
             {ipPending ? '저장 중...' : 'IP 제어 저장'}
+          </button>
+        </div>
+      </form>
+
+      {/* CAPTCHA Settings Form - SPEC-CAPTCHA-001 REQ-CAPTCHA-005 */}
+      <form action={captchaFormAction} className="space-y-6 max-w-2xl">
+        {captchaState.error && (
+          <p className="text-sm text-red-600" role="alert">
+            {captchaState.error}
+          </p>
+        )}
+
+        <div className="border rounded bg-white p-6">
+          <h2 className="text-lg font-semibold mb-4">CAPTCHA 설정 (SPEC-CAPTCHA-001 REQ-CAPTCHA-005)</h2>
+
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="captchaSignupEnabled"
+                  className="rounded mr-2"
+                  defaultChecked={initial.captchaSignupEnabled}
+                />
+                <span className="text-sm font-medium">회원가입 CAPTCHA 사용</span>
+              </label>
+              <p className="text-sm text-gray-500 ml-6">회원가입 시 Cloudflare Turnstile CAPTCHA를 표시합니다.</p>
+            </div>
+
+            <div className="flex items-center">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="captchaLoginEnabled"
+                  className="rounded mr-2"
+                  defaultChecked={initial.captchaLoginEnabled}
+                />
+                <span className="text-sm font-medium">로그인 CAPTCHA 사용</span>
+              </label>
+              <p className="text-sm text-gray-500 ml-6">로그인 실패 시 Cloudflare Turnstile CAPTCHA를 표시합니다.</p>
+            </div>
+
+            <div>
+              <label htmlFor="captchaSiteKey" className="block text-sm font-medium mb-1">
+                Turnstile Site Key
+              </label>
+              <input
+                id="captchaSiteKey"
+                name="captchaSiteKey"
+                type="text"
+                className="w-full border rounded px-3 py-2"
+                defaultValue={initial.captchaSiteKey}
+                placeholder="1x00000000000000000000AA"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Cloudflare Turnstile Site Key입니다. 테스트용 키: 1x00000000000000000000AA
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="captchaSecretKey" className="block text-sm font-medium mb-1">
+                Turnstile Secret Key
+              </label>
+              <input
+                id="captchaSecretKey"
+                name="captchaSecretKey"
+                type="password"
+                className="w-full border rounded px-3 py-2"
+                defaultValue={initial.captchaSecretKey}
+                placeholder="1x0000000000000000000000000000000AA"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Cloudflare Turnstile Secret Key입니다. 서버에서 토큰 검증에 사용됩니다.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="captchaLoginThreshold" className="block text-sm font-medium mb-1">
+                로그인 실패 허용 횟수
+              </label>
+              <input
+                id="captchaLoginThreshold"
+                name="captchaLoginThreshold"
+                type="number"
+                className="w-full border rounded px-3 py-2"
+                defaultValue={initial.captchaLoginThreshold}
+                min={1}
+                max={10}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                CAPTCHA 표시까지의 로그인 실패 허용 횟수입니다 (1-10회, 기본 5회).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded p-4">
+          <p className="text-sm text-blue-800">
+            <strong>참고:</strong> CAPTCHA 설정은 Cloudflare Turnstile 서비스와 연동됩니다. Site Key와 Secret Key는{' '}
+            <a
+              href="https://dash.cloudflare.com/sign-up"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Cloudflare Dashboard
+            </a>
+            에서 생성할 수 있습니다 (SPEC-CAPTCHA-001 REQ-CAPTCHA-005).
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={captchaPending}
+            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {captchaPending ? '저장 중...' : 'CAPTCHA 저장'}
           </button>
         </div>
       </form>

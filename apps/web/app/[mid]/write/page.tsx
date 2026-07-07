@@ -5,7 +5,7 @@
  * Server Action 은 apps/web 레이어에서만 prisma + auth 에 접근 가능하므로 여기서 정의.
  *
  * @MX:NOTE [AUTO]: apps/web 레이어에서 prisma + auth 를 주입하는 Server Action 위임 패턴.
- * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-010
+ * @MX:SPEC: SPEC-CONTENT-001 REQ-CONTENT-010, SPEC-BOARD-UI-001 REQ-BUI-008
  */
 import { headers } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
@@ -14,6 +14,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 import { getModuleDefinition } from '@/lib/modules/registry';
 import { handleCreateDocumentForm } from '@rhymix-ts/board/actions';
+import { TagInput } from '@rhymix-ts/board';
 
 interface WritePageProps {
   params: Promise<{ mid: string }>;
@@ -41,6 +42,11 @@ export default async function WritePage({ params }: WritePageProps) {
   }
 
   const session = await auth();
+
+  // SPEC-BOARD-UI-001 REQ-BUI-008 / AC-BUI-008: 비로그인 사용자는 글쓰기 접근 시 로그인 페이지로 리다이렉트
+  if (!session?.user?.id) {
+    redirect(`/login?callbackUrl=/${mid}/write`);
+  }
 
   async function createDocumentAction(formData: FormData) {
     'use server';
@@ -72,6 +78,18 @@ export default async function WritePage({ params }: WritePageProps) {
           <label htmlFor="content">내용</label>
           <textarea id="content" name="content" required rows={10} />
         </div>
+
+        {/* REQ-TAG-001: 태그 입력 UI */}
+        <div>
+          <label htmlFor="tags">태그</label>
+          <TagInput
+            name="tags"
+            maxTags={10}
+            maxTagLength={30}
+            suggestions={[]} // TODO: tRPC로 자동완성 데이터 가져오기
+          />
+        </div>
+
         <button type="submit">작성</button>
         <a href={`/${mid}`}>취소</a>
       </form>

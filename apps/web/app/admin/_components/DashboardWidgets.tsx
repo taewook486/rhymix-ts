@@ -338,6 +338,13 @@ export function UpdateNotificationWidget({
   );
 }
 
+interface DayOverDay {
+  members: number;
+  documents: number;
+  comments: number;
+  files: number;
+}
+
 interface SummaryCounts {
   members: number;
   documents: number;
@@ -347,16 +354,19 @@ interface SummaryCounts {
 
 interface SummaryCounterStripProps {
   counts?: SummaryCounts;
+  dayOverDay?: DayOverDay;
   error?: boolean;
 }
 
 /**
  * 요약 카운터 스트립 위젯
  * - REQ-ADMIN2-006: Summary counter strip showing total member/document/comment/file counts
+ * - REQ-STATS-005: 전일 대비 증감률 표시 (초록색 ▲N% / 빨간색 ▼N%)
  * - REQ-ADMIN2-007: 장애 시 에러 상태 렌더링
  */
 export function SummaryCounterStrip({
   counts,
+  dayOverDay,
   error,
 }: SummaryCounterStripProps) {
   if (error) {
@@ -377,6 +387,18 @@ export function SummaryCounterStrip({
     );
   }
 
+  // 전일 대비 증감률 포맷팅
+  const formatChange = (value: number) => {
+    if (value === 0) return null;
+    const sign = value > 0 ? '▲' : '▼';
+    const color = value > 0 ? 'text-green-600' : 'text-red-600';
+    return (
+      <span className={`text-xs font-medium ${color}`}>
+        {sign}{Math.abs(value).toFixed(1)}%
+      </span>
+    );
+  };
+
   return (
     <div className="bg-white rounded-lg border border-zinc-200 p-6 col-span-full">
       <h3 className="text-sm font-semibold text-zinc-700 mb-4">사이트 현황</h3>
@@ -386,24 +408,28 @@ export function SummaryCounterStrip({
           <p className="text-2xl font-bold text-zinc-900">
             {counts.members.toLocaleString()}
           </p>
+          {dayOverDay && formatChange(dayOverDay.members)}
         </div>
         <div>
           <p className="text-xs text-zinc-500">총 문서 수</p>
           <p className="text-2xl font-bold text-zinc-900">
             {counts.documents.toLocaleString()}
           </p>
+          {dayOverDay && formatChange(dayOverDay.documents)}
         </div>
         <div>
           <p className="text-xs text-zinc-500">총 댓글 수</p>
           <p className="text-2xl font-bold text-zinc-900">
             {counts.comments.toLocaleString()}
           </p>
+          {dayOverDay && formatChange(dayOverDay.comments)}
         </div>
         <div>
           <p className="text-xs text-zinc-500">총 파일 수</p>
           <p className="text-2xl font-bold text-zinc-900">
             {counts.files.toLocaleString()}
           </p>
+          {dayOverDay && formatChange(dayOverDay.files)}
         </div>
       </div>
     </div>

@@ -50,8 +50,10 @@ import { adminStatsRouter } from './stats';
 import { adminDomainRouter } from './domain';
 import { adminUtilsRouter } from './admin-utils';
 import { adminSpamfilterRouter } from './spamfilter';
+import { adminTermsRouter } from './terms';
 import { adminPollRouter } from './poll';
 import { adminTwoFactorRouter } from './two-factor';
+import { adminTagRouter } from './tag';
 
 export const adminRouter = router({
   module:          adminModuleRouter,
@@ -82,6 +84,8 @@ export const adminRouter = router({
   domain:          adminDomainRouter,
   adminUtils:       adminUtilsRouter,
   spamfilter:       adminSpamfilterRouter,
+  terms:            adminTermsRouter,
   poll:             adminPollRouter,
   twoFactor:        adminTwoFactorRouter,
+  tag:              adminTagRouter,
 });

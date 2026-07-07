@@ -90,6 +90,44 @@ export const contentCommentRouter = router({
           throw err;
         }
 
+        // SPEC-SPAM-001: URL 블랙리스트 + 중복 콘텐츠 검사 (AC-SPAM-002, AC-SPAM-004)
+        const { SpamFilter } = await import('@rhymix-ts/spam');
+        const spamFilter = new SpamFilter(ctx.prisma);
+
+        // 스팸 필터 설정 조회 (기본값 사용)
+        const spamSettings = await ctx.prisma.siteSetting.findUnique({
+          where: { siteId_key: { siteId: 1, key: 'spam_filter' } },
+        });
+
+        const spamConfig = (spamSettings?.value as any) || {
+          forbiddenWordsEnabled: false, // 이미 checkSpamGuard에서 검사했으므로 비활성화
+          urlBlacklistEnabled: true,
+          duplicateContentEnabled: true,
+          duplicateContentWindowMinutes: 1,
+          reportThresholdDocument: 5,
+          reportThresholdComment: 5,
+          akismetEnabled: false,
+          actionOnSpam: 'block',
+        };
+
+        const spamCheckResult = await spamFilter.check(
+          {
+            type: 'comment',
+            content: input.content,
+            authorId: ctx.session.user.id,
+            authorIp: ctx.ip ?? '127.0.0.1',
+            siteId: 1,
+          },
+          spamConfig,
+        );
+
+        if (spamCheckResult.isSpam) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: spamCheckResult.reason || '스팸으로 판단되어 저장할 수 없습니다',
+          });
+        }
+
         const actorUser = await ctx.prisma.user.findUnique({
           where: { id: ctx.session.user.id },
           select: { nickName: true },

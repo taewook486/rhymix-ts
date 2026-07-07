@@ -637,6 +637,99 @@ export const adminSettingsRouter = router({
     }),
 
   // ==========================================================================
+  // CAPTCHA Settings (SPEC-CAPTCHA-001 REQ-CAPTCHA-005)
+  // ==========================================================================
+
+  /**
+   * CAPTCHA 설정 조회.
+   */
+  getCaptcha: protectedAdminProcedure.query(async ({ ctx }) => {
+    const settings = {
+      signupEnabled: await getSiteSetting(ctx, 'security.captcha.signup.enabled', false),
+      loginEnabled: await getSiteSetting(ctx, 'security.captcha.login.enabled', false),
+      turnstileSiteKey: await getSiteSetting(ctx, 'security.captcha.turnstile.siteKey', ''),
+      turnstileSecretKey: await getSiteSetting(ctx, 'security.captcha.turnstile.secretKey', ''),
+      loginCaptchaThreshold: await getSiteSetting(ctx, 'security.login.captchaThreshold', 5),
+    };
+
+    return z
+      .object({
+        signupEnabled: z.boolean(),
+        loginEnabled: z.boolean(),
+        turnstileSiteKey: z.string(),
+        turnstileSecretKey: z.string(),
+        loginCaptchaThreshold: z.number().int().min(1).max(10),
+      })
+      .parse(settings);
+  }),
+
+  /**
+   * CAPTCHA 설정 업데이트.
+   */
+  updateCaptcha: protectedAdminProcedure
+    .input(
+      z
+        .object({
+          signupEnabled: z.boolean().default(false),
+          loginEnabled: z.boolean().default(false),
+          turnstileSiteKey: z.string().optional(),
+          turnstileSecretKey: z.string().optional(),
+          loginCaptchaThreshold: z.number().int().min(1).max(10).default(5),
+        })
+        .refine(
+          (data) => {
+            // ISSUE #4 FIX: Cannot enable captcha without keys
+            if (data.signupEnabled || data.loginEnabled) {
+              const hasSiteKey = data.turnstileSiteKey !== undefined && data.turnstileSiteKey.length > 0;
+              const hasSecretKey = data.turnstileSecretKey !== undefined && data.turnstileSecretKey.length > 0;
+              return hasSiteKey && hasSecretKey;
+            }
+            return true;
+          },
+          {
+            message: 'CAPTCHA를 활성화하려면 Turnstile Site Key와 Secret Key를 모두 입력해야 합니다.',
+            path: ['turnstileSiteKey', 'turnstileSecretKey'],
+          },
+        ),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        await setSiteSetting(txCtx, 'security.captcha.signup.enabled', input.signupEnabled, actorId);
+        await setSiteSetting(txCtx, 'security.captcha.login.enabled', input.loginEnabled, actorId);
+
+        // ISSUE #3 FIX: Only update keys if explicitly provided (undefined means keep existing)
+        if (input.turnstileSiteKey !== undefined) {
+          await setSiteSetting(
+            txCtx,
+            'security.captcha.turnstile.siteKey',
+            input.turnstileSiteKey,
+            actorId,
+          );
+        }
+        if (input.turnstileSecretKey !== undefined) {
+          await setSiteSetting(
+            txCtx,
+            'security.captcha.turnstile.secretKey',
+            input.turnstileSecretKey,
+            actorId,
+          );
+        }
+        await setSiteSetting(
+          txCtx,
+          'security.login.captchaThreshold',
+          input.loginCaptchaThreshold,
+          actorId,
+        );
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
   // Design Settings (REQ-ADMIN2-053)
   // ==========================================================================
 
@@ -717,6 +810,10 @@ export const adminSettingsRouter = router({
         ogImageUrl: z.string().url().optional().or(z.literal('')),
         canonicalUrlPolicy: z.enum(['none', 'default', 'custom']),
         sitemapEnabled: z.boolean(),
+        // REQ-SEO-006: Additional SEO fields
+        googleAnalyticsId: z.string().max(50).optional(),
+        naverSiteVerificationCode: z.string().max(200).optional(),
+        robotsTxtCustomContent: z.string().max(5000).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -1085,6 +1182,78 @@ export const adminSettingsRouter = router({
       await ctx.prisma.$transaction(async (tx) => {
         const txCtx = { ...ctx, prisma: tx };
         await setSiteSetting(txCtx, 'debug', input, actorId);
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // Social Login Settings (REQ-SOCIAL-005)
+  // ==========================================================================
+
+  /**
+   * 소셜 로그인 설정 조회 (REQ-SOCIAL-005).
+   */
+  getSocial: protectedAdminProcedure.query(async ({ ctx }) => {
+    const settings = {
+      kakao: {
+        enabled: await getSiteSetting(ctx, 'social.kakao.enabled', false),
+        clientId: await getSiteSetting(ctx, 'social.kakao.clientId', ''),
+        clientSecret: await getSiteSetting(ctx, 'social.kakao.clientSecret', ''),
+      },
+      google: {
+        enabled: await getSiteSetting(ctx, 'social.google.enabled', false),
+        clientId: await getSiteSetting(ctx, 'social.google.clientId', ''),
+        clientSecret: await getSiteSetting(ctx, 'social.google.clientSecret', ''),
+      },
+    };
+
+    return settings;
+  }),
+
+  /**
+   * 소셜 로그인 설정 업데이트 (REQ-SOCIAL-005).
+   *
+   * 여러 SiteSetting 키를 하나의 트랜잭션으로 묶어 원자적으로 적용한다.
+   */
+  updateSocial: protectedAdminProcedure
+    .input(
+      z.object({
+        kakao: z.object({
+          enabled: z.boolean(),
+          clientId: z.string().optional(),
+          clientSecret: z.string().optional(),
+        }),
+        google: z.object({
+          enabled: z.boolean(),
+          clientId: z.string().optional(),
+          clientSecret: z.string().optional(),
+        }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        // Kakao settings
+        await setSiteSetting(txCtx, 'social.kakao.enabled', input.kakao.enabled, actorId);
+        if (input.kakao.clientId !== undefined) {
+          await setSiteSetting(txCtx, 'social.kakao.clientId', input.kakao.clientId, actorId);
+        }
+        if (input.kakao.clientSecret !== undefined) {
+          await setSiteSetting(txCtx, 'social.kakao.clientSecret', input.kakao.clientSecret, actorId);
+        }
+
+        // Google settings
+        await setSiteSetting(txCtx, 'social.google.enabled', input.google.enabled, actorId);
+        if (input.google.clientId !== undefined) {
+          await setSiteSetting(txCtx, 'social.google.clientId', input.google.clientId, actorId);
+        }
+        if (input.google.clientSecret !== undefined) {
+          await setSiteSetting(txCtx, 'social.google.clientSecret', input.google.clientSecret, actorId);
+        }
       });
 
       return { success: true };

@@ -1,30 +1,54 @@
 'use client';
 
 /**
- * 회원가입 페이지 — SPEC-AUTH-001 Slice F.
+ * 회원가입 페이지 — SPEC-AUTH-001 Slice F + SPEC-CAPTCHA-001 REQ-CAPTCHA-001/003.
  *
  * useActionState 를 사용하여 signupAction 을 호출하고,
  * 성공 시 "이메일을 확인하세요" 메시지를 표시한다 (리다이렉트하지 않음).
  *
+ * SPEC-CAPTCHA-001: 이용약관 동의 체크박스와 Turnstile CAPTCHA 위젯 추가.
+ *
  * @MX:NOTE: [AUTO] 회원가입 폼 Client Component — signupAction Server Action 의 유일한 UI 진입점.
+ * @MX:SPEC: SPEC-AUTH-001 Slice F + SPEC-CAPTCHA-001 REQ-CAPTCHA-001, REQ-CAPTCHA-003
  */
-import { useActionState, useRef, useState } from 'react';
+import React, { useActionState, useRef, useState } from 'react';
 import Link from 'next/link';
+import { trpc } from '@/providers/TRPCProvider';
 
 import { signupAction } from '@/lib/auth/actions';
 import { initialAuthActionState, type AuthActionState } from '@/lib/auth/auth-state';
+import { TermsConsent } from './TermsConsent';
+import { TurnstileWidget, type TurnstileWidgetRef } from './TurnstileWidget';
 
 export default function SignupPage() {
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const turnstileRef = useRef<TurnstileWidgetRef>(null);
+
+  // 약관 동의 상태 관리 - {key, version}[] 형태로 저장
+  const [agreements, setAgreements] = useState<Array<{ key: string; version: string }>>([]);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [requiredTermsCount, setRequiredTermsCount] = useState(0);
 
   const wrappedAction = async (
     prev: AuthActionState,
     formData: FormData,
   ): Promise<AuthActionState> => {
+    // agreements를 JSON 문자열로 추가 (FormData는 배열을 직접 지원하지 않음)
+    formData.append('agreements', JSON.stringify(agreements));
+
+    // CAPTCHA 토큰 추가
+    if (captchaToken) {
+      formData.append('captchaToken', captchaToken);
+    }
+
     const result = await signupAction(prev, formData);
     if (result.ok) {
       setSubmitted(true);
+    } else {
+      // 실패 시 Turnstile 위젯 재설정
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
     }
     return result;
   };
@@ -33,6 +57,29 @@ export default function SignupPage() {
     wrappedAction,
     initialAuthActionState,
   );
+
+  // Real tRPC queries
+  const { data: captchaConfig } = trpc.public.captcha.getConfig.useQuery();
+  const { data: terms } = trpc.public.terms.listActive.useQuery();
+
+  // 필수 약관 수 계산 (AC-CAPTCHA-002: submit disabled until required terms checked)
+  React.useEffect(() => {
+    if (terms) {
+      const requiredCount = terms.filter((t: { id: number; type: string; title: string; content: string; required: boolean }) => t.required).length;
+      setRequiredTermsCount(requiredCount);
+    }
+  }, [terms]);
+
+  const handleToggleAgreement = (term: { id: number; type: string; required: boolean }) => {
+    setAgreements((prev) => {
+      const exists = prev.find((a) => a.key === term.type);
+      if (exists) {
+        return prev.filter((a) => a.key !== term.type);
+      } else {
+        return [...prev, { key: term.type, version: '' }]; // TODO: version 필드가 추가되면 실제 값 사용
+      }
+    });
+  };
 
   // 성공 시 이메일 확인 안내 메시지 표시
   if (submitted && state.ok) {
@@ -124,9 +171,37 @@ export default function SignupPage() {
           />
         </div>
 
+        {/* SPEC-CAPTCHA-001 REQ-CAPTCHA-001: 이용약관 동의 */}
+        <TermsConsent
+          selectedAgreements={new Set(agreements.filter((a) => {
+            // Find terms with matching key in agreements array
+            const term = terms?.find((t: { id: number; type: string; title: string; content: string; required: boolean }) => t.type === a.key);
+            return term && term.required;
+          }).map((a) => {
+            const term = terms?.find((t: { id: number; type: string; title: string; content: string; required: boolean }) => t.type === a.key);
+            return term?.id ?? 0;
+          }))}
+          onToggleAgreement={handleToggleAgreement}
+          terms={terms ?? []}
+        />
+
+        {/* SPEC-CAPTCHA-001 REQ-CAPTCHA-003: Turnstile CAPTCHA */}
+        {captchaConfig?.signupEnabled && (
+          <div className="space-y-2">
+            <TurnstileWidget
+              ref={turnstileRef}
+              siteKey={captchaConfig.siteKey}
+              onSuccess={setCaptchaToken}
+            />
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || (requiredTermsCount > 0 && agreements.filter((a) => {
+            const term = terms?.find((t: { id: number; type: string; title: string; content: string; required: boolean }) => t.type === a.key);
+            return term && term.required;
+          }).length < requiredTermsCount) || (captchaConfig?.signupEnabled && !captchaToken)}
           className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {isPending ? '가입 처리 중...' : '회원가입'}

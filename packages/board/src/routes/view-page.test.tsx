@@ -23,6 +23,10 @@ const FIXED_DOC = {
   boardId: 1,
   deletedAt: null,
   author: { id: 7, userId: 'hong', nickName: '홍길동' },
+  // SPEC-BOARD-UI-001: 조회수/추천수 필드
+  readedCount: 123,
+  votedCount: 5,
+  blamedCount: 0,
 };
 
 /** 공통 fakeProps 생성 헬퍼 */
@@ -51,6 +55,7 @@ describe('BoardViewPage', () => {
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
       listDocuments: vi.fn(),
       createDocument: vi.fn(),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
     }));
     vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
@@ -76,6 +81,7 @@ describe('BoardViewPage', () => {
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
       listDocuments: vi.fn(),
       createDocument: vi.fn(),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
     }));
     vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
@@ -101,6 +107,7 @@ describe('BoardViewPage', () => {
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
       listDocuments: vi.fn(),
       createDocument: vi.fn(),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
     }));
     vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
@@ -126,6 +133,7 @@ describe('BoardViewPage', () => {
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
       listDocuments: vi.fn(),
       createDocument: vi.fn(),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
     }));
     vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
@@ -151,6 +159,7 @@ describe('BoardViewPage', () => {
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
       listDocuments: vi.fn(),
       createDocument: vi.fn(),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
     }));
     vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
@@ -179,6 +188,7 @@ describe('BoardViewPage', () => {
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
       listDocuments: vi.fn(),
       createDocument: vi.fn(),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
     }));
     vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
@@ -205,6 +215,7 @@ describe('BoardViewPage', () => {
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
       listDocuments: vi.fn(),
       createDocument: vi.fn(),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
     }));
     vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
@@ -249,6 +260,7 @@ describe('BoardViewPage', () => {
       getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
       listDocuments: vi.fn(),
       createDocument: vi.fn(),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
     }));
     vi.doMock('@rhymix-ts/comment', () => ({
       listComments: vi.fn().mockResolvedValue([]),
@@ -267,5 +279,302 @@ describe('BoardViewPage', () => {
 
     // FIXED_DOC.commentCount = 3
     expect(html).toContain('3');
+  });
+
+  // ---------------------------------------------------------------------------
+  // SPEC-BOARD-UI-001: Secret post access gate (REQ-BUI-006)
+  // ---------------------------------------------------------------------------
+
+  it('VP-9: status=SECRET 문서는 작성자가 아닌 비로그인 사용자에게 "비밀글입니다" 메시지 표시 (REQ-BUI-006)', async () => {
+    const secretDoc = { ...FIXED_DOC, status: 'SECRET' as const };
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(secretDoc),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(makeFakeProps({ session: null }) as any);
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // "비밀글입니다" 메시지가 표시되어야 함
+    expect(html).toContain('비밀글입니다');
+    // 제목, 본문, 첨부파일, 댓글은 표시되지 않아야 함
+    expect(html).not.toContain('테스트 문서 제목');
+    expect(html).not.toContain('안전한 HTML 콘텐츠');
+    expect(html).not.toContain('댓글');
+  });
+
+  it('VP-10: status=SECRET 문서는 작성자에게 내용이 정상 표시됨 (REQ-BUI-006)', async () => {
+    const secretDoc = { ...FIXED_DOC, status: 'SECRET' as const };
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(secretDoc),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(
+      makeFakeProps({ session: { user: { id: 7, isAdmin: false } } }) as any,
+    );
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 작성자(session.user.id === doc.authorId)는 내용을 볼 수 있어야 함
+    expect(html).toContain('테스트 문서 제목');
+    expect(html).toContain('안전한 HTML 콘텐츠');
+    expect(html).not.toContain('비밀글입니다');
+  });
+
+  it('VP-11: status=SECRET 문서는 관리자에게 내용이 정상 표시됨 (REQ-BUI-006)', async () => {
+    const secretDoc = { ...FIXED_DOC, status: 'SECRET' as const };
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(secretDoc),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(
+      makeFakeProps({ session: { user: { id: 999, isAdmin: true } } }) as any,
+    );
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 관리자는 내용을 볼 수 있어야 함
+    expect(html).toContain('테스트 문서 제목');
+    expect(html).toContain('안전한 HTML 콘텐츠');
+    expect(html).not.toContain('비밀글입니다');
+  });
+
+  // ---------------------------------------------------------------------------
+  // SPEC-BOARD-UI-001: View/Vote counts display (REQ-BUI-007)
+  // ---------------------------------------------------------------------------
+
+  it('VP-12: 조회수와 추천수가 메타 라인에 표시됨 (REQ-BUI-007)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(makeFakeProps({}) as any);
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // FIXED_DOC.readedCount = 123, FIXED_DOC.votedCount = 5
+    expect(html).toContain('123');
+    expect(html).toContain('5');
+    expect(html).toContain('조회수');
+    expect(html).toContain('추천수');
+  });
+
+  // ---------------------------------------------------------------------------
+  // SPEC-BOARD-UI-001: Vote buttons (REQ-BUI-007)
+  // ---------------------------------------------------------------------------
+
+  it('VP-13: 비로그인 사용자에게는 추천/비추천 버튼이 표시되지 않음 (REQ-BUI-007)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(makeFakeProps({ session: null }) as any);
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 추천/비추천 버튼이 표시되지 않아야 함
+    // "비추천"은 버튼에만 표시되는 고유한 텍스트
+    expect(html).not.toContain('비추천');
+  });
+
+  it('VP-14: 로그인 사용자에게는 추천/비추천 버튼이 표시됨 (REQ-BUI-007)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(
+      makeFakeProps({ session: { user: { id: 1, isAdmin: false } } }) as any,
+    );
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 추천/비추천 버튼이 표시되어야 함
+    expect(html).toContain('추천');
+    expect(html).toContain('비추천');
+  });
+
+  // ---------------------------------------------------------------------------
+  // SPEC-BOARD-UI-001: Delete button (REQ-BUI-007)
+  // ---------------------------------------------------------------------------
+
+  it('VP-15: canEdit=true인 경우 삭제 버튼이 표시됨 (REQ-BUI-007)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // 작성자 본인 (canEdit = true)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(
+      makeFakeProps({ session: { user: { id: 7, isAdmin: false } } }) as any,
+    );
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 삭제 버튼이 표시되어야 함
+    expect(html).toContain('삭제');
+  });
+
+  it('VP-16: canEdit=false인 경우 삭제 버튼이 표시되지 않음 (REQ-BUI-007)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // 다른 사용자 (canEdit = false)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(
+      makeFakeProps({ session: { user: { id: 999, isAdmin: false } } }) as any,
+    );
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 삭제 버튼이 표시되지 않아야 함
+    expect(html).not.toContain('삭제');
+  });
+
+  // ---------------------------------------------------------------------------
+  // SPEC-BOARD-UI-001: Prev/Next links (REQ-BUI-007)
+  // ---------------------------------------------------------------------------
+
+  it('VP-17: 이전글/다음글 링크가 표시됨 (REQ-BUI-007)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi
+        .fn()
+        .mockResolvedValue({ prev: { id: 41, title: '이전 글' }, next: { id: 43, title: '다음 글' } }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(makeFakeProps({}) as any);
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 이전글/다음글 링크가 표시되어야 함
+    expect(html).toContain('이전글');
+    expect(html).toContain('다음글');
+    expect(html).toContain('/free/41');
+    expect(html).toContain('/free/43');
+  });
+
+  it('VP-18: 이전글이 없으면 "이전글" 링크가 표시되지 않음 (REQ-BUI-007)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: { id: 43, title: '다음 글' } }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(makeFakeProps({}) as any);
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 이전글 링크가 표시되지 않아야 함
+    expect(html).not.toContain('이전글');
+    expect(html).toContain('다음글');
+  });
+
+  it('VP-19: 다음글이 없으면 "다음글" 링크가 표시되지 않음 (REQ-BUI-007)', async () => {
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: { id: 41, title: '이전 글' }, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({
+      listComments: vi.fn().mockResolvedValue([]),
+    }));
+    vi.doMock('@rhymix-ts/file', () => ({
+      listAttachments: vi.fn().mockResolvedValue([]),
+    }));
+
+    const { BoardViewPage } = await import('./view-page.js');
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(makeFakeProps({}) as any);
+    const html = renderToStaticMarkup(node as React.ReactElement);
+
+    // 다음글 링크가 표시되지 않아야 함
+    expect(html).toContain('이전글');
+    expect(html).not.toContain('다음글');
   });
 });

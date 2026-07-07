@@ -23,11 +23,14 @@ import NextAuth from 'next-auth';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type NextAuthConfig = Record<string, any>;
 import Credentials from 'next-auth/providers/credentials';
+import Kakao from 'next-auth/providers/kakao';
+import Google from 'next-auth/providers/google';
 
 import { consumeAutoLoginMarker, login } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
 
-import { createJwtCallback, createSessionCallback } from './callbacks';
+import { createJwtCallback, createSessionCallback, createSignInCallback } from './callbacks';
+import { resolveDefaultSiteId } from './site';
 
 /**
  * Best-effort IP/User-Agent 추출 — Auth.js Credentials authorize() 의 두 번째
@@ -60,6 +63,35 @@ export const authConfig: NextAuthConfig = {
     error: '/login',
   },
   providers: [
+    // SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-001/002: Kakao/Google OAuth providers.
+    //
+    // Client ID/Secret are read from environment variables. NextAuth's `providers`
+    // array must be synchronous (both here and in proxy.ts's separate edge-runtime
+    // `NextAuth(authConfig)` call), so the DB-backed admin override from
+    // packages/auth's `socialAuth({ prisma })` helper (REQ-SOCIAL-005: change keys
+    // without redeploy) is NOT wired in here — that would require converting to
+    // next-auth v5's async config-factory pattern (`NextAuth(async (req) => ...)`),
+    // which has a large blast radius (proxy.ts's edge-runtime instance, ~40 test
+    // files importing authConfig as a static object) and needs its own dedicated
+    // change with edge-runtime DB-access review, not bundled into this fix.
+    //
+    // The admin enable/disable toggle (AC-SOCIAL-004) still works independently of
+    // this: the login page hides the button based on a query to the admin settings,
+    // regardless of whether the provider below is registered with env-var creds.
+    //
+    // @MX:TODO: [AUTO] REQ-SOCIAL-005's "no redeploy needed" client ID/secret override
+    //   is not implemented — only the enable/disable toggle is live. Wiring DB-backed
+    //   credentials requires the async config-factory refactor described above.
+    // @MX:SPEC: SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-001, REQ-SOCIAL-002, REQ-SOCIAL-004
+    Kakao({
+      clientId: process.env.KAKAO_CLIENT_ID ?? '',
+      clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
+    }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    }),
+
     Credentials({
       name: 'credentials',
       credentials: {
@@ -67,6 +99,8 @@ export const authConfig: NextAuthConfig = {
         password: { label: 'Password', type: 'password' },
         autologinUserId: { label: 'AutoLoginUserId', type: 'text' },
         autologinNonce: { label: 'AutoLoginNonce', type: 'text' },
+        // ISSUE #1 FIX: captchaToken 필드 추가 (Turnstile 위젯에서 전송)
+        captchaToken: { label: 'CaptchaToken', type: 'text' },
       },
       // @MX:ANCHOR: NextAuth Credentials Provider 의 유일한 인증 진입점.
       //   autologin (Branch A, Slice H) / password (Branch B, Slice C) 두 경로가
@@ -125,9 +159,33 @@ export const authConfig: NextAuthConfig = {
           return null;
         }
         const { ip, userAgent } = extractClientHints(req as Request);
+
+        // ISSUE #1 FIX: captchaToken 추출
+        const captchaToken =
+          typeof credentials?.captchaToken === 'string' ? credentials.captchaToken : undefined;
+
+        // ISSUE #1 FIX: SiteSettings에서 CAPTCHA 설정 동적으로 로드
+        const siteId = await resolveDefaultSiteId(prisma);
+        const [captchaLoginEnabled, captchaSecretKey, captchaThreshold] = await Promise.all([
+          prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.login.enabled' } } }),
+          prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.turnstile.secretKey' } } }),
+          prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.login.captchaThreshold' } } }),
+        ]);
+
+        const captchaEnabled = Boolean(captchaLoginEnabled?.value) && Boolean(captchaSecretKey?.value);
+
         const result = await login(
-          { identifier, password, ip, userAgent },
-          { prisma, config: { passwordPolicy: 'normal' } },
+          { identifier, password, ip, userAgent, captchaToken },
+          {
+            prisma,
+            config: {
+              passwordPolicy: 'normal',
+              // ISSUE #1 FIX: CAPTCHA 설정 주입
+              captchaEnabled,
+              captchaSecretKey: captchaSecretKey?.value as string,
+              captchaThreshold: (captchaThreshold?.value as number) ?? 5,
+            },
+          },
         );
         if (!result.ok) {
           return null;
@@ -142,6 +200,14 @@ export const authConfig: NextAuthConfig = {
     }),
   ],
   callbacks: {
+    /**
+     * SPEC-SOCIAL-LOGIN-001: OAuth sign-in callback for account linking.
+     * Body factored out to ./callbacks (createSignInCallback) for unit testability,
+     * matching the jwt/session callback pattern (Slice D1).
+     */
+    signIn: createSignInCallback({ prisma }) as unknown as NonNullable<
+      NextAuthConfig['callbacks']
+    >['signIn'],
     /**
      * /admin 경로 보호. 본 콜백은 middleware.ts 에서도 사용 가능하지만, Slice C 는
      * Auth.js 기본 미들웨어 통합만 제공하고 세분화된 RBAC 는 Slice D 에서 다룬다.

@@ -75,6 +75,7 @@ export default defineConfig({
       'apps/**/lib/**/*.test.tsx',
       'apps/**/middleware.test.ts',
       'apps/**/proxy.test.ts',
+      'apps/**/proxy.pageview.test.ts',
       'apps/**/app/**/*.test.ts',
       'apps/**/app/**/*.test.tsx',
       'apps/**/server/**/*.test.ts',

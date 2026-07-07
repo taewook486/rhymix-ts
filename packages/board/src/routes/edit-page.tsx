@@ -12,6 +12,7 @@ import React from 'react';
 import type { PrismaClient } from '@prisma/client';
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
 import { getDocument } from '@rhymix-ts/document';
+import { TagInput } from '../components/TagInput';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -87,6 +88,19 @@ export async function BoardEditPage({
           <label htmlFor="content">내용</label>
           <textarea id="content" name="content" required rows={10} defaultValue={doc.content ?? ''} />
         </div>
+
+        {/* REQ-TAG-001: 태그 입력 UI */}
+        <div>
+          <label htmlFor="tags">태그</label>
+          <TagInput
+            name="tags"
+            defaultValue={Array.isArray(doc.tags) ? doc.tags as string[] : []}
+            maxTags={10}
+            maxTagLength={30}
+            suggestions={[]} // TODO: tRPC로 자동완성 데이터 가져오기
+          />
+        </div>
+
         {/* 파일 첨부 — Phase 3에서 활성화 (SPEC-FILE-001) */}
         <div style={{ opacity: 0.4, pointerEvents: 'none' }}>
           <label>파일 첨부 (파일 첨부는 Phase 3에서 활성화됩니다)</label>

@@ -30,6 +30,8 @@ import type { MailDispatcher } from './mail';
 import { generateToken } from './tokens';
 // SPEC-POINT-001 REQ-POINT-070: 회원가입 보너스 포인트 지급
 import { pointHooks } from '@rhymix-ts/point';
+// SPEC-CAPTCHA-001 REQ-CAPTCHA-003: Turnstile verification
+import { verifyTurnstileToken } from './captcha';
 
 // ---------------------------------------------------------------------------
 // Input schema
@@ -50,6 +52,7 @@ export const SignupInput = z.object({
   agreements: z
     .array(z.object({ key: z.string(), version: z.string() }))
     .default([]),
+  captchaToken: z.string().optional(), // SPEC-CAPTCHA-001 REQ-CAPTCHA-003
   extraVars: z.record(z.unknown()).default({}),
   ip: z.string().max(64),
   userAgent: z.string().max(512).default(''),
@@ -69,6 +72,11 @@ export interface SignupConfig {
   passwordPolicy: 'normal' | 'strong' | 'very_strong';
   /** SPEC-POINT-001 REQ-POINT-070: 회원가입 보너스 포인트 (0 = 비활성화) */
   signupBonus?: number;
+  /** SPEC-CAPTCHA-001 REQ-CAPTCHA-003: CAPTCHA 설정 */
+  captchaEnabled?: boolean;
+  captchaSecretKey?: string;
+  /** SPEC-CAPTCHA-001 REQ-CAPTCHA-002: 필수 약관 ID 목록 (empty = no terms required) */
+  requiredTermsIds?: number[];
 }
 
 // ---------------------------------------------------------------------------
@@ -79,7 +87,9 @@ export type SignupErrorCode =
   | 'VALIDATION_FAILED'
   | 'IDENTIFIER_TAKEN'
   | 'IDENTIFIER_DENIED'
-  | 'WEAK_PASSWORD';
+  | 'WEAK_PASSWORD'
+  | 'CAPTCHA_FAILED'
+  | 'TERMS_REQUIRED'; // SPEC-CAPTCHA-001 REQ-CAPTCHA-002
 
 export interface SignupResult {
   ok: true;
@@ -161,6 +171,37 @@ export async function signup(
     return { ok: false, code: 'IDENTIFIER_TAKEN' };
   }
 
+  // 4.5) SPEC-CAPTCHA-001 REQ-CAPTCHA-003: CAPTCHA verification (when enabled).
+  if (ctx.config.captchaEnabled && ctx.config.captchaSecretKey) {
+    if (!input.captchaToken) {
+      return { ok: false, code: 'CAPTCHA_FAILED' };
+    }
+    try {
+      const result = await verifyTurnstileToken({
+        token: input.captchaToken,
+        secretKey: ctx.config.captchaSecretKey,
+        remoteIp: input.ip,
+      });
+      if (!result.success) {
+        return { ok: false, code: 'CAPTCHA_FAILED' };
+      }
+    } catch {
+      // Network error or Turnstile API failure → fail closed
+      return { ok: false, code: 'CAPTCHA_FAILED' };
+    }
+  }
+
+  // 4.75) SPEC-CAPTCHA-001 REQ-CAPTCHA-002: 필수 약관 동의 검증.
+  if (ctx.config.requiredTermsIds && ctx.config.requiredTermsIds.length > 0) {
+    const agreementKeys = input.agreements.map((a) => a.key);
+    const missingRequired = ctx.config.requiredTermsIds.filter(
+      (termsId) => !agreementKeys.includes(`terms:${termsId}`),
+    );
+    if (missingRequired.length > 0) {
+      return { ok: false, code: 'TERMS_REQUIRED' };
+    }
+  }
+
   // 5) Argon2id hash (REQ-AUTH-001).
   const passwordHash = await hashPassword(input.password);
 
@@ -210,6 +251,18 @@ export async function signup(
           userAgent: input.userAgent,
         } as never,
       });
+
+      // SPEC-CAPTCHA-001 REQ-CAPTCHA-002: 약관 동의 기록 (MemberAgreement 재사용).
+      for (const agreement of input.agreements) {
+        await tx.memberAgreement.create({
+          data: {
+            userId: user.id,
+            agreementKey: agreement.key,
+            version: agreement.version,
+            ip: input.ip,
+          } as never,
+        });
+      }
 
       return { id: user.id, tokenKey };
     });

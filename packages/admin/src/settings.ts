@@ -478,6 +478,10 @@ const SeoSettingsSchema = z.object({
   ogImageUrl: z.string().url().optional().or(z.literal('')),
   canonicalUrlPolicy: z.enum(['none', 'default', 'custom']).default('none'),
   sitemapEnabled: z.boolean().default(false),
+  // REQ-SEO-006: Google Analytics ID, Naver verification, robots.txt custom content
+  googleAnalyticsId: z.string().max(50).optional(), // UA-XXXXX-Y or G-XXXXXXXX format
+  naverSiteVerificationCode: z.string().max(200).optional(), // Naver Search Advisor verification code
+  robotsTxtCustomContent: z.string().max(5000).optional(), // Custom robots.txt content (admin editable)
 });
 
 export interface SeoSettings {
@@ -488,6 +492,10 @@ export interface SeoSettings {
   ogImageUrl?: string;
   canonicalUrlPolicy: 'none' | 'default' | 'custom';
   sitemapEnabled: boolean;
+  // REQ-SEO-006: Additional SEO fields
+  googleAnalyticsId?: string;
+  naverSiteVerificationCode?: string;
+  robotsTxtCustomContent?: string;
 }
 
 /**
@@ -495,6 +503,7 @@ export interface SeoSettings {
  *
  * REQ-ADMIN2-118: 메타 태그, Open Graph, canonical URL 정책.
  * REQ-ADMIN2-119: sitemap.xml 생성 활성화 여부.
+ * REQ-SEO-006: Google Analytics ID, Naver 사이트 인증 코드, robots.txt 사용자 정의 내용.
  */
 export async function getSeoSettings(
   ctx: { prisma: PrismaClient },
@@ -511,6 +520,10 @@ export async function getSeoSettings(
     ogImageUrl: (value.ogImageUrl as string) || '',
     canonicalUrlPolicy: (value.canonicalUrlPolicy as SeoSettings['canonicalUrlPolicy']) || 'none',
     sitemapEnabled: (value.sitemapEnabled as boolean) || false,
+    // REQ-SEO-006: Additional fields with defaults
+    googleAnalyticsId: (value.googleAnalyticsId as string) || '',
+    naverSiteVerificationCode: (value.naverSiteVerificationCode as string) || '',
+    robotsTxtCustomContent: (value.robotsTxtCustomContent as string) || '',
   };
 }
 

@@ -20,9 +20,10 @@ export default async function AdminSecuritySettingsPage() {
   }
 
   const caller = await getServerCaller();
-  const [securitySettings, ipControlSettings] = await Promise.all([
+  const [securitySettings, ipControlSettings, captchaSettings] = await Promise.all([
     caller.admin.settings.getSecurity(),
     caller.admin.settings.getIpControl(),
+    caller.admin.settings.getCaptcha(),
   ]);
 
   const initial = {
@@ -30,6 +31,11 @@ export default async function AdminSecuritySettingsPage() {
     ipControlEnabled: ipControlSettings.enabled,
     ipControlAllowList: ipControlSettings.allowList.join('\n'),
     ipControlDenyList: ipControlSettings.denyList.join('\n'),
+    captchaSignupEnabled: captchaSettings.signupEnabled,
+    captchaLoginEnabled: captchaSettings.loginEnabled,
+    captchaSiteKey: captchaSettings.turnstileSiteKey,
+    captchaSecretKey: captchaSettings.turnstileSecretKey,
+    captchaLoginThreshold: captchaSettings.loginCaptchaThreshold,
   };
 
   return (

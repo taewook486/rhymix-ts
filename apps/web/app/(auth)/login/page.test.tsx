@@ -29,6 +29,25 @@ vi.mock('@/lib/auth/actions', () => ({
   initialAuthActionState: { ok: true },
 }));
 
+// Mock tRPC provider - provide captcha config mock data
+vi.mock('@/providers/TRPCProvider', () => ({
+  trpc: {
+    public: {
+      captcha: {
+        getConfig: {
+          useQuery: () => ({
+            data: {
+              signupEnabled: false,
+              loginEnabled: false,
+              siteKey: 'test-site-key',
+            },
+          }),
+        },
+      },
+    },
+  },
+}));
+
 vi.mock('next/link', () => ({
   default: (props: { href: string; children: React.ReactNode; className?: string }) => {
     const { href, children, ...rest } = props;

@@ -10,6 +10,8 @@
  * content.history.*     — 수정 이력 조회 (Slice D)
  * content.attachment.*  — 파일 첨부 presign + 관리 (Slice E)
  * content.extraKeys.*   — 게시판 extra key 목록 조회 (Slice F)
+ * content.message.*     — 쪽지 시스템 (SPEC-MESSAGE-001)
+ * content.poll.*        — 설문 투표 및 게시물 첨부 (SPEC-POLL-001)
  */
 import { router } from '../../trpc';
 import { contentDocumentRouter } from './document';
@@ -21,6 +23,8 @@ import { contentReportRouter } from './report';
 import { contentHistoryRouter } from './history';
 import { contentAttachmentRouter } from './attachment';
 import { contentExtraKeysRouter } from './extra-keys';
+import { contentMessageRouter } from './message';
+import { contentPollRouter } from './poll';
 
 export const contentRouter = router({
   document:  contentDocumentRouter,
@@ -32,4 +36,6 @@ export const contentRouter = router({
   history:   contentHistoryRouter,
   attachment: contentAttachmentRouter,
   extraKeys: contentExtraKeysRouter,
+  message:   contentMessageRouter,
+  poll:      contentPollRouter,
 });

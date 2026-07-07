@@ -73,11 +73,22 @@ interface JwtCallbackArgs {
    */
   session?: unknown;
   isNewUser?: boolean;
+  /**
+   * SPEC-SOCIAL-LOGIN-001: OAuth provider 정보 (signIn 콜백에서만 제공).
+   * account.provider (kakao/google)와 account.providerAccountId가 포함된다.
+   */
+  account?: Record<string, unknown> | null;
 }
 
 interface SessionCallbackArgs {
   session: { user?: { id?: string } } | null;
   token: Record<string, unknown> | null;
+}
+
+interface SignInCallbackArgs {
+  account: Record<string, unknown> | null;
+  user: { id?: string; email?: string; name?: string } | null;
+  profile?: Record<string, unknown> | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -238,5 +249,176 @@ export function createSessionCallback() {
         (token.twoFactorVerified as boolean) === true;
     }
     return session;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// signIn callback factory (SPEC-SOCIAL-LOGIN-001)
+// ---------------------------------------------------------------------------
+
+/**
+ * OAuth sign-in callback factory — SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-003/004/006.
+ *
+ * Invoked during OAuth sign-in flow (Kakao/Google) AFTER the user has authenticated
+ * with the provider but BEFORE a session is issued.
+ *
+ * Flow:
+ * 1. Check if SocialAccount exists for (provider, providerAccountId) → existing user, proceed
+ * 2. If no SocialAccount, check if a User exists with the same email:
+ *    - Only auto-link when the provider confirms the email is verified (Google
+ *      `email_verified`, Kakao `kakao_account.is_email_verified`). An unverified email
+ *      match is REJECTED (not "fall through to new user" — emailAddress is a unique
+ *      column, so a second User with the same email would throw a constraint violation).
+ *      Rejecting also prevents account takeover via a spoofable/unverified OAuth profile.
+ * 3. If no existing user either, create new User + SocialAccount (new social signup).
+ * 4. Any error during resolution/creation fails closed (return false) — user.id would
+ *    otherwise be left unset, issuing a session for a nonexistent/unlinked user.
+ *
+ * @MX:ANCHOR: OAuth sign-in 계정 연결/생성의 유일한 진입점.
+ * @MX:REASON: OAuth provider 인증 후 세션 발급 전에 계정 생성/연결을 결정해야 한다.
+ * @MX:WARN: [AUTO] Email verification 필드 확인 필수 — 미확인 이메일로 계정 탈취 방지.
+ * @MX:REASON: OAuth provider가 이메일 소유권을 확인하지 않으면 기존 계정 연결 위험.
+ * @MX:SPEC: SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-003, REQ-SOCIAL-004, REQ-SOCIAL-006
+ */
+export function createSignInCallback(deps: CallbackDeps) {
+  const { prisma } = deps;
+
+  return async function signIn({
+    account,
+    user,
+    profile,
+  }: SignInCallbackArgs): Promise<boolean> {
+    // Skip OAuth handling if no account info (credentials login)
+    if (!account || !user?.id) {
+      return true;
+    }
+
+    const provider = account.provider as string; // 'kakao' | 'google'
+    const providerAccountId = account.providerAccountId as string;
+
+    // Only handle Kakao/Google providers
+    if (provider !== 'kakao' && provider !== 'google') {
+      return true;
+    }
+
+    const email = user.email || (profile?.email as string) || '';
+    const nickname = user.name || (profile?.name as string) || '';
+
+    try {
+      // 1. Check if SocialAccount already exists → return existing user
+      const existingSocialAccount = await prisma.socialAccount.findUnique({
+        where: {
+          provider_providerAccountId: {
+            provider,
+            providerAccountId,
+          },
+        },
+      });
+
+      if (existingSocialAccount) {
+        // Account already linked → proceed with sign-in
+        return true;
+      }
+
+      // 2. Check if User exists with same email → account linking (REQ-SOCIAL-004)
+      //
+      // SECURITY: Only auto-link when the provider confirms email is verified.
+      // An attacker could use unverified OAuth email to hijack existing accounts.
+      const emailVerified = (() => {
+        if (provider === 'google') {
+          // Google OIDC: profile.email_verified === true when verified
+          return (profile?.email_verified as boolean) === true;
+        }
+        if (provider === 'kakao') {
+          // Kakao: nested verification field
+          // @MX:TODO: [AUTO] Kakao verification 필드 경로 확인 필요 — 실제 API 응답 검증 후 확정.
+          return (
+            (profile?.kakao_account as Record<string, unknown> | null)
+              ?.is_email_verified === true ||
+            (profile?.is_email_verified as boolean) === true
+          );
+        }
+        // Unknown provider - conservative: do NOT auto-link
+        return false;
+      })();
+
+      const existingUserByEmail = email
+        ? await prisma.user.findUnique({
+            where: { emailAddress: email },
+          })
+        : null;
+
+      if (existingUserByEmail) {
+        // SECURITY CHECK: Only auto-link if provider verified the email.
+        if (!emailVerified) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `OAuth sign-in rejected: unverified email from ${provider} matches an existing account (${email}). ` +
+              '이미 사용 중인 이메일입니다. 비밀번호로 로그인 후 계정 설정에서 연결해주세요.',
+          );
+          return false;
+        }
+
+        // Email verified by provider → safe to auto-link
+        await prisma.socialAccount.create({
+          data: {
+            userId: existingUserByEmail.id,
+            provider,
+            providerAccountId,
+          },
+        });
+
+        // Update user.id to point to the existing user
+        user.id = String(existingUserByEmail.id);
+        return true;
+      }
+
+      // 3. New social signup (REQ-SOCIAL-003) → create User + SocialAccount
+      // Handle nickname collision (REQ-SOCIAL-003)
+      let finalNickname = nickname || `user_${provider}_${providerAccountId.slice(0, 8)}`;
+
+      // Check for nickname collision and append suffix if needed
+      const existingNickname = await prisma.user.findUnique({
+        where: { nickName: finalNickname },
+      });
+
+      if (existingNickname) {
+        // Simple collision handling: append random suffix
+        // TODO: REQ-SOCIAL-003 requires nickname picker UI; for MVP we auto-generate
+        const randomSuffix = Math.floor(Math.random() * 1000);
+        finalNickname = `${finalNickname}_${randomSuffix}`;
+      }
+
+      // Create new user
+      const newUser = await prisma.user.create({
+        data: {
+          userId: `${provider}_${providerAccountId}`, // TEMP: userId 컬럼은 deprecated 예정
+          emailAddress: email || `${provider}_${providerAccountId}@temp.local`, // TEMP: email 없는 경우 임시값
+          passwordHash: '', // OAuth 사용자는 비밀번호 없음
+          nickName: finalNickname,
+          status: 'APPROVED', // REQ-SOCIAL-003: 이메일 인증 없이 즉시 승인
+          userName: finalNickname,
+        },
+      });
+
+      // Create SocialAccount link
+      await prisma.socialAccount.create({
+        data: {
+          userId: newUser.id,
+          provider,
+          providerAccountId,
+        },
+      });
+
+      // Update user.id to point to the new user
+      user.id = String(newUser.id);
+      return true;
+    } catch (error) {
+      // Fail closed: an error during account resolution/creation means user.id was
+      // never set to a valid DB row. Letting sign-in proceed here would issue a
+      // session for a nonexistent/unlinked user — reject instead.
+      console.error('OAuth account linking error:', error);
+      return false;
+    }
   };
 }

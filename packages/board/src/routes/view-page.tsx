@@ -5,12 +5,12 @@
  * prisma 는 apps/web 레이어에서 주입됨 — 직접 import 금지.
  *
  * @MX:NOTE [AUTO]: BoardViewPage는 BoardIndexPage 와 동일한 prisma 주입 패턴을 따름.
- * @MX:SPEC: SPEC-CONTENT-001
+ * @MX:SPEC: SPEC-CONTENT-001, SPEC-BOARD-UI-001 REQ-BUI-006, REQ-BUI-007
  */
 import React from 'react';
 import type { PrismaClient } from '@prisma/client';
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
-import { getDocument } from '@rhymix-ts/document';
+import { getDocument, getAdjacentDocuments } from '@rhymix-ts/document';
 import { listComments } from '@rhymix-ts/comment';
 import { listAttachments } from '@rhymix-ts/file';
 import { sanitize } from '../components/sanitize';
@@ -50,18 +50,27 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
  *
  * @MX:ANCHOR [AUTO]: 문서 상세 보기 — apps/web 라우터 + boardModule.routes.view 에서 호출.
  * @MX:REASON: fan_in >= 3 (apps/web/app/[mid]/[id]/page.tsx, boardModule.routes, 테스트).
- * @MX:SPEC: SPEC-CONTENT-001
+ * @MX:SPEC: SPEC-CONTENT-001, SPEC-BOARD-UI-001 REQ-BUI-006, REQ-BUI-007
  */
 export async function BoardViewPage(props: BoardViewPageProps): Promise<React.ReactElement> {
   const { instance, documentId, prisma, session } = props;
   const mid = instance.mid;
 
   // 병렬 데이터 로드 — 문서/댓글/첨부파일
-  const [doc, comments, attachments] = await Promise.all([
+  const [doc, comments, attachments, adjacent] = await Promise.all([
     getDocument(documentId, { prisma }),
     listComments({ documentId }, { prisma }),
     listAttachments({ documentId }, { prisma }),
+    getAdjacentDocuments(
+      { documentId, boardId: instance.id, sort: 'list_order' },
+      { prisma },
+    ),
   ]);
+
+  // 비밀글 접근 권한 판단 (REQ-BUI-006)
+  const canViewSecret =
+    doc.status !== 'SECRET' ||
+    (session !== null && (session.user.id === doc.authorId || session.user.isAdmin));
 
   // 수정 권한 판단: 작성자 본인 또는 admin
   const canEdit =
@@ -75,16 +84,32 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
     ? regdate.toLocaleDateString('ko-KR')
     : String(regdate ?? '');
 
+  // 비밀글 접근 거부 메시지 (REQ-BUI-006)
+  if (!canViewSecret) {
+    return (
+      <main className="max-w-3xl mx-auto p-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 font-medium">비밀글입니다</p>
+          <p className="text-yellow-600 text-sm mt-2">
+            이 글은 작성자와 관리자만 볼 수 있습니다.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-3xl mx-auto p-4">
       {/* 문서 제목 */}
       <h1 className="text-2xl font-bold mb-2">{doc.title}</h1>
 
-      {/* 메타 정보: 작성자, 날짜, 댓글 수 */}
+      {/* 메타 정보: 작성자, 날짜, 댓글 수, 조회수, 추천수 (REQ-BUI-007) */}
       <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
         <span>{doc.nickName ?? (doc.author?.nickName ?? '익명')}</span>
         <span>{createdDateStr}</span>
         <span>댓글 {doc.commentCount}</span>
+        <span>조회수 {doc.readedCount}</span>
+        <span>추천수 {doc.votedCount}</span>
       </div>
 
       {/* 태그 */}
@@ -139,18 +164,65 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
         {/* CommentList injected by apps/web */}
       </div>
 
+      {/* 투표 버튼 (REQ-BUI-007) — 로그인 사용자에게만 표시 */}
+      {session !== null && (
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            type="button"
+            className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200"
+          >
+            추천
+          </button>
+          <button
+            type="button"
+            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+          >
+            비추천
+          </button>
+        </div>
+      )}
+
+      {/* 이전글/다음글 링크 (REQ-BUI-007) */}
+      <div className="flex items-center justify-between mb-4 text-sm">
+        {adjacent.prev && (
+          <a
+            href={`/${mid}/${adjacent.prev.id}`}
+            className="text-blue-600 hover:underline"
+          >
+            이전글: {adjacent.prev.title}
+          </a>
+        )}
+        <span />
+        {adjacent.next && (
+          <a
+            href={`/${mid}/${adjacent.next.id}`}
+            className="text-blue-600 hover:underline"
+          >
+            다음글: {adjacent.next.title}
+          </a>
+        )}
+      </div>
+
       {/* 액션 바 */}
       <div className="flex items-center gap-4">
         <a href={`/${mid}`} className="text-sm text-blue-600 hover:underline">
           글 목록
         </a>
         {canEdit && (
-          <a
-            href={`/${mid}/write?id=${documentId}`}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            수정
-          </a>
+          <>
+            <a
+              href={`/${mid}/write?id=${documentId}`}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              수정
+            </a>
+            <button
+              type="button"
+              className="text-sm text-red-600 hover:underline"
+            >
+              삭제
+            </button>
+          </>
         )}
       </div>
     </main>

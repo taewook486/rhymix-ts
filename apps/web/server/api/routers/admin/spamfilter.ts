@@ -348,6 +348,243 @@ export const adminSpamfilterRouter = router({
         return result;
       }),
   }),
+
+  // URL 블랙리스트 관리 (SPEC-SPAM-001 REQ-SPAM-006)
+  urlBlacklist: router({
+    list: protectedAdminProcedure
+      .query(async ({ ctx }) => {
+        const siteId = await resolveSiteId(ctx);
+        return ctx.prisma.spamUrlBlacklist.findMany({
+          where: { siteId },
+          orderBy: { domain: 'asc' },
+        });
+      }),
+
+    add: protectedAdminProcedure
+      .input(
+        z.object({
+          domain: z.string().min(1).max(200),
+          isRegex: z.boolean().default(false),
+          reason: z.string().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const siteId = await resolveSiteId(ctx);
+
+        // 중복 체크
+        const existing = await ctx.prisma.spamUrlBlacklist.findUnique({
+          where: { siteId_domain: { siteId, domain: input.domain } },
+        });
+
+        if (existing) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: '이미 존재하는 도메인입니다.',
+          });
+        }
+
+        const result = await ctx.prisma.spamUrlBlacklist.create({
+          data: {
+            siteId,
+            domain: input.domain,
+            isRegex: input.isRegex,
+            reason: input.reason,
+          },
+        });
+
+        // AdminLog 기록
+        await ctx.prisma.adminLog.create({
+          data: {
+            actorId: ctx.session.user.id,
+            action: 'configure',
+            target: `spamfilter:url-blacklist:${result.id}`,
+            diff: { before: null, after: { domain: input.domain, isRegex: input.isRegex } },
+            ip: ctx.ip ?? null,
+            userAgent: ctx.userAgent ?? null,
+          },
+        });
+
+        return result;
+      }),
+
+    remove: protectedAdminProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const siteId = await resolveSiteId(ctx);
+
+        const existing = await ctx.prisma.spamUrlBlacklist.findFirst({
+          where: { id: input.id, siteId },
+        });
+
+        if (!existing) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'URL 블랙리스트를 찾을 수 없습니다.',
+          });
+        }
+
+        await ctx.prisma.spamUrlBlacklist.delete({
+          where: { id: input.id },
+        });
+
+        // AdminLog 기록
+        await ctx.prisma.adminLog.create({
+          data: {
+            actorId: ctx.session.user.id,
+            action: 'configure',
+            target: `spamfilter:url-blacklist:${input.id}`,
+            diff: { before: { domain: existing.domain }, after: null },
+            ip: ctx.ip ?? null,
+            userAgent: ctx.userAgent ?? null,
+          },
+        });
+
+        return { success: true };
+      }),
+  }),
+
+  // 스팸 검토 큐 관리 (SPEC-SPAM-001 REQ-SPAM-005)
+  reviewQueue: router({
+    list: protectedAdminProcedure
+      .input(
+        z.object({
+          status: z.enum(['pending', 'approved', 'deleted', 'banned']).optional(),
+          type: z.enum(['document', 'comment']).optional(),
+          limit: z.number().int().min(1).max(100).optional(),
+          cursor: z.number().int().optional(),
+        }),
+      )
+      .query(async ({ ctx, input }) => {
+        const siteId = await resolveSiteId(ctx);
+
+        const where: any = { siteId };
+        if (input.status) where.status = input.status;
+        if (input.type) where.type = input.type;
+
+        const [items, total] = await Promise.all([
+          ctx.prisma.spamReviewQueue.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            take: input.limit || 20,
+            ...(input.cursor && { skip: 1, cursor: { id: input.cursor } }),
+          }),
+          ctx.prisma.spamReviewQueue.count({ where }),
+        ]);
+
+        return {
+          items,
+          total,
+          hasMore: items.length === (input.limit || 20),
+        };
+      }),
+
+    review: protectedAdminProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          action: z.enum(['approve', 'delete', 'ban']),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const siteId = await resolveSiteId(ctx);
+
+        const queueItem = await ctx.prisma.spamReviewQueue.findUnique({
+          where: { id: input.id },
+        });
+
+        if (!queueItem) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: '검토 항목을 찾을 수 없습니다.',
+          });
+        }
+
+        const now = new Date();
+
+        if (input.action === 'approve') {
+          // 승인: 콘텐츠 공개 상태로 변경
+          if (queueItem.type === 'document') {
+            await ctx.prisma.document.update({
+              where: { id: queueItem.contentId },
+              data: { status: 'PUBLIC' },
+            });
+          } else {
+            await ctx.prisma.comment.update({
+              where: { id: queueItem.contentId },
+              data: { status: 1 },
+            });
+          }
+
+          await ctx.prisma.spamReviewQueue.update({
+            where: { id: input.id },
+            data: {
+              status: 'approved',
+              reviewedAt: now,
+              reviewerId: ctx.session.user.id,
+            },
+          });
+        } else if (input.action === 'delete') {
+          // 삭제: 콘텐츠 삭제
+          if (queueItem.type === 'document') {
+            await ctx.prisma.document.update({
+              where: { id: queueItem.contentId },
+              data: { deletedAt: now },
+            });
+          } else {
+            await ctx.prisma.comment.update({
+              where: { id: queueItem.contentId },
+              data: { deletedAt: now },
+            });
+          }
+
+          await ctx.prisma.spamReviewQueue.update({
+            where: { id: input.id },
+            data: {
+              status: 'deleted',
+              reviewedAt: now,
+              reviewerId: ctx.session.user.id,
+            },
+          });
+        } else if (input.action === 'ban') {
+          // 차단: IP 밴 및 콘텐츠 삭제
+          // TODO: IP 밴 구현 필요
+          if (queueItem.type === 'document') {
+            await ctx.prisma.document.update({
+              where: { id: queueItem.contentId },
+              data: { deletedAt: now },
+            });
+          } else {
+            await ctx.prisma.comment.update({
+              where: { id: queueItem.contentId },
+              data: { deletedAt: now },
+            });
+          }
+
+          await ctx.prisma.spamReviewQueue.update({
+            where: { id: input.id },
+            data: {
+              status: 'banned',
+              reviewedAt: now,
+              reviewerId: ctx.session.user.id,
+            },
+          });
+        }
+
+        // AdminLog 기록
+        await ctx.prisma.adminLog.create({
+          data: {
+            actorId: ctx.session.user.id,
+            action: 'configure',
+            target: `spamfilter:review-queue:${input.id}`,
+            diff: { before: { status: queueItem.status }, after: { status: input.action } },
+            ip: ctx.ip ?? null,
+            userAgent: ctx.userAgent ?? null,
+          },
+        });
+
+        return { success: true };
+      }),
+  }),
 });
 
 export type SpamFilterRouter = typeof adminSpamfilterRouter;

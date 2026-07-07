@@ -16,6 +16,8 @@ import {
   incrementVisitCounters,
   getVisitStats,
   getSummaryCounts,
+  getNewContent,
+  getDayOverDay,
 } from '@rhymix-ts/admin/stats'
 
 export const adminStatsRouter = router({
@@ -49,6 +51,39 @@ export const adminStatsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       return getSummaryCounts(input.siteId, ctx.prisma)
+    }),
+
+  /**
+   * 최근 N일 신규 콘텐츠 조회 (SPEC-STATS-001 REQ-STATS-003).
+   *
+   * 대시보드 "최근 7일 신규 콘텐츠 바 차트" 데이터.
+   * DailyStat 집계 테이블에서 일별 게시물/댓글/회원 신규 수를 반환한다.
+   */
+  getNewContent: protectedAdminProcedure
+    .input(
+      z.object({
+        siteId: z.number().int().positive(),
+        days: z.number().int().positive().optional().default(7),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return getNewContent(input.siteId, input.days, ctx.prisma)
+    }),
+
+  /**
+   * 전일 대비 증감율 조회 (SPEC-STATS-001 REQ-STATS-005).
+   *
+   * 회원/문서/댓글/파일 각각에 대해 금일 vs 전일 신규 누적의 변화율(%)을 반환.
+   * 대시보드 요약 카드에 ▲N% / ▼N% 로 표시된다.
+   */
+  getDayOverDay: protectedAdminProcedure
+    .input(
+      z.object({
+        siteId: z.number().int().positive(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return getDayOverDay(input.siteId, ctx.prisma)
     }),
 
   /**

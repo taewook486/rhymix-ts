@@ -12,3 +12,4 @@
 
 export * from './visit-counter'
 export * from './ip-hasher'
+export * from './daily-stat-aggregation'

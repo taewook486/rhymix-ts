@@ -71,7 +71,7 @@ export async function reportDocument(
     throw new DuplicateReportError(targetType, targetId);
   }
 
-  return ctx.prisma.documentReport.create({
+  const report = await ctx.prisma.documentReport.create({
     data: {
       documentId: parsed.documentId ?? null,
       commentId: parsed.commentId ?? null,
@@ -81,6 +81,80 @@ export async function reportDocument(
       resolved: false,
     },
   });
+
+  // SPEC-SPAM-001 AC-SPAM-003: 신고 임계치 초과 시 자동 비공개 처리
+  // 스팸 필터 설정 조회
+  const spamSettings = await ctx.prisma.siteSetting.findUnique({
+    where: { siteId_key: { siteId: 1, key: 'spam_filter' } },
+  });
+
+  const spamConfig = (spamSettings?.value as any) || {
+    reportThresholdDocument: 5,
+    reportThresholdComment: 5,
+  };
+
+  // 게시물 신고 임계치 확인
+  if (parsed.documentId !== undefined) {
+    const reportCount = await ctx.prisma.documentReport.count({
+      where: {
+        documentId: parsed.documentId,
+        resolved: false,
+      },
+    });
+
+    if (reportCount > spamConfig.reportThresholdDocument) {
+      // 게시물을 SECRET 상태로 변경 (비공개 처리)
+      await ctx.prisma.document.update({
+        where: { id: parsed.documentId },
+        data: { status: 'SECRET' },
+      });
+
+      // 스팸 검토 큐에 추가
+      const { SpamFilter } = await import('@rhymix-ts/spam');
+      const spamFilter = new SpamFilter(ctx.prisma);
+      await spamFilter.addToReviewQueue(
+        1, // siteId
+        'document',
+        parsed.documentId,
+        'report_threshold' as any,
+        { reporterCount: reportCount },
+      );
+    }
+  }
+
+  // 댓글 신고 임계치 확인
+  if (parsed.commentId !== undefined) {
+    const reportCount = await ctx.prisma.documentReport.count({
+      where: {
+        commentId: parsed.commentId,
+      },
+    });
+
+    if (reportCount > spamConfig.reportThresholdComment) {
+      // 댓글을 비공개 처리. Comment.status 는 Prisma CommentStatus enum 이 아니라
+      // @rhymix-ts/comment 의 숫자 코드(PUBLIC=1, SECRET=2)를 그대로 쓰는 레거시 Int 컬럼이다.
+      // packages/comment 가 packages/document 에 의존하므로 순환 참조를 피하기 위해 상수를 import 하지 않고
+      // 값을 직접 사용한다 — @rhymix-ts/comment 의 CommentStatus.SECRET 과 동일한 값이어야 한다.
+      const COMMENT_STATUS_SECRET = 2;
+      await ctx.prisma.comment.update({
+        where: { id: parsed.commentId },
+        data: { status: COMMENT_STATUS_SECRET },
+      });
+
+      // 스팸 검토 큐에 추가
+      const { SpamFilter } = await import('@rhymix-ts/spam');
+      const spamFilter = new SpamFilter(ctx.prisma);
+      await spamFilter.addToReviewQueue(
+        1, // siteId
+        'comment',
+        parsed.commentId,
+        'report_threshold' as any,
+        { reporterCount: reportCount },
+      );
+    }
+  }
+
+  return report;
 }
 
 // ---------------------------------------------------------------------------
