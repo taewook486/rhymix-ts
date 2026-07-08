@@ -5,15 +5,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { contentMessageRouter } from './message';
 
-// Mock the message service
-vi.mock('@rhymix-ts/message', () => ({
-  createMessageService: vi.fn(() => ({
+// Mock the message service.
+// createMessageService must return the SAME object on every call: message.ts
+// memoizes its service singleton lazily (`messageService ??= createMessageService()`),
+// so a factory returning a fresh object per call would desync from the `mockService`
+// reference re-fetched in beforeEach below.
+const { mockMessageService } = vi.hoisted(() => ({
+  mockMessageService: {
     sendMessage: vi.fn(),
     listMessages: vi.fn(),
     readMessage: vi.fn(),
     deleteMessage: vi.fn(),
     countUnread: vi.fn(),
-  })),
+  },
+}));
+
+vi.mock('@rhymix-ts/message', () => ({
+  createMessageService: vi.fn(() => mockMessageService),
   MessageSendInputSchema: z.object({
     receiverId: z.number(),
     subject: z.string(),
@@ -42,8 +50,8 @@ vi.mock('@rhymix-ts/notification', () => ({
 describe('contentMessageRouter', () => {
   let mockService: any;
 
-  beforeEach(() => {
-    const { createMessageService } = require('@rhymix-ts/message');
+  beforeEach(async () => {
+    const { createMessageService } = await import('@rhymix-ts/message');
     mockService = createMessageService();
     vi.clearAllMocks();
   });

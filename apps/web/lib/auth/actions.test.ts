@@ -94,7 +94,13 @@ vi.mock('@rhymix-ts/auth', () => ({
 }));
 
 vi.mock('@rhymix-ts/db', () => ({
-  prisma: { __mock: true },
+  prisma: {
+    // signupAction의 CAPTCHA/약관 동적 로드 경로가 호출하는 모델들
+    // (앱 코드에 resolveDefaultSiteId + siteSetting/terms 조회가 추가되면서 필요)
+    site: { findFirst: vi.fn().mockResolvedValue({ id: 1 }) },
+    siteSetting: { findUnique: vi.fn().mockResolvedValue(null) },
+    terms: { findMany: vi.fn().mockResolvedValue([]) },
+  },
 }));
 
 vi.mock('@/lib/auth/config', () => ({

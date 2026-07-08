@@ -24,6 +24,10 @@ describe('reportDocument', () => {
       documentReport: {
         findFirst: vi.fn().mockResolvedValue(null), // 중복 없음
         create: vi.fn().mockResolvedValue(fakeReport),
+        count: vi.fn().mockResolvedValue(1), // SPEC-SPAM-001: 임계치(기본 5) 미만
+      },
+      siteSetting: {
+        findUnique: vi.fn().mockResolvedValue(null), // 스팸 필터 설정 없음 → 기본값 사용
       },
     };
 
@@ -69,6 +73,10 @@ describe('reportDocument', () => {
       documentReport: {
         findFirst: vi.fn().mockResolvedValue(null), // 다른 사용자는 중복 없음
         create: vi.fn().mockResolvedValue(fakeReport),
+        count: vi.fn().mockResolvedValue(1), // SPEC-SPAM-001: 임계치(기본 5) 미만
+      },
+      siteSetting: {
+        findUnique: vi.fn().mockResolvedValue(null), // 스팸 필터 설정 없음 → 기본값 사용
       },
     };
 

@@ -9,12 +9,16 @@
 import { describe, it, expect } from 'vitest';
 
 describe('module registry (apps/web)', () => {
+  // NOTE: the first `import('./registry')` transitively cold-transforms board's full
+  // dependency graph; on slow filesystems (WSL2/drvfs) this can exceed the default
+  // 15s testTimeout. Under full-suite parallel worker contention this took >90s
+  // (26s in isolation), so the budget is generous here (see packages/board/src/index.test.ts A-1).
   it('B-101: getModuleDefinition("board") → boardModule 반환 (code === "board")', async () => {
     const { getModuleDefinition } = await import('./registry');
     const def = getModuleDefinition('board');
     expect(def).toBeDefined();
     expect(def?.code).toBe('board');
-  });
+  }, 180000);
 
   it('B-102: getModuleDefinition("unknown-module") → undefined', async () => {
     const { getModuleDefinition } = await import('./registry');

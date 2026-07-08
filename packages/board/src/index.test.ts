@@ -11,11 +11,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // ---------------------------------------------------------------------------
 
 describe('boardModule', () => {
+  // NOTE: the first `import('./index.js')` in the process cold-transforms board's
+  // full dependency graph (editor/UI components etc.); on slow filesystems (WSL2/drvfs)
+  // this alone can exceed the default 15s testTimeout. Under full-suite parallel worker
+  // contention this took >90s (25s in isolation), so the budget is generous here.
   it('A-1: code === "board", displayName === "Board"', async () => {
     const { boardModule } = await import('./index.js');
     expect(boardModule.code).toBe('board');
     expect(boardModule.displayName).toBe('Board');
-  });
+  }, 180000);
 
   it('A-2: configSchema.parse(defaultBoardConfig) 성공 (동일 객체 반환)', async () => {
     const { boardModule, defaultBoardConfig } = await import('./index.js');

@@ -528,7 +528,9 @@ describe('listDocuments search (Slice B)', () => {
     mockPrisma.$queryRaw.mockResolvedValue([{ id: 1, title: 'hit', listOrder: BigInt(1000) }]);
 
     const result = await listDocuments(
-      { moduleInstanceId: 3, status: 'PUBLIC', search: '검색어' },
+      // SPEC-BOARD-UI-001: search만 주어지면 searchField 기본값이 'title'(단순 contains)로
+      // 바뀌었으므로, FTS($queryRaw) 경로를 검증하려면 searchField='content'를 명시해야 한다.
+      { moduleInstanceId: 3, status: 'PUBLIC', search: '검색어', searchField: 'content' },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { prisma: mockPrisma as any },
     );

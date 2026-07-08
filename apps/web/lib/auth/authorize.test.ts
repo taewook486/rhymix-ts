@@ -42,6 +42,10 @@ vi.mock('@rhymix-ts/auth', () => ({
 vi.mock('@rhymix-ts/db', () => ({
   prisma: {
     user: { findUnique: prismaUserFindUniqueMock },
+    // Branch B(password 경로)의 CAPTCHA 동적 설정 조회(resolveDefaultSiteId +
+    // siteSetting.findUnique)가 호출하는 모델들.
+    site: { findFirst: vi.fn().mockResolvedValue({ id: 1 }) },
+    siteSetting: { findUnique: vi.fn().mockResolvedValue(null) },
   },
 }));
 
@@ -66,6 +70,7 @@ vi.mock('next-auth/providers/credentials', () => ({
 vi.mock('./callbacks', () => ({
   createJwtCallback: () => vi.fn(),
   createSessionCallback: () => vi.fn(),
+  createSignInCallback: () => vi.fn(),
 }));
 
 // ---------------------------------------------------------------------------
@@ -74,10 +79,11 @@ vi.mock('./callbacks', () => ({
 
 import { authConfig } from './config';
 
-// authConfig.providers[0] 가 Credentials() 의 config 그대로 반환되므로
-// authorize 함수에 직접 접근 가능.
+// SPEC-SOCIAL-LOGIN-001로 Kakao/Google OAuth provider가 앞에 추가되어 더 이상
+// providers[0]이 Credentials가 아니므로, name으로 찾는다.
+// Credentials()의 config가 그대로 반환되므로 authorize 함수에 직접 접근 가능.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const provider = (authConfig.providers as any[])[0];
+const provider = (authConfig.providers as any[]).find((p) => p.name === 'credentials');
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const authorize: (
   credentials: Record<string, unknown> | undefined,

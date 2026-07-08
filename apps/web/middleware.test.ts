@@ -76,7 +76,10 @@ function createReq(pathname: string, _isLoggedIn: boolean) {
     clone: () => new URL(rawUrl.toString()),
   });
   const headers = new Headers({ host: 'localhost:3000' });
-  return { nextUrl, headers };
+  // SPEC-STATS-001: proxy.ts가 페이지뷰 로깅을 위해 request.cookies.get(...)을 호출하므로
+  // (getVisitorIdFromRequest), NextRequest.cookies의 최소 동작을 흉내낸다.
+  const cookies = { get: () => undefined };
+  return { nextUrl, headers, cookies };
 }
 
 // ---------------------------------------------------------------------------
@@ -203,7 +206,9 @@ function createHostReq(
   const baseUrl = `${scheme}://${host}${pathname}`;
   const nextUrl = new URL(baseUrl);
   const headers = new Headers({ host });
-  return { nextUrl, headers };
+  // SPEC-STATS-001: proxy.ts의 getVisitorIdFromRequest가 request.cookies.get(...)을 호출한다.
+  const cookies = { get: () => undefined };
+  return { nextUrl, headers, cookies };
 }
 
 /** 도메인 픽스처 — example.com 에 대응 */
@@ -433,7 +438,9 @@ describe('middleware — Slice D (SiteLock 503)', () => {
       host: 'localhost:3000',
       'x-forwarded-for': ip,
     });
-    return { nextUrl, headers };
+    // SPEC-STATS-001: proxy.ts의 getVisitorIdFromRequest가 request.cookies.get(...)을 호출한다.
+    const cookies = { get: () => undefined };
+    return { nextUrl, headers, cookies };
   }
 
   it('SL-1: sitelock_enabled=true, IP not in allowlist, GET / → 503', async () => {
