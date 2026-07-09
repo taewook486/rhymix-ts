@@ -324,30 +324,33 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
           </form>
         </div>
 
-        <div className="flex gap-2">
-          {/* 정렬 선택 */}
-          <select
-            onChange={(e) => {
-              const newSort = e.target.value;
-              window.location.href = buildUrl({ page: 1, sort: newSort === 'latest' ? undefined : newSort });
-            }}
-            value={sort}
-            className="border rounded px-2 py-1"
-          >
-            <option value="latest">최신순</option>
-            <option value="recommend">추천순</option>
-            <option value="views">조회순</option>
-          </select>
+        <div className="flex gap-2 items-center">
+          {/* 정렬 선택 (서버 렌더 링크 — RSC 경계에서 클라이언트 이벤트 핸들러를 쓸 수 없음) */}
+          {(
+            [
+              { value: 'latest', label: '최신순' },
+              { value: 'recommend', label: '추천순' },
+              { value: 'views', label: '조회순' },
+            ] as const
+          ).map((option) => (
+            <a
+              key={option.value}
+              href={buildUrl({ page: 1, sort: option.value === 'latest' ? undefined : option.value })}
+              className={`px-2 py-1 border rounded ${
+                sort === option.value ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'
+              }`}
+            >
+              {option.label}
+            </a>
+          ))}
 
           {/* 뷰 토글 */}
-          <button
-            onClick={() => {
-              window.location.href = buildUrl({ view: view === 'table' ? 'card' : 'table' });
-            }}
+          <a
+            href={buildUrl({ view: view === 'table' ? 'card' : 'table' })}
             className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
           >
             {view === 'table' ? '카드형' : '테이블형'}
-          </button>
+          </a>
         </div>
       </div>
 

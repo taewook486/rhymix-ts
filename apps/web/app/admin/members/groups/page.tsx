@@ -15,14 +15,6 @@ export default async function AdminMemberGroupsPage() {
   const caller = await getServerCaller();
   const groups = await caller.admin.group.list();
 
-  const handleDelete = async (groupId: number) => {
-    'use server';
-    const result = await deleteGroupAction(groupId);
-    if ('error' in result) {
-      throw new Error(result.error);
-    }
-  };
-
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -78,13 +70,11 @@ export default async function AdminMemberGroupsPage() {
                   >
                     수정
                   </a>
-                  <button
-                    type="button"
-                    className="text-red-600 hover:text-red-900"
-                    onClick={() => handleDelete(group.id)}
-                  >
-                    삭제
-                  </button>
+                  <form action={deleteGroupAction.bind(null, group.id)}>
+                    <button type="submit" className="text-red-600 hover:text-red-900">
+                      삭제
+                    </button>
+                  </form>
                 </div>
               </td>
             </tr>

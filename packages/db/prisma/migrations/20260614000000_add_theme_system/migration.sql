@@ -2,6 +2,30 @@
 -- themes, layouts, skins, color_sets, widget_styles, theme_assignments
 -- comment_vote_logs, comment_reports, content_rate_limits
 
+DO $$ BEGIN
+    CREATE TYPE "ThemeStatus" AS ENUM ('INSTALLED', 'ACTIVE', 'DISABLED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "LayoutType" AS ENUM ('DESKTOP', 'MOBILE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "AssignmentScope" AS ENUM ('SITE', 'DOMAIN', 'MODULE_INSTANCE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE "MobileLayoutMode" AS ENUM ('USE_DEFAULT', 'RESPONSIVE', 'SPECIFIC');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 CREATE TABLE IF NOT EXISTS "themes" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
