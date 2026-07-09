@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-07-08 (Phase 9 gap-analysis 11건 전체 완료 — SPEC-POLL-001/MESSAGE-001/SPAM-001 마지막, PR #26/#27 머지)
+> 마지막 갱신: 2026-07-09 (Phase 10 SPEC-MENU-001 작성 — 레거시 "사이트 제작/편집" 완성 SPEC, 구현 대기)
 
 ## 기술 스택 (확정)
 
@@ -34,6 +34,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 7. BACKLOG FOLLOW-UP | KEEP 레거시 모듈 후속 구현 (rss/poll/message/notification) | 2 | 2/2 | 🟢 구현 완료 (FEED-001, NOTIFICATION-001 Slice A+B 모두 완료. e2e만 후속 deferred) |
 | 8. ADMIN SECURITY HARDENING | 보안 리뷰에서 파생된 후속 구현 (2FA TOTP 백엔드 등) | 2 | 2/2 | 🟢 구현 완료 (ADMIN-2FA-OTP-001 + TEST-PRISMA-MOCK-001 전체 완료) |
 | 9. GAP ANALYSIS REMEDIATION | 레거시 실측 비교 기반 신규 기능 11건 | 11 | 11/11 | 🟢 구현 완료 (EDITOR~SPAM 전체, PR #26/#27 머지) |
+| 10. ADMIN "사이트 제작/편집" 완성 | 레거시 최상위 메뉴 parity (메뉴 편집/디자인 시드) | 1 | 0/1 | 📝 SPEC 작성 완료 (구현 대기) |
 
 ---
 
@@ -149,6 +150,26 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | [SPEC-POLL-001](./SPEC-POLL-001/spec.md) | 설문(투표) 모듈 (게시물 연동 + 독립 위젯) | DOCUMENT, WIDGET | P3 | ✅ 구현 완료 (`706ff8b`, PR #26) |
 | [SPEC-MESSAGE-001](./SPEC-MESSAGE-001/spec.md) | 쪽지(DM) 시스템 (회원간 1:1 개인 메시지) | AUTH, NOTIFICATION | P3 | ✅ 구현 완료 (`b6993d5`, PR #26) |
 | [SPEC-SPAM-001](./SPEC-SPAM-001/spec.md) | 스팸 필터 (금지어/URL 블랙리스트/신고 임계치 자동 숨김) | DOCUMENT, COMMENT | P3 | ✅ 구현 완료 (`4ff99fd`, PR #26) |
+
+### Phase 10: ADMIN "사이트 제작/편집" 완성 (레거시 최상위 메뉴 parity, 2026-07-09)
+
+> 레거시 admin 최상위 메뉴 "사이트 제작/편집"의 두 서브메뉴(사이트 메뉴 편집 / 사이트 디자인 설정)를 실사용
+> 가능한 수준으로 완성. Playwright 실측(`dispMenuAdminSiteMap`) + 코드 grep/Read 기반 gap 분석.
+
+| ID | 제목 | 의존 | 우선순위 | 상태 |
+|---|---|---|---|---|
+| [SPEC-MENU-001](./SPEC-MENU-001/spec.md) | 사이트 메뉴 편집 완성(필드/DnD 영속/다중 슬롯 렌더) + 설치 시 기본 디자인 토큰 시드 | ADMIN-001, ADMIN-EXTRAS-001, LAYOUT-001, THEME-POLISH-001, INSTALL-001 | P1 | 📝 SPEC 작성 완료 (구현 대기) |
+
+> 핵심 gap: 백엔드(schema `MenuItem` 전 필드 + `admin.menuItem.reorder` 트랜잭션)는 SPEC-ADMIN-001
+> REQ-ADMIN-030~033으로 "✅ 완료"로 마킹돼 있으나, 실제 UI(`MenuItemEditor`)는 title/url/listOrder 3필드만
+> 노출하고 `MenuItemDnDTree`의 DnD는 same-level·cross-level 모두 `admin.menuItem.reorder`를 호출하지 않아
+> **새로고침하면 사라지는 비영속 프로토타입**이다("완료" 마킹이 실 UI 완성을 보장하지 못한 사례 — spec.md §3에
+> 재발 방지 기록). 또한 `Domain.defaultMenuId`가 단일 필드라 레거시 Main/Utility/Footer 같은 **다중 메뉴 존
+> 슬롯 개념이 부재**(사용자 결정으로 slot 스키마+레이아웃 렌더링 연결을 범위 포함). 설치 시 기본 디자인 토큰
+> (ThemeAssignment.tokensOverride) 미시드 버그도 소규모로 포함. 30개 REQ(REQ-MENU-001~062), 6개 슬라이스
+> (A 편집기 필드 P0 / B DnD 영속 P1 / C slot 스키마 마이그레이션 P1 / D 레이아웃 렌더 P1 / E 토큰 시드 P2 /
+> F unlinked·찾기 P2~P3). 디자인 토큰 편집 UI(THEME-POLISH-001 소유)·레거시 PC/모바일 스킨 배정·MenuItem
+> 백엔드 스키마 변경은 명시 제외.
 
 ### Meta-Plan 문서 (참조)
 
