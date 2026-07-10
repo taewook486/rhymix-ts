@@ -231,7 +231,7 @@ export const adminMenuRouter = router({
    * 슬롯에 메뉴 할당 (REQ-MENU-024).
    * upsert 패턴 — (domainId, slot) 쌍이 존재하면 갱신, 없으면 생성.
    */
-  'slot.assign': protectedAdminProcedure
+  assignSlot: protectedAdminProcedure
     .input(
       z.object({
         domainId: z.number().int().positive(),
@@ -298,7 +298,7 @@ export const adminMenuRouter = router({
   /**
    * 도메인별 슬롯 할당 목록 (REQ-MENU-025).
    */
-  'slot.list': protectedAdminProcedure
+  listSlotAssignments: protectedAdminProcedure
     .input(z.object({ domainId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       const assignments = await ctx.prisma.menuSlotAssignment.findMany({
@@ -321,7 +321,7 @@ export const adminMenuRouter = router({
    * 사이트용 메뉴 생성 (REQ-MENU-025 "메뉴 존 추가").
    * isAdminMenu=false 고정 — 사이트 공용 메뉴만 생성.
    */
-  'siteMenu.create': protectedAdminProcedure
+  createSiteMenu: protectedAdminProcedure
     .input(
       z.object({
         siteId: z.number().int().positive(),

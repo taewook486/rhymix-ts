@@ -22,7 +22,7 @@ export default async function AdminMenuPage() {
   const domainId = await getCurrentDomainId()
   const caller = await getServerCaller()
   const menus = await caller.admin.menu.list({ siteId })
-  const slotAssignments = await caller.admin.menu['slot.list']({ domainId })
+  const slotAssignments = await caller.admin.menu.listSlotAssignments({ domainId })
 
   return (
     <div>

@@ -6,6 +6,7 @@
  */
 import Link from 'next/link';
 import { headers } from 'next/headers';
+import { prisma } from '@/lib/db/prisma';
 import { DarkModeToggle } from '@/components/theme/DarkModeToggle';
 import { auth } from '@/lib/auth/config';
 import { createNotificationService } from '@rhymix-ts/notification';
@@ -38,7 +39,7 @@ export async function GlobalHeader() {
   }> = [];
 
   if (userId != null) {
-    const notificationService = createNotificationService();
+    const notificationService = createNotificationService(prisma);
     unreadCount = await notificationService.countUnread({ recipientId: userId });
     const result = await notificationService.list({ recipientId: userId, limit: 5 });
     recentNotifications = result.items as typeof recentNotifications;

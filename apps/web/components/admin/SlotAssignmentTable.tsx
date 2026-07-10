@@ -5,18 +5,12 @@
  * 도메인별 슬롯(HEADER_PRIMARY, FOOTER, UTILITY)에 메뉴를 배정하는 UI.
  * @MX:SPEC: SPEC-MENU-001 REQ-MENU-024~025
  */
+import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Button } from '@rhymix-ts/ui/components'
-import { trpc } from '@/lib/trpc/client'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@rhymix-ts/ui/components'
+import { trpc } from '@/providers/TRPCProvider'
 
 type MenuSlot = 'HEADER_PRIMARY' | 'FOOTER' | 'UTILITY'
 
@@ -66,32 +60,25 @@ export function SlotAssignmentTable({
   // Filter to site menus only (isAdminMenu=false)
   const siteMenus = menus.filter((m) => !m.isAdminMenu)
 
-  const assignMutation = trpc.admin.menu['slot.assign'].useMutation({
-    onSuccess: (data) => {
+  const assignMutation = trpc.admin.menu.assignSlot.useMutation({
+    onSuccess: () => {
       toast.success('메뉴가 슬롯에 배정되었습니다.')
-      setAssignments((prev) => {
-        const existing = prev.findIndex((a) => a.slot === data.slot)
-        if (existing >= 0) {
-          const updated = [...prev]
-          updated[existing] = data
-          return updated
-        }
-        return [...prev, data]
-      })
       router.refresh()
     },
-    onError: (error) => {
-      toast.error(error.message || '메뉴 배정에 실패했습니다.')
+    onError: (error: unknown) => {
+      const err = error as { message?: string }
+      toast.error(err.message || '메뉴 배정에 실패했습니다.')
     },
   })
 
-  const createMenuMutation = trpc.admin.menu['siteMenu.create'].useMutation({
-    onSuccess: (data) => {
+  const createMenuMutation = trpc.admin.menu.createSiteMenu.useMutation({
+    onSuccess: (data: { id: number }) => {
       toast.success('새 메뉴가 생성되었습니다.')
       router.push(`/admin/menu/${data.id}`)
     },
-    onError: (error) => {
-      toast.error(error.message || '메뉴 생성에 실패했습니다.')
+    onError: (error: unknown) => {
+      const err = error as { message?: string }
+      toast.error(err.message || '메뉴 생성에 실패했습니다.')
     },
   })
 
@@ -135,22 +122,19 @@ export function SlotAssignmentTable({
                   {SLOT_LABELS[slot]}
                 </td>
                 <td className="px-4 py-3 text-sm">
-                  <Select
+                  <select
                     value={assignment?.menuId.toString() || ''}
-                    onValueChange={(value) => handleSlotChange(slot, value)}
+                    onChange={(e) => handleSlotChange(slot, e.target.value)}
                     disabled={assignMutation.isPending}
+                    className="w-full max-w-xs rounded border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <SelectTrigger className="w-full max-w-xs">
-                      <SelectValue placeholder="메뉴를 선택하세요" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {siteMenus.map((menu) => (
-                        <SelectItem key={menu.id} value={menu.id.toString()}>
-                          {menu.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <option value="">메뉴를 선택하세요</option>
+                    {siteMenus.map((menu) => (
+                      <option key={menu.id} value={menu.id.toString()}>
+                        {menu.title}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 <td className="px-4 py-3 text-right text-sm">
                   {assignment && (
