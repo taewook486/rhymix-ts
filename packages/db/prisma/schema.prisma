@@ -93,8 +93,9 @@ model Domain {
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
-  site                Site            @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  indexModuleInstance ModuleInstance? @relation("IndexModule", fields: [indexModuleInstanceId], references: [id])
+  site                Site                 @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  indexModuleInstance ModuleInstance?      @relation("IndexModule", fields: [indexModuleInstanceId], references: [id])
+  slotAssignments     MenuSlotAssignment[]
 
   @@index([siteId])
   @@map("domains")
@@ -156,6 +157,14 @@ model ModuleConfig {
   @@map("module_configs")
 }
 
+// REQ-MENU-020: 메뉴 슬롯 enum (SPEC-MENU-001 Slice C)
+// @MX:SPEC: SPEC-MENU-001 REQ-MENU-020
+enum MenuSlot {
+  HEADER_PRIMARY
+  FOOTER
+  UTILITY
+}
+
 // REQ-ADMIN-030: 사이트별 메뉴 + MenuItem 트리
 model Menu {
   id          Int        @id @default(autoincrement())
@@ -166,8 +175,9 @@ model Menu {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  site  Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  items MenuItem[]
+  site               Site                 @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  items              MenuItem[]
+  slotAssignments    MenuSlotAssignment[]
 
   @@index([siteId])
   @@map("menus")
@@ -201,6 +211,29 @@ model MenuItem {
 
   @@index([menuId, parentId, listOrder])
   @@map("menu_items")
+}
+
+// REQ-MENU-021: 도메인별 메뉴 슬롯 배정 (SPEC-MENU-001 Slice C)
+// @MX:SPEC: SPEC-MENU-001 REQ-MENU-021
+// @MX:WARN: [AUTO] Data migration risk — backfill from defaultMenuId must be idempotent
+// @MX:REASON: Migration creates MenuSlotAssignment rows for existing Domains; must be safe to re-run
+model MenuSlotAssignment {
+  id        Int      @id @default(autoincrement())
+  domainId  Int
+  slot      MenuSlot
+  menuId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  domain Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  // REQ-MENU-023: (domainId, slot) 유니크 제약 — 한 도메인의 한 슬롯은 하나의 메뉴만 가리킴
+  // 메뉴 중복 할당 허용 (同一 menuId가 여러 슬롯에 배정될 수 있음)
+  @@unique([domainId, slot])
+  @@index([domainId])
+  @@index([menuId])
+  @@map("menu_slot_assignments")
 }
 
 // REQ-ADMIN-070~072: 관리자 mutation before/after 감사 로그

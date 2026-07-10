@@ -1,14 +1,15 @@
 /**
- * admin.menu tRPC 라우터 — SPEC-ADMIN-001 Slice D.
+ * admin.menu tRPC 라우터 — SPEC-ADMIN-001 Slice D + SPEC-MENU-001 Slice C.
  *
  * Menu 단위 CRUD: create / list / get / delete.
  * MenuItem 은 adminMenuItemRouter 가 별도 담당.
+ * Slot assignment: assignSlot / listSlots / createSiteMenu.
  *
  * @MX:NOTE: [AUTO] admin.menu.get 의 1-depth include 한계 — lazy load 패턴.
  *           menu.get 은 parentId=null 인 1-depth MenuItem 만 포함.
  *           children 은 admin.menuItem.list({ menuId, parentId }) 로 lazy load.
  *           Slice E 의 dnd-kit 도입과 함께 트리 전체 펼침 UX 정식 도입.
- * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-030
+ * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-030 + SPEC-MENU-001 REQ-MENU-020~025
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
@@ -225,4 +226,116 @@ export const adminMenuRouter = router({
 
       return { updated: input.ops.length };
     }),
+
+  /**
+   * 슬롯에 메뉴 할당 (REQ-MENU-024).
+   * upsert 패턴 — (domainId, slot) 쌍이 존재하면 갱신, 없으면 생성.
+   */
+  'slot.assign': protectedAdminProcedure
+    .input(
+      z.object({
+        domainId: z.number().int().positive(),
+        slot: z.enum(['HEADER_PRIMARY', 'FOOTER', 'UTILITY']),
+        menuId: z.number().int().positive(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 메뉴 존재 검증
+      const menu = await ctx.prisma.menu.findUnique({
+        where: { id: input.menuId },
+      });
+      if (!menu) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: '메뉴를 찾을 수 없습니다.',
+        });
+      }
+
+      // 도메인 존재 검증
+      const domain = await ctx.prisma.domain.findUnique({
+        where: { id: input.domainId },
+      });
+      if (!domain) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: '도메인을 찾을 수 없습니다.',
+        });
+      }
+
+      // upsert: slot이 있으면 update, 없으면 create
+      const assignment = await ctx.prisma.menuSlotAssignment.upsert({
+        where: {
+          domainId_slot: {
+            domainId: input.domainId,
+            slot: input.slot,
+          },
+        },
+        create: {
+          domainId: input.domainId,
+          slot: input.slot,
+          menuId: input.menuId,
+        },
+        update: {
+          menuId: input.menuId,
+        },
+      });
+
+      // AdminLog 기록 (action: menu.slot.assign)
+      await ctx.prisma.adminLog.create({
+        data: {
+          actorId: ctx.session.user.id,
+          action: 'menu.slot.assign',
+          target: `domain:${input.domainId}`,
+          diff: { slot: input.slot, menuId: input.menuId },
+          ip: ctx.ip ?? null,
+          userAgent: ctx.userAgent ?? null,
+        },
+      });
+
+      return assignment;
+    }),
+
+  /**
+   * 도메인별 슬롯 할당 목록 (REQ-MENU-025).
+   */
+  'slot.list': protectedAdminProcedure
+    .input(z.object({ domainId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      const assignments = await ctx.prisma.menuSlotAssignment.findMany({
+        where: { domainId: input.domainId },
+        include: {
+          menu: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+        orderBy: [{ slot: 'asc' }],
+      });
+
+      return assignments;
+    }),
+
+  /**
+   * 사이트용 메뉴 생성 (REQ-MENU-025 "메뉴 존 추가").
+   * isAdminMenu=false 고정 — 사이트 공용 메뉴만 생성.
+   */
+  'siteMenu.create': protectedAdminProcedure
+    .input(
+      z.object({
+        siteId: z.number().int().positive(),
+        title: z.string().min(1).max(80),
+      }),
+    )
+    .mutation(async ({ ctx, input }) =>
+      ctx.prisma.menu.create({
+        data: {
+          siteId: input.siteId,
+          title: input.title,
+          isAdminMenu: false, // 사이트 메뉴
+          listOrder: 0,
+        },
+      }),
+    ),
 });
