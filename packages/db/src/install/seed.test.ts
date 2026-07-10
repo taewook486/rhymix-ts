@@ -112,6 +112,22 @@ describe('seedInstall (unit)', () => {
           return {};
         }),
       },
+      theme: {
+        findUnique: vi.fn(async () => ({
+          id: 'theme-default-id',
+          name: 'default',
+        })),
+        upsert: vi.fn(async () => ({
+          id: 'theme-default-id',
+          name: 'default',
+        })),
+      },
+      layout: {
+        upsert: vi.fn(async () => ({
+          id: 'layout-default-id',
+          name: 'default',
+        })),
+      },
       themeAssignment: {
         create: vi.fn(async () => {
           calls.push('themeAssignment.create');
@@ -164,6 +180,12 @@ describe('seedInstall (unit)', () => {
       memberGroupMember: { create: vi.fn() },
       moduleInstance: { create: vi.fn() },
       siteSetting: { create: vi.fn() },
+      theme: {
+        findUnique: vi.fn(async () => ({
+          id: 'theme-default-id',
+          name: 'default',
+        })),
+      },
       themeAssignment: { create: vi.fn() },
     };
     const prisma = {
@@ -284,6 +306,22 @@ function makeRecordingTx(): RecordedTx {
         calls.push(`siteSetting.create:${args.data.key}`);
         return {};
       }),
+    },
+    theme: {
+      findUnique: vi.fn(async () => ({
+        id: 'theme-default-id',
+        name: 'default',
+      })),
+      upsert: vi.fn(async () => ({
+        id: 'theme-default-id',
+        name: 'default',
+      })),
+    },
+    layout: {
+      upsert: vi.fn(async () => ({
+        id: 'layout-default-id',
+        name: 'default',
+      })),
     },
     themeAssignment: {
       create: vi.fn(async () => {
