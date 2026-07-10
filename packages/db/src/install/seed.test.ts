@@ -112,6 +112,12 @@ describe('seedInstall (unit)', () => {
           return {};
         }),
       },
+      themeAssignment: {
+        create: vi.fn(async () => {
+          calls.push('themeAssignment.create');
+          return {};
+        }),
+      },
     };
     const prisma = {
       $transaction: vi.fn(async (cb: (t: typeof tx) => Promise<unknown>) => cb(tx)),
@@ -158,6 +164,7 @@ describe('seedInstall (unit)', () => {
       memberGroupMember: { create: vi.fn() },
       moduleInstance: { create: vi.fn() },
       siteSetting: { create: vi.fn() },
+      themeAssignment: { create: vi.fn() },
     };
     const prisma = {
       $transaction: vi.fn(async (cb: (t: typeof tx) => Promise<unknown>) => cb(tx)),
@@ -275,6 +282,12 @@ function makeRecordingTx(): RecordedTx {
     siteSetting: {
       create: vi.fn(async (args: { data: { key: string } }) => {
         calls.push(`siteSetting.create:${args.data.key}`);
+        return {};
+      }),
+    },
+    themeAssignment: {
+      create: vi.fn(async () => {
+        calls.push('themeAssignment.create');
         return {};
       }),
     },

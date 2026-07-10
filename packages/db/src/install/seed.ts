@@ -1,7 +1,7 @@
 /**
  * 트랜잭션 기반 초기 시드 — SPEC-INSTALL-001 / REQ-INSTALL-014, REQ-INSTALL-015.
  *
- * `prisma.$transaction(async tx => ...)`로 모든 INSERT/UPDATE을 묶어 부분
+ * `prisma.$transaction(async tx => ...)`로 모든 INSERT/UPDATE를 묶어 부분
  * 시드를 차단합니다. 실패 시 Prisma 트랜잭션이 자동 롤백되며, 호출자
  * (`performInstall`)는 advisory lock 해제 + 사용자 친화적 오류 메시지로
  * 응답합니다.
@@ -18,7 +18,8 @@
  *   9) Board × 3 (board 모듈마다 backing Board; Document FK 선행 조건)
  *  10) Menu × 1 + MenuItem × 3 (board/notice/qna → /{mid}) — REQ-INSTALL-017
  *  11) Domain.update: indexModuleInstanceId=board(REQ-016), defaultMenuId=menu(REQ-017)
- *  12) 샘플 Document (board/notice 각 1건) — REQ-INSTALL-018, seedSampleContent 기본 true
+ *  12) ThemeAssignment (기본 디자인 토큰) — SPEC-MENU-001 REQ-MENU-060
+ *  13) 샘플 Document (board/notice 각 1건) — REQ-INSTALL-018, seedSampleContent 기본 true
  *
  * 주의: `prisma migrate deploy`는 자체 트랜잭션 관리 때문에 본 트랜잭션
  * 안으로 이식할 수 없습니다. 본 시드는 스키마가 사전 적용된 상태(prisma db
@@ -27,8 +28,10 @@
  * @MX:ANCHOR: 첫 영구 DB 변경의 단일 진입점 (fan_in: performInstall, 통합 테스트, 향후 admin re-seed tooling).
  * @MX:REASON: 본 함수가 부분 성공 시 중간 상태를 남기면 install lock과 결합되어 사이트 잠금이 발생한다.
  * @MX:SPEC: SPEC-INSTALL-001 REQ-INSTALL-014, REQ-INSTALL-015, REQ-INSTALL-016, REQ-INSTALL-017, REQ-INSTALL-018
+ *            SPEC-MENU-001 REQ-MENU-060
  */
 import type { PrismaClient } from '@prisma/client';
+import { DEFAULT_THEME_TOKENS } from '@rhymix-ts/core';
 
 /**
  * 호출자가 주입하는 패스워드 해시 버전 태그.
@@ -252,7 +255,20 @@ export async function seedInstall(
       },
     });
 
-    // 12) REQ-INSTALL-018: 환영/공지 샘플 Document(기본 활성).
+    // 12) SPEC-MENU-001 REQ-MENU-060: 기본 디자인 토큰 시드.
+    //     SITE scope ThemeAssignment를 생성하여 tokensOverride를 채운다.
+    //     본 트랜잭션 내에서 수행(부분 시드 방지).
+    await tx.themeAssignment.create({
+      data: {
+        scope: 'SITE',
+        refType: 'site',
+        refId: site.id.toString(),
+        themeId: '', // Token만 저장하는 경우 themeId는 빈 문자열
+        tokensOverride: DEFAULT_THEME_TOKENS,
+      },
+    });
+
+    // 13) REQ-INSTALL-018: 환영/공지 샘플 Document(기본 활성).
     //     board/notice 보드에 최소 1건씩. seedSampleContent=false면 건너뛴다.
     if (input.seedSampleContent !== false) {
       const samples: ReadonlyArray<{ mid: 'board' | 'notice'; title: string; content: string }> = [

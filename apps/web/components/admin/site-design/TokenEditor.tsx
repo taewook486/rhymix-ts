@@ -13,7 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@rhymix-ts/ui';
 import { themeTokensSchema, type ThemeTokens } from '@rhymix-ts/core';
 import { buildFormFields, type FormField } from '@/lib/theme/token-form-builder';
-import { saveTokens } from '@/app/admin/site/design/actions';
+import { loadTokens, saveTokens } from '@/app/admin/site/design/actions';
 
 interface TokenEditorProps {
   siteId: number;
@@ -24,6 +24,7 @@ type ColorScheme = 'light' | 'dark';
 export function TokenEditor({ siteId }: TokenEditorProps) {
   const [activeScheme, setActiveScheme] = useState<ColorScheme>('light');
   const [previewKey, setPreviewKey] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Form field introspection
   const [formFields, setFormFields] = useState<FormField[]>([]);
@@ -44,8 +45,28 @@ export function TokenEditor({ siteId }: TokenEditorProps) {
   } = useForm<ThemeTokens>({
     resolver: zodResolver(themeTokensSchema),
     mode: 'onChange', // Validate on change
-    defaultValues: {} as ThemeTokens, // TODO: DB에서 현재 token 값 로드
+    defaultValues: {} as ThemeTokens, // Loaded via useEffect with loadTokens
   });
+
+  // Load current tokens on mount — SPEC-MENU-001 REQ-MENU-062
+  useEffect(() => {
+    const loadInitialTokens = async () => {
+      setIsLoading(true);
+      const result = await loadTokens({
+        scope: 'site',
+        refId: siteId,
+      });
+
+      if (result.success && result.tokens) {
+        reset(result.tokens);
+      } else {
+        console.error('Failed to load tokens:', result.error);
+      }
+      setIsLoading(false);
+    };
+
+    loadInitialTokens();
+  }, [siteId, reset]);
 
   // Preview key update on form change (debounced)
   useEffect(() => {
@@ -178,8 +199,17 @@ export function TokenEditor({ siteId }: TokenEditorProps) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-500">토큰 로딩 중...</div>
+        </div>
+      )}
+
       {/* Tab bar */}
-      <div className="flex border-b">
+      {!isLoading && (
+        <>
+          <div className="flex border-b">
         <button
           type="button"
           onClick={() => setActiveScheme('light')}
@@ -248,6 +278,8 @@ export function TokenEditor({ siteId }: TokenEditorProps) {
           </div>
         </div>
       </form>
+        </>
+      )}
     </div>
   );
 }

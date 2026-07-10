@@ -16,10 +16,11 @@ import { isAdminSession } from '@/lib/auth/admin-middleware';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { prisma, Prisma } from '@rhymix-ts/db';
+import { getThemeAssignment, applyTokenFallback } from '@/lib/theme/admin-helpers';
 
 // @MX:NOTE: [AUTO] themeTokensSchema는 packages/core에서 import
 // token-form-builder와 동일하게 @rhymix-ts/core를 통해 import
-import { themeTokensSchema } from '@rhymix-ts/core';
+import { themeTokensSchema, type ThemeTokens } from '@rhymix-ts/core';
 
 // ============================================================================
 // Zod Schemas for Input Validation
@@ -51,9 +52,68 @@ const SaveTokensSchema = z.object({
   siteId: z.number().int().positive(),
 });
 
+const LoadTokensSchema = z.object({
+  scope: z.enum(['site', 'domain']), // module_instance scope는 아직 지원하지 않음
+  refId: z.number().int().positive(),
+});
+
 // ============================================================================
 // Server Actions
 // ============================================================================
+
+/**
+ * Token 로드 Server Action — SPEC-MENU-001 REQ-MENU-062.
+ *
+ * ThemeAssignment.tokensOverride를 조회하고, 비어 있거나 누락된 키에 대해
+ * 기본값 폴백을 적용하여 반환. /admin/site/design 화면의 초기값으로 사용.
+ *
+ * @param input - 로드 파라미터 (scope, refId)
+ * @returns 성공 여부, 에러 메시지, 폴백이 적용된 토큰
+ *
+ * @example
+ * ```ts
+ * const result = await loadTokens({
+ *   scope: 'site',
+ *   refId: 1,
+ * });
+ * // { success: true, tokens: { colors: { primary: '#3B82F6', ... }, ... } }
+ * ```
+ */
+export async function loadTokens(
+  input: z.infer<typeof LoadTokensSchema>,
+): Promise<{ success: boolean; error?: string; tokens?: ThemeTokens }> {
+  // Admin auth check — REQ-THEME-POLISH-015
+  const session = await auth();
+  if (!isAdminSession(session)) {
+    redirect('/login');
+  }
+
+  // Zod validation
+  const parseResult = LoadTokensSchema.safeParse(input);
+  if (!parseResult.success) {
+    return {
+      success: false,
+      error: `Invalid input: ${parseResult.error.errors.map((e) => e.message).join(', ')}`,
+    };
+  }
+
+  const { scope, refId } = parseResult.data;
+
+  try {
+    // ThemeAssignment 조회 — SPEC-MENU-001 REQ-MENU-062
+    const assignment = await getThemeAssignment(scope, refId);
+
+    // 폴백 적용: tokensOverride가 null/undefined/빈 객체이면 기본값 사용
+    const tokens = applyTokenFallback(assignment?.tokensOverride);
+
+    return { success: true, tokens };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    } as const;
+  }
+}
 
 /**
  * Theme 할당 Server Action — REQ-THEME-POLISH-014.

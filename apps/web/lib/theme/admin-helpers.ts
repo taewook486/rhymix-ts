@@ -8,6 +8,7 @@
  */
 import 'server-only';
 import { prisma, Prisma } from '@rhymix-ts/db';
+import { DEFAULT_THEME_TOKENS, type ThemeTokens } from '@rhymix-ts/core';
 
 /**
  * 사이트의 모든 테마 목록을 조회.
@@ -110,4 +111,60 @@ export async function getSkinsForLayout(
   return prisma.skin.findMany({
     where: { themeId },
   });
+}
+
+/**
+ * ThemeAssignment의 tokensOverride에 기본값 폴백을 적용.
+ *
+ * SPEC-MENU-001 REQ-MENU-062: tokensOverride가 null/undefined/빈 객체인 경우,
+ * 기본 디자인 토큰 값으로 채운 새 객체를 반환. 원본 tokensOverride는 변경하지 않음.
+ *
+ * @param tokensOverride - DB에서 읽은 tokensOverride 값 (nullable)
+ * @returns 폴백이 적용된 전체 토큰 객체
+ *
+ * @example
+ * ```ts
+ * const assignment = await getThemeAssignment('site', 1);
+ * const tokens = applyTokenFallback(assignment?.tokensOverride);
+ * // { colors: { primary: '#3B82F6', ... }, ... }
+ * ```
+ */
+export function applyTokenFallback(tokensOverride: unknown): ThemeTokens {
+  // tokensOverride가 null, undefined, 또는 빈 객체인 경우 기본값 전체 사용
+  if (!tokensOverride || typeof tokensOverride !== 'object' || Object.keys(tokensOverride).length === 0) {
+    return DEFAULT_THEME_TOKENS;
+  }
+
+  // tokensOverride가 부분적으로 채워진 경우, 빈 값을 기본값으로 채움
+  // 깊은 병합 수행 (중첩 객체 재귀적으로 병합)
+  const deepMerge = <T extends Record<string, unknown>>(base: T, override: Partial<T>): T => {
+    const result = { ...base };
+    for (const key in override) {
+      const baseValue = result[key];
+      const overrideValue = override[key];
+
+      if (
+        overrideValue !== null &&
+        overrideValue !== undefined &&
+        typeof overrideValue === 'object' &&
+        !Array.isArray(overrideValue) &&
+        baseValue !== null &&
+        typeof baseValue === 'object' &&
+        !Array.isArray(baseValue)
+      ) {
+        // 재귀적으로 중첩 객체 병합
+        result[key] = deepMerge(
+          baseValue as Record<string, unknown>,
+          overrideValue as Record<string, unknown>,
+        ) as T[Extract<keyof T, string>];
+      } else if (overrideValue !== null && overrideValue !== undefined) {
+        // 기본값을 오버라이드
+        result[key] = overrideValue as T[Extract<keyof T, string>];
+      }
+      // baseValue는 유지 (overrideValue가 null/undefined인 경우)
+    }
+    return result;
+  };
+
+  return deepMerge(DEFAULT_THEME_TOKENS, tokensOverride as Partial<ThemeTokens>);
 }

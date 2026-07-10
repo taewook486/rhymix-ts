@@ -55,7 +55,7 @@ export type {
 } from './install/diagnostics';
 
 // SPEC-THEME-001: Theme manifest types and validation
-export { parseManifest, themeTokensSchema } from './theme';
+export { parseManifest, themeTokensSchema, DEFAULT_THEME_TOKENS } from './theme';
 export type { ThemeManifest, ThemeTokens, ManifestParseResult, LayoutProps, SkinProps } from './theme';
 
 // SPEC-LAYOUT-001: 레이아웃 시스템 — 타입, 컨텍스트, 레지스트리, 파이프라인

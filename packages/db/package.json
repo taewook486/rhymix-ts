@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",
+    "@rhymix-ts/core": "workspace:*",
     "pg": "^8.20.0"
   },
   "devDependencies": {
