@@ -81,7 +81,14 @@ const CreateMenuItemSchema = z.object({
   title: z.string().min(1, '메뉴 항목 이름을 입력하세요').max(200),
   url: z.string().optional(),
   icon: z.string().optional(),
+  cssClass: z.string().optional(),
+  description: z.string().optional(),
   listOrder: z.coerce.number().int().default(0),
+  openInNewWindow: z.boolean().default(false),
+  expand: z.boolean().default(false),
+  normalBtn: z.string().optional(),
+  hoverBtn: z.string().optional(),
+  activeBtn: z.string().optional(),
 })
 
 export async function createMenuItemAction(
@@ -92,7 +99,14 @@ export async function createMenuItemAction(
     title: formData.get('title'),
     url: formData.get('url') || undefined,
     icon: formData.get('icon') || undefined,
+    cssClass: formData.get('cssClass') || undefined,
+    description: formData.get('description') || undefined,
     listOrder: formData.get('listOrder') || 0,
+    openInNewWindow: formData.get('openInNewWindow') === 'on',
+    expand: formData.get('expand') === 'on',
+    normalBtn: formData.get('normalBtn') || undefined,
+    hoverBtn: formData.get('hoverBtn') || undefined,
+    activeBtn: formData.get('activeBtn') || undefined,
   })
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors }
@@ -105,7 +119,12 @@ export async function createMenuItemAction(
 
   try {
     const caller = await getServerCaller()
-    await caller.admin.menuItem.create({ menuId, parentId, ...parsed.data })
+    await caller.admin.menuItem.create({
+      menuId,
+      parentId,
+      ...parsed.data,
+      groupIds: [], // Default empty for create, can be edited later
+    })
   } catch (err) {
     if (err instanceof TRPCError) {
       return { error: err.message }
@@ -119,7 +138,16 @@ export async function createMenuItemAction(
 const UpdateMenuItemSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   url: z.string().optional(),
+  icon: z.string().optional(),
+  cssClass: z.string().optional(),
+  description: z.string().optional(),
+  groupIds: z.string().optional(), // Comma-separated string for multi-select
+  openInNewWindow: z.boolean().optional(),
+  expand: z.boolean().optional(),
   listOrder: z.coerce.number().int().optional(),
+  normalBtn: z.string().optional(), // JSON string
+  hoverBtn: z.string().optional(),
+  activeBtn: z.string().optional(),
 })
 
 export async function updateMenuItemAction(
@@ -130,10 +158,61 @@ export async function updateMenuItemAction(
   const menuId = Number(formData.get('menuId'))
   if (!id) return { error: 'id 가 필요합니다.' }
 
+  // Parse groupIds from comma-separated string to array
+  const groupIdsStr = formData.get('groupIds') as string | null
+  let groupIds: number[] = []
+  if (groupIdsStr && groupIdsStr.trim()) {
+    const parsedIds = groupIdsStr.split(',').map((s) => Number(s.trim())).filter((n) => !isNaN(n) && n > 0)
+    if (parsedIds.length > 0) {
+      // Validate that all groupIds exist (AC-A4: atomic rejection for invalid groups)
+      try {
+        const caller = await getServerCaller()
+        const groups = await caller.admin.group.list()
+        const validGroupIds = new Set(groups.map((g) => g.id))
+        const invalidIds = parsedIds.filter((gid) => !validGroupIds.has(gid))
+        if (invalidIds.length > 0) {
+          return {
+            fieldErrors: {
+              groupIds: [`존재하지 않는 그룹 ID: ${invalidIds.join(', ')}`],
+            },
+          }
+        }
+        groupIds = parsedIds
+      } catch (err) {
+        return { error: '그룹 목록 조회 중 오류가 발생했습니다.' }
+      }
+    }
+  }
+
+  // Parse JSON fields for button states
+  const normalBtnStr = formData.get('normalBtn') as string | null
+  const hoverBtnStr = formData.get('hoverBtn') as string | null
+  const activeBtnStr = formData.get('activeBtn') as string | null
+
+  let normalBtn: unknown = undefined
+  let hoverBtn: unknown = undefined
+  let activeBtn: unknown = undefined
+
+  try {
+    if (normalBtnStr?.trim()) normalBtn = JSON.parse(normalBtnStr)
+    if (hoverBtnStr?.trim()) hoverBtn = JSON.parse(hoverBtnStr)
+    if (activeBtnStr?.trim()) activeBtn = JSON.parse(activeBtnStr)
+  } catch (err) {
+    return { error: '버튼 상태 JSON 형식이 올바르지 않습니다.' }
+  }
+
   const parsed = UpdateMenuItemSchema.safeParse({
     title: formData.get('title') || undefined,
     url: formData.get('url') || undefined,
+    icon: formData.get('icon') || undefined,
+    cssClass: formData.get('cssClass') || undefined,
+    description: formData.get('description') || undefined,
     listOrder: formData.get('listOrder') || undefined,
+    openInNewWindow: formData.get('openInNewWindow') === 'on',
+    expand: formData.get('expand') === 'on',
+    normalBtn: normalBtnStr ? JSON.stringify(normalBtn) : undefined,
+    hoverBtn: hoverBtnStr ? JSON.stringify(hoverBtn) : undefined,
+    activeBtn: activeBtnStr ? JSON.stringify(activeBtn) : undefined,
   })
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors }
@@ -141,7 +220,11 @@ export async function updateMenuItemAction(
 
   try {
     const caller = await getServerCaller()
-    await caller.admin.menuItem.update({ id, ...parsed.data })
+    await caller.admin.menuItem.update({
+      id,
+      ...parsed.data,
+      groupIds,
+    })
   } catch (err) {
     if (err instanceof TRPCError) {
       return { error: err.message }

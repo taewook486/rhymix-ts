@@ -1,17 +1,15 @@
 'use client'
 /**
- * MenuItem 1-depth 트리 편집기 — SPEC-ADMIN-001 Slice D.
+ * MenuItem 편집기 — SPEC-MENU-001 Slice A.
  *
- * 텍스트 입력 기반 reorder (listOrder 숫자 직접 편집).
+ * 모든 persisted 필드 노출: title, url, icon, cssClass, description, openInNewWindow, expand, listOrder.
+ * groupIds ACL (multi-select against MemberGroup).
+ * 버튼 상태 JSON (normalBtn, hoverBtn, activeBtn).
  *
- * @MX:TODO: [AUTO] Slice E 에서 드래그앤드롭(dnd-kit) 도입 예정.
- * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-031
- * @MX:PRIORITY: P1
- *
- * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-030, REQ-ADMIN-032, REQ-ADMIN-033
+ * @MX:SPEC: SPEC-MENU-001 REQ-MENU-001~006
  */
 import { useActionState, useTransition } from 'react'
-import { Button, Input, Label } from '@rhymix-ts/ui/components'
+import { Button, Input, Label, Textarea } from '@rhymix-ts/ui/components'
 import { toast } from 'sonner'
 import {
   createMenuItemAction,
@@ -28,6 +26,14 @@ interface MenuItemRow {
   url: string | null
   listOrder: number
   icon: string | null
+  cssClass: string | null
+  description: string | null
+  groupIds: number[]
+  openInNewWindow: boolean
+  expand: boolean
+  normalBtn: unknown
+  hoverBtn: unknown
+  activeBtn: unknown
 }
 
 interface MenuItemEditorProps {
@@ -65,18 +71,13 @@ export function MenuItemEditor({ menuId, items }: MenuItemEditorProps) {
 
   return (
     <div className="space-y-6">
-      {/* 드래그앤드롭은 Slice E 에서 추가됩니다 */}
-      <p className="text-sm text-zinc-500 italic">
-        드래그앤드롭은 Slice E 에서 추가됩니다. 현재는 listOrder 숫자를 직접 편집하여 순서를 변경할 수 있습니다.
-      </p>
-
       {/* 기존 아이템 목록 */}
       {items.length === 0 ? (
         <div className="rounded-md border border-zinc-200 p-6 text-center text-sm text-zinc-500">
           등록된 메뉴 항목이 없습니다
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {items.map((item) => (
             <MenuItemRow key={item.id} item={item} menuId={menuId} />
           ))}
@@ -127,40 +128,180 @@ function MenuItemRow({ item, menuId }: { item: MenuItemRow; menuId: number }) {
   )
 
   return (
-    <div className="flex items-start gap-3 rounded border border-zinc-200 p-3">
-      <div className="flex-1">
-        <form action={editAction} className="flex items-center gap-2 flex-wrap">
-          <input type="hidden" name="id" value={item.id} />
-          <input type="hidden" name="menuId" value={menuId} />
+    <div className="rounded border border-zinc-200 p-4 space-y-4">
+      <form action={editAction} className="space-y-3">
+        <input type="hidden" name="id" value={item.id} />
+        <input type="hidden" name="menuId" value={menuId} />
 
-          <Input
-            name="title"
-            defaultValue={item.title}
-            className="w-40 h-7 text-sm"
-            placeholder="이름"
+        {editState?.error && (
+          <p className="text-sm text-red-600">{editState.error}</p>
+        )}
+
+        {/* Basic fields */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label htmlFor={`title-${item.id}`}>이름</Label>
+            <Input
+              id={`title-${item.id}`}
+              name="title"
+              defaultValue={item.title}
+              placeholder="항목 이름"
+              maxLength={200}
+            />
+            {editState?.fieldErrors?.title && (
+              <p className="text-xs text-red-500">{editState.fieldErrors.title[0]}</p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label htmlFor={`url-${item.id}`}>URL</Label>
+              {item.openInNewWindow && (
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                  새 창
+                </span>
+              )}
+            </div>
+            <Input
+              id={`url-${item.id}`}
+              name="url"
+              defaultValue={item.url ?? ''}
+              placeholder="/path/to/page"
+            />
+            {editState?.fieldErrors?.url && (
+              <p className="text-xs text-red-500">{editState.fieldErrors.url[0]}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Icon and CSS Class */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label htmlFor={`icon-${item.id}`}>아이콘</Label>
+            <Input
+              id={`icon-${item.id}`}
+              name="icon"
+              defaultValue={item.icon ?? ''}
+              placeholder="icon-class"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`cssClass-${item.id}`}>CSS 클래스</Label>
+            <Input
+              id={`cssClass-${item.id}`}
+              name="cssClass"
+              defaultValue={item.cssClass ?? ''}
+              placeholder="custom-class"
+            />
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="space-y-1">
+          <Label htmlFor={`description-${item.id}`}>설명</Label>
+          <Textarea
+            id={`description-${item.id}`}
+            name="description"
+            defaultValue={item.description ?? ''}
+            placeholder="메뉴 항목 설명"
+            rows={2}
           />
+        </div>
+
+        {/* Group IDs ACL - multi-select for MemberGroup */}
+        <div className="space-y-1">
+          <Label htmlFor={`groupIds-${item.id}`}>접근 그룹 (ACL)</Label>
           <Input
-            name="url"
-            defaultValue={item.url ?? ''}
-            className="w-48 h-7 text-sm"
-            placeholder="URL"
+            id={`groupIds-${item.id}`}
+            name="groupIds"
+            defaultValue={item.groupIds.join(',')}
+            placeholder="쉼표로 구분된 그룹 ID (예: 1,2,3)"
           />
+          <p className="text-xs text-zinc-500">
+            빈 값이면 전체 공개. 쉼표로 구분된 MemberGroup ID를 입력하세요.
+          </p>
+          {editState?.fieldErrors?.groupIds && (
+            <p className="text-xs text-red-500">{editState.fieldErrors.groupIds[0]}</p>
+          )}
+        </div>
+
+        {/* List Order */}
+        <div className="space-y-1 w-32">
+          <Label htmlFor={`listOrder-${item.id}`}>순서</Label>
           <Input
+            id={`listOrder-${item.id}`}
             name="listOrder"
             type="number"
             defaultValue={item.listOrder}
-            className="w-16 h-7 text-sm"
-            placeholder="순서"
           />
-          <Button type="submit" size="sm" variant="outline" disabled={editPending}>
+        </div>
+
+        {/* Checkboxes */}
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="openInNewWindow"
+              defaultChecked={item.openInNewWindow}
+              className="h-4 w-4"
+            />
+            <span className="text-sm">새 창에서 열기</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="expand"
+              defaultChecked={item.expand}
+              className="h-4 w-4"
+            />
+            <span className="text-sm">펼쳐진 상태</span>
+          </label>
+        </div>
+
+        {/* Button State JSONs */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Label htmlFor={`normalBtn-${item.id}`}>버튼 상태 (일반)</Label>
+            <Textarea
+              id={`normalBtn-${item.id}`}
+              name="normalBtn"
+              defaultValue={typeof item.normalBtn === 'string' ? item.normalBtn : JSON.stringify(item.normalBtn ?? {}, null, 2)}
+              placeholder='{"color": "..."}'
+              rows={3}
+              className="font-mono text-xs"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`hoverBtn-${item.id}`}>버튼 상태 (호버)</Label>
+            <Textarea
+              id={`hoverBtn-${item.id}`}
+              name="hoverBtn"
+              defaultValue={typeof item.hoverBtn === 'string' ? item.hoverBtn : JSON.stringify(item.hoverBtn ?? {}, null, 2)}
+              placeholder='{"color": "..."}'
+              rows={3}
+              className="font-mono text-xs"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor={`activeBtn-${item.id}`}>버튼 상태 (활성)</Label>
+            <Textarea
+              id={`activeBtn-${item.id}`}
+              name="activeBtn"
+              defaultValue={typeof item.activeBtn === 'string' ? item.activeBtn : JSON.stringify(item.activeBtn ?? {}, null, 2)}
+              placeholder='{"color": "..."}'
+              rows={3}
+              className="font-mono text-xs"
+            />
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          <Button type="submit" size="sm" disabled={editPending}>
             {editPending ? '저장 중…' : '저장'}
           </Button>
-          {editState?.error && (
-            <span className="text-xs text-red-500">{editState.error}</span>
-          )}
-        </form>
-      </div>
-      <DeleteMenuItemButton id={item.id} menuId={menuId} />
+          <DeleteMenuItemButton id={item.id} menuId={menuId} />
+        </div>
+      </form>
     </div>
   )
 }
