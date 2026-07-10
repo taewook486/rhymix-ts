@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-07-09 (Phase 10 SPEC-MENU-001 작성 — 레거시 "사이트 제작/편집" 완성 SPEC, 구현 대기)
+> 마지막 갱신: 2026-07-10 (Phase 10 SPEC-MENU-001 run phase 진행 — Slice A/B/C/E 구현+검증 완료, Slice D 부분 검증, Slice F 제외/백로그. status: in-progress)
 
 ## 기술 스택 (확정)
 
@@ -34,7 +34,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 7. BACKLOG FOLLOW-UP | KEEP 레거시 모듈 후속 구현 (rss/poll/message/notification) | 2 | 2/2 | 🟢 구현 완료 (FEED-001, NOTIFICATION-001 Slice A+B 모두 완료. e2e만 후속 deferred) |
 | 8. ADMIN SECURITY HARDENING | 보안 리뷰에서 파생된 후속 구현 (2FA TOTP 백엔드 등) | 2 | 2/2 | 🟢 구현 완료 (ADMIN-2FA-OTP-001 + TEST-PRISMA-MOCK-001 전체 완료) |
 | 9. GAP ANALYSIS REMEDIATION | 레거시 실측 비교 기반 신규 기능 11건 | 11 | 11/11 | 🟢 구현 완료 (EDITOR~SPAM 전체, PR #26/#27 머지) |
-| 10. ADMIN "사이트 제작/편집" 완성 | 레거시 최상위 메뉴 parity (메뉴 편집/디자인 시드) | 1 | 0/1 | 📝 SPEC 작성 완료 (구현 대기) |
+| 10. ADMIN "사이트 제작/편집" 완성 | 레거시 최상위 메뉴 parity (메뉴 편집/디자인 시드) | 1 | 0/1 | 🟡 구현 진행 중 (Slice A/B/C/E 완료+검증, Slice D 부분 검증, Slice F 백로그) |
 
 ---
 
@@ -158,7 +158,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 | ID | 제목 | 의존 | 우선순위 | 상태 |
 |---|---|---|---|---|
-| [SPEC-MENU-001](./SPEC-MENU-001/spec.md) | 사이트 메뉴 편집 완성(필드/DnD 영속/다중 슬롯 렌더) + 설치 시 기본 디자인 토큰 시드 | ADMIN-001, ADMIN-EXTRAS-001, LAYOUT-001, THEME-POLISH-001, INSTALL-001 | P1 | 📝 SPEC 작성 완료 (구현 대기) |
+| [SPEC-MENU-001](./SPEC-MENU-001/spec.md) | 사이트 메뉴 편집 완성(필드/DnD 영속/다중 슬롯 렌더) + 설치 시 기본 디자인 토큰 시드 | ADMIN-001, ADMIN-EXTRAS-001, LAYOUT-001, THEME-POLISH-001, INSTALL-001 | P1 | 🟡 구현 진행 중 (status: in-progress, Slice A/B/C/E 완료, Slice D 부분 검증, Slice F 백로그) |
 
 > 핵심 gap: 백엔드(schema `MenuItem` 전 필드 + `admin.menuItem.reorder` 트랜잭션)는 SPEC-ADMIN-001
 > REQ-ADMIN-030~033으로 "✅ 완료"로 마킹돼 있으나, 실제 UI(`MenuItemEditor`)는 title/url/listOrder 3필드만
@@ -170,6 +170,17 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 > (A 편집기 필드 P0 / B DnD 영속 P1 / C slot 스키마 마이그레이션 P1 / D 레이아웃 렌더 P1 / E 토큰 시드 P2 /
 > F unlinked·찾기 P2~P3). 디자인 토큰 편집 UI(THEME-POLISH-001 소유)·레거시 PC/모바일 스킨 배정·MenuItem
 > 백엔드 스키마 변경은 명시 제외.
+>
+> **run phase 진행 결과(2026-07-10):** Slice A(편집기 필드, `d03caf0`) / B(DnD 영속, `c5f046d`) /
+> C(슬롯 스키마 `MenuSlotAssignment`+`MenuSlot` enum, 마이그레이션 `20260710000000_spec_menu_001_slot_assignment`,
+> `df6ad97`) / D(레이아웃 렌더링, `df6ad97`) / E(디자인 토큰 시드, `b77379b`) 구현 완료 + 후속 버그 수정
+> 3건(`b71dcc8` tRPC import 경로, `aa79611` 컴파일 에러, `2a3f98c` 설치 시 `ThemeAssignment` FK 위반)
+> 전부 main 브랜치 직접 커밋. **Slice F(REQ-MENU-050/051, unlinked 모듈 목록/검색)는 사용자 결정으로 이번
+> run 범위에서 제외 — 백로그 유예.** 오케스트레이터가 실 DB/dev 서버로 재현 검증한 항목: 슬롯 마이그레이션
+> 백필 idempotency(재실행 시 중복 0건), 헤더(HEADER_PRIMARY) 슬롯 공개 렌더, 설치 시 디자인 토큰 정상 시드
+> (FK 버그 수정 후 `#000000`/빈 값 없음 확인). **Footer/Utility 슬롯 배정·groupIds ACL 렌더·중첩 트리
+> 렌더는 admin 로그인 세션이 필요해 이번 sync 시점까지 런타임 재현 미실시** — 코드는 존재하나 "완료"로
+> 마킹하지 않고 SPEC status를 `in-progress`로 유지한다(상세: SPEC-MENU-001/spec.md `## 8. Implementation Notes`).
 
 ### Meta-Plan 문서 (참조)
 
@@ -218,9 +229,13 @@ SPEC-ADMIN-001 (Foundation, ✅)
 
 ## 다음 단계
 
-### 현황 (2026-07-08 기준)
+### 현황 (2026-07-10 기준)
 
-Phase 1~9의 **모든 SPEC이 구현 완료** 상태다. 미구현 SPEC은 0건이다.
+Phase 1~9의 **모든 SPEC이 구현 완료** 상태다. Phase 10(`SPEC-MENU-001`)은 **run phase 진행 중**이다 —
+Slice A/B/C/E는 구현+검증 완료, Slice D는 헤더 슬롯 렌더만 실측 확인(Footer/Utility/ACL/중첩 트리는
+admin 로그인 세션이 필요해 미검증), Slice F는 사용자 결정으로 백로그 유예. 남은 작업: Footer/Utility
+슬롯 배정·groupIds ACL 렌더·중첩 트리 렌더를 admin 로그인 재현으로 확인한 뒤 status를 completed로
+전환.
 
 완료 이력:
 1. Phase 1~6 구현 완료 (2026-06-20 기준)
@@ -234,6 +249,11 @@ Phase 1~9의 **모든 SPEC이 구현 완료** 상태다. 미구현 SPEC은 0건�
    - **P2**: `SPEC-TAG-001`(태그 시스템), `SPEC-SEO-001`(sitemap/robots/OG/JSON-LD), `SPEC-STATS-001`(접속 통계 대시보드)
    - **P3**: `SPEC-POLL-001`(설문/투표), `SPEC-MESSAGE-001`(쪽지/DM + 알림 연동), `SPEC-SPAM-001`(URL블랙리스트/중복콘텐츠/신고임계치 스팸 필터) — PR #26으로 일괄 머지
    - `SPEC-SEARCH-001`의 `page.test.tsx`에 남아있던 "원인불명 hang" 이슈도 재조사 후 실제로는 hang이 아님(WSL2 jsdom environment 오버헤드)을 확인해 마무리, PR #27로 머지
+5. Phase 10 (`SPEC-MENU-001`) 진행 중 (2026-07-09 SPEC 작성 ~ 2026-07-10 run phase, **미완료**) —
+   Slice A(편집기 필드)/B(DnD 영속)/C(슬롯 스키마)/E(디자인 토큰 시드) 구현+검증 완료. Slice D(레이아웃
+   렌더링)는 헤더 슬롯만 실측 확인, Footer/Utility/ACL/중첩 트리는 admin 로그인 재현 필요(미검증).
+   Slice F(unlinked 모듈 목록/검색)는 사용자 결정으로 백로그 유예. 상세: SPEC-MENU-001/spec.md `## 8.
+   Implementation Notes`.
 
 ### 백로그 (구현 대상 아님, 참고용)
 

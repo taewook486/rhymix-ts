@@ -2,7 +2,7 @@
 
 TypeScript + Next.js 16 redesign of the [Rhymix](https://github.com/rhymix/rhymix) CMS.
 
-> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (975 unit) · SPEC-THEME-001 완료 (946 unit) · SPEC-FEED-001 완료 (67 unit, 게시판별 RSS/Atom 피드)**.
+> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (975 unit) · SPEC-THEME-001 완료 (946 unit) · SPEC-FEED-001 완료 (67 unit, 게시판별 RSS/Atom 피드) · SPEC-MENU-001 진행 중 (사이트 메뉴 편집 + 다중 메뉴 존 렌더링, Slice A/B/C/E 완료·Slice D 부분 검증)**.
 > Reference instance running at `http://localhost:8080` (PHP, Docker).
 
 ## Architecture (locked)
@@ -125,10 +125,13 @@ pnpm test:e2e
 | SPEC-THEME-001 | 완료 (Slice A–F) | 946 unit | 테마/레이아웃/스킨/토큰/다크모드/프리뷰/위젯 |
 | SPEC-POINT-001 | 완료 (Slice A+B) | 24 unit | 포인트 시스템 독립 패키지 + 크로스 모듈 트랜잭션 통합 + 관리자 UI |
 | SPEC-FEED-001 | 완료 (Slice A+B+C) | 67 unit | 게시판별 RSS 2.0/Atom 1.0 피드, 캐싱+자동탐색+이벤트 무효화, admin 설정 패널 |
+| SPEC-MENU-001 | 진행 중 (Slice A/B/C/E 완료, Slice D 부분 검증, Slice F 백로그) | 미집계 | 사이트 메뉴 편집기 필드 완성, DnD 영속화, 다중 메뉴 존(header/footer/utility) 슬롯 스키마+렌더링, 설치 시 기본 디자인 토큰 시드. Footer/Utility 슬롯·groupIds ACL·중첩 트리 렌더는 admin 로그인 재현 필요(미검증) |
 
 ## Next Step
 
-Phase 7 SPEC-FEED-001 구현 완료. 다음 단계는 SPEC-MODULE-BACKLOG-001 KEEP 잔여 3종(poll 위젯/쪽지/알림센터) SPEC 작성 또는 E2E 통합 테스트:
+Phase 10 SPEC-MENU-001 run phase 진행 중. 남은 작업: Footer/Utility 슬롯 배정·groupIds ACL 렌더·중첩 트리
+렌더을 admin 로그인 세션으로 실측 재현 후 완료 마킹 (상세: `.moai/specs/SPEC-MENU-001/spec.md` `## 8.
+Implementation Notes`):
 
 ```bash
 # E2E 테스트 실행

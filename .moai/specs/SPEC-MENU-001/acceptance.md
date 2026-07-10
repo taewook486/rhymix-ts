@@ -1,9 +1,9 @@
 ---
 id: SPEC-MENU-001
-version: 0.1.0
-status: draft
+version: 0.2.0
+status: in-progress
 created: 2026-07-09
-updated: 2026-07-09
+updated: 2026-07-10
 ---
 
 # SPEC-MENU-001 — 인수 기준 (Acceptance Criteria)
@@ -141,10 +141,23 @@ updated: 2026-07-09
 
 ## Definition of Done
 
-- [ ] REQ-MENU-001~006, 010~015, 040~041 (Slice A/B) 구현·테스트 통과, 런타임 영속 확인
-- [ ] REQ-MENU-020~025, 030~034 (Slice C/D) 구현, 마이그레이션 백필 검증, 공개 렌더 회귀 없음
-- [ ] REQ-MENU-060~062 (Slice E) 설치 직후 유효 토큰 확인
-- [ ] Optional(REQ-MENU-050/051)은 채택 시 통과, 유예 시 백로그 기록
-- [ ] `pnpm tsc --noEmit` 0 errors, 관련 vitest/Playwright 통과
-- [ ] stale 문구·obsolete `@MX:TODO` 제거 확인
-- [ ] INDEX.md에 SPEC-MENU-001 등재
+> 2026-07-10 sync 시점 실측 반영. 체크된 항목은 오케스트레이터가 실 DB/dev 서버로 직접 재현 확인한
+> 항목만이다. 코드가 존재하나 런타임 재현이 admin 로그인 세션 부재로 수행되지 못한 항목은 미체크로
+> 남긴다(§3 "완료 마킹의 함정" 재발 방지).
+
+- [x] REQ-MENU-001~006, 010~015, 040~041 (Slice A/B) 구현·커밋 완료(`d03caf0`, `c5f046d`). 단, 런타임
+      영속(새로고침 후 유지) 재현은 이번 sync 시점에 오케스트레이터가 별도로 재확인하지 않았다 — 코드
+      구현 완료로만 기록.
+- [ ] REQ-MENU-020~025, 030~034 (Slice C/D) — 부분 체크:
+  - [x] 마이그레이션 적용 + `defaultMenuId` → `HEADER_PRIMARY` 백필 idempotency 확인(재실행 시 중복 0건)
+  - [x] 헤더(HEADER_PRIMARY) 슬롯이 실 DB 데이터로 `MenuRenderer`를 통해 정상 렌더됨을 확인
+  - [ ] Footer/Utility 슬롯 동시 배정(AC-C1) — admin 로그인 필요, 미검증
+  - [ ] groupIds ACL 렌더 제한(AC-D3) — admin 로그인 필요, 미검증
+  - [ ] 중첩(부모-자식) 트리 다단계 렌더(AC-D2) — admin 로그인 필요, 미검증
+- [x] REQ-MENU-060~062 (Slice E) 설치 직후 유효 토큰 확인 — 설치 트랜잭션 FK 위반 버그 발견·수정
+      (`2a3f98c`) 후 재검증 통과. `#000000`/빈 값 없음 확인.
+- [x] Optional(REQ-MENU-050/051)은 사용자 결정으로 이번 run 범위에서 제외 — 백로그 기록(SPEC §8.2 참조)
+- [ ] `pnpm tsc --noEmit` 0 errors, 관련 vitest/Playwright 통과 — 컴파일 에러 수정 커밋(`aa79611`,
+      `b71dcc8`)은 반영되었으나 이번 sync 시점에 전체 스위트 재실행으로 재확인하지 않음
+- [x] stale 문구·obsolete `@MX:TODO` 제거 확인 (REQ-MENU-040/041, Slice A 커밋에 포함)
+- [x] INDEX.md에 SPEC-MENU-001 등재 (Phase 10, 본 sync에서 상태 갱신)

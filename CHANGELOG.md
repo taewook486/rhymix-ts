@@ -8,6 +8,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### SPEC-MENU-001 — 사이트 메뉴 편집 완성 + 다중 메뉴 존 렌더링 (진행 중)
+
+> status: in-progress — Slice A/B/C/E는 구현+검증 완료, Slice D는 헤더 슬롯 렌더만 실측 확인
+> (Footer/Utility 슬롯 배정, groupIds ACL, 중첩 트리 렌더는 admin 로그인 세션이 필요해 미검증). Slice F는
+> 사용자 결정으로 백로그 유예.
+
+- **MenuItem 편집기 필드 완성** (`d03caf0`) — icon/cssClass/description/openInNewWindow/expand/listOrder
+  전체 노출, groupIds ACL 편집, 버튼 상태(normalBtn/hoverBtn/activeBtn) JSON 편집, stale 안내 문구 제거
+- **DnD 영속화** (`c5f046d`) — `MenuItemDnDTree`의 same-level·cross-level 드롭을
+  `admin.menuItem.reorder`에 연결, 순환/깊이초과 거부, 실패 시 롤백
+- **다중 메뉴 존(slot) 스키마 + 레이아웃 렌더링** (`df6ad97`)
+  - 신규 모델 `MenuSlotAssignment(domainId, slot, menuId)` + `enum MenuSlot { HEADER_PRIMARY, FOOTER, UTILITY }`
+  - 마이그레이션 `20260710000000_spec_menu_001_slot_assignment` — 기존 `Domain.defaultMenuId`를
+    `HEADER_PRIMARY` 슬롯으로 백필(idempotent, 재실행 시 중복 0건 확인)
+  - 레이아웃 렌더링이 슬롯별 메뉴를 렌더 — 헤더(HEADER_PRIMARY) 슬롯 공개 렌더 실측 확인
+- **설치 시 기본 디자인 토큰 시드** (`b77379b`) — 설치 마법사 완료 시 기본 색상/타이포/간격/라운드 토큰 시드
+- 버그 수정 3건(전부 main 브랜치 직접 커밋): tRPC import 경로 수정(`b71dcc8`), Slice C/D 컴파일 에러
+  수정(`aa79611`), 설치 트랜잭션 중 `ThemeAssignment.themeId` FK 위반 수정 — `seedDefaultTheme()` 선행
+  호출로 해결(`2a3f98c`)
+- **제외됨(백로그)**: unlinked 모듈 목록(REQ-MENU-050), 메뉴 검색(REQ-MENU-051) — 사용자 결정으로 이번
+  run 범위 밖, Optional(P2/P3)이므로 MVP 필수 아님
+
 #### SPEC-FEED-001 — 게시판별 RSS 2.0 / Atom 1.0 피드
 
 - **피드 빌더 + 라우트** (`packages/board/src/feed/`, `apps/web/app/[mid]/{rss,atom}/route.ts`)

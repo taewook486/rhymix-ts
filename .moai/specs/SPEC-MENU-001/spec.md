@@ -1,9 +1,9 @@
 ---
 id: SPEC-MENU-001
-version: 0.1.0
-status: draft
+version: 0.2.0
+status: in-progress
 created: 2026-07-09
-updated: 2026-07-09
+updated: 2026-07-10
 author: manager-spec
 priority: P1
 issue_number: null
@@ -18,6 +18,12 @@ issue_number: null
 
 - 2026-07-09 (v0.1.0): 최초 작성. 레거시 실측(`dispMenuAdminSiteMap`) + 코드베이스 grep/Read 기반 gap 분석.
   오케스트레이터 조사 결과를 근거로 30개 REQ 도출. 구현(run) 미착수.
+- 2026-07-10 (v0.2.0): run phase 진행. Slice A/B/C/D/E 구현(커밋 `d03caf0`, `c5f046d`, `df6ad97`,
+  `b77379b`, `b71dcc8`, `aa79611`, `2a3f98c`, 전부 main 브랜치 직접 커밋). Slice F(unlinked 모듈 목록/검색,
+  REQ-MENU-050/051)는 사용자 결정으로 이번 run 범위에서 제외 — 백로그 유예. Slice D의 Footer/Utility 슬롯
+  배정, groupIds ACL, 중첩 트리 렌더링은 admin 로그인이 필요한 런타임 재현을 아직 수행하지 못해 **부분
+  검증** 상태로 남김(§ Implementation Notes 참조). 이 미검증 부분이 남아 있어 status를 `completed`로
+  올리지 않고 `in-progress`로 유지한다.
 
 ---
 
@@ -211,3 +217,89 @@ INDEX.md와 각 SPEC에서 **"✅ 완료"로 마킹**되어 있으나, 실제 �
 3. groupIds ACL 렌더 판정을 서버 컴포넌트에서 세션 그룹으로 계산하는 방식의 캐싱 경계.
 4. 버튼상태(normalBtn/hoverBtn/activeBtn) JSON의 정확한 스키마 — 레거시 대비 최소 필드셋.
 5. 기본 디자인 토큰 값의 출처 — default theme manifest에서 파생 vs seed 하드코딩.
+
+---
+
+## 8. Implementation Notes (run phase 완료 보고, 2026-07-10)
+
+> [HARD] 본 절은 §3 "완료 마킹의 함정" 재발 방지 원칙에 따라, 검증된 사실과 미검증 사실을 분리해서
+> 정직하게 기록한다. Slice D 일부가 부분 검증 상태이므로 SPEC 전체 status는 `in-progress`를 유지한다
+> (완료로 마킹하지 않음).
+
+### 8.1 Open Question 확정 (§7 대비)
+
+| # | 확정 결과 |
+|---|---|
+| 1 | 별도 테이블 `MenuSlotAssignment(domainId, slot, menuId)` 채택 (권장안 그대로). |
+| 2 | `enum MenuSlot { HEADER_PRIMARY, FOOTER, UTILITY }` — 3종 확정, enum 확장 방식으로 향후 슬롯 추가. |
+| 3 | (미확정 — 아래 8.3 참조) |
+| 4 | (미확정 — 아래 8.3 참조) |
+| 5 | seed 하드코딩 채택. `packages/db/src/install/seed.ts`에 `seedDefaultTheme()`을 선행 호출하는 방식으로 구현. |
+
+### 8.2 Slice별 구현 및 커밋 매핑
+
+| Slice | 범위 | REQ | 커밋 |
+|---|---|---|---|
+| A | MenuItem 편집기 필드 완성 | REQ-MENU-001~006, 040 | `d03caf0` |
+| B | DnD 영속화(`admin.menuItem.reorder` 연결) | REQ-MENU-010~015 | `c5f046d` |
+| C | 다중 메뉴 존 슬롯 스키마(`MenuSlotAssignment`, `MenuSlot` enum, 마이그레이션 `20260710000000_spec_menu_001_slot_assignment`) | REQ-MENU-020~025 | `df6ad97` |
+| D | 레이아웃 렌더링(슬롯 기반) | REQ-MENU-030~034 | `df6ad97` |
+| E | 설치 시 기본 디자인 토큰 시드 | REQ-MENU-060~062 | `b77379b` |
+| — | tRPC import 경로 수정 | (버그 수정) | `b71dcc8` |
+| — | Slice C/D 컴파일 에러 수정 | (버그 수정) | `aa79611` |
+| — | `ThemeAssignment` FK 위반 수정(`seedDefaultTheme` 선행 호출 필요) | (버그 수정) | `2a3f98c` |
+
+**Slice F(REQ-MENU-050 unlinked 모듈 목록, REQ-MENU-051 메뉴 검색)는 사용자 결정으로 이번 run 범위에서
+제외되었다.** 둘 다 SPEC 상 Optional(P2/P3)로 명시되어 있었으므로 MVP 필수 요건은 아니었다. 백로그로
+유예하며, 채택 시 별도 후속 작업으로 처리한다.
+
+### 8.3 실제 검증 상태 (오케스트레이터가 실 DB/dev 서버로 재현 확인)
+
+**검증 완료:**
+
+- **Slice C**: 마이그레이션 `20260710000000_spec_menu_001_slot_assignment` 실제 적용 확인.
+  `defaultMenuId` → `HEADER_PRIMARY` 슬롯 백필이 idempotent함을 재실행으로 확인(중복 배정 0건,
+  `@@unique([domainId, slot])` 제약과 함께 동작).
+- **Slice D (일부)**: 헤더(`HEADER_PRIMARY` 슬롯)가 실제 DB 데이터로 `MenuRenderer`를 통해 정상 렌더되는
+  것을 확인함(공개 페이지 실측).
+- **Slice E**: 설치 트랜잭션 실행 중 `ThemeAssignment.themeId` FK 위반 버그를 실 DB 재현으로 발견 →
+  `seedDefaultTheme()` 선행 호출로 수정 → 재검증 통과. `Theme`/`ThemeAssignment`가 정상 생성되고
+  `#000000` 값이 남지 않음을 확인.
+
+**부분 검증 (admin 로그인 필요 — 이번 run에서는 여기까지만 확인하기로 사용자가 결정):**
+
+- Footer/Utility 슬롯 배정 화면 동작(AC-C1의 3종 슬롯 동시 배정)
+- `groupIds` ACL에 따른 렌더 제한(AC-D3)
+- 중첩(부모-자식) 트리의 다단계 렌더링(AC-D2)
+
+위 3개 acceptance criteria는 admin 세션이 필요한 시나리오라 오케스트레이터의 실측 재현 범위 밖에
+남아 있다. 코드는 구현되어 있으나(REQ-MENU-020~024, REQ-MENU-031~032 대응 로직 존재), **런타임
+관찰로 확정되지 않았으므로 "완료"로 마킹하지 않는다.** 이 gap이 SPEC status를 `in-progress`로 유지하는
+직접적인 이유다.
+
+### 8.4 미확정 Open Question 잔여
+
+- Q3(groupIds ACL 서버 컴포넌트 캐싱 경계)와 Q4(버튼상태 JSON 정확한 스키마)는 8.3의 미검증 영역과
+  맞물려 있어 이번 run에서 확정 짓지 못했다. 후속 세션에서 admin 로그인 재현과 함께 마무리 필요.
+
+### 8.5 Definition of Done 대비 실측 (acceptance.md)
+
+체크 표시는 acceptance.md에 동일하게 반영했다(§ 아래 참조). 요약:
+
+- Slice A/B(REQ-MENU-001~006, 010~015, 040~041): 구현 완료. DnD 영속(새로고침 후 유지)은 오케스트레이터가
+  직접 재현 확인함.
+- Slice C(REQ-MENU-020~025): 구현 완료 + 마이그레이션 백필 idempotency 확인. 3종 슬롯 동시 배정 UI
+  자체는 admin 로그인 재현 미실시.
+- Slice D(REQ-MENU-030~034): 헤더 렌더만 실측 확인. 나머지(Footer/Utility/ACL/중첩)는 코드 존재,
+  런타임 미확인.
+- Slice E(REQ-MENU-060~062): 구현 완료 + 실 DB 재검증 통과.
+- Slice F(REQ-MENU-050/051): 제외, 백로그 기록.
+
+---
+
+Version: 0.2.0
+Status: in-progress (Slice A/B/C/E 구현+검증 완료, Slice D 일부 부분 검증, Slice F 제외/백로그)
+Estimated REQ Count: 30 (REQ-MENU-001~062, Slice F 2개 Optional 포함)
+Estimated Slice Count: 6 (A 편집기 필드, B DnD 영속, C slot 스키마, D 레이아웃 렌더, E 토큰 시드, F 부가(제외))
+Dependencies (upstream): SPEC-ADMIN-001 ✅, SPEC-ADMIN-EXTRAS-001 ✅, SPEC-LAYOUT-001 ✅, SPEC-THEME-POLISH-001 ✅, SPEC-INSTALL-001 ✅
+Next Action: Footer/Utility 슬롯 배정 + groupIds ACL 렌더 + 중첩 트리 렌더(AC-C1, AC-D2, AC-D3)를 admin 로그인 세션으로 실측 재현 후 status를 completed로 전환. Slice F는 별도 채택 여부 결정 필요.
