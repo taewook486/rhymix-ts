@@ -22,6 +22,8 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { toast } from 'sonner'
+import { api } from '@/lib/trpc/client'
+import { useRouter } from 'next/navigation'
 
 interface MenuItemRow {
   id: number
@@ -155,9 +157,12 @@ function SortableMenuItem({
 /**
  * MenuItemDnDTree — DnD 기반 MenuItem 순서/계층 편집 컴포넌트.
  */
-export function MenuItemDnDTree({ initialItems }: MenuItemDnDTreeProps) {
+export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) {
   const [items, setItems] = useState<MenuItemRow[]>(() => flattenTree(initialItems))
   const [activeId, setActiveId] = useState<number | null>(null)
+  const [isReordering, setIsReordering] = useState(false)
+  const router = useRouter()
+  const reorderMutation = api.admin.menuItem.reorder.useMutation()
 
   // DnD 센서
   const sensors = useSensors(
@@ -173,7 +178,7 @@ export function MenuItemDnDTree({ initialItems }: MenuItemDnDTreeProps) {
   }
 
   // DnD 종료
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     setActiveId(null)
 
@@ -198,16 +203,36 @@ export function MenuItemDnDTree({ initialItems }: MenuItemDnDTreeProps) {
       const [removed] = newItems.splice(oldIndex, 1)
       newItems.splice(newIndex, 0, removed!)
 
-      // TODO: tRPC mutation 호출
-      // await trpc.admin.menuItem.reorder.mutate({ ops: [...] })
-      toast.info('순서 변경 (백엔드 연동 필요)')
-      setItems(newItems)
+      // 백엔드 호출: reorder ops 생성
+      const ops = newItems
+        .filter((item) => item.parentId === activeItem.parentId)
+        .map((item, index) => ({
+          id: item.id,
+          parentId: item.parentId,
+          listOrder: index,
+        }))
+
+      setIsReordering(true)
+      try {
+        await reorderMutation.mutateAsync({ ops })
+        // 성공: revalidate로 서버 확정 상태 반영
+        router.refresh()
+        setItems(newItems)
+        toast.success('순서가 변경되었습니다')
+      } catch (err) {
+        // 실패: 롤백 (AC-B4)
+        console.error('Reorder failed:', err)
+        toast.error('순서 변경 실패: 서버 오류')
+        setItems([...items]) // 이전 상태로 롤백
+      } finally {
+        setIsReordering(false)
+      }
       return
     }
 
-    // Cross-level 드롭 (다른 부모의 자식으로 이동)
-    const newParentId = overItem.parentId
-    const newDepth = newParentId === null ? 0 : (overItem.depth ?? 0) + 1
+    // Cross-level 드롭 (다른 항목의 자식으로 이동)
+    const newParentId = overItem.id
+    const newDepth = (overItem.depth ?? 0) + 1
 
     // Depth 체크
     if (newDepth >= MAX_DEPTH) {
@@ -216,13 +241,39 @@ export function MenuItemDnDTree({ initialItems }: MenuItemDnDTreeProps) {
     }
 
     // Cycle detection
-    if (wouldCreateCycle(activeIdNum, overItem.id, items)) {
+    if (wouldCreateCycle(activeIdNum, newParentId, items)) {
       toast.error('순환 참조를 생성할 수 없습니다')
       return
     }
 
-    // 새로운 부모로 이동 (TODO: 백엔드 연동)
-    toast.info(`항목 ${activeItem.title}을(를) ${overItem.title}의 자식으로 이동 (백엔드 연동 필요)`)
+    // 백엔드 호출: cross-level 이동
+    setIsReordering(true)
+    try {
+      // 새 부모 아래의 항목들 listOrder 재계산을 위해 임시 로컬 상태 생성
+      const newItems = [...items]
+      const activeIndex = newItems.findIndex((item) => item.id === activeIdNum)
+      const movedItem = { ...newItems[activeIndex]!, parentId: newParentId }
+      newItems.splice(activeIndex, 1)
+
+      // 새 부모의 마지막 자식으로 추가
+      const siblings = newItems.filter((item) => item.parentId === newParentId)
+      const maxListOrder = siblings.length > 0 ? Math.max(...siblings.map((s) => s.listOrder)) : -1
+      movedItem.listOrder = maxListOrder + 1
+      newItems.push(movedItem)
+
+      await reorderMutation.mutateAsync({
+        ops: [{ id: activeIdNum, parentId: newParentId, listOrder: movedItem.listOrder }],
+      })
+      router.refresh()
+      setItems(newItems)
+      toast.success(`항목 ${activeItem.title}을(를) ${overItem.title}의 자식으로 이동했습니다`)
+    } catch (err) {
+      console.error('Cross-level move failed:', err)
+      toast.error('이동 실패: 서버 오류')
+      setItems([...items]) // 롤백
+    } finally {
+      setIsReordering(false)
+    }
   }
 
   // Escape 키로 드래그 취소
