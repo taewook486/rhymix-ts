@@ -22,7 +22,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { toast } from 'sonner'
-import { api } from '@/lib/trpc/client'
+import { trpc } from '@/providers/TRPCProvider'
 import { useRouter } from 'next/navigation'
 
 interface MenuItemRow {
@@ -162,7 +162,7 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
   const [activeId, setActiveId] = useState<number | null>(null)
   const [isReordering, setIsReordering] = useState(false)
   const router = useRouter()
-  const reorderMutation = api.admin.menuItem.reorder.useMutation()
+  const reorderMutation = trpc.admin.menuItem.reorder.useMutation()
 
   // DnD 센서
   const sensors = useSensors(
