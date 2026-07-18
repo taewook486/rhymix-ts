@@ -47,6 +47,7 @@ const mockUserUpdate = vi.fn();
 const mockDeniedIdentifierCreate = vi.fn();
 const mockDeniedIdentifierDelete = vi.fn();
 const mockDeniedIdentifierFindMany = vi.fn();
+const mockDeniedIdentifierFindFirst = vi.fn();
 const mockAdminLogCreate = vi.fn();
 const mockMemberGroupMemberFindMany = vi.fn();
 const mockNicknameChangeLogCreate = vi.fn();
@@ -78,6 +79,7 @@ const mockPrisma = {
     create: (...args: unknown[]) => mockDeniedIdentifierCreate(...args),
     delete: (...args: unknown[]) => mockDeniedIdentifierDelete(...args),
     findMany: (...args: unknown[]) => mockDeniedIdentifierFindMany(...args),
+    findFirst: (...args: unknown[]) => mockDeniedIdentifierFindFirst(...args),
   },
   memberGroupMember: {
     findMany: (...args: unknown[]) => mockMemberGroupMemberFindMany(...args),
@@ -240,6 +242,38 @@ describe('admin.user tRPC router (Slice E-5)', () => {
       }),
     );
     expect(result).toMatchObject({ kind: 'USER_ID' });
+  });
+
+  it('AC-B2: admin.user.deniedList.add → 중복 (kind, pattern) 등록 시 위반 필드+기존값을 명시한 BAD_REQUEST (REQ-MADM-006)', async () => {
+    const p2002 = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
+    mockDeniedIdentifierCreate.mockRejectedValue(p2002);
+    mockDeniedIdentifierFindFirst.mockResolvedValue({
+      id: 5,
+      kind: 'NICK_NAME',
+      pattern: 'badword',
+    });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.deniedList.add({ type: 'NICK_NAME', pattern: 'badword' }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: expect.stringContaining('NICK_NAME'),
+    });
+
+    // 위반 필드(kind, pattern) + 기존 등록값이 메시지에 노출되어야 한다.
+    try {
+      await caller.deniedList.add({ type: 'NICK_NAME', pattern: 'badword' });
+    } catch (err) {
+      const message = (err as { message: string }).message;
+      expect(message).toContain('NICK_NAME');
+      expect(message).toContain('badword');
+    }
   });
 
   it('E-5-7: admin.user.deniedList.remove → DeniedIdentifier 삭제 (US-7)', async () => {

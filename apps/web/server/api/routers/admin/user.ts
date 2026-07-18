@@ -331,20 +331,41 @@ export const adminUserRouter = router({
 
     /**
      * DeniedIdentifier 추가 (USER_ID, NICK_NAME).
+     *
+     * REQ-MADM-006: 이미 존재하는 (kind, pattern) 조합을 다시 등록하려는 요청은
+     * 위반된 필드(kind, pattern)와 기존 등록된 값을 오류 메시지에 명시하여 거부한다.
+     * 어떤 행도 부분 반영되지 않는다(Prisma unique 제약이 원자적으로 보장).
      */
     add: protectedAdminProcedure
       .input(
         z.object({
           type: z.enum(['USER_ID', 'NICK_NAME']),
-          pattern: z.string().min(1),
+          pattern: z.string().min(1, '패턴을 입력하세요.'),
         }),
       )
-      .mutation(({ ctx, input }) =>
-        ctx.prisma.deniedIdentifier.create({
+      .mutation(async ({ ctx, input }) => {
+        try {
+          return await ctx.prisma.deniedIdentifier.create({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data: { kind: input.type as any, pattern: input.pattern },
+          });
+        } catch (err) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          data: { kind: input.type as any, pattern: input.pattern },
-        }),
-      ),
+          if ((err as any)?.code === 'P2002') {
+            const existing = await ctx.prisma.deniedIdentifier.findFirst({
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              where: { kind: input.type as any, pattern: input.pattern },
+            });
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `이미 등록된 조합입니다. kind=${input.type}, pattern=${input.pattern}${
+                existing ? ` (기존 등록값: kind=${existing.kind}, pattern=${existing.pattern})` : ''
+              }`,
+            });
+          }
+          throw err;
+        }
+      }),
 
     /**
      * DeniedIdentifier 삭제.

@@ -32,6 +32,9 @@ export default async function AdminMemberSettingsPage() {
           <Link href="/admin/members/nickname-log" className="text-sm text-blue-600 hover:underline">
             닉네임 변경 기록 →
           </Link>
+          <Link href="/admin/members/denied-list" className="text-sm text-blue-600 hover:underline">
+            차단 관리 →
+          </Link>
           <Link href="/admin/members/joinform" className="text-sm text-blue-600 hover:underline">
             가입 양식 편집 →
           </Link>
