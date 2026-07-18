@@ -1,9 +1,9 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.0
+version: 0.2.1
 status: in-progress
 created: 2026-07-09
-updated: 2026-07-10
+updated: 2026-07-18
 author: manager-spec
 priority: P1
 issue_number: null
@@ -24,6 +24,13 @@ issue_number: null
   배정, groupIds ACL, 중첩 트리 렌더링은 admin 로그인이 필요한 런타임 재현을 아직 수행하지 못해 **부분
   검증** 상태로 남김(§ Implementation Notes 참조). 이 미검증 부분이 남아 있어 status를 `completed`로
   올리지 않고 `in-progress`로 유지한다.
+- 2026-07-18 (v0.2.1): admin 로그인 후 실 DB/실 렌더링으로 Footer/Utility 슬롯 배정(AC-C1), groupIds
+  ACL(AC-D3), 중첩 트리 렌더링(AC-D2)을 재현 확인. 검증 과정에서 Slice B DnD 드래그앤드롭이 프론트-백엔드
+  mutation 페이로드 계약 불일치(`{ ops }` vs `{ menuId, items }`)로 100% 실패하던 회귀 버그를 발견,
+  `MenuItemDnDTree.tsx` 수정으로 해결(커밋 `107c0d4`) — same-level 순서 변경(AC-B1)을 실 재현으로
+  재검증 완료. Cross-level 자식 이동(AC-B2)은 동일 코드 경로 수정이나 별도 드래그 재현은 미실시. AC-D4
+  (icon/cssClass/openInNewWindow 렌더)와 전체 vitest/Playwright 스위트 재실행은 여전히 미검증 —
+  status를 `completed`로 올리지 않고 `in-progress`로 유지한다.
 
 ---
 
