@@ -1,6 +1,6 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.1
+version: 0.2.2
 status: in-progress
 created: 2026-07-09
 updated: 2026-07-18
@@ -151,8 +151,11 @@ updated: 2026-07-18
       발견·수정.** `MenuItemDnDTree.tsx`가 `admin.menuItem.reorder`를 `{ ops }` 형태로 호출했으나 실제
       프로시저 입력 스키마는 `{ menuId, items }`를 요구해, same-level(AC-B1)·cross-level(AC-B2) 드래그가
       전부 400으로 실패하던 버그(커밋 `107c0d4`로 수정). 수정 후 실 재현: 드래그 → `POST .../reorder 200`
-      → DB `listOrder` 반영 → 새로고침 후 순서 유지, 3단계 전부 확인. Cross-level(AC-B2)은 same-level과
-      동일 코드 경로·동일 수정이라 함께 고쳐졌으나, 별도 드래그 재현은 하지 않았다(§잔여 검증 참고).
+      → DB `listOrder` 반영 → 새로고침 후 순서 유지, 3단계 전부 확인.
+      Cross-level(AC-B2)은 자식 펼침(expand-to-load-children) UX 구현 후 실제 드래그로 재현 완료
+      (§ 발견된 갭 → 구현 완료 참고): Q&A를 Notice(Board의 자식) 위로 드래그 → `POST .../reorder 200`
+      (`{parentId: 2, listOrder: 0}`) → DB에 Board→Notice→Q&A 3단계 중첩 반영 → 새로고침 후 각 단계를
+      펼쳐서 구조 유지 확인, 접기로 하위 트리 일괄 제거도 확인.
       AC-B4(실패 시 롤백, 허위 성공 없음)는 수정 전 버그 상태에서도 이미 정상 동작 확인.
 - [x] REQ-MENU-020~025, 030~034 (Slice C/D) — **2026-07-18 admin 로그인 후 실 DB/실 렌더링으로 확인:**
   - [x] 마이그레이션 적용 + `defaultMenuId` → `HEADER_PRIMARY` 백필 idempotency 확인(재실행 시 중복 0건)
@@ -183,23 +186,32 @@ updated: 2026-07-18
 
 ### 잔여 검증 (다음 세션)
 
-- (없음 — 이번 세션에서 계획된 검증 항목 전부 완료. AC-B2 UI 갭은 아래 § 발견된 갭 참고)
+- AC-B3(순환/깊이 초과 거부), AC-C3(새 메뉴 존 생성), AC-C4(미배정 슬롯 무렌더)는 이번 세션에서
+  개별 재현 검증하지 않음 — 코드는 존재하나 실 드래그/실 화면으로 각각 확인 필요
+- AC-B2 UI 갭은 이번 세션에 구현·검증 완료(아래 § 발견된 갭 참고)
 
-### 발견된 갭 — AC-B2 실 UI 재현 불가 (수정 보류, 기록만)
+### 발견된 갭 — AC-B2 실 UI 재현 불가 → 구현 완료 (2026-07-18)
 
-**2026-07-18 발견.** `admin.menu.get` 쿼리는 주석에 명시된 대로 최상위(parentId=null) MenuItem만
+**발견 (같은 세션 초반).** `admin.menu.get` 쿼리는 주석에 명시된 대로 최상위(parentId=null) MenuItem만
 포함하고 자식은 로드하지 않는다("1-depth include 한계 — lazy load 패턴". "children은
 `admin.menuItem.list({ menuId, parentId })`로 lazy load. Slice E의 dnd-kit 도입과 함께 트리 전체
 펼침 UX 정식 도입" — 이 펼침 UX가 실제로는 구현되지 않음). `MenuItemDnDTree.tsx`에도 자식을
-fetch하는 로직이 없어 `item.children`이 항상 비어있다.
+fetch하는 로직이 없어 `item.children`이 항상 비어있었다. 결과: 관리자 메뉴 편집 화면에 보이는
+항목은 전부 parentId가 동일(최상위)해서, 어떤 두 항목을 서로 드래그해도
+`activeItem.parentId === overItem.parentId`가 항상 참이 되어 same-level 코드 경로만 타고,
+cross-level("자식으로 만들기") 코드 경로(AC-B2)는 당시 UI로는 트리거할 방법이 없었다.
 
-결과: 관리자 메뉴 편집 화면에 보이는 항목은 전부 parentId가 동일(최상위)해서, 어떤 두 항목을
-서로 드래그해도 `activeItem.parentId === overItem.parentId`가 항상 참이 되어 same-level 코드
-경로만 타고, cross-level("자식으로 만들기") 코드 경로(AC-B2)는 현재 UI로는 트리거할 방법이 없다.
-페이로드 계약 수정(커밋 `107c0d4`)은 cross-level 경로에도 동일하게 적용됐으므로 로직상 맞을
-것으로 보이나, 실제 드래그로 재현 검증하지 못했다.
+**구현 (사용자 요청, 같은 세션 후반).** `MenuItemDnDTree.tsx`에 펼침/접기 토글 버튼 추가:
+- 클릭 시 `utils.admin.menuItem.list.fetch({ menuId, parentId: item.id })`로 자식을 lazy load,
+  부모 바로 뒤에 depth-first 연속 순서로 삽입(`insertChildrenAfterParent`)
+- 재클릭(접기) 시 depth 기반 연속 구간 컷으로 하위 트리 전체 제거(`removeSubtree`)
+- 부수 수정: cross-level 이동 시 로컬 상태의 `movedItem.depth`가 갱신되지 않던 사소한 버그도
+  같이 고침(`newDepth`를 명시적으로 반영)
 
-이번 세션에서는 수정하지 않고 발견 사항만 기록한다. 트리 펼침(expand-to-load-children) UX
-구현이 별도로 필요 — 백로그로 남김.
+**재현 검증**: Board를 펼쳐 Notice가 자식으로 로드됨을 확인 → Q&A를 Notice 위로 드래그 →
+`POST .../reorder 200`, 페이로드 `{parentId: 2, listOrder: 0}` → DB 확인: Board(top)→Notice(자식)
+→Q&A(손자) 3단계 중첩 실제 반영 → 전체 페이지 새로고침 후 Board→Notice→Q&A 순서로 다시 펼쳐서
+구조 그대로 유지됨을 확인 → Board 접기로 Notice+Q&A 하위 트리 전체가 한번에 사라짐을 확인.
+`pnpm --filter web exec tsc --noEmit` 신규 에러 0건.
 - [x] stale 문구·obsolete `@MX:TODO` 제거 확인 (REQ-MENU-040/041, Slice A 커밋에 포함)
 - [x] INDEX.md에 SPEC-MENU-001 등재 (Phase 10, 본 sync에서 상태 갱신)

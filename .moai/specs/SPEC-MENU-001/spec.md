@@ -1,6 +1,6 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.1
+version: 0.2.2
 status: in-progress
 created: 2026-07-09
 updated: 2026-07-18
@@ -38,6 +38,14 @@ issue_number: null
   SPEC-MENU-001과 무관한 사전 존재 이슈. 메뉴 관련 테스트는 전부 통과.
   이번 세션에서 계획된 검증 항목은 모두 완료했으나, AC-B2 UI 갭(펼침 UX 미구현)이 남아있어
   status를 `completed`로 올리지 않고 `in-progress`로 유지한다.
+- 2026-07-18 (v0.2.2, 같은 날 후속): 사용자 요청으로 AC-B2 UI 갭을 구현. `MenuItemDnDTree.tsx`에
+  펼침/접기 토글을 추가해 `admin.menuItem.list`로 자식을 lazy load하고, 부모 뒤에 depth-first
+  연속 순서로 삽입/제거하는 방식으로 트리 펼침 UX를 완성. Q&A를 (Board의 자식인) Notice 위로
+  드래그해 Board→Notice→Q&A 3단계 cross-level 이동을 실제로 재현·DB 반영·새로고침 후 유지까지
+  확인 — AC-B2가 이제 실 UI로 검증 가능해짐. 부수적으로 cross-level 이동 시 로컬 depth 미갱신
+  버그도 함께 수정. `pnpm --filter web exec tsc --noEmit` 신규 에러 0건.
+  단 AC-B3(순환/깊이 초과 거부)·AC-C3(새 메뉴 존 생성)·AC-C4(미배정 슬롯 무렌더)는 개별 재현
+  검증을 하지 않아 status를 `completed`로 올리지 않고 `in-progress`로 유지한다.
 
 ---
 
