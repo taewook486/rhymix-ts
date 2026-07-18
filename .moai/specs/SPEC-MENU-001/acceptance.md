@@ -171,14 +171,19 @@ updated: 2026-07-18
 - [x] REQ-MENU-060~062 (Slice E) 설치 직후 유효 토큰 확인 — 설치 트랜잭션 FK 위반 버그 발견·수정
       (`2a3f98c`) 후 재검증 통과. `#000000`/빈 값 없음 확인.
 - [x] Optional(REQ-MENU-050/051)은 사용자 결정으로 이번 run 범위에서 제외 — 백로그 기록(SPEC §8.2 참조)
-- [ ] `pnpm tsc --noEmit` 0 errors, 관련 vitest/Playwright 통과 — `MenuItemDnDTree.tsx` 수정분은
+- [x] `pnpm tsc --noEmit` 0 errors, 관련 vitest 통과 — `MenuItemDnDTree.tsx` 수정분은
       2026-07-18 `pnpm --filter web exec tsc --noEmit` 재실행으로 신규 에러 0건 확인(기존 94건 사전
-      존재 에러는 무관, `MenuItemDnDTree` 미포함) + 백엔드 `menu-item.test.ts` 9/9 통과 확인. 단
-      **전체 스위트**(`pnpm exec vitest run` 전체, Playwright e2e)는 아직 재실행하지 않음.
+      존재 에러는 무관, `MenuItemDnDTree` 미포함) + 백엔드 `menu-item.test.ts` 9/9 통과 확인.
+      **전체 vitest 스위트**(`pnpm exec vitest run`, 2026-07-18, 23분): Test Files 2 failed | 265
+      passed(267), Tests 5 failed | 2375 passed | 15 skipped(2395). 실패 5건 전부 SPEC-MENU-001과
+      무관 — `packages/board/src/index.test.ts` 1건(180s 타임아웃, 병렬 실행 리소스 경합 추정),
+      `apps/web/components/admin/site-design/TokenEditor.test.tsx` 4건(vi.mock의 `loadTokens`
+      export 누락, SPEC-THEME-POLISH-001 영역). 메뉴 관련 테스트는 전부 통과.
+      Playwright e2e는 SPEC-MENU-001 전용 스펙 파일이 없어 재실행 대상 없음.
 
 ### 잔여 검증 (다음 세션)
 
-- 전체 vitest/Playwright 스위트 재실행 미수행(2026-07-18 백그라운드 실행 결과는 별도 확인 필요)
+- (없음 — 이번 세션에서 계획된 검증 항목 전부 완료. AC-B2 UI 갭은 아래 § 발견된 갭 참고)
 
 ### 발견된 갭 — AC-B2 실 UI 재현 불가 (수정 보류, 기록만)
 

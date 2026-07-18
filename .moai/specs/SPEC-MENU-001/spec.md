@@ -32,8 +32,12 @@ issue_number: null
   추가로 admin.menu.get이 최상위 MenuItem만 로드하고("1-depth include 한계") 자식 펼침(lazy load)
   UX가 실제로는 구현되지 않아, cross-level 자식 이동(AC-B2)을 현재 UI로는 재현할 방법이 없다는 별도
   갭을 발견 — 이번 세션에서는 수정하지 않고 acceptance.md § 발견된 갭에 기록만 함(사용자 결정).
-  전체 vitest/Playwright 스위트 재실행은 여전히 미검증 — status를 `completed`로 올리지 않고
-  `in-progress`로 유지한다.
+  전체 vitest 스위트 재실행(23분): 5 failed | 2375 passed | 15 skipped — 실패 5건은
+  `packages/board/src/index.test.ts`(타임아웃 1건)와
+  `apps/web/components/admin/site-design/TokenEditor.test.tsx`(vi.mock 누락 4건)로 전부
+  SPEC-MENU-001과 무관한 사전 존재 이슈. 메뉴 관련 테스트는 전부 통과.
+  이번 세션에서 계획된 검증 항목은 모두 완료했으나, AC-B2 UI 갭(펼침 UX 미구현)이 남아있어
+  status를 `completed`로 올리지 않고 `in-progress`로 유지한다.
 
 ---
 
