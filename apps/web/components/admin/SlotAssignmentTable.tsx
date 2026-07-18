@@ -71,6 +71,17 @@ export function SlotAssignmentTable({
     },
   })
 
+  const unassignMutation = trpc.admin.menu.unassignSlot.useMutation({
+    onSuccess: () => {
+      toast.success('슬롯 배정이 해제되었습니다.')
+      router.refresh()
+    },
+    onError: (error: unknown) => {
+      const err = error as { message?: string }
+      toast.error(err.message || '배정 해제에 실패했습니다.')
+    },
+  })
+
   const createMenuMutation = trpc.admin.menu.createSiteMenu.useMutation({
     onSuccess: (data: { id: number }) => {
       toast.success('새 메뉴가 생성되었습니다.')
@@ -83,6 +94,10 @@ export function SlotAssignmentTable({
   })
 
   const handleSlotChange = (slot: MenuSlot, menuId: string) => {
+    if (menuId === '') {
+      unassignMutation.mutate({ domainId, slot })
+      return
+    }
     const menuIdNum = Number.parseInt(menuId, 10)
     assignMutation.mutate({
       domainId,
@@ -125,7 +140,7 @@ export function SlotAssignmentTable({
                   <select
                     value={assignment?.menuId.toString() || ''}
                     onChange={(e) => handleSlotChange(slot, e.target.value)}
-                    disabled={assignMutation.isPending}
+                    disabled={assignMutation.isPending || unassignMutation.isPending}
                     className="w-full max-w-xs rounded border border-zinc-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">메뉴를 선택하세요</option>

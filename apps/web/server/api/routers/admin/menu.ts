@@ -296,6 +296,39 @@ export const adminMenuRouter = router({
     }),
 
   /**
+   * 슬롯 배정 해제 — assignSlot의 역연산 (REQ-MENU-020~025).
+   * menuId 가 not-null 컬럼이라 배정 해제는 MenuSlotAssignment 행 삭제로 구현.
+   * 이미 배정이 없으면 idempotent no-op.
+   */
+  unassignSlot: protectedAdminProcedure
+    .input(
+      z.object({
+        domainId: z.number().int().positive(),
+        slot: z.enum(['HEADER_PRIMARY', 'FOOTER', 'UTILITY']),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.prisma.menuSlotAssignment.deleteMany({
+        where: { domainId: input.domainId, slot: input.slot },
+      });
+
+      if (result.count > 0) {
+        await ctx.prisma.adminLog.create({
+          data: {
+            actorId: ctx.session.user.id,
+            action: 'menu.slot.unassign',
+            target: `domain:${input.domainId}`,
+            diff: { slot: input.slot },
+            ip: ctx.ip ?? null,
+            userAgent: ctx.userAgent ?? null,
+          },
+        });
+      }
+
+      return { unassigned: result.count > 0 };
+    }),
+
+  /**
    * 도메인별 슬롯 할당 목록 (REQ-MENU-025).
    */
   listSlotAssignments: protectedAdminProcedure
