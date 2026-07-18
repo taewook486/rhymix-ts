@@ -164,7 +164,10 @@ updated: 2026-07-18
         항목은 정상 렌더.
   - [x] 중첩(부모-자식) 트리 다단계 렌더(AC-D2) — 원본 HTML(`curl`)과 라이브 DOM(`document.querySelector`)
         양쪽에서 `<ul><li>Board<ul><li>Notice</li></ul></li></ul>` 형태의 정상 중첩 확인
-  - [ ] icon/cssClass/openInNewWindow 렌더 적용(AC-D4) — 이번 세션에서 미검증
+  - [x] icon/cssClass/openInNewWindow 렌더 적용(AC-D4) — Board에 아이콘(🏠)·cssClass(`test-board-link`)·
+        openInNewWindow를 설정해 저장 후 익명 요청 HTML로 확인:
+        `<a class="... test-board-link" target="_blank" rel="noopener"><span class="mr-1">🏠</span>Board</a>`.
+        확인 후 실제 운영 메뉴 항목이라 테스트 값은 원복함.
 - [x] REQ-MENU-060~062 (Slice E) 설치 직후 유효 토큰 확인 — 설치 트랜잭션 FK 위반 버그 발견·수정
       (`2a3f98c`) 후 재검증 통과. `#000000`/빈 값 없음 확인.
 - [x] Optional(REQ-MENU-050/051)은 사용자 결정으로 이번 run 범위에서 제외 — 백로그 기록(SPEC §8.2 참조)
@@ -175,9 +178,23 @@ updated: 2026-07-18
 
 ### 잔여 검증 (다음 세션)
 
-- AC-D4(icon/cssClass/openInNewWindow 렌더) 미검증
-- AC-B2(cross-level 자식 이동) — 코드 수정은 완료했으나 실제 드래그로 자식 이동 시나리오 자체를
-  재현하지는 않음(same-level만 직접 재현)
-- 전체 vitest/Playwright 스위트 재실행 미수행
+- 전체 vitest/Playwright 스위트 재실행 미수행(2026-07-18 백그라운드 실행 결과는 별도 확인 필요)
+
+### 발견된 갭 — AC-B2 실 UI 재현 불가 (수정 보류, 기록만)
+
+**2026-07-18 발견.** `admin.menu.get` 쿼리는 주석에 명시된 대로 최상위(parentId=null) MenuItem만
+포함하고 자식은 로드하지 않는다("1-depth include 한계 — lazy load 패턴". "children은
+`admin.menuItem.list({ menuId, parentId })`로 lazy load. Slice E의 dnd-kit 도입과 함께 트리 전체
+펼침 UX 정식 도입" — 이 펼침 UX가 실제로는 구현되지 않음). `MenuItemDnDTree.tsx`에도 자식을
+fetch하는 로직이 없어 `item.children`이 항상 비어있다.
+
+결과: 관리자 메뉴 편집 화면에 보이는 항목은 전부 parentId가 동일(최상위)해서, 어떤 두 항목을
+서로 드래그해도 `activeItem.parentId === overItem.parentId`가 항상 참이 되어 same-level 코드
+경로만 타고, cross-level("자식으로 만들기") 코드 경로(AC-B2)는 현재 UI로는 트리거할 방법이 없다.
+페이로드 계약 수정(커밋 `107c0d4`)은 cross-level 경로에도 동일하게 적용됐으므로 로직상 맞을
+것으로 보이나, 실제 드래그로 재현 검증하지 못했다.
+
+이번 세션에서는 수정하지 않고 발견 사항만 기록한다. 트리 펼침(expand-to-load-children) UX
+구현이 별도로 필요 — 백로그로 남김.
 - [x] stale 문구·obsolete `@MX:TODO` 제거 확인 (REQ-MENU-040/041, Slice A 커밋에 포함)
 - [x] INDEX.md에 SPEC-MENU-001 등재 (Phase 10, 본 sync에서 상태 갱신)
