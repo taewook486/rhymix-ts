@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-07-10 (Phase 10 SPEC-MENU-001 run phase 진행 — Slice A/B/C/E 구현+검증 완료, Slice D 부분 검증, Slice F 제외/백로그. status: in-progress)
+> 마지막 갱신: 2026-07-18 (Phase 10 SPEC-MENU-001 완료 — Slice A~E 전 AC 실 재현 검증 완료, Slice F 제외/백로그. status: completed)
 
 ## 기술 스택 (확정)
 
@@ -158,7 +158,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 
 | ID | 제목 | 의존 | 우선순위 | 상태 |
 |---|---|---|---|---|
-| [SPEC-MENU-001](./SPEC-MENU-001/spec.md) | 사이트 메뉴 편집 완성(필드/DnD 영속/다중 슬롯 렌더) + 설치 시 기본 디자인 토큰 시드 | ADMIN-001, ADMIN-EXTRAS-001, LAYOUT-001, THEME-POLISH-001, INSTALL-001 | P1 | 🟡 구현 진행 중 (status: in-progress, Slice A/B/C/E 완료, Slice D 부분 검증, Slice F 백로그) |
+| [SPEC-MENU-001](./SPEC-MENU-001/spec.md) | 사이트 메뉴 편집 완성(필드/DnD 영속/다중 슬롯 렌더) + 설치 시 기본 디자인 토큰 시드 | ADMIN-001, ADMIN-EXTRAS-001, LAYOUT-001, THEME-POLISH-001, INSTALL-001 | P1 | ✅ 완료 (status: completed, Slice A~E 전 AC 실 재현 검증, Slice F 백로그) |
 
 > 핵심 gap: 백엔드(schema `MenuItem` 전 필드 + `admin.menuItem.reorder` 트랜잭션)는 SPEC-ADMIN-001
 > REQ-ADMIN-030~033으로 "✅ 완료"로 마킹돼 있으나, 실제 UI(`MenuItemEditor`)는 title/url/listOrder 3필드만

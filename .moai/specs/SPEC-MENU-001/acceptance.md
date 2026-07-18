@@ -1,7 +1,7 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.4
-status: in-progress
+version: 0.3.0
+status: completed
 created: 2026-07-09
 updated: 2026-07-18
 ---
@@ -254,3 +254,8 @@ cross-level("자식으로 만들기") 코드 경로(AC-B2)는 당시 UI로는 �
 `pnpm --filter web exec tsc --noEmit` 신규 에러 0건.
 - [x] stale 문구·obsolete `@MX:TODO` 제거 확인 (REQ-MENU-040/041, Slice A 커밋에 포함)
 - [x] INDEX.md에 SPEC-MENU-001 등재 (Phase 10, 본 sync에서 상태 갱신)
+
+---
+
+**2026-07-18 완료 판정**: 위 Definition of Done 전 항목이 실 DB/실 렌더링/실 드래그 재현으로
+체크됨(Slice F 제외 — 사용자 결정으로 별도 백로그). 사용자 확인 후 `status: completed`로 전환.

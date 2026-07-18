@@ -1,7 +1,7 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.4
-status: in-progress
+version: 0.3.0
+status: completed
 created: 2026-07-09
 updated: 2026-07-18
 author: manager-spec
@@ -67,8 +67,11 @@ issue_number: null
   범위 밖 유지). "배정 해제 기능 없음" UX 갭은 여전히 기록만 된 상태(수정 안 함).
   모든 계획된 AC가 실 재현으로 확인됐으나, status를 `completed`로 전환할지는 사용자 확인 후
   결정 — 이번 커밋에서는 `in-progress`로 유지한다.
-
----
+- 2026-07-18 (v0.3.0, 같은 세션 후속): 사용자 확인 후 status를 `completed`로 전환. Slice A~E의
+  전 AC(A1-A5, B1-B4, C1-C4, D1-D4, E1-E2)가 실 DB/실 렌더링/실 드래그 재현으로 검증됨.
+  Slice F(REQ-MENU-050/051)는 사용자 결정으로 이 SPEC의 완료 범위에서 계속 제외 — 별도 백로그.
+  "슬롯 배정 해제 UI 기능 없음"은 원래 AC 항목이 아닌 부가 발견 UX 갭으로, 완료 판정을 막지
+  않고 별도 기록으로 남긴다.
 
 ## 1. 배경 (Why)
 
