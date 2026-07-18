@@ -1,6 +1,6 @@
 ---
 id: SPEC-MENU-001
-version: 0.3.0
+version: 0.3.1
 status: completed
 created: 2026-07-09
 updated: 2026-07-18
@@ -213,8 +213,14 @@ Utility 슬롯 배정을 DB에서 직접 제거하고 공개 페이지를 열어
 
 1. **관리자 화면 슬롯 배정 드롭다운에 "배정 해제" 기능이 없음** — 빈 옵션을 선택해도 실제로는
    반영되지 않아(가드 없이 `Number.parseInt('')` → `NaN`으로 mutate 호출, 백엔드에서 거부되는
-   것으로 추정) DB를 직접 지워서 우회 검증함. 별도 UX 갭으로 기록만 하고 이번 세션에서는 수정하지
-   않음.
+   것으로 추정) DB를 직접 지워서 우회 검증함.
+   **2026-07-18 구현 완료(사용자 요청)**: 백엔드에 `admin.menu.unassignSlot` 프로시저 신규 추가
+   (`MenuSlotAssignment.menuId`가 not-null 컬럼이라 해제는 `deleteMany`로 행 자체를 삭제,
+   idempotent). 프론트(`SlotAssignmentTable.tsx`)는 빈 옵션 선택 시 `assignSlot` 대신
+   `unassignSlot`을 호출하도록 `handleSlotChange` 분기 추가. 실 재현: Utility 슬롯에서 빈 옵션
+   선택 → `POST unassignSlot 200` → DB `menu_slot_assignments` UTILITY 행 삭제 확인 → 새로고침
+   후에도 "메뉴를 선택하세요"로 유지 확인. 검증 후 원래 상태(Utility Menu 배정)로 복구.
+   `pnpm --filter web exec tsc --noEmit` 신규 에러 0건, 백엔드 `menu.test.ts` 4/4 통과.
 2. **(더 중요) Footer/Utility 슬롯 렌더 컴포넌트가 실제 사이트 레이아웃에 연결되지 않고 있었음** —
    `app/layout.tsx`는 `GlobalHeader`(HEADER_PRIMARY 슬롯 포함)와 `GlobalFooter`(SPEC-INSTALL-003의
    "Powered by Rhymix-TS" 고정 attribution, FOOTER 슬롯과 무관)만 연결돼 있었고, SPEC-MENU-001이

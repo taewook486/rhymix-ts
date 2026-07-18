@@ -1,6 +1,6 @@
 ---
 id: SPEC-MENU-001
-version: 0.3.0
+version: 0.3.1
 status: completed
 created: 2026-07-09
 updated: 2026-07-18
@@ -72,6 +72,12 @@ issue_number: null
   Slice F(REQ-MENU-050/051)는 사용자 결정으로 이 SPEC의 완료 범위에서 계속 제외 — 별도 백로그.
   "슬롯 배정 해제 UI 기능 없음"은 원래 AC 항목이 아닌 부가 발견 UX 갭으로, 완료 판정을 막지
   않고 별도 기록으로 남긴다.
+- 2026-07-18 (v0.3.1, 같은 세션 후속): 위에서 기록만 해뒀던 "슬롯 배정 해제 UI 기능 없음" 갭을
+  사용자 요청으로 구현. 백엔드 `admin.menu.unassignSlot` 프로시저 신규 추가(`MenuSlotAssignment.
+  menuId`가 not-null이라 `deleteMany`로 행 삭제, idempotent) + 프론트 `SlotAssignmentTable.tsx`의
+  `handleSlotChange`가 빈 옵션 선택 시 이를 호출하도록 분기. 실 재현: Utility 슬롯 배정 해제 →
+  `POST unassignSlot 200` → DB 행 삭제 → 새로고침 후에도 미배정 유지 확인, 이후 원상 복구.
+  `pnpm --filter web exec tsc --noEmit` 신규 에러 0건, 백엔드 `menu.test.ts` 4/4 통과.
 
 ## 1. 배경 (Why)
 
