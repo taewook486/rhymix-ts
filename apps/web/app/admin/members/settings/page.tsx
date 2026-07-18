@@ -28,9 +28,14 @@ export default async function AdminMemberSettingsPage() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">회원 설정</h1>
-        <Link href="/admin/members/joinform" className="text-sm text-blue-600 hover:underline">
-          가입 양식 편집 →
-        </Link>
+        <div className="flex gap-4">
+          <Link href="/admin/members/nickname-log" className="text-sm text-blue-600 hover:underline">
+            닉네임 변경 기록 →
+          </Link>
+          <Link href="/admin/members/joinform" className="text-sm text-blue-600 hover:underline">
+            가입 양식 편집 →
+          </Link>
+        </div>
       </div>
 
       {/* 탭 네비게이션 */}
