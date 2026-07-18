@@ -1,6 +1,6 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.2
+version: 0.2.3
 status: in-progress
 created: 2026-07-09
 updated: 2026-07-18
@@ -161,7 +161,9 @@ updated: 2026-07-18
   - [x] 마이그레이션 적용 + `defaultMenuId` → `HEADER_PRIMARY` 백필 idempotency 확인(재실행 시 중복 0건)
   - [x] 헤더(HEADER_PRIMARY) 슬롯이 실 DB 데이터로 `MenuRenderer`를 통해 정상 렌더됨을 확인
   - [x] Footer/Utility 슬롯 동시 배정(AC-C1) — 3개 메뉴를 header/footer/utility 슬롯에 각각 배정 후
-        전체 페이지 새로고침으로 유지 확인(서로 다른 메뉴를 가리킴)
+        전체 페이지 새로고침으로 유지 확인(서로 다른 메뉴를 가리킴). **단, 이 확인은 어드민 화면·DB
+        레벨이었고, 실사용자 화면(공개 페이지)에는 반영되지 않고 있었음이 이후 발견·수정됨 —
+        아래 § 발견된 갭(Footer/Utility 미연결) 참고.**
   - [x] groupIds ACL 렌더 제한(AC-D3) — groupIds=[2]로 제한한 항목이 쿠키 없는 익명 요청(`curl`)과
         해당 그룹에 속하지 않은 admin(그룹 1) 세션 양쪽 모두에서 렌더되지 않음을 확인. groupIds 빈
         항목은 정상 렌더.
@@ -186,9 +188,43 @@ updated: 2026-07-18
 
 ### 잔여 검증 (다음 세션)
 
-- AC-B3(순환/깊이 초과 거부), AC-C3(새 메뉴 존 생성), AC-C4(미배정 슬롯 무렌더)는 이번 세션에서
-  개별 재현 검증하지 않음 — 코드는 존재하나 실 드래그/실 화면으로 각각 확인 필요
-- AC-B2 UI 갭은 이번 세션에 구현·검증 완료(아래 § 발견된 갭 참고)
+- AC-B3 깊이 초과(6단계) 쪽은 6단계 체인을 직접 만들어야 해서 실 드래그로 재현하지 않음(순환 거부는
+  아래에서 재현 완료). 코드는 `newDepth >= MAX_DEPTH` 단순 비교로 구조적으로는 맞아 보임.
+
+### AC-B3 (순환/깊이 초과 거부) — 순환 거부 재현 완료, 깊이 초과는 코드 검토만
+
+Board→Notice→Q&A(3단계) 트리에서 Board를 자신의 자식인 Notice 위로 드래그 → `wouldCreateCycle`이
+요청 전에 차단해 `admin.menuItem.reorder` 네트워크 요청 자체가 발생하지 않음, 트리 구조도 그대로
+유지됨을 확인(순환 거부 통과). 깊이 초과 거부는 6단계 체인 구성 비용 때문에 이번 세션엔 실 드래그
+재현을 하지 않고 코드 검토로 대체함.
+
+### AC-C3 (새 메뉴 존 생성) — 통과
+
+"+ 메뉴 존 추가" 클릭 → prompt에 이름 입력 → `admin.menu.createSiteMenu` 호출 → `/admin/menu/{새id}`로
+리다이렉트. DB 확인: 새 Menu 행이 `siteId=1`(해당 site 범위)로 생성되고 메뉴 목록에도 나타남.
+
+### AC-C4 (미배정 슬롯 무렌더) — 통과 (검증 중 더 큰 갭 발견 → 구현 완료)
+
+Utility 슬롯 배정을 DB에서 직접 제거하고 공개 페이지를 열어본 결과 에러 없이 무렌더 확인
+(코드 레벨 통과). 단, 검증 과정에서 다음 2가지를 추가로 발견:
+
+1. **관리자 화면 슬롯 배정 드롭다운에 "배정 해제" 기능이 없음** — 빈 옵션을 선택해도 실제로는
+   반영되지 않아(가드 없이 `Number.parseInt('')` → `NaN`으로 mutate 호출, 백엔드에서 거부되는
+   것으로 추정) DB를 직접 지워서 우회 검증함. 별도 UX 갭으로 기록만 하고 이번 세션에서는 수정하지
+   않음.
+2. **(더 중요) Footer/Utility 슬롯 렌더 컴포넌트가 실제 사이트 레이아웃에 연결되지 않고 있었음** —
+   `app/layout.tsx`는 `GlobalHeader`(HEADER_PRIMARY 슬롯 포함)와 `GlobalFooter`(SPEC-INSTALL-003의
+   "Powered by Rhymix-TS" 고정 attribution, FOOTER 슬롯과 무관)만 연결돼 있었고, SPEC-MENU-001이
+   만든 `Footer.tsx`(FOOTER 슬롯)·`Utility.tsx`(UTILITY 슬롯)는 어디에서도 import되지 않는 완전한
+   미사용 코드였음. 즉 지금까지 Footer/Utility 메뉴를 배정해도 **실사용자는 절대 볼 수 없었음.**
+   **2026-07-18 구현 완료(사용자 요청)**: `app/layout.tsx`에 `<Utility />`(헤더 위)·`<Footer />`
+   (GlobalFooter 위) 연결. Footer Menu에 "Contact"(/contact), Utility Menu에 "Help"(/help) 항목을
+   추가한 뒤 익명 요청 HTML로 실제 렌더 확인:
+   - Utility bar: `<div class="border-b bg-zinc-100">...<a href="/help">Help</a>...`(헤더 바로 위)
+   - Footer: `<footer class="border-t bg-zinc-50 mt-auto">...<a href="/contact">Contact</a>...`
+     (GlobalFooter 바로 위)
+   기존 `apps/web/app/layout.test.tsx`가 `Utility`/`Footer`를 mock하지 않아 `next/headers`
+   호출로 깨졌던 것도 mock 추가로 수정, 3/3 통과 재확인.
 
 ### 발견된 갭 — AC-B2 실 UI 재현 불가 → 구현 완료 (2026-07-18)
 

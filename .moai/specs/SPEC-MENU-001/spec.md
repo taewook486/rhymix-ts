@@ -1,6 +1,6 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.2
+version: 0.2.3
 status: in-progress
 created: 2026-07-09
 updated: 2026-07-18
@@ -46,6 +46,19 @@ issue_number: null
   버그도 함께 수정. `pnpm --filter web exec tsc --noEmit` 신규 에러 0건.
   단 AC-B3(순환/깊이 초과 거부)·AC-C3(새 메뉴 존 생성)·AC-C4(미배정 슬롯 무렌더)는 개별 재현
   검증을 하지 않아 status를 `completed`로 올리지 않고 `in-progress`로 유지한다.
+- 2026-07-18 (v0.2.3, 같은 세션 후속): AC-B3(순환 거부 재현 완료, 깊이 초과는 코드 검토만)·
+  AC-C3(새 메뉴 존 생성, 통과)·AC-C4(미배정 슬롯 무렌더, 통과)를 확인하는 과정에서 **Footer/Utility
+  슬롯 렌더 컴포넌트가 실제 사이트 레이아웃(`app/layout.tsx`)에 전혀 연결돼 있지 않던 문제**를
+  발견 — `Footer.tsx`/`Utility.tsx`는 Slice D에서 만들어졌지만 어디에서도 import되지 않는 죽은
+  코드였고, 실제 레이아웃엔 `GlobalHeader`(HEADER_PRIMARY 포함)와 SPEC-INSTALL-003의 무관한
+  `GlobalFooter`("Powered by Rhymix-TS")만 연결돼 있었음. 즉 지금까지 Footer/Utility 메뉴를
+  배정해도 실사용자는 절대 볼 수 없었음. 사용자 요청으로 즉시 구현: `<Utility />`(헤더 위)·
+  `<Footer />`(GlobalFooter 위)를 layout.tsx에 연결, Footer/Utility Menu에 각각 항목을 추가해
+  익명 요청 HTML로 실제 렌더 확인. 기존 `apps/web/app/layout.test.tsx`가 두 컴포넌트를 mock하지
+  않아 `next/headers` 호출로 깨졌던 것도 mock 추가로 수정(3/3 통과). 부가로 슬롯 배정 드롭다운에
+  "배정 해제" 기능이 없다는 UX 갭도 발견 — 이번 세션에서는 기록만 하고 수정하지 않음.
+  AC-B3 깊이 초과 케이스가 여전히 미검증이라 status를 `completed`로 올리지 않고 `in-progress`로
+  유지한다.
 
 ---
 
