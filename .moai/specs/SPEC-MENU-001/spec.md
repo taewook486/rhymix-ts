@@ -1,6 +1,6 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.3
+version: 0.2.4
 status: in-progress
 created: 2026-07-09
 updated: 2026-07-18
@@ -59,6 +59,14 @@ issue_number: null
   "배정 해제" 기능이 없다는 UX 갭도 발견 — 이번 세션에서는 기록만 하고 수정하지 않음.
   AC-B3 깊이 초과 케이스가 여전히 미검증이라 status를 `completed`로 올리지 않고 `in-progress`로
   유지한다.
+- 2026-07-18 (v0.2.4, 같은 세션 후속): AC-B3 깊이 초과 거부를 실 드래그로 재현 완료. DB에
+  Board→Notice→Q&A→Level3→Level4→Level5(6단계) 체인 + 별도 top-level 항목 DeepTest를 구성 →
+  전부 펼쳐서 DeepTest를 Level5 위로 드래그 → `newDepth(6) >= MAX_DEPTH(6)`로 차단, 네트워크
+  요청 없음 + DB `parentId` 불변 확인. 검증용 항목은 확인 후 삭제해 원상 복구.
+  이로써 acceptance.md Definition of Done 전 항목이 체크됨(Slice F 제외 — 사용자 결정으로
+  범위 밖 유지). "배정 해제 기능 없음" UX 갭은 여전히 기록만 된 상태(수정 안 함).
+  모든 계획된 AC가 실 재현으로 확인됐으나, status를 `completed`로 전환할지는 사용자 확인 후
+  결정 — 이번 커밋에서는 `in-progress`로 유지한다.
 
 ---
 

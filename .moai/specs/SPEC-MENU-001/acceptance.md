@@ -1,6 +1,6 @@
 ---
 id: SPEC-MENU-001
-version: 0.2.3
+version: 0.2.4
 status: in-progress
 created: 2026-07-09
 updated: 2026-07-18
@@ -188,15 +188,18 @@ updated: 2026-07-18
 
 ### 잔여 검증 (다음 세션)
 
-- AC-B3 깊이 초과(6단계) 쪽은 6단계 체인을 직접 만들어야 해서 실 드래그로 재현하지 않음(순환 거부는
-  아래에서 재현 완료). 코드는 `newDepth >= MAX_DEPTH` 단순 비교로 구조적으로는 맞아 보임.
+- (없음 — 이번 세션에서 계획된 검증 항목 전부 완료. Slice F는 사용자 결정으로 범위 밖 유지)
 
-### AC-B3 (순환/깊이 초과 거부) — 순환 거부 재현 완료, 깊이 초과는 코드 검토만
+### AC-B3 (순환/깊이 초과 거부) — 순환·깊이 초과 둘 다 재현 완료
 
-Board→Notice→Q&A(3단계) 트리에서 Board를 자신의 자식인 Notice 위로 드래그 → `wouldCreateCycle`이
-요청 전에 차단해 `admin.menuItem.reorder` 네트워크 요청 자체가 발생하지 않음, 트리 구조도 그대로
-유지됨을 확인(순환 거부 통과). 깊이 초과 거부는 6단계 체인 구성 비용 때문에 이번 세션엔 실 드래그
-재현을 하지 않고 코드 검토로 대체함.
+**순환 거부**: Board→Notice→Q&A(3단계) 트리에서 Board를 자신의 자식인 Notice 위로 드래그 →
+`wouldCreateCycle`이 요청 전에 차단해 `admin.menuItem.reorder` 네트워크 요청 자체가 발생하지
+않음, 트리 구조도 그대로 유지됨을 확인.
+
+**깊이 초과 거부**: DB에 Board→Notice→Q&A→Level3→Level4→Level5(6단계, depth 0~5) 체인과 별도
+top-level 항목 DeepTest를 만든 뒤, 전부 펼쳐서 DeepTest를 Level5(depth 5) 위로 드래그 →
+`newDepth(6) >= MAX_DEPTH(6)`로 차단, 마찬가지로 네트워크 요청 없음 + DB `parentId` 불변 확인.
+검증용으로 만든 Level3/Level4/Level5/DeepTest 항목은 확인 후 삭제해 원상 복구함.
 
 ### AC-C3 (새 메뉴 존 생성) — 통과
 
