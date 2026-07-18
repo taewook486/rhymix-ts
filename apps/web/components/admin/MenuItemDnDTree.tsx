@@ -214,7 +214,7 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
 
       setIsReordering(true)
       try {
-        await reorderMutation.mutateAsync({ ops })
+        await reorderMutation.mutateAsync({ menuId, items: ops })
         // 성공: revalidate로 서버 확정 상태 반영
         router.refresh()
         setItems(newItems)
@@ -262,7 +262,8 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
       newItems.push(movedItem)
 
       await reorderMutation.mutateAsync({
-        ops: [{ id: activeIdNum, parentId: newParentId, listOrder: movedItem.listOrder }],
+        menuId,
+        items: [{ id: activeIdNum, parentId: newParentId, listOrder: movedItem.listOrder }],
       })
       router.refresh()
       setItems(newItems)
