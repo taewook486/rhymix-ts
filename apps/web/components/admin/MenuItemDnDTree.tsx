@@ -17,7 +17,7 @@
  * - Depth check: 최대 깊이 6 제한
  */
 import { useState, useEffect } from 'react'
-import { GripVertical } from 'lucide-react'
+import { GripVertical, ChevronRight, ChevronDown } from 'lucide-react'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
@@ -93,6 +93,35 @@ function wouldCreateCycle(itemId: number, newParentId: number | null, allItems: 
 }
 
 /**
+ * 트리 펼침(expand) 시 부모 바로 뒤에 자식들을 삽입 — depth-first 연속 순서 유지 (AC-B2).
+ */
+function insertChildrenAfterParent(
+  items: (MenuItemRow & { depth: number })[],
+  parentId: number,
+  children: (MenuItemRow & { depth: number })[]
+): (MenuItemRow & { depth: number })[] {
+  const idx = items.findIndex((item) => item.id === parentId)
+  if (idx === -1) return items
+  return [...items.slice(0, idx + 1), ...children, ...items.slice(idx + 1)]
+}
+
+/**
+ * 트리 접기(collapse) 시 해당 항목의 모든 자손을 제거 — depth-first 연속 순서를 이용해
+ * 부모보다 depth 가 깊은 연속 구간을 잘라낸다 (AC-B2).
+ */
+function removeSubtree(
+  items: (MenuItemRow & { depth: number })[],
+  parentId: number
+): (MenuItemRow & { depth: number })[] {
+  const idx = items.findIndex((item) => item.id === parentId)
+  if (idx === -1) return items
+  const parentDepth = items[idx]!.depth
+  let end = idx + 1
+  while (end < items.length && items[end]!.depth > parentDepth) end++
+  return [...items.slice(0, idx + 1), ...items.slice(end)]
+}
+
+/**
  * cn 유틸리티 함수
  */
 function cn(...classes: (string | boolean | undefined | null)[]): string {
@@ -106,10 +135,16 @@ function SortableMenuItem({
   item,
   isActive,
   isDragging,
+  isExpanded,
+  isExpanding,
+  onToggleExpand,
 }: {
   item: MenuItemRow & { depth: number }
   isActive: boolean
   isDragging: boolean
+  isExpanded: boolean
+  isExpanding: boolean
+  onToggleExpand: (item: MenuItemRow & { depth: number }) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: item.id,
@@ -144,6 +179,21 @@ function SortableMenuItem({
       {/* Depth 인덴트 */}
       <div style={{ width: `${indent}px` }} className="flex-shrink-0" />
 
+      {/* 자식 펼침/접기 토글 (AC-B2 — lazy load) */}
+      <button
+        type="button"
+        disabled={isExpanding}
+        onClick={() => onToggleExpand(item)}
+        className="text-zinc-400 hover:text-zinc-600 disabled:opacity-50"
+        aria-label={isExpanded ? '자식 접기' : '자식 펼치기'}
+      >
+        {isExpanded ? (
+          <ChevronDown className="h-4 w-4" aria-hidden />
+        ) : (
+          <ChevronRight className="h-4 w-4" aria-hidden />
+        )}
+      </button>
+
       <span className="flex-1 text-sm font-medium truncate">{item.title}</span>
 
       <span className="text-xs text-zinc-400">
@@ -161,8 +211,45 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
   const [items, setItems] = useState<MenuItemRow[]>(() => flattenTree(initialItems))
   const [activeId, setActiveId] = useState<number | null>(null)
   const [isReordering, setIsReordering] = useState(false)
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+  const [expandingId, setExpandingId] = useState<number | null>(null)
   const router = useRouter()
   const reorderMutation = trpc.admin.menuItem.reorder.useMutation()
+  const utils = trpc.useUtils()
+
+  // 자식 펼침/접기 (AC-B2 — admin.menuItem.list 로 lazy load, 트리 계약 문서 § Implementation Notes)
+  const handleToggleExpand = async (item: MenuItemRow & { depth: number }) => {
+    if (expandedIds.has(item.id)) {
+      setExpandedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(item.id)
+        return next
+      })
+      setItems((prev) => removeSubtree(prev as (MenuItemRow & { depth: number })[], item.id))
+      return
+    }
+
+    setExpandingId(item.id)
+    try {
+      const children = await utils.admin.menuItem.list.fetch({ menuId, parentId: item.id })
+      const childRows: (MenuItemRow & { depth: number })[] = children.map((c) => ({
+        id: c.id,
+        title: c.title,
+        parentId: item.id,
+        listOrder: c.listOrder,
+        depth: item.depth + 1,
+      }))
+      setItems((prev) =>
+        insertChildrenAfterParent(prev as (MenuItemRow & { depth: number })[], item.id, childRows)
+      )
+      setExpandedIds((prev) => new Set(prev).add(item.id))
+    } catch (err) {
+      console.error('자식 로드 실패:', err)
+      toast.error('자식 항목을 불러오지 못했습니다')
+    } finally {
+      setExpandingId(null)
+    }
+  }
 
   // DnD 센서
   const sensors = useSensors(
@@ -252,7 +339,7 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
       // 새 부모 아래의 항목들 listOrder 재계산을 위해 임시 로컬 상태 생성
       const newItems = [...items]
       const activeIndex = newItems.findIndex((item) => item.id === activeIdNum)
-      const movedItem = { ...newItems[activeIndex]!, parentId: newParentId }
+      const movedItem = { ...newItems[activeIndex]!, parentId: newParentId, depth: newDepth }
       newItems.splice(activeIndex, 1)
 
       // 새 부모의 마지막 자식으로 추가
@@ -319,6 +406,9 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
                   item={{ ...item, depth: item.depth ?? 0 }}
                   isActive={activeId === item.id}
                   isDragging={activeId === item.id}
+                  isExpanded={expandedIds.has(item.id)}
+                  isExpanding={expandingId === item.id}
+                  onToggleExpand={handleToggleExpand}
                 />
               </li>
             ))}
