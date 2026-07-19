@@ -15,7 +15,7 @@ import type { PrismaClient } from '@rhymix-ts/db';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { InMemoryMailDispatcher } from './mail';
-import { type SignupConfig, signup } from './signup';
+import { type SignupConfig, isEmailHostAllowed, signup } from './signup';
 
 // ---------------------------------------------------------------------------
 // In-memory Prisma fake
@@ -49,9 +49,16 @@ interface FakeAuditLog {
   userAgent: string | null;
 }
 
+interface FakeEmailHost {
+  siteId?: number | null;
+  host: string;
+  policy: 'ALLOW' | 'DENY';
+}
+
 interface FakeOptions {
   preexistingUsers?: FakeUser[];
   preexistingDenied?: FakeDenied[];
+  preexistingEmailHosts?: FakeEmailHost[];
   failOnUserCreate?: { code: string };
   failOnAuditCreate?: boolean;
 }
@@ -59,6 +66,7 @@ interface FakeOptions {
 function buildFakePrisma(opts: FakeOptions = {}) {
   const users: FakeUser[] = [...(opts.preexistingUsers ?? [])];
   const denied: FakeDenied[] = [...(opts.preexistingDenied ?? [])];
+  const emailHosts: FakeEmailHost[] = [...(opts.preexistingEmailHosts ?? [])];
   const emailTokens: FakeEmailToken[] = [];
   const auditLogs: FakeAuditLog[] = [];
   let nextUserId = users.length + 1;
@@ -116,6 +124,13 @@ function buildFakePrisma(opts: FakeOptions = {}) {
         );
       },
     },
+    managedEmailHost: {
+      // SPEC-MEMBER-ADMIN-001 REQ-MADM-032~035: signup 이메일 호스트 정책 조회.
+      findMany: async (args?: { where?: { siteId?: number | null } }) => {
+        const wantSiteId = args?.where?.siteId ?? null;
+        return emailHosts.filter((h) => (h.siteId ?? null) === wantSiteId);
+      },
+    },
     emailAuthToken: {
       create: async (args: { data: Omit<FakeEmailToken, 'id'> }) => {
         const token: FakeEmailToken = { id: nextTokenId++, ...args.data };
@@ -152,7 +167,7 @@ function buildFakePrisma(opts: FakeOptions = {}) {
 
   return {
     prisma: fake as unknown as PrismaClient,
-    state: { users, denied, emailTokens, auditLogs },
+    state: { users, denied, emailHosts, emailTokens, auditLogs },
   };
 }
 
@@ -602,5 +617,139 @@ describe('signup', () => {
     });
     const stored = state.users[0]?.passwordHash ?? '';
     expect(stored).toMatch(/,t=10,/); // clamped to the safe-range upper bound
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-MEMBER-ADMIN-001 Group E — ManagedEmailHost signup policy
+//   REQ-MADM-032 (whitelist mode), REQ-MADM-033 (blacklist mode),
+//   REQ-MADM-034 (unrestricted), REQ-MADM-035 (clear error, atomic reject),
+//   CONFLICT: same host under ALLOW+DENY → ALLOW wins.
+// ---------------------------------------------------------------------------
+
+describe('isEmailHostAllowed (pure policy evaluation)', () => {
+  it('REQ-034: zero ALLOW + zero DENY → unrestricted (any domain permitted)', () => {
+    expect(isEmailHostAllowed('user@anything.com', [])).toBe(true);
+  });
+
+  it('REQ-032: ≥1 ALLOW host → whitelist mode, domain in ALLOW passes', () => {
+    const hosts = [{ host: 'gmail.com', policy: 'ALLOW' as const }];
+    expect(isEmailHostAllowed('user@gmail.com', hosts)).toBe(true);
+  });
+
+  it('REQ-032: ≥1 ALLOW host → whitelist mode, domain NOT in ALLOW rejected', () => {
+    const hosts = [{ host: 'gmail.com', policy: 'ALLOW' as const }];
+    expect(isEmailHostAllowed('user@yahoo.com', hosts)).toBe(false);
+  });
+
+  it('REQ-032: whitelist match is case-insensitive (domain + host)', () => {
+    const hosts = [{ host: 'Gmail.COM', policy: 'ALLOW' as const }];
+    expect(isEmailHostAllowed('User@GMAIL.com', hosts)).toBe(true);
+  });
+
+  it('REQ-033: zero ALLOW + ≥1 DENY → blacklist mode, DENY domain rejected', () => {
+    const hosts = [{ host: 'spam.com', policy: 'DENY' as const }];
+    expect(isEmailHostAllowed('user@spam.com', hosts)).toBe(false);
+  });
+
+  it('REQ-033: zero ALLOW + ≥1 DENY → other domains still pass', () => {
+    const hosts = [{ host: 'spam.com', policy: 'DENY' as const }];
+    expect(isEmailHostAllowed('user@gmail.com', hosts)).toBe(true);
+  });
+
+  it('CONFLICT: same host under ALLOW and DENY → ALLOW wins (permitted)', () => {
+    const hosts = [
+      { host: 'gmail.com', policy: 'ALLOW' as const },
+      { host: 'gmail.com', policy: 'DENY' as const },
+    ];
+    expect(isEmailHostAllowed('user@gmail.com', hosts)).toBe(true);
+  });
+
+  it('CONFLICT: ALLOW-priority host wins even when other DENY hosts exist', () => {
+    const hosts = [
+      { host: 'gmail.com', policy: 'ALLOW' as const },
+      { host: 'gmail.com', policy: 'DENY' as const },
+      { host: 'spam.com', policy: 'DENY' as const },
+    ];
+    // gmail is explicitly ALLOW → passes; but whitelist mode is active (≥1 ALLOW)
+    expect(isEmailHostAllowed('user@gmail.com', hosts)).toBe(true);
+    // spam is not in ALLOW list → whitelist mode rejects it
+    expect(isEmailHostAllowed('user@spam.com', hosts)).toBe(false);
+  });
+});
+
+describe('signup email-host policy branch', () => {
+  let mail: InMemoryMailDispatcher;
+  beforeEach(() => {
+    mail = new InMemoryMailDispatcher();
+  });
+
+  it('REQ-034: no managed hosts → signup proceeds unrestricted', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(baseInput(), { prisma, mail, config: baseConfig() });
+    expect(result).toMatchObject({ ok: true });
+    expect(state.users).toHaveLength(1);
+  });
+
+  it('REQ-032/035: whitelist mode rejects non-listed domain with EMAIL_HOST_DENIED, no user row', async () => {
+    const { prisma, state } = buildFakePrisma({
+      preexistingEmailHosts: [{ host: 'company.com', policy: 'ALLOW' }],
+    });
+    const result = await signup(
+      { ...baseInput(), email: 'alice@gmail.com' },
+      { prisma, mail, config: baseConfig() },
+    );
+    expect(result).toEqual({ ok: false, code: 'EMAIL_HOST_DENIED' });
+    expect(state.users).toHaveLength(0); // atomic: no partial user row
+    expect(state.auditLogs).toHaveLength(0);
+  });
+
+  it('REQ-032: whitelist mode admits a listed domain', async () => {
+    const { prisma, state } = buildFakePrisma({
+      preexistingEmailHosts: [{ host: 'example.com', policy: 'ALLOW' }],
+    });
+    const result = await signup(baseInput(), { prisma, mail, config: baseConfig() });
+    expect(result).toMatchObject({ ok: true });
+    expect(state.users).toHaveLength(1);
+  });
+
+  it('REQ-033/035: blacklist mode rejects a DENY domain with EMAIL_HOST_DENIED, no user row', async () => {
+    const { prisma, state } = buildFakePrisma({
+      preexistingEmailHosts: [{ host: 'example.com', policy: 'DENY' }],
+    });
+    const result = await signup(baseInput(), { prisma, mail, config: baseConfig() });
+    expect(result).toEqual({ ok: false, code: 'EMAIL_HOST_DENIED' });
+    expect(state.users).toHaveLength(0);
+  });
+
+  it('REQ-033: blacklist mode admits a non-DENY domain', async () => {
+    const { prisma, state } = buildFakePrisma({
+      preexistingEmailHosts: [{ host: 'spam.com', policy: 'DENY' }],
+    });
+    const result = await signup(baseInput(), { prisma, mail, config: baseConfig() });
+    expect(result).toMatchObject({ ok: true });
+    expect(state.users).toHaveLength(1);
+  });
+
+  it('CONFLICT: host under both ALLOW+DENY → signup for that host permitted', async () => {
+    const { prisma, state } = buildFakePrisma({
+      preexistingEmailHosts: [
+        { host: 'example.com', policy: 'ALLOW' },
+        { host: 'example.com', policy: 'DENY' },
+      ],
+    });
+    const result = await signup(baseInput(), { prisma, mail, config: baseConfig() });
+    expect(result).toMatchObject({ ok: true });
+    expect(state.users).toHaveLength(1);
+  });
+
+  it('siteId scoping: hosts on another site do not restrict the default site', async () => {
+    const { prisma, state } = buildFakePrisma({
+      preexistingEmailHosts: [{ siteId: 99, host: 'company.com', policy: 'ALLOW' }],
+    });
+    // config.emailHostSiteId defaults to null → site-99 ALLOW list is not applied
+    const result = await signup(baseInput(), { prisma, mail, config: baseConfig() });
+    expect(result).toMatchObject({ ok: true });
+    expect(state.users).toHaveLength(1);
   });
 });

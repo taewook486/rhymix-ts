@@ -541,6 +541,28 @@ model DeniedIdentifier {
   @@map("denied_identifiers")
 }
 
+// SPEC-MEMBER-ADMIN-001 Slice E REQ-MADM-028: 이메일 호스트 관리 (허용/차단 도메인).
+//
+// 사이트별 선택적 스코프 (siteId Int?)는 MemberGroup.siteId 선례를 따른다.
+// citext 확장과 created_by/createdAt 패턴은 DeniedIdentifier를 재사용한다.
+enum ManagedEmailHostPolicy {
+  ALLOW
+  DENY
+}
+
+model ManagedEmailHost {
+  id        Int                    @id @default(autoincrement())
+  siteId    Int?
+  host      String                 @db.Citext
+  policy    ManagedEmailHostPolicy
+  reason    String?
+  createdBy String?
+  createdAt DateTime               @default(now()) @db.Timestamptz
+
+  @@unique([siteId, host, policy])
+  @@map("managed_email_hosts")
+}
+
 // SPEC-AUTH-001 REQ-AUTH-004: append-only audit log for state-changing auth events.
 model AuditLog {
   id        Int      @id @default(autoincrement())

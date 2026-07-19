@@ -56,6 +56,10 @@ const mockDeniedIdentifierCreate = vi.fn();
 const mockDeniedIdentifierDelete = vi.fn();
 const mockDeniedIdentifierFindMany = vi.fn();
 const mockDeniedIdentifierFindFirst = vi.fn();
+const mockManagedEmailHostCreate = vi.fn();
+const mockManagedEmailHostDelete = vi.fn();
+const mockManagedEmailHostFindMany = vi.fn();
+const mockManagedEmailHostFindFirst = vi.fn();
 const mockAdminLogCreate = vi.fn();
 const mockMemberGroupMemberFindMany = vi.fn();
 const mockNicknameChangeLogCreate = vi.fn();
@@ -94,6 +98,12 @@ const mockPrisma = {
     delete: (...args: unknown[]) => mockDeniedIdentifierDelete(...args),
     findMany: (...args: unknown[]) => mockDeniedIdentifierFindMany(...args),
     findFirst: (...args: unknown[]) => mockDeniedIdentifierFindFirst(...args),
+  },
+  managedEmailHost: {
+    create: (...args: unknown[]) => mockManagedEmailHostCreate(...args),
+    delete: (...args: unknown[]) => mockManagedEmailHostDelete(...args),
+    findMany: (...args: unknown[]) => mockManagedEmailHostFindMany(...args),
+    findFirst: (...args: unknown[]) => mockManagedEmailHostFindFirst(...args),
   },
   memberGroupMember: {
     findMany: (...args: unknown[]) => mockMemberGroupMemberFindMany(...args),
@@ -509,5 +519,111 @@ describe('admin.user tRPC router (Slice E-5)', () => {
     expect(mockNicknameChangeLogFindMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: 2 } }),
     );
+  });
+
+  // ==========================================================================
+  // 이메일 호스트 관리 (SPEC-MEMBER-ADMIN-001 Slice E, REQ-MADM-028~035)
+  // ==========================================================================
+
+  it('AC-E1: admin.user.emailHost.add → ManagedEmailHost 생성 (REQ-MADM-028~031)', async () => {
+    const created = { id: 10, siteId: null, host: 'example.com', policy: 'DENY' };
+    mockManagedEmailHostCreate.mockResolvedValue(created);
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.emailHost.add({ host: 'example.com', policy: 'DENY' });
+
+    expect(mockManagedEmailHostCreate).toHaveBeenCalledOnce();
+    expect(mockManagedEmailHostCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ host: 'example.com', policy: 'DENY' }),
+      }),
+    );
+    expect(result).toMatchObject({ host: 'example.com', policy: 'DENY' });
+  });
+
+  it('AC-E1: admin.user.emailHost.remove → ManagedEmailHost 삭제 (REQ-MADM-028~031)', async () => {
+    const deleted = { id: 10, siteId: null, host: 'example.com', policy: 'DENY' };
+    mockManagedEmailHostDelete.mockResolvedValue(deleted);
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await caller.emailHost.remove({ id: 10 });
+
+    expect(mockManagedEmailHostDelete).toHaveBeenCalledOnce();
+    expect(mockManagedEmailHostDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 10 } }),
+    );
+  });
+
+  it('AC-E1: admin.user.emailHost.list → 정책 필터링 목록 반환 (REQ-MADM-029)', async () => {
+    const hosts = [
+      { id: 1, siteId: null, host: 'example.com', policy: 'DENY' },
+      { id: 2, siteId: null, host: 'trusted.com', policy: 'ALLOW' },
+    ];
+    mockManagedEmailHostFindMany.mockImplementation(
+      async (args?: { where?: { policy?: string } }) =>
+        args?.where?.policy
+          ? hosts.filter((h) => h.policy === args.where?.policy)
+          : hosts,
+    );
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.emailHost.list({ policy: 'DENY' });
+
+    expect(mockManagedEmailHostFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ policy: 'DENY' }),
+        orderBy: { id: 'desc' },
+      }),
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ host: 'example.com', policy: 'DENY' });
+  });
+
+  it('AC-E1: admin.user.emailHost.add → 중복 (siteId, host, policy) 등록 시 P2002 에러 (REQ-MADM-031)', async () => {
+    const p2002 = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
+    mockManagedEmailHostCreate.mockRejectedValue(p2002);
+    mockManagedEmailHostFindFirst.mockResolvedValue({
+      id: 5,
+      siteId: null,
+      host: 'example.com',
+      policy: 'DENY',
+    });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.emailHost.add({ host: 'example.com', policy: 'DENY' }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: expect.stringContaining('example.com'),
+    });
+
+    // 위반 필드(host, policy) + 기존 등록값이 메시지에 노출되어야 한다.
+    try {
+      await caller.emailHost.add({ host: 'example.com', policy: 'DENY' });
+    } catch (err) {
+      const message = (err as { message: string }).message;
+      expect(message).toContain('example.com');
+      expect(message).toContain('DENY');
+    }
   });
 });

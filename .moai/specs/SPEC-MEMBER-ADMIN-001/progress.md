@@ -231,6 +231,63 @@ packages/db/prisma/schema.prisma에 ManagedEmailHost/ManagedEmailHostPolicy 추�
 (2) apps/web/app/admin/members/email-hosts/ UI 페이지 미작성. (3) 실 Postgres로 마이그레이션
 적용 + AC-E1~E5 재현 검증 미실시.
 
+### Slice E (M5) — 완료 (2026-07-19, 이 세션)
+
+이전 세션 WIP를 이어받아 완료. `isEmailHostAllowed` 순수 함수(화이트리스트: ≥1 ALLOW,
+블랙리스트: 0 ALLOW + ≥1 DENY, 무제한: 0/0, 충돌 시 ALLOW 우선) + `SignupConfig.emailHostSiteId`
+(사이트 스코핑, `?? null` 기본값 — 정확한 siteId 일치만 조회, global-fallback 병합 없음) +
+`SignupErrorCode.EMAIL_HOST_DENIED` 추가, `signup()` 파이프라인의 DeniedIdentifier 검증 직후에
+배선. `apps/web/app/admin/members/email-hosts/{page,actions,forms}.tsx` 신규 작성(denied-list
+패턴 재사용).
+
+첫 위임(manager-develop, GLM/cg 아닌 일반 서브에이전트)이 "완료"로 자체보고했으나 독립 검증 결과
+5개 문제 발견 — [[feedback-dont-trust-completion-marking]] 패턴 재확인:
+1. schema.prisma/마이그레이션 디렉터리/admin/user.ts/두 테스트 파일 미커밋(첫 커밋 dc3bdd5는
+   signup.ts+UI 3파일+progress.md만 포함).
+2. 로컬 Postgres `_prisma_migrations`가 FAILED 상태(`type "ManagedEmailHostPolicy" already
+   exists`, 42710) — 원인은 실제 DB에 대소문자가 다른 enum 타입이 2개 존재
+   (`"ManagedEmailHostPolicy"`, `managedemailhostpolicy`)했고 테이블이 소문자쪽에 바인딩되어
+   Prisma Client(대소문자 보존 쿼리)와 불일치. `managed_email_hosts` 테이블+두 타입을 DROP,
+   `_prisma_migrations`의 실패 레코드 삭제 후 `prisma migrate deploy` 재적용으로 해결.
+3. AC-E1~E5 실 DB 검증 근거 없음(0행) — 이 세션에서 signup()을 실제로 호출하는 vitest 기반
+   임시 검증(테스트 자체는 커밋하지 않음, 검증 후 삭제)으로 5건 전부 실행·PASS 확인.
+4. `apps/web/server/api/routers/admin/user.test.ts:605`에 신규 타입 오류(`createCaller` 미정의,
+   `createCallerFactory` 임포트만 하고 다른 헬퍼 이름 호출) — 수정 완료.
+5. `admin.user.emailHost.list` 정책 필터링 테스트가 실제로는 필터링을 검증하지 않는 목(mock)
+   버그도 추가로 발견(`mockResolvedValue`가 `where.policy`를 무시하고 항상 전체 목록 반환) —
+   `mockImplementation`으로 실제 필터링 흉내내도록 수정.
+
+**AC-E1~E5 실 DB 검증 결과(전부 PASS, 로컬 도커 Postgres 5444)**:
+- AC-E1(등록/삭제 영속): `managedEmailHost.create` → `findMany` 재조회로 1행 확인 → `delete` →
+  재조회로 0행 확인. PASS.
+- AC-E2(화이트리스트): `trusted.com` ALLOW 등록 상태에서 `user@untrusted.com` → signup()이
+  `{ok:false, code:'EMAIL_HOST_DENIED'}` 반환 확인, `user@trusted.com` → `{ok:true}` 확인. PASS.
+- AC-E3(블랙리스트): `spam.com` DENY만 등록 상태에서 `user@spam.com` → 거부,
+  `user@anything-else.com` → 허용 확인. PASS.
+- AC-E4(무제한): 등록 행 0개 상태에서 임의 도메인 signup() → `{ok:true}` 확인. PASS.
+- AC-E5(부분생성 방지): 화이트리스트 거부된 시도의 userId로 `prisma.user.findFirst` 재조회 →
+  null(행 없음) 확인. PASS.
+
+**최종 검증**:
+```
+pnpm exec vitest run packages/auth/src/signup.test.ts
+  → 47 passed (47)
+pnpm exec vitest run apps/web/server/api/routers/admin/user.test.ts
+  → 22 passed (22)
+pnpm --filter web exec tsc --noEmit
+  → 이 SPEC 범위(signup.ts/user.ts/user.test.ts/email-hosts) 신규 오류 0건.
+     기존 baseline 오류만 잔존(module.test.ts/settings.test.ts/attachment.test.ts/
+     comment.test.ts/themes/default/install.ts — 이 SPEC 무관, §E.2에 이미 기록된 baseline)
+grep -rn 'AskUserQuestion' packages/auth/src/signup.ts apps/web/app/admin/members/email-hosts/ \
+  apps/web/server/api/routers/admin/user.ts
+  → 매치 없음(exit 1)
+docker exec rhymix-ts-db psql ... _prisma_migrations WHERE migration_name LIKE '%slice_e%'
+  → finished_at 정상, rolled_back_at 비어있음(정상 완료), applied_steps_count=1, logs 없음
+```
+
+ac_pass_count(누적): 29 (기존 24 + Slice E AC-E1~E5 5건)
+ac_fail_count: 0
+
 ## §E.4 Sync-phase Audit-Ready Signal
 
 _<pending sync-phase>_

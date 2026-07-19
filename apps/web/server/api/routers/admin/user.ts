@@ -438,4 +438,71 @@ export const adminUserRouter = router({
         ctx.prisma.deniedIdentifier.delete({ where: { id: input.id } }),
       ),
   }),
+
+  /**
+   * SPEC-MEMBER-ADMIN-001 Slice E: 이메일 호스트 관리 (REQ-MADM-028~035).
+   */
+  emailHost: router({
+    /**
+     * ManagedEmailHost 목록 조회 (REQ-MADM-029).
+     */
+    list: protectedAdminProcedure
+      .input(z.object({ policy: z.enum(['ALLOW', 'DENY']).optional() }))
+      .query(({ ctx, input }) =>
+        ctx.prisma.managedEmailHost.findMany({
+          where: input.policy ? { policy: input.policy } : undefined,
+          orderBy: { id: 'desc' },
+        }),
+      ),
+
+    /**
+     * ManagedEmailHost 추가 (REQ-MADM-030).
+     *
+     * REQ-MADM-031: 이미 존재하는 (siteId, host, policy) 조합을 다시 등록하려는 요청은
+     * 위반된 필드(host, policy)와 기존 등록된 값을 오류 메시지에 명시하여 거부한다.
+     * 어떤 행도 부분 반영되지 않는다(Prisma unique 제약이 원자적으로 보장).
+     */
+    add: protectedAdminProcedure
+      .input(
+        z.object({
+          host: z.string().min(1, '호스트를 입력하세요.').max(254, '호스트는 254자 이하여야 합니다.'),
+          policy: z.enum(['ALLOW', 'DENY']),
+          reason: z.string().max(500, '사유는 500자 이하여야 합니다.').optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        try {
+          return await ctx.prisma.managedEmailHost.create({
+            data: {
+              host: input.host,
+              policy: input.policy,
+              reason: input.reason,
+            },
+          });
+        } catch (err) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((err as any)?.code === 'P2002') {
+            const existing = await ctx.prisma.managedEmailHost.findFirst({
+              where: { host: input.host, policy: input.policy },
+            });
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `이미 등록된 조합입니다. host=${input.host}, policy=${input.policy}${
+                existing ? ` (기존 등록값: host=${existing.host}, policy=${existing.policy})` : ''
+              }`,
+            });
+          }
+          throw err;
+        }
+      }),
+
+    /**
+     * ManagedEmailHost 삭제 (REQ-MADM-031).
+     */
+    remove: protectedAdminProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ ctx, input }) =>
+        ctx.prisma.managedEmailHost.delete({ where: { id: input.id } }),
+      ),
+  }),
 });
