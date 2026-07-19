@@ -62,6 +62,20 @@ export function CreateGroupForm() {
         </div>
 
         <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="imageMark">
+            이미지 마크
+          </label>
+          <input
+            type="text"
+            id="imageMark"
+            name="imageMark"
+            maxLength={2000}
+            className="w-full border border-zinc-300 rounded px-3 py-2"
+            placeholder="이미지 URL 또는 업로드 경로 (선택)"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium mb-1" htmlFor="listOrder">
             표시 순서
           </label>
@@ -101,6 +115,7 @@ export function EditGroupForm({
     description: string | null;
     isDefault: boolean;
     isAdmin: boolean;
+    imageMark: string | null;
     listOrder: number;
   };
 }) {
@@ -171,6 +186,21 @@ export function EditGroupForm({
             />
             <span className="text-sm">관리자 그룹</span>
           </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="imageMark">
+            이미지 마크
+          </label>
+          <input
+            type="text"
+            id="imageMark"
+            name="imageMark"
+            maxLength={2000}
+            defaultValue={group.imageMark ?? ''}
+            className="w-full border border-zinc-300 rounded px-3 py-2"
+            placeholder="이미지 URL 또는 업로드 경로 (선택)"
+          />
         </div>
 
         <div>

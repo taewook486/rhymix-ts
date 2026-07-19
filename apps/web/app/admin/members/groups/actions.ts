@@ -28,6 +28,8 @@ const CreateGroupSchema = z.object({
   description: z.string().max(1000).optional(),
   isDefault: z.boolean().default(false),
   isAdmin: z.boolean().default(false),
+  // REQ-MADM-009: 이미지 마크(썸네일 URL 또는 업로드 경로)
+  imageMark: z.string().max(2000).optional(),
   listOrder: z.coerce.number().int().default(0),
 })
 
@@ -40,6 +42,7 @@ export async function createGroupAction(
     description: formData.get('description') || undefined,
     isDefault: formData.get('isDefault') === 'on',
     isAdmin: formData.get('isAdmin') === 'on',
+    imageMark: formData.get('imageMark') || undefined,
     listOrder: formData.get('listOrder') || 0,
   })
   if (!parsed.success) {
@@ -65,6 +68,8 @@ const UpdateGroupSchema = z.object({
   description: z.string().max(1000).optional(),
   isDefault: z.boolean().optional(),
   isAdmin: z.boolean().optional(),
+  // REQ-MADM-009: 이미지 마크(썸네일 URL 또는 업로드 경로)
+  imageMark: z.string().max(2000).optional(),
   listOrder: z.coerce.number().int().optional(),
 })
 
@@ -81,6 +86,7 @@ export async function updateGroupAction(
     description: formData.get('description') || undefined,
     isDefault: formData.get('isDefault') === 'on' ? true : formData.get('isDefault') === 'off' ? false : undefined,
     isAdmin: formData.get('isAdmin') === 'on' ? true : formData.get('isAdmin') === 'off' ? false : undefined,
+    imageMark: formData.get('imageMark') || undefined,
     listOrder: formData.get('listOrder') || undefined,
   })
   if (!parsed.success) {

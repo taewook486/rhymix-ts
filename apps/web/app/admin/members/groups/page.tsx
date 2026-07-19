@@ -8,6 +8,7 @@
  */
 import { getServerCaller } from '@/lib/trpc/server';
 import { deleteGroupAction } from './actions';
+import { GroupReorderList } from './GroupReorderList';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,12 +28,28 @@ export default async function AdminMemberGroupsPage() {
         </a>
       </div>
 
+      {/* 순서 변경 (REQ-MADM-011~014) — 드래그앤드롭 / 키보드 재배치 */}
+      <div className="mb-8">
+        <h2 className="text-sm font-medium text-zinc-600 mb-2">순서 변경</h2>
+        <GroupReorderList
+          initialGroups={groups.map((g) => ({
+            id: g.id,
+            title: g.title,
+            listOrder: g.listOrder,
+            imageMark: g.imageMark,
+            memberCount: g.memberCount,
+            isDefault: g.isDefault,
+          }))}
+        />
+      </div>
+
       {/* 그룹 목록 테이블 */}
       <div className="text-sm text-zinc-500 mb-2">총 {groups.length}개</div>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="bg-zinc-100">
             <th className="text-left px-3 py-2 font-medium">ID</th>
+            <th className="text-left px-3 py-2 font-medium">이미지 마크</th>
             <th className="text-left px-3 py-2 font-medium">그룹명</th>
             <th className="text-left px-3 py-2 font-medium">설명</th>
             <th className="text-left px-3 py-2 font-medium">회원 수</th>
@@ -46,6 +63,14 @@ export default async function AdminMemberGroupsPage() {
           {groups.map((group) => (
             <tr key={group.id} className="border-t border-zinc-200 hover:bg-zinc-50">
               <td className="px-3 py-2 font-mono text-xs">{group.id}</td>
+              <td className="px-3 py-2">
+                {group.imageMark ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={group.imageMark} alt="" className="h-6 w-6 rounded object-cover" />
+                ) : (
+                  '—'
+                )}
+              </td>
               <td className="px-3 py-2 font-medium">{group.title}</td>
               <td className="px-3 py-2 text-zinc-600 text-xs max-w-xs truncate">
                 {group.description || '—'}
@@ -81,7 +106,7 @@ export default async function AdminMemberGroupsPage() {
           ))}
           {groups.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-3 py-8 text-center text-zinc-400">
+              <td colSpan={9} className="px-3 py-8 text-center text-zinc-400">
                 그룹이 없습니다.
               </td>
             </tr>

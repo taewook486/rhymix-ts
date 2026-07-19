@@ -27,6 +27,7 @@ export const adminGroupRouter = router({
           description: true,
           isDefault: true,
           isAdmin: true,
+          imageMark: true,
           listOrder: true,
           _count: {
             select: {
@@ -42,6 +43,7 @@ export const adminGroupRouter = router({
         description: group.description,
         isDefault: group.isDefault,
         isAdmin: group.isAdmin,
+        imageMark: group.imageMark,
         listOrder: group.listOrder,
         memberCount: group._count.members,
       }));
@@ -61,6 +63,7 @@ export const adminGroupRouter = router({
           description: true,
           isDefault: true,
           isAdmin: true,
+          imageMark: true,
           listOrder: true,
           _count: {
             select: {
@@ -88,6 +91,8 @@ export const adminGroupRouter = router({
         title: z.string().min(1).max(80),
         description: z.string().max(1000).optional(),
         isDefault: z.boolean().default(false),
+        // REQ-MADM-009: 이미지 마크(썸네일 URL 또는 업로드 경로) — 기존 미사용 컬럼 노출
+        imageMark: z.string().max(2000).optional(),
         listOrder: z.number().int().default(0),
       }),
     )
@@ -106,6 +111,7 @@ export const adminGroupRouter = router({
           description: input.description,
           isDefault: input.isDefault,
           isAdmin: false,
+          imageMark: input.imageMark,
           listOrder: input.listOrder,
         },
       });
@@ -126,6 +132,8 @@ export const adminGroupRouter = router({
         title: z.string().min(1).max(80).optional(),
         description: z.string().max(1000).optional(),
         isDefault: z.boolean().optional(),
+        // REQ-MADM-009: 이미지 마크(썸네일 URL 또는 업로드 경로) — 기존 미사용 컬럼 노출
+        imageMark: z.string().max(2000).optional(),
         listOrder: z.number().int().optional(),
       }),
     )
@@ -234,5 +242,47 @@ export const adminGroupRouter = router({
 
       // AdminLog는 auditLogger 미들웨어가 자동 기록한다 (trpc.ts).
       return { success: true };
+    }),
+
+  /**
+   * 회원 그룹 배치 reorder — DnD 드래그 완료 시 호출 (REQ-MADM-011, REQ-MADM-012, REQ-MADM-013).
+   *
+   * `admin.menuItem.reorder`(menu-item.ts) 와 동일한 방식으로 단일 `$transaction` 으로
+   * 모든 그룹의 `listOrder` 를 원자적으로 갱신한다. `MemberGroup` 은 트리 구조가
+   * 아니므로 `parentId` 갱신은 불필요 — `listOrder` 만 갱신하는 더 단순한 형태
+   * (plan.md §핵심 설계 결정 3).
+   *
+   * @MX:ANCHOR: [AUTO] admin.group.reorder — 그룹 DnD 순서 갱신 단일 진입점.
+   * @MX:REASON: 모든 그룹 순서 갱신은 이 프로시저를 통해 단일 $transaction 으로 처리돼야
+   *             부분 적용(partial update)을 방지할 수 있음. fan_in >= 3 예상(DnD UI, tests, admin page).
+   * @MX:SPEC: SPEC-MEMBER-ADMIN-001 REQ-MADM-011, REQ-MADM-012, REQ-MADM-013
+   */
+  reorder: protectedAdminProcedure
+    .input(
+      z.object({
+        items: z.array(
+          z.object({
+            id: z.number().int().positive(),
+            listOrder: z.number().int(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.items.length === 0) {
+        return { updated: 0 };
+      }
+
+      // 단일 트랜잭션으로 일괄 갱신 — 실패 시 전체 롤백(부분 반영 없음, REQ-MADM-013).
+      await ctx.prisma.$transaction(
+        input.items.map((item) =>
+          ctx.prisma.memberGroup.update({
+            where: { id: item.id },
+            data: { listOrder: item.listOrder },
+          }),
+        ),
+      );
+
+      return { updated: input.items.length };
     }),
 });
