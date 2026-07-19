@@ -7,8 +7,9 @@
  *
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-047, REQ-ADMIN2-048, REQ-ADMIN2-050, REQ-ADMIN2-051, REQ-ADMIN2-052
  */
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import {
+  updateDefaultSettingsAction,
   updateSignupSettingsAction,
   updateLoginSettingsAction,
   updateAgreementSettingsAction,
@@ -18,6 +19,241 @@ import {
 } from './actions';
 
 const initialActionState: ActionState = {};
+
+export interface DefaultSettingsValue {
+  signupAccessMode: 'ALLOW' | 'DENY' | 'SIGNUP_KEY';
+  signupKey: string;
+  emailAuthTtlHours: number;
+  showProfilePhotoInList: boolean;
+  nicknameChangeAllowed: boolean;
+  nicknameSaveChangeLog: boolean;
+  nicknameAllowSpecialChars: boolean;
+  nicknameAllowedSpecialChars: string;
+  nicknameAllowSpacing: boolean;
+  allowDuplicateNickname: boolean;
+  passwordPolicyLevel: 'NORMAL' | 'STRONG' | 'VERY_STRONG';
+  argon2TimeCost: number;
+  autoRehashEnabled: boolean;
+}
+
+/**
+ * "기본 설정" 탭 — SPEC-MEMBER-ADMIN-001 Slice D (REQ-MADM-015~027).
+ */
+export function DefaultSettingsForm({ initial }: { initial: DefaultSettingsValue }) {
+  const [state, formAction, isPending] = useActionState(
+    updateDefaultSettingsAction,
+    initialActionState,
+  );
+  const [accessMode, setAccessMode] = useState(initial.signupAccessMode);
+  const [allowSpecialChars, setAllowSpecialChars] = useState(initial.nicknameAllowSpecialChars);
+
+  return (
+    <form action={formAction} className="max-w-2xl space-y-6">
+      {state.error && (
+        <p className="text-sm text-red-600" role="alert">
+          {state.error}
+        </p>
+      )}
+
+      {/* REQ-MADM-016/017: 가입 허가 모드 */}
+      <div>
+        <label className="block text-sm font-medium mb-1" htmlFor="signupAccessMode">
+          회원가입 허가
+        </label>
+        <select
+          id="signupAccessMode"
+          name="signupAccessMode"
+          defaultValue={initial.signupAccessMode}
+          onChange={(e) => setAccessMode(e.target.value as DefaultSettingsValue['signupAccessMode'])}
+          className="border border-zinc-300 rounded px-3 py-2 text-sm"
+        >
+          <option value="ALLOW">허용</option>
+          <option value="DENY">거부</option>
+          <option value="SIGNUP_KEY">가입키 일치 시에만 허용</option>
+        </select>
+      </div>
+
+      {accessMode === 'SIGNUP_KEY' && (
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="signupKey">
+            가입키
+          </label>
+          <input
+            type="text"
+            id="signupKey"
+            name="signupKey"
+            defaultValue={initial.signupKey}
+            className="w-full border border-zinc-300 rounded px-3 py-2 text-sm"
+            placeholder="가입 URL의 key 파라미터와 일치해야 가입이 허용됩니다"
+          />
+        </div>
+      )}
+
+      {/* REQ-MADM-018: 인증 메일 유효기간 */}
+      <div>
+        <label className="block text-sm font-medium mb-1" htmlFor="emailAuthTtlHours">
+          인증 메일 유효기간(시간)
+        </label>
+        <input
+          type="number"
+          id="emailAuthTtlHours"
+          name="emailAuthTtlHours"
+          min={1}
+          defaultValue={initial.emailAuthTtlHours}
+          className="w-32 border border-zinc-300 rounded px-3 py-2 text-sm"
+        />
+      </div>
+
+      {/* REQ-MADM-019: 관리자 회원 목록 프로필사진 노출 */}
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="showProfilePhotoInList"
+            defaultChecked={initial.showProfilePhotoInList}
+            className="rounded"
+          />
+          <span className="text-sm">관리자 회원 목록에 프로필사진 표시</span>
+        </label>
+      </div>
+
+      {/* REQ-MADM-020~023: 닉네임 변경 관련 */}
+      <fieldset className="border border-zinc-200 rounded p-4 space-y-3">
+        <legend className="text-sm font-medium px-1">닉네임 변경</legend>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="nicknameChangeAllowed"
+            defaultChecked={initial.nicknameChangeAllowed}
+            className="rounded"
+          />
+          <span className="text-sm">닉네임 변경 허용</span>
+        </label>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="nicknameSaveChangeLog"
+            defaultChecked={initial.nicknameSaveChangeLog}
+            className="rounded"
+          />
+          <span className="text-sm">닉네임 변경 기록 저장</span>
+        </label>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="nicknameAllowSpecialChars"
+            defaultChecked={initial.nicknameAllowSpecialChars}
+            onChange={(e) => setAllowSpecialChars(e.target.checked)}
+            className="rounded"
+          />
+          <span className="text-sm">닉네임 특수문자 허용</span>
+        </label>
+
+        {allowSpecialChars && (
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="nicknameAllowedSpecialChars">
+              허용 특수문자
+            </label>
+            <input
+              type="text"
+              id="nicknameAllowedSpecialChars"
+              name="nicknameAllowedSpecialChars"
+              defaultValue={initial.nicknameAllowedSpecialChars}
+              className="w-48 border border-zinc-300 rounded px-3 py-2 text-sm"
+              placeholder="예: -_."
+            />
+          </div>
+        )}
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="nicknameAllowSpacing"
+            defaultChecked={initial.nicknameAllowSpacing}
+            className="rounded"
+          />
+          <span className="text-sm">닉네임 띄어쓰기 허용</span>
+        </label>
+
+        {/* REQ-MADM-024: 가입 설정 탭과 동일한 키(member.signup.allowDuplicateNickname) 재사용 */}
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="allowDuplicateNickname"
+            defaultChecked={initial.allowDuplicateNickname}
+            className="rounded"
+          />
+          <span className="text-sm">닉네임 중복 허용 (가입 설정 탭과 동일한 값)</span>
+        </label>
+      </fieldset>
+
+      {/* REQ-MADM-025~027: 비밀번호/보안 */}
+      <fieldset className="border border-zinc-200 rounded p-4 space-y-3">
+        <legend className="text-sm font-medium px-1">비밀번호 보안</legend>
+
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="passwordPolicyLevel">
+            비밀번호 보안수준
+          </label>
+          <select
+            id="passwordPolicyLevel"
+            name="passwordPolicyLevel"
+            defaultValue={initial.passwordPolicyLevel}
+            className="border border-zinc-300 rounded px-3 py-2 text-sm"
+          >
+            <option value="NORMAL">낮음</option>
+            <option value="STRONG">보통</option>
+            <option value="VERY_STRONG">높음</option>
+          </select>
+        </div>
+
+        <div>
+          <p className="text-sm text-zinc-500">
+            현재 해시 알고리즘: <span className="font-mono">Argon2id</span> (읽기 전용)
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="argon2TimeCost">
+            Argon2id 시간 비용(time cost, 안전 범위 2~10)
+          </label>
+          <input
+            type="number"
+            id="argon2TimeCost"
+            name="argon2TimeCost"
+            min={2}
+            max={10}
+            defaultValue={initial.argon2TimeCost}
+            className="w-32 border border-zinc-300 rounded px-3 py-2 text-sm"
+          />
+        </div>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="autoRehashEnabled"
+            defaultChecked={initial.autoRehashEnabled}
+            className="rounded"
+          />
+          <span className="text-sm">로그인 시 구버전 해시 자동 업그레이드</span>
+        </label>
+      </fieldset>
+
+      <div className="pt-4">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="px-4 py-2 text-sm bg-zinc-800 text-white rounded hover:bg-zinc-700 disabled:opacity-50"
+        >
+          {isPending ? '저장 중...' : '저장'}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 export function SignupSettingsForm({
   initial,

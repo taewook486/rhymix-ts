@@ -52,6 +52,36 @@ const SignupSettingsSchema = z.object({
   allowDuplicateNickname: z.boolean().default(false),
 });
 
+// SPEC-MEMBER-ADMIN-001 Slice D (REQ-MADM-015~027): "기본 설정" 탭.
+// 레거시 순서(기본/가입/로그인/약관/기능/디자인)에 맞춰 회원 설정의 첫 번째 탭.
+const DefaultSettingsSchema = z.object({
+  // REQ-MADM-016: 가입 허가 모드. 기존 member.signup.enabled(boolean) 과의 하위
+  // 호환을 위해 updateDefault 는 이 값을 member.signup.enabled 에도 미러링한다
+  // (ALLOW/SIGNUP_KEY → true, DENY → false).
+  signupAccessMode: z.enum(['ALLOW', 'DENY', 'SIGNUP_KEY']).default('ALLOW'),
+  // REQ-MADM-017: SIGNUP_KEY 모드일 때 요구되는 가입키.
+  signupKey: z.string().max(200).default(''),
+  // REQ-MADM-018: 인증 메일 유효기간(시간 단위). EmailAuthToken.expiresAt 계산에 실제 반영.
+  emailAuthTtlHours: z.number().int().positive().max(24 * 365).default(24),
+  // REQ-MADM-019: 관리자 회원 목록(/admin/members) 프로필사진 노출 여부.
+  showProfilePhotoInList: z.boolean().default(true),
+  // REQ-MADM-020~022: 닉네임 변경 허용 / 변경 기록 저장.
+  nicknameChangeAllowed: z.boolean().default(true),
+  nicknameSaveChangeLog: z.boolean().default(true),
+  // REQ-MADM-023: 닉네임 특수문자/띄어쓰기 허용.
+  nicknameAllowSpecialChars: z.boolean().default(false),
+  nicknameAllowedSpecialChars: z.string().max(100).default(''),
+  nicknameAllowSpacing: z.boolean().default(false),
+  // REQ-MADM-024: 기존 member.signup.allowDuplicateNickname 키를 그대로 재사용(신규 키 금지).
+  allowDuplicateNickname: z.boolean().default(false),
+  // REQ-MADM-025: 비밀번호 보안수준 — PasswordPolicyLevel enum 재사용.
+  passwordPolicyLevel: z.enum(['NORMAL', 'STRONG', 'VERY_STRONG']).default('NORMAL'),
+  // REQ-MADM-026: Argon2id timeCost — 안전 범위(2~10, RFC 9106 권고치 대비 클램프) 강제.
+  argon2TimeCost: z.number().int().min(2).max(10).default(3),
+  // REQ-MADM-027: 로그인 시 구버전 해시 자동 재해싱(REQ-AUTH-014) on/off.
+  autoRehashEnabled: z.boolean().default(true),
+});
+
 const LoginSettingsSchema = z.object({
   allowAutoLogin: z.boolean().default(true),
   autoLoginDuration: z.number().int().positive().default(30), // days
@@ -254,6 +284,144 @@ export const adminSettingsRouter = router({
           txCtx,
           'member.signup.allowDuplicateNickname',
           input.allowDuplicateNickname,
+          actorId,
+        );
+      });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // Default Settings — "기본 설정" 탭 (SPEC-MEMBER-ADMIN-001 Slice D)
+  // ==========================================================================
+
+  /**
+   * "기본 설정" 탭 조회 (REQ-MADM-015~027).
+   */
+  getDefault: protectedAdminProcedure
+    .input(z.object({}).optional())
+    .query(async ({ ctx }) => {
+      // REQ-MADM-016: accessMode 키가 아직 없으면(마이그레이션 전) 기존
+      // member.signup.enabled 불리언에서 유도해 하위 호환을 지킨다.
+      const rawAccessMode = await getSiteSetting(ctx, 'member.signup.accessMode', null);
+      let signupAccessMode: 'ALLOW' | 'DENY' | 'SIGNUP_KEY';
+      if (rawAccessMode === 'ALLOW' || rawAccessMode === 'DENY' || rawAccessMode === 'SIGNUP_KEY') {
+        signupAccessMode = rawAccessMode;
+      } else {
+        const legacyEnabled = await getSiteSetting(ctx, 'member.signup.enabled', true);
+        signupAccessMode = legacyEnabled ? 'ALLOW' : 'DENY';
+      }
+
+      const settings = {
+        signupAccessMode,
+        signupKey: await getSiteSetting(ctx, 'member.signup.key', ''),
+        emailAuthTtlHours: await getSiteSetting(ctx, 'member.signup.emailAuthTtlHours', 24),
+        showProfilePhotoInList: await getSiteSetting(ctx, 'member.admin.showProfilePhotoInList', true),
+        nicknameChangeAllowed: await getSiteSetting(ctx, 'member.nickname.changeAllowed', true),
+        nicknameSaveChangeLog: await getSiteSetting(ctx, 'member.nickname.saveChangeLog', true),
+        nicknameAllowSpecialChars: await getSiteSetting(ctx, 'member.nickname.allowSpecialChars', false),
+        nicknameAllowedSpecialChars: await getSiteSetting(ctx, 'member.nickname.allowedSpecialChars', ''),
+        nicknameAllowSpacing: await getSiteSetting(ctx, 'member.nickname.allowSpacing', false),
+        // REQ-MADM-024: 기존 "가입 설정" 탭과 동일한 키를 재사용(신규 키 아님).
+        allowDuplicateNickname: await getSiteSetting(ctx, 'member.signup.allowDuplicateNickname', false),
+        passwordPolicyLevel: await getSiteSetting(ctx, 'member.password.policyLevel', 'NORMAL'),
+        argon2TimeCost: await getSiteSetting(ctx, 'security.password.argon2TimeCost', 3),
+        autoRehashEnabled: await getSiteSetting(ctx, 'security.password.autoRehashEnabled', true),
+      };
+
+      return DefaultSettingsSchema.parse(settings);
+    }),
+
+  /**
+   * "기본 설정" 탭 업데이트 (REQ-MADM-015~027).
+   *
+   * 여러 SiteSetting 키를 하나의 트랜잭션으로 묶어 원자적으로 적용한다.
+   * REQ-MADM-016: signupAccessMode 는 member.signup.enabled 에도 미러링되어
+   * 기존 "가입 설정" 탭 및 packages/auth/signup.ts 의 boolean 소비 코드와의
+   * 하위 호환을 유지한다.
+   */
+  updateDefault: protectedAdminProcedure
+    .input(DefaultSettingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const actorId = Number(ctx.session.user.id);
+
+      await ctx.prisma.$transaction(async (tx) => {
+        const txCtx = { ...ctx, prisma: tx };
+
+        await setSiteSetting(txCtx, 'member.signup.accessMode', input.signupAccessMode, actorId);
+        // REQ-MADM-016: 하위 호환 미러 — ALLOW/SIGNUP_KEY → true, DENY → false.
+        await setSiteSetting(
+          txCtx,
+          'member.signup.enabled',
+          input.signupAccessMode !== 'DENY',
+          actorId,
+        );
+        await setSiteSetting(txCtx, 'member.signup.key', input.signupKey, actorId);
+        await setSiteSetting(
+          txCtx,
+          'member.signup.emailAuthTtlHours',
+          input.emailAuthTtlHours,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.admin.showProfilePhotoInList',
+          input.showProfilePhotoInList,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.nickname.changeAllowed',
+          input.nicknameChangeAllowed,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.nickname.saveChangeLog',
+          input.nicknameSaveChangeLog,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.nickname.allowSpecialChars',
+          input.nicknameAllowSpecialChars,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.nickname.allowedSpecialChars',
+          input.nicknameAllowedSpecialChars,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.nickname.allowSpacing',
+          input.nicknameAllowSpacing,
+          actorId,
+        );
+        // REQ-MADM-024: 기존 "가입 설정" 탭과 동일한 키에 기록(신규 키 분기 금지).
+        await setSiteSetting(
+          txCtx,
+          'member.signup.allowDuplicateNickname',
+          input.allowDuplicateNickname,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.password.policyLevel',
+          input.passwordPolicyLevel,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'security.password.argon2TimeCost',
+          input.argon2TimeCost,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'security.password.autoRehashEnabled',
+          input.autoRehashEnabled,
           actorId,
         );
       });

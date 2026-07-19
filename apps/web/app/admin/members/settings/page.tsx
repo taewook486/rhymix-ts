@@ -9,14 +9,15 @@
  */
 import Link from 'next/link';
 import { getServerCaller } from '@/lib/trpc/server';
-import { SignupSettingsForm, LoginSettingsForm, AgreementSettingsForm, FeatureSettingsForm, DesignSettingsForm } from './forms';
+import { DefaultSettingsForm, SignupSettingsForm, LoginSettingsForm, AgreementSettingsForm, FeatureSettingsForm, DesignSettingsForm } from './forms';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminMemberSettingsPage() {
   const caller = await getServerCaller();
 
-  const [signupSettings, loginSettings, agreementSettings, featureSettings, designSettings] = await Promise.all([
+  const [defaultSettings, signupSettings, loginSettings, agreementSettings, featureSettings, designSettings] = await Promise.all([
+    caller.admin.settings.getDefault(),
     caller.admin.settings.getSignup(),
     caller.admin.settings.getLogin(),
     caller.admin.settings.getAgreement(),
@@ -41,12 +42,18 @@ export default async function AdminMemberSettingsPage() {
         </div>
       </div>
 
-      {/* 탭 네비게이션 */}
+      {/* 탭 네비게이션 — 레거시 순서(기본/가입/로그인/약관/기능/디자인)에 맞춰 "기본 설정"이 첫 탭 (REQ-MADM-015) */}
       <div className="border-b border-zinc-200 mb-6">
         <nav className="-mb-px flex gap-4">
           <a
-            href="#signup"
+            href="#default"
             className="px-4 py-2 text-sm font-medium border-b-2 border-zinc-800 text-zinc-900"
+          >
+            기본 설정
+          </a>
+          <a
+            href="#signup"
+            className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-zinc-600 hover:text-zinc-900"
           >
             가입 설정
           </a>
@@ -76,6 +83,13 @@ export default async function AdminMemberSettingsPage() {
           </a>
         </nav>
       </div>
+
+      {/* 기본 설정 탭 (REQ-MADM-015~027) */}
+      <section id="default" className="mb-8">
+        <h2 className="text-lg font-medium mb-4">기본 설정</h2>
+
+        <DefaultSettingsForm initial={defaultSettings} />
+      </section>
 
       {/* 가입 설정 탭 */}
       <section id="signup" className="mb-8">

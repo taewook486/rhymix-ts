@@ -58,6 +58,62 @@ export async function updateSignupSettingsAction(
 }
 
 // ---------------------------------------------------------------------------
+// Default Settings Actions — "기본 설정" 탭 (SPEC-MEMBER-ADMIN-001 Slice D)
+// ---------------------------------------------------------------------------
+
+const UpdateDefaultSettingsSchema = z.object({
+  signupAccessMode: z.enum(['ALLOW', 'DENY', 'SIGNUP_KEY']).default('ALLOW'),
+  signupKey: z.string().max(200).default(''),
+  emailAuthTtlHours: z.coerce.number().int().positive().max(24 * 365).default(24),
+  showProfilePhotoInList: z.boolean().default(true),
+  nicknameChangeAllowed: z.boolean().default(true),
+  nicknameSaveChangeLog: z.boolean().default(true),
+  nicknameAllowSpecialChars: z.boolean().default(false),
+  nicknameAllowedSpecialChars: z.string().max(100).default(''),
+  nicknameAllowSpacing: z.boolean().default(false),
+  allowDuplicateNickname: z.boolean().default(false),
+  passwordPolicyLevel: z.enum(['NORMAL', 'STRONG', 'VERY_STRONG']).default('NORMAL'),
+  argon2TimeCost: z.coerce.number().int().min(2).max(10).default(3),
+  autoRehashEnabled: z.boolean().default(true),
+})
+
+export async function updateDefaultSettingsAction(
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = UpdateDefaultSettingsSchema.safeParse({
+    signupAccessMode: formData.get('signupAccessMode') || 'ALLOW',
+    signupKey: formData.get('signupKey') || '',
+    emailAuthTtlHours: formData.get('emailAuthTtlHours') || 24,
+    showProfilePhotoInList: formData.get('showProfilePhotoInList') === 'on',
+    nicknameChangeAllowed: formData.get('nicknameChangeAllowed') === 'on',
+    nicknameSaveChangeLog: formData.get('nicknameSaveChangeLog') === 'on',
+    nicknameAllowSpecialChars: formData.get('nicknameAllowSpecialChars') === 'on',
+    nicknameAllowedSpecialChars: formData.get('nicknameAllowedSpecialChars') || '',
+    nicknameAllowSpacing: formData.get('nicknameAllowSpacing') === 'on',
+    allowDuplicateNickname: formData.get('allowDuplicateNickname') === 'on',
+    passwordPolicyLevel: formData.get('passwordPolicyLevel') || 'NORMAL',
+    argon2TimeCost: formData.get('argon2TimeCost') || 3,
+    autoRehashEnabled: formData.get('autoRehashEnabled') === 'on',
+  })
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors }
+  }
+
+  try {
+    const caller = await getServerCaller()
+    await caller.admin.settings.updateDefault(parsed.data)
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message }
+    }
+    return { error: '기본 설정 저장 중 오류가 발생했습니다.' }
+  }
+  revalidatePath('/admin/members/settings')
+  return {}
+}
+
+// ---------------------------------------------------------------------------
 // Login Settings Actions
 // ---------------------------------------------------------------------------
 
