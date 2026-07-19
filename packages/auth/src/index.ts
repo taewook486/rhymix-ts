@@ -45,6 +45,9 @@ export type {
   SignupFailure,
   SignupResult,
 } from './signup';
+// SPEC-MEMBER-ADMIN-001 REQ-MADM-023: shared nickname validation (signup + admin edit paths).
+export { validateNickname } from './signup';
+export type { NicknamePolicy } from './signup';
 
 // SPEC-AUTH-001 Slice C — login pipeline (REQ-AUTH-013/014/015/051/052).
 export { login } from './login';

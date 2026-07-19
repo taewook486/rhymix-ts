@@ -17,11 +17,48 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { router, protectedAdminProcedure } from '../../trpc';
-import { changeUserStatus, softDeleteUser } from '@rhymix-ts/auth';
+import { changeUserStatus, softDeleteUser, validateNickname } from '@rhymix-ts/auth';
 import { hashPassword } from '@rhymix-ts/auth';
 
 // UserStatus enum — Prisma schema 와 동기화
 const UserStatusEnum = z.enum(['APPROVED', 'UNAUTHED', 'SUSPENDED', 'DENIED', 'DELETED']);
+
+/**
+ * SPEC-MEMBER-ADMIN-001 REQ-MADM-020~023: "기본 설정" 탭에서 저장한 닉네임 변경
+ * 정책을 조회한다. `admin.settings.ts`의 getSiteSetting과 동일한 패턴이지만
+ * 라우터 내부 헬퍼가 export되어 있지 않아 이 파일에서 최소한으로 재구현한다.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getNicknameChangeSettings(ctx: { prisma: any }) {
+  const site = await ctx.prisma.site.findFirst({ orderBy: { id: 'asc' } });
+  const siteId = site?.id ?? 1;
+
+  const readValue = async (key: string) => {
+    const setting = await ctx.prisma.siteSetting.findUnique({
+      where: { siteId_key: { siteId, key } },
+    });
+    return setting ? setting.value : undefined;
+  };
+
+  const [changeAllowed, saveChangeLog, allowSpecialChars, allowedSpecialChars, allowSpacing] =
+    await Promise.all([
+      readValue('member.nickname.changeAllowed'),
+      readValue('member.nickname.saveChangeLog'),
+      readValue('member.nickname.allowSpecialChars'),
+      readValue('member.nickname.allowedSpecialChars'),
+      readValue('member.nickname.allowSpacing'),
+    ]);
+
+  return {
+    changeAllowed: (changeAllowed as boolean | undefined) ?? true,
+    saveChangeLog: (saveChangeLog as boolean | undefined) ?? true,
+    nicknamePolicy: {
+      allowSpecialChars: (allowSpecialChars as boolean | undefined) ?? false,
+      allowedSpecialChars: (allowedSpecialChars as string | undefined) ?? '',
+      allowSpacing: (allowSpacing as boolean | undefined) ?? false,
+    },
+  };
+}
 
 export const adminUserRouter = router({
   /**
@@ -216,13 +253,18 @@ export const adminUserRouter = router({
     }),
 
   /**
-   * 닉네임 변경 (REQ-ADMIN2-057).
+   * 닉네임 변경 (REQ-ADMIN2-057, SPEC-MEMBER-ADMIN-001 REQ-MADM-020~023).
    *
    * User.nickName 변경과 NicknameChangeLog 기록을 하나의 트랜잭션으로 처리한다.
    * AdminLog는 auditLogger 미들웨어(트랜스포트 trpc.ts)가 모든 admin mutation 에 대해
    * 자동으로 기록하므로 여기서 중복 기록하지 않는다 (admin.user.create 와 동일 패턴).
    *
-   * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-056, REQ-ADMIN2-057
+   * REQ-MADM-021: 닉네임 변경 허용이 꺼져 있으면(관리자 편집 경로 포함) 거부한다.
+   * REQ-MADM-022: 기록 저장이 꺼져 있으면 NicknameChangeLog 행을 생성하지 않는다.
+   * REQ-MADM-023: 특수문자/띄어쓰기 정책을 signup()과 동일한 validateNickname()으로 검증한다.
+   *
+   * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-056, REQ-ADMIN2-057,
+   *           SPEC-MEMBER-ADMIN-001 REQ-MADM-020, REQ-MADM-021, REQ-MADM-022, REQ-MADM-023
    */
   updateNickname: protectedAdminProcedure
     .input(
@@ -233,6 +275,15 @@ export const adminUserRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const actorId = Number(ctx.session.user.id);
+      const settings = await getNicknameChangeSettings(ctx);
+
+      // REQ-MADM-021: 닉네임 변경 허용 여부가 거짓이면(관리자 편집 경로 포함) 거부한다.
+      if (!settings.changeAllowed) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: '현재 닉네임 변경이 허용되지 않습니다.',
+        });
+      }
 
       const existing = await ctx.prisma.user.findUnique({
         where: { id: input.userId },
@@ -248,6 +299,14 @@ export const adminUserRouter = router({
         return { id: existing.id, nickName: existing.nickName };
       }
 
+      // REQ-MADM-023: 닉네임 특수문자/띄어쓰기 검증(가입 경로와 동일한 정책/함수 재사용).
+      if (!validateNickname(input.newNickName, settings.nicknamePolicy)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '허용되지 않는 문자가 포함된 닉네임입니다.',
+        });
+      }
+
       try {
         const result = await ctx.prisma.$transaction(async (tx) => {
           const updated = await tx.user.update({
@@ -256,14 +315,17 @@ export const adminUserRouter = router({
             select: { id: true, nickName: true },
           });
 
-          await tx.nicknameChangeLog.create({
-            data: {
-              userId: input.userId,
-              oldNickName: existing.nickName,
-              newNickName: input.newNickName,
-              changedByAdminId: actorId,
-            },
-          });
+          // REQ-MADM-022: 기록 저장이 꺼져 있으면 NicknameChangeLog 행을 생성하지 않는다.
+          if (settings.saveChangeLog) {
+            await tx.nicknameChangeLog.create({
+              data: {
+                userId: input.userId,
+                oldNickName: existing.nickName,
+                newNickName: input.newNickName,
+                changedByAdminId: actorId,
+              },
+            });
+          }
 
           return updated;
         });

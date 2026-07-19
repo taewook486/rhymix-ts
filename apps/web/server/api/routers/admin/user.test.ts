@@ -26,15 +26,23 @@ vi.mock('@/lib/db/prisma', () => ({
 
 // ---------------------------------------------------------------------------
 // @rhymix-ts/auth mock — changeUserStatus / softDeleteUser
+// validateNickname is kept as the REAL implementation (pure function, no I/O) —
+// SPEC-MEMBER-ADMIN-001 REQ-MADM-023 shares it with packages/auth/src/signup.ts,
+// so mocking it here would defeat the point of testing the shared policy.
 // ---------------------------------------------------------------------------
 
 const mockChangeUserStatus = vi.fn();
 const mockSoftDeleteUser = vi.fn();
 
-vi.mock('@rhymix-ts/auth', () => ({
-  changeUserStatus: (...args: unknown[]) => mockChangeUserStatus(...args),
-  softDeleteUser: (...args: unknown[]) => mockSoftDeleteUser(...args),
-}));
+vi.mock('@rhymix-ts/auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@rhymix-ts/auth')>();
+  return {
+    validateNickname: actual.validateNickname,
+    hashPassword: actual.hashPassword,
+    changeUserStatus: (...args: unknown[]) => mockChangeUserStatus(...args),
+    softDeleteUser: (...args: unknown[]) => mockSoftDeleteUser(...args),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Prisma mock
@@ -64,10 +72,16 @@ const mockUserTransaction = vi.fn().mockImplementation(async (fn: (tx: unknown) 
   }),
 );
 const mockSiteSettingFindFirst = vi.fn();
+const mockSiteSettingFindUnique = vi.fn();
+const mockSiteFindFirst = vi.fn();
 
 const mockPrisma = {
+  site: {
+    findFirst: (...args: unknown[]) => mockSiteFindFirst(...args),
+  },
   siteSetting: {
     findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+    findUnique: (...args: unknown[]) => mockSiteSettingFindUnique(...args),
   },
   user: {
     findMany: (...args: unknown[]) => mockUserFindMany(...args),
@@ -115,6 +129,8 @@ describe('admin.user tRPC router (Slice E-5)', () => {
     vi.clearAllMocks();
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
     mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
+    mockSiteFindFirst.mockResolvedValue({ id: 1 });
+    mockSiteSettingFindUnique.mockResolvedValue(null); // 기본값: 닉네임 설정 미저장(모두 기본값 적용)
     // actor 조회 기본값
     mockUserFindUnique.mockResolvedValue({ id: 1, isAdmin: true, status: 'APPROVED' });
     mockMemberGroupMemberFindMany.mockResolvedValue([]);
@@ -371,6 +387,82 @@ describe('admin.user tRPC router (Slice E-5)', () => {
     await expect(
       caller.updateNickname({ userId: 2, newNickName: '중복닉네임' }),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('NICKNAME-006 (REQ-MADM-021): updateNickname → FORBIDDEN when member.nickname.changeAllowed=false, no writes', async () => {
+    mockSiteSettingFindUnique.mockImplementation(async ({ where }: any) => {
+      if (where.siteId_key.key === 'member.nickname.changeAllowed') return { value: false };
+      return null;
+    });
+    mockUserFindUnique.mockResolvedValue({ id: 2, nickName: '이전닉네임' });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.updateNickname({ userId: 2, newNickName: '새닉네임' }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+    expect(mockNicknameChangeLogCreate).not.toHaveBeenCalled();
+  });
+
+  it('NICKNAME-007 (REQ-MADM-022): updateNickname → member.nickname.saveChangeLog=false skips NicknameChangeLog row, still updates nickName', async () => {
+    mockSiteSettingFindUnique.mockImplementation(async ({ where }: any) => {
+      if (where.siteId_key.key === 'member.nickname.saveChangeLog') return { value: false };
+      return null;
+    });
+    mockUserFindUnique.mockResolvedValue({ id: 2, nickName: '이전닉네임' });
+    mockUserUpdate.mockResolvedValue({ id: 2, nickName: '새닉네임' });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateNickname({ userId: 2, newNickName: '새닉네임' });
+
+    expect(result).toEqual({ id: 2, nickName: '새닉네임' });
+    expect(mockUserUpdate).toHaveBeenCalledOnce();
+    expect(mockNicknameChangeLogCreate).not.toHaveBeenCalled();
+  });
+
+  it('NICKNAME-008 (REQ-MADM-023): updateNickname → rejects a special-char nickname when policy disallows (default)', async () => {
+    mockUserFindUnique.mockResolvedValue({ id: 2, nickName: '이전닉네임' });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await expect(
+      caller.updateNickname({ userId: 2, newNickName: '새닉네임!' }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+  });
+
+  it('NICKNAME-009 (REQ-MADM-023): updateNickname → accepts a special-char nickname when policy explicitly allows it', async () => {
+    mockSiteSettingFindUnique.mockImplementation(async ({ where }: any) => {
+      if (where.siteId_key.key === 'member.nickname.allowSpecialChars') return { value: true };
+      if (where.siteId_key.key === 'member.nickname.allowedSpecialChars') return { value: '!' };
+      return null;
+    });
+    mockUserFindUnique.mockResolvedValue({ id: 2, nickName: '이전닉네임' });
+    mockUserUpdate.mockResolvedValue({ id: 2, nickName: '새닉네임!' });
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.updateNickname({ userId: 2, newNickName: '새닉네임!' });
+
+    expect(result).toEqual({ id: 2, nickName: '새닉네임!' });
   });
 
   it('NICKNAME-005: nicknameLog.list → returns paginated { total, items, page, pageSize }', async () => {

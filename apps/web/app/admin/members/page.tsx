@@ -49,14 +49,19 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
   const isFilterAdmin = activeFilter === 'admin'
   const statusFromFilter = activeFilter && activeFilter !== 'admin' ? activeFilter : sp.status
 
-  const data = await caller.admin.user.list({
-    q: sp.q ?? undefined,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    status: statusFromFilter ? (statusFromFilter as any) : undefined,
-    filterAdmin: isFilterAdmin ? true : undefined,
-    page,
-    pageSize: 50,
-  })
+  // REQ-MADM-019: "기본 설정" 탭의 프로필사진 노출 토글을 실제로 반영한다.
+  const [data, defaultSettings] = await Promise.all([
+    caller.admin.user.list({
+      q: sp.q ?? undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      status: statusFromFilter ? (statusFromFilter as any) : undefined,
+      filterAdmin: isFilterAdmin ? true : undefined,
+      page,
+      pageSize: 50,
+    }),
+    caller.admin.settings.getDefault(),
+  ])
+  const showProfilePhoto = defaultSettings.showProfilePhotoInList
 
   return (
     <div>
@@ -126,6 +131,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="bg-zinc-100">
+            {showProfilePhoto && <th className="text-left px-3 py-2 font-medium">프로필</th>}
             <th className="text-left px-3 py-2 font-medium">ID</th>
             <th className="text-left px-3 py-2 font-medium">닉네임</th>
             <th className="text-left px-3 py-2 font-medium">이메일</th>
@@ -137,6 +143,21 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
         <tbody>
           {data.users.map((user) => (
             <tr key={user.id} className="border-t border-zinc-200 hover:bg-zinc-50">
+              {showProfilePhoto && (
+                <td className="px-3 py-2">
+                  {/* 프로필 사진 원본 컬럼(User.profileImage 등)이 아직 없어 닉네임
+                      첫 글자 기반 아바타로 대체 표시한다 — REQ-MADM-019는 노출
+                      토글의 실제 반영을 요구할 뿐, 신규 이미지 업로드 기능을
+                      요구하지 않는다(§5 범위 밖 원칙 준용). */}
+                  <span
+                    data-testid="member-avatar"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-200 text-xs font-medium text-zinc-700"
+                    aria-hidden
+                  >
+                    {(user.nickName || user.userId).slice(0, 1).toUpperCase()}
+                  </span>
+                </td>
+              )}
               <td className="px-3 py-2 font-mono text-xs">{user.userId}</td>
               <td className="px-3 py-2">{user.nickName}</td>
               <td className="px-3 py-2 text-zinc-600">{user.emailAddress}</td>
@@ -158,7 +179,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
           ))}
           {data.users.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-3 py-8 text-center text-zinc-400">
+              <td colSpan={showProfilePhoto ? 7 : 6} className="px-3 py-8 text-center text-zinc-400">
                 회원이 없습니다.
               </td>
             </tr>
