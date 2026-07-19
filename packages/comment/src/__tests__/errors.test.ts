@@ -11,7 +11,6 @@ import {
   CommentNotFoundError,
   CommentAlreadyVotedError,
   SelfVoteNotAllowedError,
-  CommentAlreadyReportedError,
 } from '../errors';
 
 // ---------------------------------------------------------------------------
@@ -65,18 +64,5 @@ describe('SelfVoteNotAllowedError', () => {
   it('커스텀 에러 타입을 갖는다', () => {
     const error = new SelfVoteNotAllowedError(321);
     expect(error.name).toBe('SelfVoteNotAllowedError');
-  });
-});
-
-describe('CommentAlreadyReportedError', () => {
-  it('에러 메시지에 commentId와 reporterId가 포함된다', () => {
-    const error = new CommentAlreadyReportedError(654, 202);
-    expect(error.message).toContain('654');
-    expect(error.message).toContain('202');
-  });
-
-  it('커스텀 에러 타입을 갖는다', () => {
-    const error = new CommentAlreadyReportedError(654, 202);
-    expect(error.name).toBe('CommentAlreadyReportedError');
   });
 });

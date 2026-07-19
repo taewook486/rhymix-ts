@@ -3,7 +3,8 @@
  *
  * Comment tRPC router 정의.
  *
- * REQ-COMMENT-070~073: tRPC commentRouter (create, list, delete, vote, report).
+ * REQ-COMMENT-070~073: tRPC commentRouter (create, list, delete, vote).
+ * 댓글 신고는 content.report.create(documentReport 기반)로 일원화되어 이 라우터에서 제거됨.
  */
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -13,12 +14,10 @@ import {
   listComments,
   deleteComment,
   voteComment,
-  reportComment,
   type CreateCommentInput,
   type ListCommentsInput,
   type DeleteCommentInput,
   type VoteCommentInput,
-  type ReportCommentInput,
 } from './service';
 
 // tRPC 컨텍스트 타입 — prisma 인젝션
@@ -85,22 +84,6 @@ export const commentRouter = t.router({
     )
     .mutation(({ input, ctx }) =>
       voteComment(input as VoteCommentInput, ctx),
-    ),
-
-  /**
-   * Slice C: 댓글 신고 (REQ-COMMENT-040).
-   */
-  report: t.procedure
-    .input(
-      z.object({
-        commentId: z.number().int().positive(),
-        reporterId: z.number().int().positive(),
-        reporterIp: z.string().ip().nullable().optional(),
-        reason: z.string().min(1).max(500).optional(),
-      }),
-    )
-    .mutation(({ input, ctx }) =>
-      reportComment(input as ReportCommentInput, ctx),
     ),
 });
 

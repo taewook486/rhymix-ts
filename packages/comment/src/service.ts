@@ -1,11 +1,14 @@
 /**
  * service.ts — SPEC-COMMENT-001 Slice A/C
  *
- * Comment 도메인 — createComment / listComments / deleteComment / voteComment / reportComment.
+ * Comment 도메인 — createComment / listComments / deleteComment / voteComment.
  * Document.commentCount 의 원자성을 보장하기 위해 모든 mutation 은 $transaction 안에서 수행.
  *
  * REQ-COMMENT-010 (댓글 생성), REQ-COMMENT-012 (댓글 목록), REQ-COMMENT-013 (댓글 삭제).
- * REQ-COMMENT-030 (댓글 투표), REQ-COMMENT-040 (댓글 신고).
+ * REQ-COMMENT-030 (댓글 투표).
+ *
+ * 댓글 신고(구 REQ-COMMENT-040, commentReport 기반)는 SPEC-SPAM-001의
+ * content.report.create(documentReport 기반, commentId 지원)로 일원화되어 제거됨.
  */
 import { z } from 'zod';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +26,6 @@ import {
   CommentDepthExceededError,
   CommentAlreadyVotedError,
   SelfVoteNotAllowedError,
-  CommentAlreadyReportedError,
 } from './errors';
 import { emitCommentDeleted } from './events';
 // SPEC-POINT-001 REQ-POINT-042: 포인트 훅 연동
@@ -440,59 +442,3 @@ export async function voteComment(
   });
 }
 
-// ---------------------------------------------------------------------------
-// reportComment (REQ-COMMENT-040)
-// ---------------------------------------------------------------------------
-
-const ReportCommentSchema = z.object({
-  commentId: z.number().int().positive(),
-  reporterId: z.number().int().positive(),
-  reporterIp: z.string().ip().nullable().optional(),
-  reason: z.string().min(1).max(500).optional(),
-});
-
-export type ReportCommentInput = z.input<typeof ReportCommentSchema>;
-
-/**
- * 댓글 신고.
- *
- * @MX:WARN [AUTO]: 트랜잭션 필수 — blamedCount 원자성 보장.
- * @MX:REASON: 트랜잭션 없이 실행 시 카운트 불일치 발생.
- */
-export async function reportComment(
-  input: ReportCommentInput,
-  ctx: { prisma: PrismaClient },
-) {
-  const parsed = ReportCommentSchema.parse(input);
-
-  // REQ-COMMENT-041: 중복 신고 확인 (findFirst — compound unique 이름 불필요)
-  const existingReport = await ctx.prisma.commentReport.findFirst({
-    where: {
-      commentId: parsed.commentId,
-      reporterId: parsed.reporterId,
-    },
-  });
-
-  if (existingReport) {
-    throw new CommentAlreadyReportedError(parsed.commentId, parsed.reporterId);
-  }
-
-  // REQ-COMMENT-040: 신고 생성 + blamedCount++ (단일 트랜잭션)
-  return ctx.prisma.$transaction(async (tx) => {
-    const report = await tx.commentReport.create({
-      data: {
-        commentId: parsed.commentId,
-        reporterId: parsed.reporterId,
-        reporterIp: parsed.reporterIp,
-        reason: parsed.reason,
-      },
-    });
-
-    await tx.comment.update({
-      where: { id: parsed.commentId },
-      data: { blamedCount: { increment: 1 } },
-    });
-
-    return report;
-  });
-}

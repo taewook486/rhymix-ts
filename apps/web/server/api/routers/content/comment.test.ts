@@ -40,15 +40,11 @@ vi.mock('@rhymix-ts/comment', () => ({
   createComment: (...args: unknown[]) => mockCreateComment(...args),
   deleteComment: (...args: unknown[]) => mockDeleteComment(...args),
   voteComment: vi.fn(),
-  reportComment: vi.fn(),
   CommentDepthExceededError: class extends Error {
     readonly code = 'COMMENT_DEPTH_EXCEEDED';
   },
   SelfVoteNotAllowedError: class extends Error {
     readonly code = 'SELF_VOTE_NOT_ALLOWED';
-  },
-  CommentAlreadyReportedError: class extends Error {
-    readonly code = 'COMMENT_ALREADY_REPORTED';
   },
 }));
 

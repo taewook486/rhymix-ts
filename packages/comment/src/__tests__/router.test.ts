@@ -33,11 +33,6 @@ describe('commentRouter structure', () => {
     expect(commentRouter._def.procedures).toHaveProperty('vote');
     expect(commentRouter._def.procedures.vote._def.type).toBe('mutation');
   });
-
-  it('report 프로시저가 존재한다 (Slice C stub)', () => {
-    expect(commentRouter._def.procedures).toHaveProperty('report');
-    expect(commentRouter._def.procedures.report._def.type).toBe('mutation');
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -112,37 +107,5 @@ describe('commentRouter input schemas', () => {
     expect(valid1.success).toBe(true);
     expect(valid2.success).toBe(true);
     expect(invalid.success).toBe(false);
-  });
-
-  it('report는 commentId, reporterId를 필수로 받는다', () => {
-    const schema = commentRouter._def.procedures.report._def.inputs[0];
-    const result = schema.safeParse({
-      commentId: 1,
-      reporterId: 5,
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('report는 reason을 최대 500자까지 허용한다', () => {
-    const schema = commentRouter._def.procedures.report._def.inputs[0];
-    const short = schema.safeParse({
-      commentId: 1,
-      reporterId: 5,
-      reason: 'a'.repeat(10),
-    });
-    const max = schema.safeParse({
-      commentId: 1,
-      reporterId: 5,
-      reason: 'a'.repeat(500),
-    });
-    const tooLong = schema.safeParse({
-      commentId: 1,
-      reporterId: 5,
-      reason: 'a'.repeat(501),
-    });
-
-    expect(short.success).toBe(true);
-    expect(max.success).toBe(true);
-    expect(tooLong.success).toBe(false);
   });
 });

@@ -219,8 +219,10 @@ export class SpamFilter {
       });
       return reportCount > threshold;
     } else {
-      const reportCount = await this.prisma.commentReport.count({
-        where: { commentId: contentId },
+      // 댓글 신고는 content.report.create(documentReport 기반)로 일원화됨 —
+      // commentReport 테이블은 더 이상 쓰이지 않아 documentReport.commentId 로 센다.
+      const reportCount = await this.prisma.documentReport.count({
+        where: { commentId: contentId, resolved: false },
       });
       return reportCount > threshold;
     }

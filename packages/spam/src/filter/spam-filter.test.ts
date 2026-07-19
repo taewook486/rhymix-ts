@@ -32,9 +32,6 @@ const mockPrisma = {
   documentReport: {
     count: vi.fn(),
   },
-  commentReport: {
-    count: vi.fn(),
-  },
   siteSetting: {
     findUnique: vi.fn(),
   },
@@ -385,7 +382,8 @@ describe('SpamFilter', () => {
     });
 
     it('should check comment reports', async () => {
-      (mockPrisma.commentReport.count as any).mockResolvedValue(6);
+      // 댓글 신고는 content.report.create(documentReport 기반)로 일원화됨
+      (mockPrisma.documentReport.count as any).mockResolvedValue(6);
 
       const result = await spamFilter.checkReportThreshold('comment', 1, 5);
 

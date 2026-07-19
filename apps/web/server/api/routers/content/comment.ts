@@ -3,7 +3,10 @@
  *
  * Comment 도메인 함수를 tRPC 엔드포인트로 노출.
  *   - list (public)
- *   - create / delete / vote / report (protected)
+ *   - create / delete / vote (protected)
+ *
+ * 댓글 신고는 content.report.create (documentReport 기반, commentId 지원)로 일원화됨 —
+ * 이 라우터의 자체 report 프로시저(commentReport 기반)는 중복 제거되었다.
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
@@ -13,10 +16,8 @@ import {
   createComment,
   deleteComment,
   voteComment,
-  reportComment,
   CommentDepthExceededError,
   SelfVoteNotAllowedError,
-  CommentAlreadyReportedError,
 } from '@rhymix-ts/comment';
 import { BoardPermissionDeniedError, DocumentOwnershipError } from '@rhymix-ts/document';
 
@@ -49,9 +50,6 @@ function mapDomainError(err: unknown): never {
   }
   if (err instanceof SelfVoteNotAllowedError) {
     throw new TRPCError({ code: 'FORBIDDEN', message: err.message });
-  }
-  if (err instanceof CommentAlreadyReportedError) {
-    throw new TRPCError({ code: 'CONFLICT', message: err.message });
   }
   throw err;
 }
@@ -176,29 +174,6 @@ export const contentCommentRouter = router({
             commentId: input.commentId,
             memberId: ctx.session.user.id,
             voteType: input.voteType,
-          },
-          { prisma: ctx.prisma },
-        );
-      } catch (err) {
-        mapDomainError(err);
-      }
-    }),
-
-  report: protectedProcedure
-    .input(
-      z.object({
-        commentId: z.number().int().positive(),
-        reason: z.string().min(1).max(500).optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        await reportComment(
-          {
-            commentId: input.commentId,
-            reporterId: ctx.session.user.id,
-            reporterIp: null, // TODO: extract from request headers
-            reason: input.reason,
           },
           { prisma: ctx.prisma },
         );

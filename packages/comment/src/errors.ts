@@ -4,7 +4,7 @@
  * Comment 도메인 에러 클래스 정의.
  *
  * REQ-COMMENT-061: CommentDepthExceededError.
- * 추가: CommentAlreadyVotedError, CommentAlreadyReportedError.
+ * 추가: CommentAlreadyVotedError.
  */
 import { MAX_COMMENT_DEPTH } from './constants';
 
@@ -49,19 +49,5 @@ export class SelfVoteNotAllowedError extends Error {
   constructor(commentId: number) {
     super(`자신의 댓글 ${commentId}에는 투표할 수 없습니다`);
     this.name = 'SelfVoteNotAllowedError';
-  }
-}
-
-/**
- * 이미 신고한 댓글 (REQ-COMMENT-041).
- */
-export class CommentAlreadyReportedError extends Error {
-  constructor(commentId: number, reporterId?: number) {
-    super(
-      reporterId != null
-        ? `이미 댓글 ${commentId}를 신고했습니다 (reporterId: ${reporterId})`
-        : `이미 댓글 ${commentId}를 신고했습니다`,
-    );
-    this.name = 'CommentAlreadyReportedError';
   }
 }
