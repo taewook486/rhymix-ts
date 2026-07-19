@@ -2,7 +2,7 @@
 id: SPEC-SOCIAL-LOGIN-001
 title: 소셜 로그인 통합 (카카오 / 구글 OAuth2)
 version: 1.0.0
-status: completed
+status: in-progress
 created: 2026-06-27
 updated: 2026-07-19
 author: MoAI gap-analysis
