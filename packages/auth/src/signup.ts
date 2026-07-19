@@ -97,6 +97,57 @@ export function validateNickname(
 }
 
 // ---------------------------------------------------------------------------
+// SPEC-MEMBER-ADMIN-001 REQ-MADM-032~034: 이메일 호스트 정책 검증
+// ---------------------------------------------------------------------------
+
+/**
+ * REQ-MADM-032~034: 이메일 호스트 화이트리스트/블랙리스트 정책을 순수 함수로 평가한다.
+ *
+ * @param email — 검증 대상 이메일 전체 (예: "user@example.com")
+ * @param hosts — { host, policy }[] 목록 (host는 도메인만, policy는 'ALLOW' 또는 'DENY')
+ * @returns true=가입 허용, false=거부
+ *
+ * 정책:
+ *   - hosts가 비어있으면 → 무제한 (any domain permitted)
+ *   - ALLOW가 1개 이상 있으면 → 화이트리스트 모드 (요청 도메인이 ALLOW 목록에 있어야 통과)
+ *   - ALLOW가 없고 DENY만 있으면 → 블랙리스트 모드 (요청 도메인이 DENY 목록에 없으면 통과)
+ *   - 동일 host에 ALLOW+DENY가 동시에 등록되면 → ALLOW가 우선 (CONFLICT: ALLOW wins)
+ */
+export function isEmailHostAllowed(
+  email: string,
+  hosts: { host: string; policy: 'ALLOW' | 'DENY' }[],
+): boolean {
+  // 빈 목록 = 무제한 (REQ-MADM-034)
+  if (hosts.length === 0) {
+    return true;
+  }
+
+  // 이메일에서 도메인 부분 추출 (@ 뒤쪽, 소문자로 정규화)
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!domain) {
+    // 잘못된 이메일 형식 = 차단 (안전 기본값)
+    return false;
+  }
+
+  // ALLOW가 하나라도 있으면 화이트리스트 모드 (REQ-MADM-032)
+  const allowHosts = hosts.filter((h) => h.policy === 'ALLOW');
+  if (allowHosts.length > 0) {
+    // 대소문자 무시 매칭 (citext 컬럼이므로 lowercase 비교)
+    return allowHosts.some((h) => h.host.toLowerCase() === domain);
+  }
+
+  // ALLOW가 없고 DENY만 있으면 블랙리스트 모드 (REQ-MADM-033)
+  const denyHosts = hosts.filter((h) => h.policy === 'DENY');
+  if (denyHosts.length > 0) {
+    // DENY 목록에 없으면 통과
+    return !denyHosts.some((h) => h.host.toLowerCase() === domain);
+  }
+
+  // 여기까지 도달하는 경우는 없음 (빈 목록은 위에서 처리됨)
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // SPEC-MEMBER-ADMIN-001 REQ-MADM-025: 비밀번호 보안수준별 문자 구성 요건
 // ---------------------------------------------------------------------------
 
@@ -162,6 +213,8 @@ export interface SignupConfig {
   nicknamePolicy?: NicknamePolicy;
   /** REQ-MADM-026: Argon2id timeCost 오버라이드(미지정 시 ARGON2ID_PARAMS.timeCost 사용). */
   argon2TimeCost?: number;
+  /** SPEC-MEMBER-ADMIN-001 REQ-MADM-028: 이메일 호스트 정책 적용 사이트 ID(null=전역). */
+  emailHostSiteId?: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -175,7 +228,8 @@ export type SignupErrorCode =
   | 'WEAK_PASSWORD'
   | 'CAPTCHA_FAILED'
   | 'TERMS_REQUIRED' // SPEC-CAPTCHA-001 REQ-CAPTCHA-002
-  | 'SIGNUP_CLOSED'; // SPEC-MEMBER-ADMIN-001 REQ-MADM-016/017: 가입 거부/가입키 불일치
+  | 'SIGNUP_CLOSED' // SPEC-MEMBER-ADMIN-001 REQ-MADM-016/017: 가입 거부/가입키 불일치
+  | 'EMAIL_HOST_DENIED'; // SPEC-MEMBER-ADMIN-001 REQ-MADM-035: 이메일 호스트 정책 위반
 
 export interface SignupResult {
   ok: true;
@@ -262,6 +316,17 @@ export async function signup(
   });
   if (denied) {
     return { ok: false, code: 'IDENTIFIER_DENIED' };
+  }
+
+  // 3.5) SPEC-MEMBER-ADMIN-001 REQ-MADM-035: 이메일 호스트 정책 검증 (REQ-MADM-032~034).
+  //      기존 DeniedIdentifier 검증 바로 옆에 위치 (일관성 유지).
+  //      이 검증은 DB 쓰기 전에 실행해야 함 — no partial user row (REQ-MADM-035).
+  const managedHosts = await ctx.prisma.managedEmailHost.findMany({
+    where: { siteId: ctx.config.emailHostSiteId ?? null },
+    select: { host: true, policy: true },
+  });
+  if (!isEmailHostAllowed(input.email, managedHosts)) {
+    return { ok: false, code: 'EMAIL_HOST_DENIED' };
   }
 
   // 4) Best-effort uniqueness pre-check (REQ-AUTH-010). DB unique 제약이 source of truth.

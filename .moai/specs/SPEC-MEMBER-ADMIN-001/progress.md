@@ -210,6 +210,27 @@ ac_fail_count: 0
 preserve_list_post_run_count: Slice E(packages/db/prisma/*, apps/web/app/admin/members/email-hosts)
 미착수 — plan.md §A EXTEND 범위 내 유지.
 
+### Slice E (M5) — WIP, 다음 세션에서 이어감 (2026-07-19)
+
+§7-4/§7-1 사용자 확인 완료: ALLOW 우선(§7-4), §5 비밀번호 축소는 이미 승인된 것으로 간주(§7-1,
+M4d 기 반영). 이 확인 내용은 재질문 불필요 — 다음 세션은 바로 구현으로 진입.
+
+manager-develop(CG/GLM teammate) 위임 중 프로세스가 응답 없이 종료됨(반복된 Bash/Read
+PostToolUseFailure 이후) — 기존 CG 모드 불안정 매뢨(feedback-cg-mode-mid-session-degradation)와
+일치하는 패턴. 커밋/푸시는 발생하지 않았고, 미커밋 WIP가 워킹트리에 그대로 남아있음.
+
+완료됨: RED(테스트 작성) + GREEN(admin.user.emailHost.list/add/remove 라우터) +
+packages/db/prisma/schema.prisma에 ManagedEmailHost/ManagedEmailHostPolicy 추가 +
+마이그레이션 `20260719000000_spec_member_admin_001_slice_e` 생성.
+
+발견 후 직접 수정: migration.sql이 host 컬럼을 CITEXT가 아닌 TEXT로 생성하던 버그(schema.prisma의
+`@db.Citext`와 불일치) — CITEXT로 수정 + CREATE EXTENSION을 테이블 생성보다 앞으로 이동.
+
+미완료(다음 세션 이어갈 작업): (1) packages/auth/src/signup.ts에 이메일 호스트 검증 분기
+미구현(테스트만 작성됨, RED 상태) — SignupCtx에 siteId 없음, 사이트 스코핑 컨벤션 조사 필요.
+(2) apps/web/app/admin/members/email-hosts/ UI 페이지 미작성. (3) 실 Postgres로 마이그레이션
+적용 + AC-E1~E5 재현 검증 미실시.
+
 ## §E.4 Sync-phase Audit-Ready Signal
 
 _<pending sync-phase>_
