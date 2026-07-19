@@ -104,7 +104,7 @@ export function validateNickname(
  * REQ-MADM-025: 낮음(normal)=길이만(Zod min(10)이 이미 처리), 보통(strong)=길이+숫자,
  * 높음(very_strong)=길이+숫자+특수문자.
  */
-function validatePasswordPolicy(
+export function validatePasswordPolicy(
   password: string,
   policy: 'normal' | 'strong' | 'very_strong',
 ): boolean {
@@ -131,7 +131,7 @@ const ARGON2_TIME_COST_MAX = 10;
  *             거부보다 안전한 값으로 클램프하는 편이 사용자 경험/가용성에 유리하다.
  *             1차 방어는 admin.settings.updateDefault 의 Zod min(2)/max(10)이다.
  */
-function clampArgon2TimeCost(timeCost: number | undefined): number | undefined {
+export function clampArgon2TimeCost(timeCost: number | undefined): number | undefined {
   if (timeCost === undefined) return undefined;
   return Math.min(ARGON2_TIME_COST_MAX, Math.max(ARGON2_TIME_COST_MIN, Math.trunc(timeCost)));
 }

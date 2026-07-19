@@ -425,9 +425,26 @@ export async function confirmPasswordResetAction(
     };
   }
 
+  // SPEC-MEMBER-ADMIN-001 REQ-MADM-025/026: "기본 설정" 탭의 비밀번호 보안수준/
+  // Argon2id timeCost가 비밀번호 재설정 경로에도 동일하게 반영되도록 배선한다.
+  const siteId = await resolveDefaultSiteId(prisma);
+  const [passwordPolicyLevel, argon2TimeCost] = await Promise.all([
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.password.policyLevel' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.password.argon2TimeCost' } } }),
+  ]);
+  const policyLevel = (passwordPolicyLevel?.value as string | undefined) ?? 'NORMAL';
+  const passwordPolicy: 'normal' | 'strong' | 'very_strong' =
+    policyLevel === 'VERY_STRONG' ? 'very_strong' : policyLevel === 'STRONG' ? 'strong' : 'normal';
+
   const result = await confirmPasswordReset(
     { token, newPassword },
-    { prisma },
+    {
+      prisma,
+      config: {
+        passwordPolicy,
+        argon2TimeCost: (argon2TimeCost?.value as number | undefined) ?? undefined,
+      },
+    },
   );
 
   if (!result.ok) {

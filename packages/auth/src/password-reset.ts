@@ -20,6 +20,8 @@ import { hashPassword } from './password';
 import { generateToken } from './tokens';
 import type { MailDispatcher } from './mail';
 import { revokeAllSessions } from './session-revocation';
+// SPEC-MEMBER-ADMIN-001 REQ-MADM-025/026: 가입 경로와 동일한 정책 함수를 재사용.
+import { validatePasswordPolicy, clampArgon2TimeCost } from './signup';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +44,11 @@ export interface ConfirmPasswordResetInput {
 
 export interface ConfirmPasswordResetCtx {
   prisma: PrismaClient;
+  /** SPEC-MEMBER-ADMIN-001 REQ-MADM-025/026: 미지정 시 기존 동작(normal, 기본 timeCost) 유지. */
+  config?: {
+    passwordPolicy?: 'normal' | 'strong' | 'very_strong';
+    argon2TimeCost?: number;
+  };
 }
 
 export type PasswordResetResult = { ok: true };
@@ -143,13 +150,20 @@ export async function confirmPasswordReset(
     return { ok: false, code: 'TOKEN_EXPIRED' };
   }
 
-  // 5) 비밀번호 정책 검증 (NORMAL).
+  // 5) 비밀번호 정책 검증 (NORMAL 길이 + REQ-MADM-025 STRONG/VERY_STRONG 문자 구성).
   if (!input.newPassword || input.newPassword.length < MIN_PASSWORD_LENGTH) {
     return { ok: false, code: 'WEAK_PASSWORD' };
   }
+  if (!validatePasswordPolicy(input.newPassword, ctx.config?.passwordPolicy ?? 'normal')) {
+    return { ok: false, code: 'WEAK_PASSWORD' };
+  }
 
-  // 6) 비밀번호 해싱.
-  const newHash = await hashPassword(input.newPassword);
+  // 6) 비밀번호 해싱 (REQ-MADM-026: timeCost 오버라이드 + 안전 범위 클램프).
+  const clampedTimeCost = clampArgon2TimeCost(ctx.config?.argon2TimeCost);
+  const newHash = await hashPassword(
+    input.newPassword,
+    clampedTimeCost !== undefined ? { iterations: clampedTimeCost } : undefined,
+  );
   const userId = token.userId;
 
   // 7) 트랜잭션: 비밀번호 변경 + 토큰 소비 + AuditLog.

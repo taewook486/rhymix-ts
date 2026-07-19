@@ -341,6 +341,45 @@ describe('confirmPasswordReset', () => {
     expect(result).toEqual({ ok: false, code: 'WEAK_PASSWORD' });
   });
 
+  it('8b) REQ-MADM-025: passwordPolicy=strong → digit-less new password rejected as WEAK_PASSWORD', async () => {
+    const user = await makeUser();
+    const token = makeToken(user.id);
+    const { prisma } = buildFakePrisma({ users: [user], tokens: [token] });
+
+    const result = await confirmPasswordReset(
+      { token: 'valid-reset-token-abc123', newPassword: 'nodigitshere' },
+      { prisma, config: { passwordPolicy: 'strong' } },
+    );
+
+    expect(result).toEqual({ ok: false, code: 'WEAK_PASSWORD' });
+  });
+
+  it('8c) REQ-MADM-025: passwordPolicy=strong → new password with a digit is accepted', async () => {
+    const user = await makeUser();
+    const token = makeToken(user.id);
+    const { prisma } = buildFakePrisma({ users: [user], tokens: [token] });
+
+    const result = await confirmPasswordReset(
+      { token: 'valid-reset-token-abc123', newPassword: 'hasadigit9' },
+      { prisma, config: { passwordPolicy: 'strong' } },
+    );
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('8d) REQ-MADM-026: argon2TimeCost override is reflected in the reset password hash', async () => {
+    const user = await makeUser();
+    const token = makeToken(user.id);
+    const { prisma, state } = buildFakePrisma({ users: [user], tokens: [token] });
+
+    await confirmPasswordReset(
+      { token: 'valid-reset-token-abc123', newPassword: PLAIN_NEW },
+      { prisma, config: { argon2TimeCost: 6 } },
+    );
+
+    expect(state.users[0]!.passwordHash).toMatch(/,t=6,/);
+  });
+
   it('9) 존재하지 않는 토큰 → TOKEN_INVALID', async () => {
     const { prisma } = buildFakePrisma();
 
