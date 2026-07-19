@@ -66,6 +66,11 @@ export interface LoginConfig {
   captchaSecretKey?: string;
   /** SPEC-CAPTCHA-001 REQ-CAPTCHA-004: 실패 횟수 기준 CAPTCHA 요구 (기본 5) */
   captchaThreshold?: number;
+  /**
+   * SPEC-MEMBER-ADMIN-001 REQ-MADM-027: 로그인 시 구버전 해시 자동 재해싱
+   * (REQ-AUTH-014) on/off. 미지정 시 기존 동작(켜짐)을 유지한다.
+   */
+  autoRehashEnabled?: boolean;
 }
 
 /** Public-facing user payload — never includes passwordHash. */
@@ -276,9 +281,11 @@ export async function login(
 
   // 6) 성공 경로 — rehash 필요 시 같은 트랜잭션에서 비밀번호 + 메타데이터 갱신.
   //    REQ-AUTH-013: lastLoginIp/lastLoginAt + LoginAttempt SUCCESS도 한 트랜잭션.
+  //    REQ-MADM-027: autoRehashEnabled=false 이면 needsRehash 이더라도 재해싱을 건너뛴다.
   let rehashed = false;
   let newHash: string | null = null;
-  if (verifyResult.needsRehash) {
+  const autoRehashEnabled = ctx.config.autoRehashEnabled ?? true;
+  if (verifyResult.needsRehash && autoRehashEnabled) {
     newHash = await hashPassword(rawInput.password);
     rehashed = true;
   }

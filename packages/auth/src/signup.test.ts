@@ -430,4 +430,177 @@ describe('signup', () => {
     expect(result.ok).toBe(false);
     expect(Object.keys(result).sort()).toEqual(['code', 'ok']);
   });
+
+  // -------------------------------------------------------------------------
+  // SPEC-MEMBER-ADMIN-001 Slice D — REQ-MADM-017, REQ-MADM-023, REQ-MADM-025, REQ-MADM-026
+  // -------------------------------------------------------------------------
+
+  it('17) REQ-MADM-017: accessMode=DENY → SIGNUP_CLOSED, no DB writes', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(baseInput(), {
+      prisma,
+      mail,
+      config: baseConfig({ accessMode: 'DENY' }),
+    });
+    expect(result).toEqual({ ok: false, code: 'SIGNUP_CLOSED' });
+    expect(state.users).toHaveLength(0);
+  });
+
+  it('18) REQ-MADM-017: accessMode=SIGNUP_KEY + missing key → SIGNUP_CLOSED', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(baseInput(), {
+      prisma,
+      mail,
+      config: baseConfig({ accessMode: 'SIGNUP_KEY', signupKeyValue: 'correct-key' }),
+    });
+    expect(result).toEqual({ ok: false, code: 'SIGNUP_CLOSED' });
+    expect(state.users).toHaveLength(0);
+  });
+
+  it('19) REQ-MADM-017: accessMode=SIGNUP_KEY + wrong key → SIGNUP_CLOSED', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), signupKey: 'wrong-key' },
+      {
+        prisma,
+        mail,
+        config: baseConfig({ accessMode: 'SIGNUP_KEY', signupKeyValue: 'correct-key' }),
+      },
+    );
+    expect(result).toEqual({ ok: false, code: 'SIGNUP_CLOSED' });
+    expect(state.users).toHaveLength(0);
+  });
+
+  it('20) REQ-MADM-017: accessMode=SIGNUP_KEY + correct key → ok:true', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), signupKey: 'correct-key' },
+      {
+        prisma,
+        mail,
+        config: baseConfig({ accessMode: 'SIGNUP_KEY', signupKeyValue: 'correct-key' }),
+      },
+    );
+    expect(result.ok).toBe(true);
+    expect(state.users).toHaveLength(1);
+  });
+
+  it('21) REQ-MADM-023: special char rejected by default (nicknamePolicy absent → no special chars)', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), nickName: 'Alice!' },
+      { prisma, mail, config: baseConfig() },
+    );
+    expect(result).toEqual({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(state.users).toHaveLength(0);
+  });
+
+  it('22) REQ-MADM-023: special char accepted when nicknamePolicy allows it explicitly', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), nickName: 'Alice-1' },
+      {
+        prisma,
+        mail,
+        config: baseConfig({
+          nicknamePolicy: { allowSpecialChars: true, allowedSpecialChars: '-', allowSpacing: false },
+        }),
+      },
+    );
+    expect(result.ok).toBe(true);
+    expect(state.users).toHaveLength(1);
+  });
+
+  it('23) REQ-MADM-023: spacing rejected by default', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), nickName: 'Al ice' },
+      { prisma, mail, config: baseConfig() },
+    );
+    expect(result).toEqual({ ok: false, code: 'VALIDATION_FAILED' });
+    expect(state.users).toHaveLength(0);
+  });
+
+  it('24) REQ-MADM-023: spacing accepted when nicknamePolicy.allowSpacing=true', async () => {
+    const { prisma, state } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), nickName: 'Al ice' },
+      {
+        prisma,
+        mail,
+        config: baseConfig({
+          nicknamePolicy: { allowSpecialChars: false, allowedSpecialChars: '', allowSpacing: true },
+        }),
+      },
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('25) REQ-MADM-025: passwordPolicy=strong rejects a digit-less password', async () => {
+    const { prisma } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), password: 'correct horse battery staple' },
+      { prisma, mail, config: baseConfig({ passwordPolicy: 'strong' }) },
+    );
+    expect(result).toEqual({ ok: false, code: 'WEAK_PASSWORD' });
+  });
+
+  it('26) REQ-MADM-025: passwordPolicy=strong accepts a password with a digit', async () => {
+    const { prisma } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), password: 'correct horse battery staple9' },
+      { prisma, mail, config: baseConfig({ passwordPolicy: 'strong' }) },
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('27) REQ-MADM-025: passwordPolicy=very_strong rejects a password lacking a special char', async () => {
+    const { prisma } = buildFakePrisma();
+    // NOTE: no spaces — a space itself counts as a "special char" for this
+    // policy, so a diceware-style passphrase would defeat this negative case.
+    const result = await signup(
+      { ...baseInput(), password: 'correcthorsebatterystaple9' },
+      { prisma, mail, config: baseConfig({ passwordPolicy: 'very_strong' }) },
+    );
+    expect(result).toEqual({ ok: false, code: 'WEAK_PASSWORD' });
+  });
+
+  it('28) REQ-MADM-025: passwordPolicy=very_strong accepts a password with digit + special char', async () => {
+    const { prisma } = buildFakePrisma();
+    const result = await signup(
+      { ...baseInput(), password: 'correct horse battery staple9!' },
+      { prisma, mail, config: baseConfig({ passwordPolicy: 'very_strong' }) },
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it('29) REQ-MADM-026: argon2TimeCost override is reflected in the stored PHC hash t= param', async () => {
+    const { prisma, state } = buildFakePrisma();
+    await signup(baseInput(), {
+      prisma,
+      mail,
+      config: baseConfig({ argon2TimeCost: 5 }),
+    });
+    const stored = state.users[0]?.passwordHash ?? '';
+    // PHC format: $argon2id$v=19$m=65536,t=5,p=4$<salt>$<hash>
+    expect(stored).toMatch(/,t=5,/);
+  });
+
+  it('30) REQ-MADM-026: argon2TimeCost absent falls back to the ANCHOR default (t=3)', async () => {
+    const { prisma, state } = buildFakePrisma();
+    await signup(baseInput(), { prisma, mail, config: baseConfig() });
+    const stored = state.users[0]?.passwordHash ?? '';
+    expect(stored).toMatch(/,t=3,/);
+  });
+
+  it('31) REQ-MADM-026: argon2TimeCost outside the safe range (2~10) is clamped, not passed through raw', async () => {
+    const { prisma, state } = buildFakePrisma();
+    await signup(baseInput(), {
+      prisma,
+      mail,
+      config: baseConfig({ argon2TimeCost: 100 }),
+    });
+    const stored = state.users[0]?.passwordHash ?? '';
+    expect(stored).toMatch(/,t=10,/); // clamped to the safe-range upper bound
+  });
 });

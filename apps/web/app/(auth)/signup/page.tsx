@@ -13,6 +13,7 @@
  */
 import React, { useActionState, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { trpc } from '@/providers/TRPCProvider';
 
 import { signupAction } from '@/lib/auth/actions';
@@ -24,6 +25,9 @@ export default function SignupPage() {
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const turnstileRef = useRef<TurnstileWidgetRef>(null);
+  // REQ-MADM-017: 가입키 모드일 때 URL의 ?key= 파라미터를 폼에 실어 signupAction으로 전달.
+  const searchParams = useSearchParams();
+  const signupKeyParam = searchParams.get('key') ?? '';
 
   // 약관 동의 상태 관리 - {key, version}[] 형태로 저장
   const [agreements, setAgreements] = useState<Array<{ key: string; version: string }>>([]);
@@ -112,6 +116,9 @@ export default function SignupPage() {
       )}
 
       <form ref={formRef} action={formAction} className="space-y-4">
+        {/* REQ-MADM-017: 가입키 모드일 때 서버(signup())가 검증할 값을 그대로 전달. */}
+        <input type="hidden" name="key" value={signupKeyParam} />
+
         <div>
           <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
             아이디

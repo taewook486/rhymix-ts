@@ -316,6 +316,40 @@ describe('login', () => {
     expect(state.users[0]?.passwordHash).toBe(originalHash);
   });
 
+  it('9c) REQ-MADM-027: autoRehashEnabled=false → needsRehash:true is NOT rehashed', async () => {
+    const weakHash = await hashPassword(PLAIN, {
+      memorySize: 8,
+      iterations: 2,
+      parallelism: 1,
+    });
+    const u = await makeUser({ passwordHash: weakHash });
+    const { prisma, state } = buildFakePrisma({ preexistingUsers: [u] });
+    const result = await login(baseInput(), {
+      prisma,
+      config: baseConfig({ autoRehashEnabled: false }),
+    });
+    expect(result).toMatchObject({ ok: true, rehashed: false });
+    // 해시가 그대로 유지된다 — 재해싱이 수행되지 않음(REQ-MADM-027).
+    expect(state.users[0]?.passwordHash).toBe(weakHash);
+    expect(state.users[0]?.passwordChangedAt.getTime()).toBe(u.passwordChangedAt.getTime());
+  });
+
+  it('9d) REQ-MADM-027: autoRehashEnabled=true (explicit) behaves the same as the default (rehashed:true)', async () => {
+    const weakHash = await hashPassword(PLAIN, {
+      memorySize: 8,
+      iterations: 2,
+      parallelism: 1,
+    });
+    const u = await makeUser({ passwordHash: weakHash });
+    const { prisma, state } = buildFakePrisma({ preexistingUsers: [u] });
+    const result = await login(baseInput(), {
+      prisma,
+      config: baseConfig({ autoRehashEnabled: true }),
+    });
+    expect(result).toMatchObject({ ok: true, rehashed: true });
+    expect(state.users[0]?.passwordHash).not.toBe(weakHash);
+  });
+
   it('10) AuditLog LOGIN written on success with actorId=userId, targetId=userId', async () => {
     const { prisma, state } = buildFakePrisma({ preexistingUsers: [user] });
     await login(baseInput(), { prisma, config: baseConfig() });

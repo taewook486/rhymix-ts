@@ -92,8 +92,25 @@ export async function signupAction(
   }
 
   // ISSUE #1 FIX: SiteSettings에서 CAPTCHA 및 Terms 설정 동적으로 로드
+  // SPEC-MEMBER-ADMIN-001 Slice D: "기본 설정" 탭 값(가입 허가 모드/가입키/인증메일
+  // 유효기간/닉네임 정책/비밀번호 보안수준/Argon2id timeCost)도 함께 로드해 signup()에 주입한다.
   const siteId = await resolveDefaultSiteId(prisma);
-  const [captchaSignupEnabled, captchaLoginEnabled, captchaSecretKey, requiredTerms] = await Promise.all([
+  const [
+    captchaSignupEnabled,
+    captchaLoginEnabled,
+    captchaSecretKey,
+    requiredTerms,
+    signupAccessMode,
+    signupEnabledLegacy,
+    signupKeySetting,
+    requireEmailVerification,
+    emailAuthTtlHours,
+    nicknameAllowSpecialChars,
+    nicknameAllowedSpecialChars,
+    nicknameAllowSpacing,
+    passwordPolicyLevel,
+    argon2TimeCost,
+  ] = await Promise.all([
     prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.signup.enabled' } } }),
     prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.login.enabled' } } }),
     prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.turnstile.secretKey' } } }),
@@ -101,10 +118,35 @@ export async function signupAction(
       where: { siteId, required: true, active: true },
       select: { id: true },
     }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.signup.accessMode' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.signup.enabled' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.signup.key' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.signup.requireEmailVerification' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.signup.emailAuthTtlHours' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.nickname.allowSpecialChars' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.nickname.allowedSpecialChars' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.nickname.allowSpacing' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'member.password.policyLevel' } } }),
+    prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.password.argon2TimeCost' } } }),
   ]);
 
   const captchaEnabled = Boolean(captchaSignupEnabled?.value) && Boolean(captchaSecretKey?.value);
   const requiredTermsIds = requiredTerms.map((t) => t.id);
+
+  // REQ-MADM-016: accessMode 키가 아직 없으면(마이그레이션 전) 기존
+  // member.signup.enabled 불리언에서 유도한다 — admin.settings.getDefault와 동일한 하위 호환 규칙.
+  const rawAccessMode = signupAccessMode?.value as 'ALLOW' | 'DENY' | 'SIGNUP_KEY' | undefined;
+  const accessMode: 'ALLOW' | 'DENY' | 'SIGNUP_KEY' =
+    rawAccessMode === 'ALLOW' || rawAccessMode === 'DENY' || rawAccessMode === 'SIGNUP_KEY'
+      ? rawAccessMode
+      : (signupEnabledLegacy?.value as boolean | undefined) === false
+        ? 'DENY'
+        : 'ALLOW';
+
+  // REQ-MADM-025: PasswordPolicyLevel(NORMAL/STRONG/VERY_STRONG) → signup() lowercase config.
+  const policyLevel = (passwordPolicyLevel?.value as string | undefined) ?? 'NORMAL';
+  const passwordPolicy: 'normal' | 'strong' | 'very_strong' =
+    policyLevel === 'VERY_STRONG' ? 'very_strong' : policyLevel === 'STRONG' ? 'strong' : 'normal';
 
   const result = await signup(
     {
@@ -116,18 +158,30 @@ export async function signupAction(
       userAgent,
       agreements,
       captchaToken: captchaToken ? String(captchaToken) : undefined,
+      // REQ-MADM-017: 가입 URL의 key 파라미터(signup 폼의 숨은 필드로 전달됨).
+      signupKey: (formData.get('key') as string | null) ?? undefined,
     },
     {
       prisma,
       mail: mailDispatcher,
       config: {
-        enableConfirm: true,
-        signupTokenTtlHours: 24,
-        passwordPolicy: 'normal',
+        // REQ-MADM-018 재사용: 기존 member.signup.requireEmailVerification 키를 그대로 소비.
+        enableConfirm: (requireEmailVerification?.value as boolean | undefined) ?? true,
+        signupTokenTtlHours: (emailAuthTtlHours?.value as number | undefined) ?? 24,
+        passwordPolicy,
         // ISSUE #1 FIX: CAPTCHA 및 Terms 설정 주입
         captchaEnabled,
         captchaSecretKey: captchaSecretKey?.value as string,
         requiredTermsIds,
+        // SPEC-MEMBER-ADMIN-001 Slice D
+        accessMode,
+        signupKeyValue: (signupKeySetting?.value as string | undefined) || undefined,
+        nicknamePolicy: {
+          allowSpecialChars: (nicknameAllowSpecialChars?.value as boolean | undefined) ?? false,
+          allowedSpecialChars: (nicknameAllowedSpecialChars?.value as string | undefined) ?? '',
+          allowSpacing: (nicknameAllowSpacing?.value as boolean | undefined) ?? false,
+        },
+        argon2TimeCost: (argon2TimeCost?.value as number | undefined) ?? undefined,
       },
     },
   );
@@ -155,6 +209,8 @@ function signupErrorMessage(code: SignupErrorCode): string {
       return '로봇 확인에 실패했습니다. 다시 시도해주세요.';
     case 'TERMS_REQUIRED':
       return '필수 약관에 동의해주세요.';
+    case 'SIGNUP_CLOSED':
+      return '현재 회원가입이 허용되지 않거나, 가입키가 올바르지 않습니다.';
   }
 }
 

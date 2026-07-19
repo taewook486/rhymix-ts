@@ -76,6 +76,14 @@ vi.mock('next/link', () => ({
   },
 }));
 
+// SPEC-MEMBER-ADMIN-001 REQ-MADM-017: signup page reads ?key= via useSearchParams.
+const { useSearchParamsMock } = vi.hoisted(() => ({
+  useSearchParamsMock: vi.fn(() => new URLSearchParams()),
+}));
+vi.mock('next/navigation', () => ({
+  useSearchParams: useSearchParamsMock,
+}));
+
 // Mock child components
 vi.mock('./TermsConsent', () => ({
   TermsConsent: ({ selectedAgreements, onToggleAgreement }: any) => (
@@ -101,6 +109,7 @@ describe('SignupPage', () => {
     cleanup();
     useActionStateMock.mockReset();
     useStateMock.mockReset();
+    useSearchParamsMock.mockReturnValue(new URLSearchParams());
   });
 
   function setupNormalState() {
@@ -121,6 +130,17 @@ describe('SignupPage', () => {
     expect(screen.getByLabelText(/이메일/i)).toBeDefined();
     expect(screen.getByLabelText(/비밀번호/i)).toBeDefined();
     expect(screen.getByLabelText(/닉네임/i)).toBeDefined();
+  });
+
+  it('REQ-MADM-017: URL의 ?key= 파라미터가 숨은 input[name="key"] 값으로 전달된다', async () => {
+    setupNormalState();
+    useSearchParamsMock.mockReturnValue(new URLSearchParams('key=my-signup-key'));
+    const { default: SignupPage } = await import('./page');
+    const { container } = render(React.createElement(SignupPage));
+
+    const hidden = container.querySelector('input[type="hidden"][name="key"]') as HTMLInputElement | null;
+    expect(hidden).not.toBeNull();
+    expect(hidden?.value).toBe('my-signup-key');
   });
 
   it('이용약관 동의 컴포넌트를 렌더링', async () => {

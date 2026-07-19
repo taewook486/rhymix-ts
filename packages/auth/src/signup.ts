@@ -56,8 +56,85 @@ export const SignupInput = z.object({
   extraVars: z.record(z.unknown()).default({}),
   ip: z.string().max(64),
   userAgent: z.string().max(512).default(''),
+  // SPEC-MEMBER-ADMIN-001 REQ-MADM-017: 가입키(accessMode='SIGNUP_KEY'일 때만 검사됨).
+  signupKey: z.string().max(200).optional(),
 });
 export type SignupInput = z.infer<typeof SignupInput>;
+
+// ---------------------------------------------------------------------------
+// SPEC-MEMBER-ADMIN-001 REQ-MADM-023: 닉네임 특수문자/띄어쓰기 검증
+// ---------------------------------------------------------------------------
+
+export interface NicknamePolicy {
+  allowSpecialChars: boolean;
+  allowedSpecialChars: string;
+  allowSpacing: boolean;
+}
+
+const DEFAULT_NICKNAME_POLICY: NicknamePolicy = {
+  allowSpecialChars: false,
+  allowedSpecialChars: '',
+  allowSpacing: false,
+};
+
+/**
+ * REQ-MADM-023: 닉네임 특수문자 허용 여부(허용 시 허용 문자 지정 가능) 및 띄어쓰기
+ * 허용 여부를 검증한다. 문자·숫자(유니코드, 한글 포함)는 항상 허용되고, 그 외는
+ * 정책이 명시적으로 허용한 문자(및 공백)만 통과한다.
+ *
+ * 가입·관리자 편집 경로 전체(REQ-MADM-023)가 이 함수를 공유한다.
+ */
+export function validateNickname(
+  nickName: string,
+  policy: NicknamePolicy = DEFAULT_NICKNAME_POLICY,
+): boolean {
+  const escapedSpecial = policy.allowSpecialChars
+    ? policy.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')
+    : '';
+  const space = policy.allowSpacing ? ' ' : '';
+  const pattern = new RegExp(`^[\\p{L}\\p{N}${escapedSpecial}${space}]+$`, 'u');
+  return pattern.test(nickName);
+}
+
+// ---------------------------------------------------------------------------
+// SPEC-MEMBER-ADMIN-001 REQ-MADM-025: 비밀번호 보안수준별 문자 구성 요건
+// ---------------------------------------------------------------------------
+
+/**
+ * REQ-MADM-025: 낮음(normal)=길이만(Zod min(10)이 이미 처리), 보통(strong)=길이+숫자,
+ * 높음(very_strong)=길이+숫자+특수문자.
+ */
+function validatePasswordPolicy(
+  password: string,
+  policy: 'normal' | 'strong' | 'very_strong',
+): boolean {
+  if (policy === 'normal') return true;
+  const hasDigit = /[0-9]/.test(password);
+  if (policy === 'strong') return hasDigit;
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  return hasDigit && hasSpecial;
+}
+
+// ---------------------------------------------------------------------------
+// SPEC-MEMBER-ADMIN-001 REQ-MADM-026: Argon2id timeCost 안전 범위 클램프
+// ---------------------------------------------------------------------------
+
+const ARGON2_TIME_COST_MIN = 2;
+const ARGON2_TIME_COST_MAX = 10;
+
+/**
+ * REQ-MADM-026: 관리자가 조정한 timeCost 값을 안전 범위(2~10) 내로 강제한다 —
+ * 클라이언트/설정 레이어 검증을 신뢰하지 않고 여기서도 방어적으로 클램프한다.
+ *
+ * @MX:WARN: [AUTO] 범위를 벗어난 값을 서버가 조용히 클램프한다(거부하지 않음).
+ * @MX:REASON: 이 함수를 호출하는 시점에는 이미 회원가입 트랜잭션이 진행 중이므로
+ *             거부보다 안전한 값으로 클램프하는 편이 사용자 경험/가용성에 유리하다.
+ *             1차 방어는 admin.settings.updateDefault 의 Zod min(2)/max(10)이다.
+ */
+function clampArgon2TimeCost(timeCost: number | undefined): number | undefined {
+  if (timeCost === undefined) return undefined;
+  return Math.min(ARGON2_TIME_COST_MAX, Math.max(ARGON2_TIME_COST_MIN, Math.trunc(timeCost)));
+}
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -77,6 +154,14 @@ export interface SignupConfig {
   captchaSecretKey?: string;
   /** SPEC-CAPTCHA-001 REQ-CAPTCHA-002: 필수 약관 ID 목록 (empty = no terms required) */
   requiredTermsIds?: number[];
+  /** SPEC-MEMBER-ADMIN-001 REQ-MADM-016/017: 가입 허가 모드(미지정 시 'ALLOW'). */
+  accessMode?: 'ALLOW' | 'DENY' | 'SIGNUP_KEY';
+  /** REQ-MADM-017: accessMode='SIGNUP_KEY'일 때 비교 대상이 되는 관리자 설정 키. */
+  signupKeyValue?: string;
+  /** REQ-MADM-023: 닉네임 특수문자/띄어쓰기 정책(미지정 시 둘 다 불허). */
+  nicknamePolicy?: NicknamePolicy;
+  /** REQ-MADM-026: Argon2id timeCost 오버라이드(미지정 시 ARGON2ID_PARAMS.timeCost 사용). */
+  argon2TimeCost?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,7 +174,8 @@ export type SignupErrorCode =
   | 'IDENTIFIER_DENIED'
   | 'WEAK_PASSWORD'
   | 'CAPTCHA_FAILED'
-  | 'TERMS_REQUIRED'; // SPEC-CAPTCHA-001 REQ-CAPTCHA-002
+  | 'TERMS_REQUIRED' // SPEC-CAPTCHA-001 REQ-CAPTCHA-002
+  | 'SIGNUP_CLOSED'; // SPEC-MEMBER-ADMIN-001 REQ-MADM-016/017: 가입 거부/가입키 불일치
 
 export interface SignupResult {
   ok: true;
@@ -111,11 +197,9 @@ export interface SignupFailure {
 /**
  * Common-password micro-blocklist used by the NORMAL policy tier.
  *
- * Slice B는 Zod min(10) + 본 목록만 검사한다. STRONG / VERY_STRONG의 본격적인
- * 정책 (문자 클래스, RockYou 데이터베이스 등)은 후속 슬라이스에서 도입한다.
- *
- * @MX:TODO: STRONG / VERY_STRONG 정책은 후속 슬라이스에서 본격적으로 구현.
- * @MX:REASON: 본 슬라이스의 SPEC 범위는 NORMAL 티어만 다룸 (REQ-AUTH-041).
+ * Slice B는 Zod min(10) + 본 목록만 검사한다. STRONG / VERY_STRONG의 문자 클래스
+ * 요건은 SPEC-MEMBER-ADMIN-001 REQ-MADM-025(validatePasswordPolicy)가 구현한다.
+ * RockYou 등 대규모 사전 기반 검사는 여전히 범위 밖(후속 SPEC).
  */
 const COMMON_PASSWORDS = new Set<string>([
   'password',
@@ -140,8 +224,28 @@ export async function signup(
   }
   const input = parsed.data;
 
-  // 2) Password policy (REQ-AUTH-041 NORMAL).
+  // 1.5) REQ-MADM-016/017: 가입 허가 모드 게이트. accessMode 미지정 시 기존
+  //      동작(가입 허용) 유지 — 하위 호환.
+  const accessMode = ctx.config.accessMode ?? 'ALLOW';
+  if (accessMode === 'DENY') {
+    return { ok: false, code: 'SIGNUP_CLOSED' };
+  }
+  if (accessMode === 'SIGNUP_KEY') {
+    if (!ctx.config.signupKeyValue || input.signupKey !== ctx.config.signupKeyValue) {
+      return { ok: false, code: 'SIGNUP_CLOSED' };
+    }
+  }
+
+  // 1.75) REQ-MADM-023: 닉네임 특수문자/띄어쓰기 검증.
+  if (!validateNickname(input.nickName, ctx.config.nicknamePolicy)) {
+    return { ok: false, code: 'VALIDATION_FAILED' };
+  }
+
+  // 2) Password policy (REQ-AUTH-041 NORMAL + REQ-MADM-025 STRONG/VERY_STRONG).
   if (COMMON_PASSWORDS.has(input.password.toLowerCase())) {
+    return { ok: false, code: 'WEAK_PASSWORD' };
+  }
+  if (!validatePasswordPolicy(input.password, ctx.config.passwordPolicy)) {
     return { ok: false, code: 'WEAK_PASSWORD' };
   }
 
@@ -202,8 +306,12 @@ export async function signup(
     }
   }
 
-  // 5) Argon2id hash (REQ-AUTH-001).
-  const passwordHash = await hashPassword(input.password);
+  // 5) Argon2id hash (REQ-AUTH-001, REQ-MADM-026 timeCost override + safety clamp).
+  const clampedTimeCost = clampArgon2TimeCost(ctx.config.argon2TimeCost);
+  const passwordHash = await hashPassword(
+    input.password,
+    clampedTimeCost !== undefined ? { iterations: clampedTimeCost } : undefined,
+  );
 
   // 6) Transaction: user + (optional) token + audit-log.
   const status = ctx.config.enableConfirm ? 'UNAUTHED' : 'APPROVED';

@@ -165,11 +165,13 @@ export const authConfig: NextAuthConfig = {
           typeof credentials?.captchaToken === 'string' ? credentials.captchaToken : undefined;
 
         // ISSUE #1 FIX: SiteSettings에서 CAPTCHA 설정 동적으로 로드
+        // SPEC-MEMBER-ADMIN-001 REQ-MADM-027: 자동 재해싱 토글도 함께 로드한다.
         const siteId = await resolveDefaultSiteId(prisma);
-        const [captchaLoginEnabled, captchaSecretKey, captchaThreshold] = await Promise.all([
+        const [captchaLoginEnabled, captchaSecretKey, captchaThreshold, autoRehashSetting] = await Promise.all([
           prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.login.enabled' } } }),
           prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.captcha.turnstile.secretKey' } } }),
           prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.login.captchaThreshold' } } }),
+          prisma.siteSetting.findUnique({ where: { siteId_key: { siteId, key: 'security.password.autoRehashEnabled' } } }),
         ]);
 
         const captchaEnabled = Boolean(captchaLoginEnabled?.value) && Boolean(captchaSecretKey?.value);
@@ -184,6 +186,8 @@ export const authConfig: NextAuthConfig = {
               captchaEnabled,
               captchaSecretKey: captchaSecretKey?.value as string,
               captchaThreshold: (captchaThreshold?.value as number) ?? 5,
+              // REQ-MADM-027: 미지정 시 기존 동작(켜짐) 유지.
+              autoRehashEnabled: (autoRehashSetting?.value as boolean | undefined) ?? true,
             },
           },
         );
