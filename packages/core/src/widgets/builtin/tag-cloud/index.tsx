@@ -11,7 +11,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { z } from 'zod';
-import type { WidgetDefinition } from '../../types';
+import type { WidgetDefinition, WidgetRenderContext } from '../../types';
 
 // @MX:NOTE: [AUTO] 위젯 props 스키마 — Zod 런타임 검증
 export const tagCloudWidgetPropsSchema = z.object({
@@ -23,15 +23,22 @@ export const tagCloudWidgetPropsSchema = z.object({
   maxFontSize: z.number().int().min(12).max(72).default(24).optional(),
   /** 정렬 순서 (count: 사용 빈도순, name: 이름순, random: 무작위) */
   sortBy: z.enum(['count', 'name', 'random']).default('count').optional(),
+  /**
+   * 렌더 파이프라인이 resolveContextProps로 주입하는 태그 목록.
+   * 토큰 속성으로는 전달될 수 없으므로 항상 optional — 미주입 시 빈 상태 UI를 표시한다.
+   */
+  tags: z
+    .array(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        count: z.number(),
+      }),
+    )
+    .optional(),
 });
 
 export type TagCloudWidgetProps = z.infer<typeof tagCloudWidgetPropsSchema>;
-
-interface Tag {
-  id: number;
-  name: string;
-  count: number;
-}
 
 /**
  * REQ-TAG-005: 태그 클라우드 위젯
@@ -45,12 +52,8 @@ export function TagCloudWidget(props: TagCloudWidgetProps) {
     minFontSize = 12,
     maxFontSize = 24,
     sortBy = 'count',
+    tags = [],
   } = props;
-
-  // TODO: tRPC에서 태그 목록 가져오기
-  // const { data: tags } = trpc.tag.listAll.useQuery();
-  // 임시 더미 데이터
-  const tags: Tag[] = [];
 
   if (tags.length === 0) {
     return (
@@ -139,4 +142,16 @@ export const tagCloudWidget: WidgetDefinition<TagCloudWidgetProps> = {
     sortBy: 'count',
   },
   category: 'content',
+  // 실제 태그 사용 빈도 데이터를 렌더 파이프라인에서 주입한다 (REQ-TAG-005).
+  // 토큰 속성으로는 배열을 전달할 수 없어 DB 조회 결과를 컨텍스트로 넘긴다.
+  resolveContextProps: async (
+    ctx: WidgetRenderContext,
+  ): Promise<Partial<TagCloudWidgetProps>> => {
+    const tags = await ctx.prisma.tag.findMany({
+      orderBy: { count: 'desc' },
+      take: 100,
+      select: { id: true, name: true, count: true },
+    });
+    return { tags };
+  },
 };

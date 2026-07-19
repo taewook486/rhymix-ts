@@ -31,8 +31,10 @@ export interface WidgetDefinition<P = Record<string, unknown>> {
    * 렌더 컨텍스트(인증 상태 등)에서 동적 props를 추출한다.
    * 토큰 속성에서 파싱된 props보다 우선순위가 높다(오버라이드).
    * 세션 기반 위젯(login_info 등)이 인증 상태를 주입받을 때 사용한다.
+   * DB 조회가 필요한 위젯(tag-cloud 등)을 위해 Promise 반환도 허용한다 —
+   * 호출부(renderBodyWithWidgets)가 await 하므로 동기 반환도 그대로 호환된다.
    */
-  resolveContextProps?: (ctx: WidgetRenderContext) => Partial<P>
+  resolveContextProps?: (ctx: WidgetRenderContext) => Partial<P> | Promise<Partial<P>>
 }
 
 /**
