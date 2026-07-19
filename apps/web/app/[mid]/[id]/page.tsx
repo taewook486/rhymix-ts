@@ -15,6 +15,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 import { getModuleDefinition } from '@/lib/modules/registry';
 import { boardFeedConfigSchema, resolveFeedAlternates } from '@rhymix-ts/board/feed';
+import { SendMessageButton } from '@/components/message/SendMessageButton';
 
 interface ViewPageProps {
   params: Promise<{ mid: string; id: string }>;
@@ -115,5 +116,13 @@ export default async function ViewPage({ params, searchParams }: ViewPageProps) 
     prisma,
     documentId,
     session: typedSession,
+    // SPEC-MESSAGE-001 REQ-MSG-001: 작성자 닉네임 옆 "쪽지 보내기" 액션 주입
+    renderSendMessageAction: (receiverId: number, receiverNickname: string) => (
+      <SendMessageButton
+        receiverId={receiverId}
+        receiverNickname={receiverNickname}
+        currentUserId={typedSession?.user.id ?? null}
+      />
+    ),
   } as Parameters<typeof def.routes.view>[0]);
 }

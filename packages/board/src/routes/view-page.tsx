@@ -39,6 +39,12 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
   prisma: PrismaClient;
   /** 현재 세션 — null이면 비로그인 */
   session: { user: { id: number; isAdmin: boolean } } | null;
+  /**
+   * SPEC-MESSAGE-001 REQ-MSG-001: 작성자 닉네임 옆에 표시할 "쪽지 보내기" 액션.
+   * apps/web 레이어에서 주입되는 render-prop — packages/board 는 실제 발송 로직을
+   * 알지 못하고, 상위(apps/web)에서 렌더링을 위임받아 표시만 한다.
+   */
+  renderSendMessageAction?: (receiverId: number, receiverNickname: string) => React.ReactNode;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,7 +59,7 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
  * @MX:SPEC: SPEC-CONTENT-001, SPEC-BOARD-UI-001 REQ-BUI-006, REQ-BUI-007
  */
 export async function BoardViewPage(props: BoardViewPageProps): Promise<React.ReactElement> {
-  const { instance, documentId, prisma, session } = props;
+  const { instance, documentId, prisma, session, renderSendMessageAction } = props;
   const mid = instance.mid;
 
   // 병렬 데이터 로드 — 문서/댓글/첨부파일
@@ -105,7 +111,12 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
 
       {/* 메타 정보: 작성자, 날짜, 댓글 수, 조회수, 추천수 (REQ-BUI-007) */}
       <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-        <span>{doc.nickName ?? (doc.author?.nickName ?? '익명')}</span>
+        <span className="inline-flex items-center gap-2">
+          {doc.nickName ?? (doc.author?.nickName ?? '익명')}
+          {/* SPEC-MESSAGE-001 REQ-MSG-001: 닉네임 옆 쪽지 보내기 액션 */}
+          {doc.author?.id != null &&
+            renderSendMessageAction?.(doc.author.id, doc.nickName ?? doc.author.nickName ?? '익명')}
+        </span>
         <span>{createdDateStr}</span>
         <span>댓글 {doc.commentCount}</span>
         <span>조회수 {doc.readedCount}</span>

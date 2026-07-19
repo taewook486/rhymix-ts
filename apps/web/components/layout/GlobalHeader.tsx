@@ -36,13 +36,20 @@ export async function GlobalHeader() {
     actorNickname: string | null;
     read: boolean;
     createdAt: Date;
+    sourceType: string;
+    sourceId: number;
+    sourceUrl?: string;
   }> = [];
 
   if (userId != null) {
     const notificationService = createNotificationService(prisma);
     unreadCount = await notificationService.countUnread({ recipientId: userId });
     const result = await notificationService.list({ recipientId: userId, limit: 5 });
-    recentNotifications = result.items as typeof recentNotifications;
+    recentNotifications = (result.items as typeof recentNotifications).map((notif) => ({
+      ...notif,
+      // SPEC-MESSAGE-001 REQ-MSG-003: 쪽지 알림 클릭 시 /messages?id={messageId} 로 이동
+      sourceUrl: notif.category === 'MESSAGE' ? `/messages?id=${notif.sourceId}` : undefined,
+    }));
   }
 
   return (
