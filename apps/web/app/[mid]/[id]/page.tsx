@@ -16,6 +16,7 @@ import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 import { getModuleDefinition } from '@/lib/modules/registry';
 import { boardFeedConfigSchema, resolveFeedAlternates } from '@rhymix-ts/board/feed';
 import { SendMessageButton } from '@/components/message/SendMessageButton';
+import { PollWidget } from '@/components/poll/PollWidget';
 
 interface ViewPageProps {
   params: Promise<{ mid: string; id: string }>;
@@ -109,6 +110,12 @@ export default async function ViewPage({ params, searchParams }: ViewPageProps) 
       ? { user: { id: Number(sessionUser.id), isAdmin: !!sessionUser.isAdmin } }
       : null;
 
+  // SPEC-POLL-001 REQ-POLL-001~003: 이 게시물에 연결된 설문이 있는지 조회
+  const documentPoll = await prisma.documentPoll.findFirst({
+    where: { documentId },
+    orderBy: { sortKey: 'asc' },
+  });
+
   return def.routes.view({
     instance,
     params: { mid, id },
@@ -124,5 +131,9 @@ export default async function ViewPage({ params, searchParams }: ViewPageProps) 
         currentUserId={typedSession?.user.id ?? null}
       />
     ),
+    // SPEC-POLL-001 REQ-POLL-001~003: 연결된 설문이 있을 때만 렌더
+    renderPoll: documentPoll
+      ? () => <PollWidget pollId={documentPoll.pollId} memberId={typedSession?.user.id ?? null} />
+      : undefined,
   } as Parameters<typeof def.routes.view>[0]);
 }

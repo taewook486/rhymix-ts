@@ -117,8 +117,11 @@ export const contentPollRouter = router({
   getDocumentPoll: protectedProcedure
     .input(z.object({ documentId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
-      const documentPoll = await ctx.prisma.documentPoll.findUnique({
-        where: { documentId_pollId: { documentId: input.documentId, pollId: 0 } },
+      // @MX:NOTE: [AUTO] documentId_pollId 복합키는 pollId도 함께 필요해 findUnique로
+      // 직접 조회할 수 없다 (documentId만 아는 시점) — documentId 단독 조회는 findFirst 사용.
+      const documentPoll = await ctx.prisma.documentPoll.findFirst({
+        where: { documentId: input.documentId },
+        orderBy: { sortKey: 'asc' },
       });
 
       if (!documentPoll) {

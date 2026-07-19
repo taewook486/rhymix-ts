@@ -45,6 +45,11 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
    * 알지 못하고, 상위(apps/web)에서 렌더링을 위임받아 표시만 한다.
    */
   renderSendMessageAction?: (receiverId: number, receiverNickname: string) => React.ReactNode;
+  /**
+   * SPEC-POLL-001 REQ-POLL-001~003: 게시물에 연결된 설문(있을 때만)을 표시할 슬롯.
+   * apps/web 레이어가 문서에 연결된 설문 존재 여부를 조회해 주입한다.
+   */
+  renderPoll?: () => React.ReactNode;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,7 +64,7 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
  * @MX:SPEC: SPEC-CONTENT-001, SPEC-BOARD-UI-001 REQ-BUI-006, REQ-BUI-007
  */
 export async function BoardViewPage(props: BoardViewPageProps): Promise<React.ReactElement> {
-  const { instance, documentId, prisma, session, renderSendMessageAction } = props;
+  const { instance, documentId, prisma, session, renderSendMessageAction, renderPoll } = props;
   const mid = instance.mid;
 
   // 병렬 데이터 로드 — 문서/댓글/첨부파일
@@ -168,6 +173,9 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
           </ul>
         </div>
       )}
+
+      {/* SPEC-POLL-001 REQ-POLL-001~003: 게시물에 연결된 설문 (있을 때만) */}
+      {renderPoll?.()}
 
       {/* 댓글 섹션 — CommentList는 apps/web 레이어에서 주입됨 */}
       <div id="comments" className="mb-8">

@@ -115,6 +115,71 @@ export async function updatePollAction(
   }
 }
 
+/**
+ * 설문을 게시물에 연결 — SPEC-POLL-001 REQ-POLL-001.
+ */
+export async function attachPollToDocumentAction(
+  prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await auth();
+  if (!isAdminSession(session)) {
+    return { error: '권한이 없습니다.' };
+  }
+
+  try {
+    const pollId = parseInt(String(formData.get('pollId') ?? ''), 10);
+    const documentId = parseInt(String(formData.get('documentId') ?? ''), 10);
+
+    if (!pollId || Number.isNaN(pollId)) {
+      return { error: '잘못된 설문 ID입니다.' };
+    }
+    if (!documentId || Number.isNaN(documentId)) {
+      return { error: '게시물 ID를 입력해주세요.' };
+    }
+
+    const caller = await getServerCaller();
+    await caller.content.poll.attachToDocument({ documentId, pollId });
+
+    revalidatePath(`/admin/polls/${pollId}/edit`);
+    return { success: true };
+  } catch (error) {
+    console.error('Attach poll to document error:', error);
+    return { error: error instanceof Error ? error.message : '게시물 연결에 실패했습니다.' };
+  }
+}
+
+/**
+ * 설문을 게시물에서 연결 해제 — SPEC-POLL-001 REQ-POLL-001.
+ */
+export async function detachPollFromDocumentAction(
+  prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await auth();
+  if (!isAdminSession(session)) {
+    return { error: '권한이 없습니다.' };
+  }
+
+  try {
+    const pollId = parseInt(String(formData.get('pollId') ?? ''), 10);
+    const documentId = parseInt(String(formData.get('documentId') ?? ''), 10);
+
+    if (!pollId || Number.isNaN(pollId) || !documentId || Number.isNaN(documentId)) {
+      return { error: '잘못된 요청입니다.' };
+    }
+
+    const caller = await getServerCaller();
+    await caller.content.poll.removeFromDocument({ documentId, pollId });
+
+    revalidatePath(`/admin/polls/${pollId}/edit`);
+    return { success: true };
+  } catch (error) {
+    console.error('Detach poll from document error:', error);
+    return { error: error instanceof Error ? error.message : '게시물 연결 해제에 실패했습니다.' };
+  }
+}
+
 export async function deletePollAction(
   prevState: ActionState,
   formData: FormData,
