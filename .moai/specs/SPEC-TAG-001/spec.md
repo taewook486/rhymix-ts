@@ -2,9 +2,9 @@
 id: SPEC-TAG-001
 title: 태그 시스템 — 게시물 태그 입력/검색/연관글
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-19
 author: MoAI gap-analysis
 priority: P2
 phase: 5
