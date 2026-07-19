@@ -2,9 +2,9 @@
 id: SPEC-MEMBER-ADMIN-001
 title: "관리자 회원 메뉴 레거시 기능 완성 (기본 설정 · 닉네임 이력 · 차단 관리 · 이메일 호스트 · 그룹 재배치)"
 version: "0.1.0"
-status: in-progress
+status: completed
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 author: manager-spec
 priority: P1
 phase: "Phase 11 — 관리자 회원 메뉴 레거시 parity"

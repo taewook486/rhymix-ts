@@ -8,6 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### SPEC-MEMBER-ADMIN-001 — 관리자 회원 메뉴 레거시 기능 완성 (완료)
+
+> status: completed — 5개 슬라이스(A~E) 전체 구현+검증 완료(REQ-MADM-001~035).
+
+- **Slice A — 닉네임 변경 기록 조회 UI** (`37c9038`) — `admin.user.nicknameLog.list` 기반
+  읽기전용 페이지네이션 테이블
+- **Slice B — 아이디/닉네임 차단 관리 UI** (`ae96c33`) — `deniedList.list/add/remove` CRUD 화면
+- **Slice C — 회원 그룹 재배치 + 이미지 마크** (`cd054f9`) — `admin.group.reorder` 신규
+  프로시저(단일 트랜잭션 원자적 `listOrder` 갱신), dnd-kit 기반 재배치 UI, `imageMark` 노출
+- **Slice D — 회원 설정 "기본 설정" 탭** (`67dc7a7`, `9fcc4fe`, `df64248`, `9a2dc54`) — 가입
+  허가 3값 모드(ALLOW/DENY/SIGNUP_KEY), 닉네임 특수문자/띄어쓰기 정책, 비밀번호 보안수준별
+  문자 구성 요건(REQ-MADM-025), Argon2id timeCost 안전범위(2~10) 클램프 + 로그인 재해싱
+  자동업그레이드 토글, 목록 프로필사진 표시 토글
+- **Slice E — 이메일 호스트 관리(허용/차단 도메인)** (`dc3bdd5`, `2f5e137`) — 신규
+  `ManagedEmailHost` 모델(citext host, `[siteId,host,policy]` unique) + 마이그레이션,
+  `isEmailHostAllowed` 화이트리스트/블랙리스트 정책 평가(충돌 시 ALLOW 우선), `signup()`
+  파이프라인 배선(REQ-MADM-032~035), 관리자 UI(`admin/members/email-hosts`). AC-E1~E5 전부
+  실 Postgres에 대해 재현 검증(등록/삭제 영속, 화이트리스트/블랙리스트 실집행, 무제한 기본값,
+  거부 시 부분생성 방지)
+- 총 11개 테스트 파일, 104개 테스트 전부 PASS (Slice A~E 전체)
+
 #### SPEC-MENU-001 — 사이트 메뉴 편집 완성 + 다중 메뉴 존 렌더링 (진행 중)
 
 > status: in-progress — Slice A/B/C/E는 구현+검증 완료, Slice D는 헤더 슬롯 렌더만 실측 확인

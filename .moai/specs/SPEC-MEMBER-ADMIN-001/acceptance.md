@@ -1,9 +1,9 @@
 ---
 id: SPEC-MEMBER-ADMIN-001
 version: "0.1.0"
-status: in-progress
+status: completed
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 ---
 
 # SPEC-MEMBER-ADMIN-001 — 인수 기준 (Acceptance Criteria, GEARS)

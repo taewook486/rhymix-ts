@@ -2,7 +2,7 @@
 
 TypeScript + Next.js 16 redesign of the [Rhymix](https://github.com/rhymix/rhymix) CMS.
 
-> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (975 unit) · SPEC-THEME-001 완료 (946 unit) · SPEC-FEED-001 완료 (67 unit, 게시판별 RSS/Atom 피드) · SPEC-MENU-001 진행 중 (사이트 메뉴 편집 + 다중 메뉴 존 렌더링, Slice A/B/C/E 완료·Slice D 부분 검증)**.
+> Status: **SPEC-INSTALL-001 완료 (164 unit + 7 E2E) · SPEC-AUTH-001 완료 (508 unit) · SPEC-ADMIN-001 완료 (533 unit) · SPEC-CONTENT-001 완료 (975 unit) · SPEC-THEME-001 완료 (946 unit) · SPEC-FEED-001 완료 (67 unit, 게시판별 RSS/Atom 피드) · SPEC-MEMBER-ADMIN-001 완료 (104 unit, 관리자 회원 메뉴 레거시 기능) · SPEC-MENU-001 진행 중 (사이트 메뉴 편집 + 다중 메뉴 존 렌더링, Slice A/B/C/E 완료·Slice D 부분 검증)**.
 > Reference instance running at `http://localhost:8080` (PHP, Docker).
 
 ## Architecture (locked)
@@ -126,6 +126,7 @@ pnpm test:e2e
 | SPEC-POINT-001 | 완료 (Slice A+B) | 24 unit | 포인트 시스템 독립 패키지 + 크로스 모듈 트랜잭션 통합 + 관리자 UI |
 | SPEC-FEED-001 | 완료 (Slice A+B+C) | 67 unit | 게시판별 RSS 2.0/Atom 1.0 피드, 캐싱+자동탐색+이벤트 무효화, admin 설정 패널 |
 | SPEC-MENU-001 | 진행 중 (Slice A/B/C/E 완료, Slice D 부분 검증, Slice F 백로그) | 미집계 | 사이트 메뉴 편집기 필드 완성, DnD 영속화, 다중 메뉴 존(header/footer/utility) 슬롯 스키마+렌더링, 설치 시 기본 디자인 토큰 시드. Footer/Utility 슬롯·groupIds ACL·중첩 트리 렌더는 admin 로그인 재현 필요(미검증) |
+| SPEC-MEMBER-ADMIN-001 | 완료 (Slice A–E) | 104 unit | 닉네임 변경 이력, 아이디/닉네임 차단 관리, 회원 그룹 재배치+이미지마크, 가입허가/닉네임/비밀번호/Argon2id 정책 설정, 이메일 호스트 허용/차단 목록(신규 마이그레이션) |
 
 ## Next Step
 
