@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 
 import { AutoLoginRefresher } from '@/components/auth/AutoLoginRefresher';
@@ -10,6 +11,8 @@ import { Utility } from '@/components/layout/Utility';
 import { Footer } from '@/components/layout/Footer';
 import { ColorSchemeProvider } from '@/components/theme/ColorSchemeProvider';
 import { colorSchemeScript } from '@/lib/theme/color-scheme-script';
+import { prisma } from '@/lib/db/prisma';
+import { getSeoSettings } from '@rhymix-ts/admin';
 
 export const metadata: Metadata = {
   title: {
@@ -21,14 +24,31 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // SPEC-SEO-001 REQ-SEO-006, AC-SEO-006: Google Analytics ID 설정 시 전 페이지에 스크립트 삽입
+  const { googleAnalyticsId } = await getSeoSettings({ prisma });
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* REQ-THEME-POLISH-033: FOIT 방지 — React hydration 전에 다크모드 클래스 주입 */}
         <script dangerouslySetInnerHTML={{ __html: colorSchemeScript }} />
+        {googleAnalyticsId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${googleAnalyticsId}');`}
+            </Script>
+          </>
+        )}
       </head>
       <body className="min-h-screen antialiased">
         <ColorSchemeProvider>

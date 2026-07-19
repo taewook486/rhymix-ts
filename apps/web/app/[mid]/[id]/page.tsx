@@ -15,12 +15,27 @@ import { prisma } from '@/lib/db/prisma';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 import { getModuleDefinition } from '@/lib/modules/registry';
 import { boardFeedConfigSchema, resolveFeedAlternates } from '@rhymix-ts/board/feed';
+import { getSeoSettings } from '@rhymix-ts/admin';
 import { SendMessageButton } from '@/components/message/SendMessageButton';
 import { PollWidget } from '@/components/poll/PollWidget';
+import { ArticleJsonLd } from '@/components/seo/ArticleJsonLd';
 
 interface ViewPageProps {
   params: Promise<{ mid: string; id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+// SPEC-SEO-001: sitemap.ts 와 동일한 사이트 URL 소스 (REQ-SEO-002/004)
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+const SITE_TITLE = 'Rhymix-TS';
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '');
+}
+
+function extractFirstImageUrl(html: string): string | null {
+  const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match?.[1] ?? null;
 }
 
 /**
@@ -30,7 +45,7 @@ interface ViewPageProps {
  * @MX:SPEC: SPEC-FEED-001 REQ-FEED-007
  */
 export async function generateMetadata({ params }: ViewPageProps): Promise<Metadata> {
-  const { mid } = await params;
+  const { mid, id } = await params;
   const h = await headers();
   const siteIdStr = h.get('x-site-id');
   const siteId = siteIdStr != null ? Number(siteIdStr) : NaN;
@@ -55,11 +70,62 @@ export async function generateMetadata({ params }: ViewPageProps): Promise<Metad
   const feedConfig = boardFeedConfigSchema.parse(board.feedConfig ?? {});
   const alternates = resolveFeedAlternates(feedConfig, mid);
 
+  // SPEC-SEO-001 REQ-SEO-001, REQ-SEO-004, REQ-SEO-005: 게시물 상세 메타태그
+  let seoMetadata: Metadata = {};
+  const documentId = Number(id);
+
+  if (Number.isInteger(documentId) && documentId > 0) {
+    const doc = await prisma.document.findUnique({
+      where: { id: documentId, status: 'PUBLIC', deletedAt: null },
+      select: {
+        title: true,
+        content: true,
+        contentText: true,
+        regdate: true,
+        lastUpdate: true,
+        nickName: true,
+        author: { select: { nickName: true } },
+      },
+    });
+
+    if (doc) {
+      const settings = await getSeoSettings({ prisma });
+      const description = (doc.contentText || stripHtml(doc.content)).slice(0, 160);
+      const image = extractFirstImageUrl(doc.content) || settings.ogImageUrl || undefined;
+      const url = `${SITE_URL}/${mid}/${documentId}`;
+      const authorName = doc.nickName ?? doc.author?.nickName ?? 'Guest';
+
+      seoMetadata = {
+        title: doc.title,
+        description,
+        // 루트 레이아웃 기본값(robots: {index:false})을 이 페이지에서만 명시적으로 덮어씀
+        robots: { index: true, follow: true },
+        openGraph: {
+          title: doc.title,
+          description,
+          url,
+          type: 'article',
+          publishedTime: doc.regdate.toISOString(),
+          modifiedTime: doc.lastUpdate.toISOString(),
+          authors: [authorName],
+          images: image ? [{ url: image }] : undefined,
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: doc.title,
+          description,
+          images: image ? [image] : undefined,
+        },
+      };
+    }
+  }
+
   if (!alternates) {
-    return {};
+    return seoMetadata;
   }
 
   return {
+    ...seoMetadata,
     alternates: {
       types: alternates,
     },
@@ -116,7 +182,14 @@ export default async function ViewPage({ params, searchParams }: ViewPageProps) 
     orderBy: { sortKey: 'asc' },
   });
 
-  return def.routes.view({
+  // SPEC-SEO-001 REQ-SEO-005: JSON-LD 구조화 데이터용 게시물 정보
+  // (generateMetadata 와는 별도 요청 사이클이라 별도 조회 — 기존 board 재조회와 동일한 패턴)
+  const seoDoc = await prisma.document.findUnique({
+    where: { id: documentId },
+    select: { title: true, content: true, regdate: true, lastUpdate: true, nickName: true },
+  });
+
+  const view = await def.routes.view({
     instance,
     params: { mid, id },
     searchParams: resolvedSearchParams,
@@ -136,4 +209,13 @@ export default async function ViewPage({ params, searchParams }: ViewPageProps) 
       ? () => <PollWidget pollId={documentPoll.pollId} memberId={typedSession?.user.id ?? null} />
       : undefined,
   } as Parameters<typeof def.routes.view>[0]);
+
+  return (
+    <>
+      {view}
+      {seoDoc && (
+        <ArticleJsonLd document={seoDoc} siteConfig={{ title: SITE_TITLE, url: SITE_URL }} />
+      )}
+    </>
+  );
 }
