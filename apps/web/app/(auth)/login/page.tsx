@@ -162,20 +162,12 @@ function LoginForm() {
  * Kakao/Google login buttons. Buttons are hidden when disabled by admin (AC-SOCIAL-004).
  */
 function SocialLoginButtons({ isPending }: { isPending: boolean }) {
-  const [kakaoEnabled, setKakaoEnabled] = React.useState(false);
-  const [googleEnabled, setGoogleEnabled] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
+  // SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-005, AC-SOCIAL-004: 관리자 설정을 실제로 조회한다.
+  const { data: socialConfig, isLoading } = trpc.public.social.getConfig.useQuery();
+  const kakaoEnabled = socialConfig?.kakao.enabled ?? false;
+  const googleEnabled = socialConfig?.google.enabled ?? false;
 
-  // Fetch social login settings on mount
-  React.useEffect(() => {
-    // TODO: Replace with actual tRPC query when settings router is implemented
-    // For now, check environment variables as fallback
-    setKakaoEnabled(Boolean(process.env.NEXT_PUBLIC_KAKAO_ENABLED || process.env.KAKAO_CLIENT_ID));
-    setGoogleEnabled(Boolean(process.env.NEXT_PUBLIC_GOOGLE_ENABLED || process.env.GOOGLE_CLIENT_ID));
-    setLoading(false);
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return null; // Don't render while loading
   }
 

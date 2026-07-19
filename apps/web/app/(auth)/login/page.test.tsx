@@ -29,7 +29,14 @@ vi.mock('@/lib/auth/actions', () => ({
   initialAuthActionState: { ok: true },
 }));
 
-// Mock tRPC provider - provide captcha config mock data
+// Mock tRPC provider - provide captcha/social config mock data
+const { socialConfigMock } = vi.hoisted(() => ({
+  socialConfigMock: vi.fn(() => ({
+    data: { kakao: { enabled: false }, google: { enabled: false } },
+    isLoading: false,
+  })),
+}));
+
 vi.mock('@/providers/TRPCProvider', () => ({
   trpc: {
     public: {
@@ -42,6 +49,11 @@ vi.mock('@/providers/TRPCProvider', () => ({
               siteKey: 'test-site-key',
             },
           }),
+        },
+      },
+      social: {
+        getConfig: {
+          useQuery: socialConfigMock,
         },
       },
     },
@@ -78,6 +90,34 @@ describe('LoginPage', () => {
   afterEach(() => {
     cleanup();
     useActionStateMock.mockReset();
+    socialConfigMock.mockReturnValue({
+      data: { kakao: { enabled: false }, google: { enabled: false } },
+      isLoading: false,
+    });
+  });
+
+  // SPEC-SOCIAL-LOGIN-001 AC-SOCIAL-004: 관리자 설정을 실제로 반영해야 한다
+  // (재발 방지 — 이전엔 존재하지 않는 환경변수를 읽어 항상 버튼이 숨겨졌음)
+  it('소셜 로그인이 둘 다 비활성화면 버튼을 표시하지 않는다', async () => {
+    useActionStateMock.mockReturnValue([{ ok: true }, vi.fn(), false]);
+    const { default: LoginPage } = await import('./page');
+    render(React.createElement(LoginPage));
+
+    expect(screen.queryByRole('button', { name: /카카오/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Google/i })).toBeNull();
+  });
+
+  it('관리자가 카카오 로그인을 활성화하면 카카오 버튼이 표시된다', async () => {
+    socialConfigMock.mockReturnValue({
+      data: { kakao: { enabled: true }, google: { enabled: false } },
+      isLoading: false,
+    });
+    useActionStateMock.mockReturnValue([{ ok: true }, vi.fn(), false]);
+    const { default: LoginPage } = await import('./page');
+    render(React.createElement(LoginPage));
+
+    expect(screen.getByRole('button', { name: /카카오/i })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Google/i })).toBeNull();
   });
 
   it('identifier 와 password 입력 필드를 렌더링', async () => {
