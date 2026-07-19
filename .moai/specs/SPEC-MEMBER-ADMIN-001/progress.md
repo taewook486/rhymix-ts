@@ -326,4 +326,4 @@ settings.test.ts / attachment.test.ts / comment.test.ts / themes/default/install
 `next lint`는 이 프로젝트의 Next 16 버전에서 커맨드 자체가 제거되어 실행 불가(프로젝트 전역
 툴링 부채, 이 SPEC이 원인 아님) — typecheck+테스트로 대체 검증.
 
-sync_commit_sha: pending-backfill-sync
+sync_commit_sha: 2daffb9
