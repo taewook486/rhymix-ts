@@ -2,9 +2,9 @@
 id: SPEC-STATS-001
 title: 접속 통계 — 일별/월별 방문자 차트 및 게시물 통계
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-19
 author: MoAI gap-analysis
 priority: P2
 phase: 5

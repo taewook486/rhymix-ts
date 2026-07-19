@@ -2,9 +2,9 @@
 id: SPEC-BOARD-UI-001
 title: 게시판 목록 UI 완성 — 테이블/페이지네이션/검색/정렬/공지/비밀
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-19
 author: MoAI gap-analysis
 priority: P0
 phase: 3

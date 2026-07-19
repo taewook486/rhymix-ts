@@ -2,9 +2,9 @@
 id: SPEC-SEARCH-001
 title: 통합 검색 — 전체 게시판 대상 키워드 검색
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-19
 author: MoAI gap-analysis
 priority: P1
 phase: 4

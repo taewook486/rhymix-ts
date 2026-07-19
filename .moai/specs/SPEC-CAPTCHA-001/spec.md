@@ -2,9 +2,9 @@
 id: SPEC-CAPTCHA-001
 title: CAPTCHA + 이용약관 동의 (가입/로그인 스팸 방지)
 version: 1.0.0
-status: draft
+status: completed
 created: 2026-06-27
-updated: 2026-06-27
+updated: 2026-07-19
 author: MoAI gap-analysis
 priority: P1
 phase: 4
