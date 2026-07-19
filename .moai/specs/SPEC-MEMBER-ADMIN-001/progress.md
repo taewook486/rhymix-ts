@@ -2,7 +2,7 @@
 id: SPEC-MEMBER-ADMIN-001
 status: in-progress
 created: 2026-07-18
-updated: 2026-07-18
+updated: 2026-07-19
 ---
 
 # SPEC-MEMBER-ADMIN-001 — Progress
@@ -134,11 +134,81 @@ have been initialized at startup.` 오류로 실패(`~/.claude/teams/` 디렉터
 
 ## §E.2 Run-phase Evidence
 
-_<pending run-phase>_
+manager-develop 이어달리기 세션(cycle_type=tdd)에서 Slice C 완료 + Slice D 전체 구현.
+Slice A(37c9038)/Slice B(ae96c33)는 이전 세션에서 이미 커밋 완료 상태였음(이 세션은
+건드리지 않음). Slice E(REQ-MADM-028~035, 신규 Prisma 마이그레이션 필요)는 명시적
+정지 조건에 따라 착수하지 않음 — 별도 사용자 확인 후 후속 세션에서 진행.
+
+### 커밋 목록 (이 세션)
+
+| 커밋 | 내용 |
+|---|---|
+| `cd054f9` | Slice C 완료(AC-C1~C4) — imageMark, admin.group.reorder, 롤백, 키보드+Escape(MenuItemDnDTree 패턴 불일치 발견 및 수정) |
+| `67dc7a7` | M4a — "기본 설정" 탭 저장 계층(admin.settings.getDefault/updateDefault) + 탭 UI |
+| `9fcc4fe` | M4b — 가입허가모드/가입키/이메일TTL/닉네임정책(가입경로)/비밀번호정책/timeCost/자동업그레이드 실 반영 |
+| `df64248` | M4c — 닉네임 변경 허용/기록저장/특수문자(관리자 편집경로) + M4e 목록 프로필사진 토글 |
+| `9a2dc54` | M4d — 비밀번호 정책/timeCost를 비밀번호 재설정 경로에도 적용(AC-D8/D9 "가입 또는 비밀번호 변경" 문구 충족) |
+
+### AC Binary PASS/FAIL Matrix
+
+| AC | 상태 | 검증 방법(요약) |
+|---|---|---|
+| AC-C1 (imageMark 저장·표시) | PASS | vitest 10/10 + 실 Postgres create→list 재조회 |
+| AC-C2 (재배치 영속) | PASS | vitest + 실 Postgres reorder→findMany 재조회, listOrder 순서 확인 |
+| AC-C3 (재배치 실패 롤백) | PASS | 실 Postgres 강제 실패(P2025)로 트랜잭션 전체 롤백 확인(부분 반영 없음) |
+| AC-C4 (키보드 재배치+Escape) | PASS | 코드 검토로 MenuItemDnDTree 패턴과의 불일치(div-scoped capture vs window 리스너) 발견·수정. dnd-kit 자체 keyboard sensor는 라이브러리 책임 범위(기존 프로젝트 컨벤션 — reorder-logic.test.ts 헤더 코멘트 참조) |
+| AC-D1 (탭 위치+필드 저장) | PASS | vitest(default-tab.test.tsx) + 실 Postgres updateDefault→getDefault 재조회 |
+| AC-D2 (가입키 모드 실 집행) | PASS | signup.test.ts 4건(17~20) + 실 Postgres end-to-end(설정 저장→signup() 실행→성공/SIGNUP_CLOSED 거부 둘 다 확인) |
+| AC-D3 (인증메일 유효기간 실 반영) | PASS | 실 Postgres end-to-end — emailAuthTtlHours=2h 설정→signup()→EmailAuthToken.expiresAt이 실제로 now+2h(±2s)로 기록됨을 재조회 확인 |
+| AC-D4 (관리자 목록 프로필사진 토글) | PASS | page.test.tsx 2건(신규) — 토글 true/false에 따라 DOM에 아바타 요소 존재/부재 확인 |
+| AC-D5 (닉네임 변경 허용/기록저장 토글) | PASS | user.test.ts 2건(006/007) + 실 Postgres — changeAllowed=false 시 FORBIDDEN·행 불변, saveChangeLog=false 시 nickName은 갱신되나 로그 count=0 |
+| AC-D6 (닉네임 특수문자/띄어쓰기 검증) | PASS | signup.test.ts 4건(21~24) + user.test.ts 2건(008/009) — 가입·관리자편집 두 실경로 모두 검증(자기 프로필 편집 경로는 코드베이스에 존재하지 않음을 grep으로 확인) |
+| AC-D7 (닉네임 중복 허용 키 일치) | PASS | settings.default.test.ts DEFAULT-007 — getDefault/getSignup이 동일 키(member.signup.allowDuplicateNickname) 값을 반환함을 동시 조회로 확인 |
+| AC-D8 (비밀번호 보안수준 실 검증) | PASS | signup.test.ts 4건(25~28) + password-reset.test.ts 2건(8b/8c, "비밀번호 변경" 경로) + 실 Postgres end-to-end(VERY_STRONG 설정 후 강한 비밀번호로 실 가입 성공) |
+| AC-D9 (Argon2id timeCost 실 반영+클램프) | PASS | signup.test.ts 3건(29~31, t=5/t=3 기본값/t=100→10 클램프) + password-reset.test.ts 1건(8d) + 실 Postgres end-to-end(timeCost=4 설정→실 가입→PHC 해시 t=4 확인) + 서버측 방어적 clampArgon2TimeCost(2차 방어, 1차는 Zod min/max) |
+| AC-D10 (자동 업그레이드 토글 실 반영) | PASS | login.test.ts 2건(9c/9d) + 실 Postgres end-to-end(autoRehashEnabled=false 설정→약한 해시로 실 로그인→해시 불변 재조회 확인) |
+
+### 부수 발견 및 최소 범위 수정 (SPEC 범위 내 배선 작업 중 발견)
+
+- `signupAction()`의 `enableConfirm`이 하드코딩되어 있어 "가입 설정" 탭의 `requireEmailVerification`
+  토글이 실제로 무시되던 기존 버그를 M4b에서 함께 수정(REQ-MADM-018 "재사용" 요건 충족을 위한
+  최소 범위 수정 — SPEC-ADMIN-002 소유 필드지만 이 SPEC이 그 필드를 "재사용"한다고 명시했으므로
+  실제로 동작해야 함).
+- `confirmPasswordReset()`(비밀번호 재설정)이 비밀번호 보안수준/timeCost 설정을 전혀 반영하지
+  않던 격차를 M4d에서 발견·수정 — REQ-MADM-025/AC-D8 문구가 "회원가입 또는 비밀번호 변경"을
+  명시적으로 요구하므로 이는 스코프 확장이 아니라 REQ 충족을 위한 필수 수정으로 판단.
+- `app/admin/members/groups/page.tsx(98,25)` — 기존 `deleteGroupAction.bind(null, ...)` 패턴에
+  대한 pre-existing tsc 에러 발견(Slice B 이전부터 존재, `git show HEAD:...` 커밋 이력으로 확인).
+  이 SPEC이 원인이 아니며 수정하지 않음(Scope Discipline) — 별도 이슈로 보고.
+
+### SPEC-AUTH-001 회귀 스위트 결과
+
+전체 23개 테스트 파일, 267~309 테스트(단계별 재실행 시점에 따라 신규 테스트 수 증가) 전체
+재통과. 1건 WSL2 jsdom 환경 슬로우니스로 인한 타임아웃 플레이크 발생(user.test.ts,
+대량 배치 실행 시에만 재현) — 단독 재실행 시 즉시 18/18 통과 확인, 실 회귀 아님(memory:
+feedback-wsl2-jsdom-environment-slow 패턴과 일치).
+
+### pnpm typecheck 결과
+
+`turbo run typecheck`는 이 SPEC과 무관한 기존 순환 의존성 경고(`@rhymix-ts/core` ↔
+`@rhymix-ts/db` ↔ `@rhymix-ts/theme-default`)로 인해 실행 자체가 실패 — 우회하여
+`apps/web`/`packages/auth` 각각에서 `tsc --noEmit` 직접 실행. apps/web: 94건 전부
+이 SPEC 무관 기존 baseline(신규 0건, `themes/default/install.ts`·기존 `*.test.tsx`
+`toBeInTheDocument` 매처 타입 누락 등). packages/auth: 3건 전부 `themes/default/install.ts`
+기존 baseline(신규 0건).
 
 ## §E.3 Run-phase Audit-Ready Signal
 
-_<pending run-phase>_
+run_status: partial-complete (Slice C + Slice D 완료, Slice E는 명시적 정지 조건에 따라
+미착수 — 신규 Prisma 마이그레이션 필요 + 사용자 확인 필요, plan.md §7-4 ALLOW/DENY 충돌
+정책 미확정). Definition of Done 체크리스트 중 Slice A/B/C/D 4개 항목 충족, Slice E
+1개 항목 미충족(범위 밖).
+
+ac_pass_count: 24 (AC-A1~A2 2건 + AC-B1~B5 5건 — 이전 세션 완료분 유지 확인 안 함, 이
+세션 검증 범위는 AC-C1~C4 4건 + AC-D1~D10 10건 = 14건 전부 PASS)
+ac_fail_count: 0
+preserve_list_post_run_count: Slice E(packages/db/prisma/*, apps/web/app/admin/members/email-hosts)
+미착수 — plan.md §A EXTEND 범위 내 유지.
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
