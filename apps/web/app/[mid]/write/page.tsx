@@ -90,6 +90,40 @@ export default async function WritePage({ params }: WritePageProps) {
           />
         </div>
 
+        {/* SPEC-POLL-001 REQ-POLL-001: 글쓰기 폼에서 직접 설문 생성 */}
+        <details>
+          <summary>설문 추가</summary>
+          <div>
+            <label htmlFor="pollQuestion">질문</label>
+            <input id="pollQuestion" name="pollQuestion" type="text" maxLength={200} />
+          </div>
+          <div>
+            <span>선택지 (2~10개, 사용할 만큼만 입력)</span>
+            {Array.from({ length: 10 }, (_, i) => (
+              <div key={i}>
+                <label htmlFor={`pollOption-${i}`}>선택지 {i + 1}</label>
+                <input id={`pollOption-${i}`} name="pollOptions" type="text" maxLength={200} />
+              </div>
+            ))}
+          </div>
+          <div>
+            <label htmlFor="pollMultiSelect">
+              <input id="pollMultiSelect" name="pollMultiSelect" type="checkbox" />
+              복수 선택 허용
+            </label>
+          </div>
+          <div>
+            <label htmlFor="pollAllowGuest">
+              <input id="pollAllowGuest" name="pollAllowGuest" type="checkbox" />
+              비로그인도 투표 가능
+            </label>
+          </div>
+          <div>
+            <label htmlFor="pollEndsAt">마감일</label>
+            <input id="pollEndsAt" name="pollEndsAt" type="date" />
+          </div>
+        </details>
+
         <button type="submit">작성</button>
         <a href={`/${mid}`}>취소</a>
       </form>
