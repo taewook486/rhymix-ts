@@ -104,7 +104,8 @@ ehthumbs.db
 # Logs & Temporary Files
 # ===========================================
 *.log
-logs/
+logs/*
+!logs/.gitkeep
 *.tmp
 *.temp
 *.bak
@@ -114,6 +115,7 @@ logs/
 # Backups
 # ===========================================
 .moai-backups/
+.moai/backups/
 *.backup/
 *-backup/
 *_backup_*/
@@ -155,6 +157,10 @@ secret-*.*
 .aws/config
 .aws/credentials
 
+# MINK agent credentials (plaintext API keys, per AC-CR-026).
+# Ignored anywhere in the tree so per-project auth dirs are never committed.
+**/.mink/auth/
+
 # ===========================================
 # Claude Code Configuration
 # ===========================================
@@ -181,7 +187,21 @@ secret-*.*
 .moai/status_line.sh
 .moai/memory/
 .moai/worktrees/
-.moai/reports/
+.moai/branches/
+
+# ===========================================
+# Update Noise-Suppression Ledgers (per-machine, never tracked)
+# Per-machine state + cache ledgers used to suppress redundant update noise.
+# ===========================================
+.moai/state/
+.moai/cache/
+
+# ===========================================
+# Plan Audit Reports (local artifacts)
+# Plan-audit verdict reports are local artifacts; only .gitkeep is tracked.
+# ===========================================
+.moai/reports/plan-audit/*.md
+!.moai/reports/plan-audit/.gitkeep
 
 # ===========================================
 # Evolution Telemetry (local-only usage data)
@@ -214,34 +234,24 @@ dist-ssr/
 .firebase/
 
 # ===========================================
-# Rhymix-TS Project Specific
+# MoAI Runtime Reports / Logs / Per-package State
+# Auto-generated per-session/per-run artifacts; not meant for git tracking.
 # ===========================================
-# Prisma local DB / shadow DB
-prisma/migrations/dev/
-prisma/dev.db*
-
-# Playwright / E2E
-playwright-report/
-test-results/
-playwright/.cache/
-
-# Local rewrite of Rhymix install state
-.install-lock
-
-# pnpm
-.pnpm-store/
-
-# Local helper file accidentally created on Windows
-nul
-# Test coverage output
-coverage/
-
-# moai sync auto-backups (regenerated each sync run)
-.moai/backups/
+.claude/*.lock
+.moai/reports/session-*.md
+.moai/reports/sync-report-*.md
+.moai/logs/*
+!.moai/logs/.gitkeep
+.moai/harness/
+.moai/lessons-inbox.jsonl
+**/.moai/plans/
 **/.moai/state/
 
-# Playwright MCP debug artifacts (console logs, screenshots)
-.playwright-mcp/
-
-# Legacy vs new comparison screenshots (reference only, not versioned)
+# ===========================================
+# Test / E2E Generated Artifacts
+# ===========================================
+coverage/
 screenshots/
+.playwright-mcp/
+.tmp-report/
+test-results/

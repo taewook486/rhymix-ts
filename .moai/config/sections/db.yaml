@@ -1,7 +1,7 @@
 # Database Documentation Configuration
 # Controls /moai db workflow, auto-sync hook, and schema documentation policy.
 #
-# Structure: 8 keys directly under `db:` (REQ-010)
+# Structure: 8 keys directly under `db:`
 #   - 5 system-fixed keys: enabled, dir, auto_sync, migration_patterns, engine
 #   - 3 interview-input keys: orm, multi_tenant, migration_tool (filled by `/moai db init`)
 
@@ -31,14 +31,14 @@ db:
     - "supabase/migrations/**/*.sql"
     - "sql/migrations/**/*.sql"
 
-  # [System] Primary database engine (set during /moai db init interview)
-  engine: "_TBD_"
+  # [System] Primary database engine (empty until /moai db init interview fills it)
+  engine: ""
 
-  # [Interview] ORM/ODM (set during /moai db init interview)
-  orm: "_TBD_"
+  # [Interview] ORM/ODM (empty until /moai db init interview fills it)
+  orm: ""
 
   # [Interview] Multi-tenant strategy (set during /moai db init interview)
   multi_tenant: "none"
 
-  # [Interview] Migration tool (set during /moai db init interview)
-  migration_tool: "_TBD_"
+  # [Interview] Migration tool (empty until /moai db init interview fills it)
+  migration_tool: ""

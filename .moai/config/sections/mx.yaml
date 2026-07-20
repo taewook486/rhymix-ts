@@ -194,6 +194,32 @@ mx:
       - ".moai/project/product.md"
       - "README.md"
 
+  # default danger_categories mapping
+  # Pattern map for classifying WARN tag REASON text into categories.
+  # Keys: category names; values: case-insensitive substring pattern lists.
+  danger_categories:
+    concurrency:
+      - goroutine leak
+      - unbounded channel
+      - race condition
+    resource-leak:
+      - missing Close
+      - fd leak
+    cleanup:
+      - defer missing
+      - Close not called
+    security:
+      - hardcoded credential
+      - sql injection
+      - xss
+
+  # Test file path patterns (excluded by default when computing fan-in)
+  test_paths:
+    - "*_test.go"
+    - "tests/**"
+    - "testdata/**"
+    - "fixtures/**"
+
   # Auto-tagging behavior
   auto_tag: true
 

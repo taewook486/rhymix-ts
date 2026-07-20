@@ -6,6 +6,10 @@ harness:
   # Default evaluator profile (used when SPEC has no evaluator_profile field)
   default_profile: "default"
 
+  # @MX:NOTE: FROZEN at per_iteration per design-constitution §11.4.1; loader enforces via HRN_EVAL_MEMORY_FROZEN
+  evaluator:
+    memory_scope: per_iteration
+
   # Execution mode defaults
   mode_defaults:
     solo: auto            # Sub-agent mode: auto-detect level
@@ -43,9 +47,24 @@ harness:
   # Maps harness depth to CLAUDE_CODE_EFFORT_LEVEL for Opus 4.7 adaptive thinking.
   # Deeper harness = more extended reasoning budget for evaluator and planner agents.
   effort_mapping:
-    minimal:  "medium"   # Fast iteration: no extended reasoning
-    standard: "high"     # Balanced quality: moderate reasoning budget
-    thorough: "xhigh"    # Critical features: maximum reasoning budget
+    minimal:  "low"      # Fast iteration: no extended reasoning
+    standard: "medium"   # Balanced quality: moderate reasoning budget
+    thorough: "high"     # Critical features: maximum reasoning budget
+
+  # [HARD] Global plan_audit override — prevents 2026-04-21 incident recurrence
+  #
+  # On 2026-04-21, 30 SPECs were generated without going through the plan-auditor
+  # gate because: (a) /moai project scope creep bypassed /moai plan entirely, and
+  # (b) the minimal level had plan_audit.enabled: false. Result: 386 cross-SPEC
+  # defects (100% FAIL rate) that required emergency remediation.
+  #
+  # This global override enforces plan_audit on ALL levels regardless of
+  # auto_detection output. The per-level plan_audit.enabled below is now
+  # treated as a hint for max_iterations only — the gate itself is always on.
+  plan_audit_global:
+    always_enabled: true              # [HARD] Cannot be disabled by auto_detection
+    enforce_gate_on_spec_creation: true  # [HARD] Blocks SPEC creation outside /moai plan
+    rationale: "prevent scope-creep SPEC generation"
 
   # Level definitions
   levels:
@@ -55,7 +74,11 @@ harness:
       evaluator: false
       sprint_contract: false
       plan_audit:
-        enabled: false
+        # NOTE: plan_audit_global.always_enabled overrides this to true.
+        # This field now controls max_iterations defaults only.
+        enabled: true
+        max_iterations: 1             # Minimal level: single-pass audit (fast)
+        require_must_pass: false      # Relaxed for minimal: warn but do not block
 
     standard:
       description: "Balanced quality for most development"
@@ -85,6 +108,9 @@ harness:
   # Model Upgrade Review Process
   # When Claude model is upgraded, review harness components for simplification.
   # Reference: Anthropic "Harness Design for Long-Running Apps" (2025)
+  # DORMANT-in-practice: the model_upgrade_review consumer (emitModelUpgradeReminder)
+  # exists, but its CLAUDE_MODEL_PREVIOUS / CLAUDE_MODEL trigger env vars have no
+  # setter anywhere — the review never fires. Preserved for forward compatibility.
   model_upgrade_review:
     enabled: true
     # Checklist items to evaluate after model upgrade
@@ -129,3 +155,29 @@ harness:
     output:
       report_path: ".moai/reports/harness-review.md"
       require_approval: true          # Human must approve harness changes
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Harness Learning Subsystem Configuration
+# Learning behavior parameters, defined under the learning: key.
+# ─────────────────────────────────────────────────────────────────────────────
+learning:
+  # Whether the observer + learner are enabled (default true).
+  # Setting false makes RecordEvent and AggregatePatterns both no-ops.
+  enabled: true
+
+  # Whether to apply automatically upon reaching Tier 4 (default false).
+  # When false, user approval via AskUserQuestion is required.
+  # auto_apply default value MUST be false.
+  auto_apply: false
+
+  # Tier promotion thresholds [Observation, Heuristic, Rule, AutoUpdate].
+  # Default [1, 3, 5, 10] — changing this alters ClassifyTier behavior.
+  tier_thresholds: [1, 3, 5, 10]
+
+  # Automatic update rate limit.
+  rate_limit:
+    max_per_week: 3       # Maximum allowed updates within a 7-day sliding window
+    cooldown_hours: 24    # Minimum wait time between updates (hours)
+
+  # Retention period for usage-log.jsonl (days).
+  log_retention_days: 90

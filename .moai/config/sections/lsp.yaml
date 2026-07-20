@@ -1,7 +1,7 @@
 # LSP Configuration for MoAI-ADK
 #
 # ================================================================
-# Language Neutrality Policy (CLAUDE.local.md Section 22)
+# Language Neutrality Policy (per .claude/rules/moai/development/coding-standards.md § Language Policy)
 # ================================================================
 # This is a TEMPLATE file deployed to end-user projects via
 # `moai init`. MoAI-ADK supports 16 programming languages, and
@@ -41,14 +41,14 @@
 
 lsp:
   # Master switch. Flip to true once the runtime LSP client lands
-  # (SPEC-LSP-CORE-002, re-designed with charmbracelet/powernap).
+  # (powernap-based, multi-language design).
   enabled: false
 
-  # Client implementation selector (SPEC-LSP-CORE-002 AC10, REQ-LC-010).
+  # Client implementation selector.
   # Accepted values:
-  #   gopls_bridge  — legacy Go-only bridge (SPEC-GOPLS-BRIDGE-001). Default.
-  #   powernap_core — multi-language foundation (SPEC-LSP-CORE-002).
-  # Empty defaults to "gopls_bridge". Read by internal/lsp/config loader.
+  #   gopls_bridge  — legacy Go-only bridge. Default.
+  #   powernap_core — multi-language foundation (charmbracelet/powernap).
+  # Empty defaults to "gopls_bridge". Read by the internal LSP config loader.
   client_impl: gopls_bridge
 
   # ---------------- 16 Language Server Matrix ----------------
