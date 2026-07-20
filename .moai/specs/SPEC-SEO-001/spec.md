@@ -4,7 +4,7 @@ title: SEO 기반 구축 — sitemap.xml / robots.txt / Open Graph / JSON-LD
 version: 1.0.0
 status: in-progress
 created: 2026-06-27
-updated: 2026-07-19
+updated: 2026-07-20
 author: MoAI gap-analysis
 priority: P2
 phase: 5
