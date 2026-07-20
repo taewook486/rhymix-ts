@@ -110,6 +110,7 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
       allowProfileImage: true,
       allowSignature: true,
       exposeInMemberSearch: true,
+      allowMessages: true,
     });
   });
 
@@ -117,7 +118,8 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     mockSiteSettingFindUnique
       .mockResolvedValueOnce({ value: false }) // allowProfileImage
       .mockResolvedValueOnce({ value: false }) // allowSignature
-      .mockResolvedValueOnce({ value: false }); // exposeInMemberSearch
+      .mockResolvedValueOnce({ value: false }) // exposeInMemberSearch
+      .mockResolvedValueOnce({ value: false }); // allowMessages
 
     const { adminSettingsRouter } = await import('./settings');
     const { createCallerFactory } = await import('../../trpc');
@@ -131,10 +133,11 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
       allowProfileImage: false,
       allowSignature: false,
       exposeInMemberSearch: false,
+      allowMessages: false,
     });
   });
 
-  it('SETTINGS-FEATURE-003: updateFeature → persists all 3 keys via siteSetting.upsert inside transaction', async () => {
+  it('SETTINGS-FEATURE-003: updateFeature → persists all 4 keys via siteSetting.upsert inside transaction', async () => {
     mockSiteSettingFindUnique.mockResolvedValue(null);
     mockSiteSettingUpsert.mockResolvedValue({});
 
@@ -148,9 +151,10 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
       allowProfileImage: false,
       allowSignature: false,
       exposeInMemberSearch: false,
+      allowMessages: false,
     });
 
-    expect(mockSiteSettingUpsert).toHaveBeenCalledTimes(3);
+    expect(mockSiteSettingUpsert).toHaveBeenCalledTimes(4);
     expect(mockSiteSettingUpsert).toHaveBeenNthCalledWith(1, {
       where: {
         siteId_key: { siteId: 1, key: 'member.feature.allowProfileImage' },
@@ -162,9 +166,20 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
       },
       update: { value: false },
     });
+    expect(mockSiteSettingUpsert).toHaveBeenNthCalledWith(4, {
+      where: {
+        siteId_key: { siteId: 1, key: 'member.feature.allowMessages' },
+      },
+      create: {
+        siteId: 1,
+        key: 'member.feature.allowMessages',
+        value: false,
+      },
+      update: { value: false },
+    });
   });
 
-  it('SETTINGS-FEATURE-004: updateFeature → writes 3 AdminLog entries', async () => {
+  it('SETTINGS-FEATURE-004: updateFeature → writes 4 AdminLog entries', async () => {
     mockSiteSettingFindUnique.mockResolvedValue(null);
     mockSiteSettingUpsert.mockResolvedValue({});
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
@@ -179,10 +194,11 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
       allowProfileImage: false,
       allowSignature: true,
       exposeInMemberSearch: false,
+      allowMessages: true,
     });
 
-    // Each of the 3 keys creates 1 AdminLog entry
-    expect(mockAdminLogCreate.mock.calls.length).toBeGreaterThanOrEqual(3);
+    // Each of the 4 keys creates 1 AdminLog entry
+    expect(mockAdminLogCreate.mock.calls.length).toBeGreaterThanOrEqual(4);
   });
 
   // ==========================================================================

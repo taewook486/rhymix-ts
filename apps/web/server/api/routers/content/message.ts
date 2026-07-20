@@ -8,8 +8,9 @@
  * content.message.countUnread: 안읽은 카운트 (인증 필요)
  */
 import { z } from 'zod';
-import { router, protectedProcedure } from '../../trpc';
-import { MessageService, createMessageService, type MessageHooks } from '@rhymix-ts/message';
+import { router, protectedProcedure, publicProcedure } from '../../trpc';
+import type { Context } from '../../context';
+import { MessageService, createMessageService, defaultMessageConfig, type MessageHooks } from '@rhymix-ts/message';
 import { createNotificationService } from '@rhymix-ts/notification';
 import {
   MessageSendInputSchema,
@@ -26,6 +27,24 @@ function getMessageService(): MessageService {
   return messageService;
 }
 
+/**
+ * 관리자 "쪽지 시스템 사용" 토글 조회 — REQ-MSG-005.
+ *
+ * public.social.getConfig 와 동일한 패턴: SiteSetting(member.feature.allowMessages)을
+ * 직접 조회한다. 행 부재 시 기본값 true(허용).
+ */
+// @MX:ANCHOR: [AUTO] fan_in=2 (send mutation + getConfig query) — REQ-MSG-005 admin toggle read path
+async function isMessagingEnabled(ctx: Context): Promise<boolean> {
+  const siteId = ctx.siteId ?? (await ctx.prisma.site.findFirst({ orderBy: { id: 'asc' } }))?.id;
+  if (siteId === undefined) {
+    return true;
+  }
+  const setting = await ctx.prisma.siteSetting.findUnique({
+    where: { siteId_key: { siteId, key: 'member.feature.allowMessages' } },
+  });
+  return (setting?.value as boolean | undefined) ?? true;
+}
+
 export const contentMessageRouter = router({
   /**
    * 쪽지 발송 — REQ-MSG-001
@@ -38,6 +57,7 @@ export const contentMessageRouter = router({
     .mutation(async ({ ctx, input }) => {
       const senderId = Number(ctx.session.user.id);
       const notificationService = createNotificationService(ctx.prisma);
+      const enabled = await isMessagingEnabled(ctx);
 
       const hooks: MessageHooks = {
         onNewMessage: async ({ messageId, senderId: actorId, receiverId }) => {
@@ -57,7 +77,8 @@ export const contentMessageRouter = router({
         },
       };
 
-      return getMessageService().sendMessage(senderId, input, hooks);
+      // REQ-MSG-005: 관리자 설정(member.feature.allowMessages)을 요청마다 반영한다.
+      return createMessageService({ ...defaultMessageConfig, enabled }).sendMessage(senderId, input, hooks);
     }),
 
   /**
@@ -94,7 +115,7 @@ export const contentMessageRouter = router({
     }),
 
   /**
-   * 쪽지 삭제 — REQ-MSG-004
+   * 쪽지 삭제 — AC-MSG-004 (양측 독립 삭제)
    */
   delete: protectedProcedure
     .input(MessageDeleteInputSchema)
@@ -111,5 +132,16 @@ export const contentMessageRouter = router({
     const userId = Number(ctx.session.user.id);
     const count = await getMessageService().countUnread(userId);
     return { count };
+  }),
+
+  /**
+   * 쪽지 시스템 사용 여부 — REQ-MSG-005
+   *
+   * /messages 페이지 접근 제어 + "쪽지 보내기" 버튼 노출 여부 판단용.
+   * public.social.getConfig 와 동일하게 비로그인 사용자도 조회 가능해야
+   * 로그인 화면 진입 전에도 UI를 올바르게 숨길 수 있다.
+   */
+  getConfig: publicProcedure.query(async ({ ctx }) => {
+    return { enabled: await isMessagingEnabled(ctx) };
   }),
 });

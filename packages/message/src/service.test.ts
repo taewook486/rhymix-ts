@@ -9,6 +9,7 @@ import {
   MessageNotFoundError,
   MessageNoPermissionError,
   MessageSystemDisabledError,
+  MessageReceiverOptedOutError,
 } from './errors';
 
 // Mock Prisma client
@@ -95,7 +96,7 @@ describe('MessageService', () => {
       );
     });
 
-    it('should throw MessageBlockedError when receiver denied (REQ-MSG-004)', async () => {
+    it('should throw MessageBlockedError when receiver denied (REQ-MSG-001)', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
         id: 2,
         denied: true,
@@ -103,6 +104,18 @@ describe('MessageService', () => {
 
       await expect(service.sendMessage(senderId, input)).rejects.toThrow(
         MessageBlockedError
+      );
+    });
+
+    it('should throw MessageReceiverOptedOutError when receiver disabled message reception (REQ-MSG-004)', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        id: 2,
+        denied: false,
+        allowMessages: false,
+      } as any);
+
+      await expect(service.sendMessage(senderId, input)).rejects.toThrow(
+        MessageReceiverOptedOutError
       );
     });
 

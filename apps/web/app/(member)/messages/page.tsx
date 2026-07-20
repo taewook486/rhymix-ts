@@ -44,11 +44,25 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
     redirect('/login?callbackUrl=/messages');
   }
 
+  const caller = await getServerCaller();
+
+  // REQ-MSG-005: 관리자가 쪽지 시스템을 비활성화하면 /messages 접근을 비노출한다.
+  const { enabled } = await caller.content.message.getConfig();
+  if (!enabled) {
+    return (
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6">쪽지함</h1>
+        <p className="text-zinc-500 text-sm py-8 text-center">
+          현재 쪽지 기능을 사용할 수 없습니다.
+        </p>
+      </main>
+    );
+  }
+
   const { folder: folderParam, id: idParam } = await searchParams;
   const folder: 'inbox' | 'sent' = folderParam === 'sent' ? 'sent' : 'inbox';
   const selectedId = idParam ? Number(idParam) : null;
 
-  const caller = await getServerCaller();
   const { messages } = await caller.content.message.list({ folder, limit: 50 });
 
   let selected =

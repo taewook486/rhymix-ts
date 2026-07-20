@@ -378,6 +378,8 @@ model User {
   twoFactorEnabled      Boolean    @default(false)
   twoFactorConfirmedAt  DateTime?  @db.Timestamptz
   twoFactorBackupCodes  Json       @default("[]")  // SHA-256 해시 배열 (1회용 백업 코드)
+  // SPEC-MESSAGE-001 REQ-MSG-004: 쪽지 수신 허용 여부 (opt-out, 행 부재/기본값=허용)
+  allowMessages         Boolean    @default(true)
 
   @@index([status])
   @@index([emailAddress])

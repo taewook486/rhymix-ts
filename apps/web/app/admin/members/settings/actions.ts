@@ -235,6 +235,8 @@ const UpdateFeatureSettingsSchema = z.object({
   allowProfileImage: z.boolean().default(true),
   allowSignature: z.boolean().default(true),
   exposeInMemberSearch: z.boolean().default(true),
+  // SPEC-MESSAGE-001 REQ-MSG-005: 쪽지 시스템 활성화/비활성화
+  allowMessages: z.boolean().default(true),
 })
 
 export async function updateFeatureSettingsAction(
@@ -245,6 +247,7 @@ export async function updateFeatureSettingsAction(
     allowProfileImage: formData.get('allowProfileImage') === 'on',
     allowSignature: formData.get('allowSignature') === 'on',
     exposeInMemberSearch: formData.get('exposeInMemberSearch') === 'on',
+    allowMessages: formData.get('allowMessages') === 'on',
   })
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors }

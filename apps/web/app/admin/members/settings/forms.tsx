@@ -603,6 +603,7 @@ export function FeatureSettingsForm({
     allowProfileImage: boolean;
     allowSignature: boolean;
     exposeInMemberSearch: boolean;
+    allowMessages: boolean;
   };
 }) {
   const [state, formAction, isPending] = useActionState(
@@ -651,6 +652,18 @@ export function FeatureSettingsForm({
             className="rounded"
           />
           <span className="text-sm font-medium">회원 검색 노출</span>
+        </label>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="allowMessages"
+            defaultChecked={initial.allowMessages}
+            className="rounded"
+          />
+          <span className="text-sm font-medium">쪽지 시스템 사용</span>
         </label>
       </div>
 

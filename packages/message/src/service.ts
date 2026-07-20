@@ -15,6 +15,7 @@ import {
   MessageNotFoundError,
   MessageNoPermissionError,
   MessageSystemDisabledError,
+  MessageReceiverOptedOutError,
 } from './errors';
 
 /**
@@ -58,7 +59,7 @@ export class MessageService {
     // 수신자 존재 검증
     const receiver = await prisma.user.findUnique({
       where: { id: input.receiverId },
-      select: { id: true, denied: true },
+      select: { id: true, denied: true, allowMessages: true },
     });
 
     if (!receiver) {
@@ -68,6 +69,11 @@ export class MessageService {
     // 차단된 사용자 체크
     if (receiver.denied) {
       throw new MessageBlockedError();
+    }
+
+    // 쪽지 수신 거부 설정 체크 (REQ-MSG-004)
+    if (receiver.allowMessages === false) {
+      throw new MessageReceiverOptedOutError();
     }
 
     // 쪽지 생성

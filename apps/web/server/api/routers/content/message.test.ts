@@ -22,6 +22,12 @@ const { mockMessageService } = vi.hoisted(() => ({
 
 vi.mock('@rhymix-ts/message', () => ({
   createMessageService: vi.fn(() => mockMessageService),
+  defaultMessageConfig: {
+    enabled: true,
+    maxContentLength: 2000,
+    maxSubjectLength: 200,
+    messagePerPage: 20,
+  },
   MessageSendInputSchema: z.object({
     receiverId: z.number(),
     subject: z.string(),
@@ -60,12 +66,17 @@ describe('contentMessageRouter', () => {
     session: {
       user: { id: userId },
     },
+    siteId: 1,
     prisma: {
       user: {
         findUnique: vi.fn().mockResolvedValue({ nickName: 'tester' }),
       },
       notification: {
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      // REQ-MSG-005: isMessagingEnabled() 조회 대상 (기본값 null → enabled=true)
+      siteSetting: {
+        findUnique: vi.fn().mockResolvedValue(null),
       },
     },
   });
@@ -149,6 +160,62 @@ describe('contentMessageRouter', () => {
 
       expect(result).toEqual({ count: 5 });
       expect(mockService.countUnread).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('getConfig procedure (REQ-MSG-005)', () => {
+    it('should return enabled=true when no SiteSetting row exists', async () => {
+      const { createCallerFactory } = await import('../../trpc');
+      const caller = createCallerFactory(contentMessageRouter)(createMockContext(1) as any);
+
+      const result = await caller.getConfig();
+
+      expect(result).toEqual({ enabled: true });
+    });
+
+    it('should return enabled=false when admin disabled the message system', async () => {
+      const ctx = createMockContext(1);
+      vi.mocked(ctx.prisma.siteSetting.findUnique).mockResolvedValueOnce({ value: false } as any);
+
+      const { createCallerFactory } = await import('../../trpc');
+      const caller = createCallerFactory(contentMessageRouter)(ctx as any);
+
+      const result = await caller.getConfig();
+
+      expect(result).toEqual({ enabled: false });
+    });
+  });
+
+  describe('send procedure — admin toggle wiring (REQ-MSG-005)', () => {
+    it('should construct the service with enabled=false when admin disabled the system', async () => {
+      const ctx = createMockContext(1);
+      vi.mocked(ctx.prisma.siteSetting.findUnique).mockResolvedValueOnce({ value: false } as any);
+      mockService.sendMessage.mockResolvedValueOnce({ id: 101 });
+
+      const { createMessageService } = (await import('@rhymix-ts/message')) as any;
+      const { createCallerFactory } = await import('../../trpc');
+      const caller = createCallerFactory(contentMessageRouter)(ctx as any);
+
+      await caller.send({ receiverId: 2, subject: 'Test', content: 'Content' });
+
+      expect(createMessageService).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: false })
+      );
+    });
+
+    it('should construct the service with enabled=true by default', async () => {
+      const ctx = createMockContext(1);
+      mockService.sendMessage.mockResolvedValueOnce({ id: 102 });
+
+      const { createMessageService } = (await import('@rhymix-ts/message')) as any;
+      const { createCallerFactory } = await import('../../trpc');
+      const caller = createCallerFactory(contentMessageRouter)(ctx as any);
+
+      await caller.send({ receiverId: 2, subject: 'Test', content: 'Content' });
+
+      expect(createMessageService).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: true })
+      );
     });
   });
 });

@@ -3,7 +3,8 @@
  *
  * SPEC-MESSAGE-001 error scenarios:
  * - Receiver not found (REQ-MSG-001)
- * - Receiver has blocked messages (REQ-MSG-004)
+ * - Receiver has blocked messages (REQ-MSG-001)
+ * - Receiver opted out of receiving messages (REQ-MSG-004)
  * - Cannot send to self (implicit)
  * - Message not found (delete/read operations)
  * - No permission (accessing other's messages)
@@ -48,5 +49,12 @@ export class MessageSystemDisabledError extends Error {
   constructor() {
     super('Message system is disabled by admin');
     this.name = 'MessageSystemDisabledError';
+  }
+}
+
+export class MessageReceiverOptedOutError extends Error {
+  constructor() {
+    super('Receiver does not accept messages');
+    this.name = 'MessageReceiverOptedOutError';
   }
 }

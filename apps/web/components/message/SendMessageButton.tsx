@@ -41,6 +41,9 @@ export function SendMessageButton({
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
 
+  // REQ-MSG-005: 관리자가 쪽지 시스템을 비활성화하면 버튼을 노출하지 않는다.
+  const { data: config } = trpc.content.message.getConfig.useQuery();
+
   const sendMutation = trpc.content.message.send.useMutation({
     onSuccess: () => {
       toast.success('쪽지를 보냈습니다.');
@@ -54,7 +57,8 @@ export function SendMessageButton({
   });
 
   // 비로그인이거나 자기 자신에게는 버튼을 표시하지 않는다 (REQ-MSG-001).
-  if (currentUserId == null || currentUserId === receiverId) {
+  // 관리자가 쪽지 시스템을 껐을 때도 표시하지 않는다 (REQ-MSG-005).
+  if (currentUserId == null || currentUserId === receiverId || config?.enabled === false) {
     return null;
   }
 

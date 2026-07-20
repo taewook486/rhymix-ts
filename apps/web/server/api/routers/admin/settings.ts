@@ -102,6 +102,8 @@ const FeatureSettingsSchema = z.object({
   allowProfileImage: z.boolean().default(true),
   allowSignature: z.boolean().default(true),
   exposeInMemberSearch: z.boolean().default(true),
+  // SPEC-MESSAGE-001 REQ-MSG-005: 쪽지 시스템 활성화/비활성화
+  allowMessages: z.boolean().default(true),
 });
 
 // REQ-ADMIN2-054/055: 가입 양식 커스터마이징
@@ -625,6 +627,11 @@ export const adminSettingsRouter = router({
           'member.feature.exposeInMemberSearch',
           true,
         ),
+        allowMessages: await getSiteSetting(
+          ctx,
+          'member.feature.allowMessages',
+          true,
+        ),
       };
 
       return FeatureSettingsSchema.parse(settings);
@@ -659,6 +666,12 @@ export const adminSettingsRouter = router({
           txCtx,
           'member.feature.exposeInMemberSearch',
           input.exposeInMemberSearch,
+          actorId,
+        );
+        await setSiteSetting(
+          txCtx,
+          'member.feature.allowMessages',
+          input.allowMessages,
           actorId,
         );
       });
