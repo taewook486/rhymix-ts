@@ -2,9 +2,9 @@
 id: SPEC-MESSAGE-001
 title: 쪽지(DM) 시스템 — 회원간 1:1 개인 메시지
 version: 1.0.0
-status: in-progress
+status: completed
 created: 2026-06-27
-updated: 2026-07-19
+updated: 2026-07-20
 author: MoAI gap-analysis
 priority: P3
 phase: 6
