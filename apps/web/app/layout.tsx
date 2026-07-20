@@ -28,13 +28,17 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   // SPEC-SEO-001 REQ-SEO-006, AC-SEO-006: Google Analytics ID 설정 시 전 페이지에 스크립트 삽입
-  const { googleAnalyticsId } = await getSeoSettings({ prisma });
+  const { googleAnalyticsId, naverSiteVerificationCode } = await getSeoSettings({ prisma });
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* REQ-THEME-POLISH-033: FOIT 방지 — React hydration 전에 다크모드 클래스 주입 */}
         <script dangerouslySetInnerHTML={{ __html: colorSchemeScript }} />
+        {/* SPEC-SEO-001 REQ-SEO-006: Naver 사이트 인증 코드 설정 시 전 페이지에 삽입 */}
+        {naverSiteVerificationCode && (
+          <meta name="naver-site-verification" content={naverSiteVerificationCode} />
+        )}
         {googleAnalyticsId && (
           <>
             <Script

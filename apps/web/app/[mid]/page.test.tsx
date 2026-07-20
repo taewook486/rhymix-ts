@@ -40,8 +40,13 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+const mockBoardFindUnique = vi.fn();
 vi.mock('@/lib/db/prisma', () => ({
-  prisma: {},
+  prisma: {
+    board: {
+      findUnique: (...args: unknown[]) => mockBoardFindUnique(...args),
+    },
+  },
 }));
 
 // SPEC-LAYOUT-001: renderModuleWithLayout을 패스스루로 mock
@@ -131,5 +136,73 @@ describe('[mid] page (Slice B — module delegation)', () => {
         searchParams: Promise.resolve({}),
       }),
     ).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+});
+
+describe('[mid] generateMetadata (SPEC-SEO-001 REQ-SEO-001)', () => {
+  const mockInstance = {
+    id: 1,
+    siteId: 1,
+    moduleCode: 'board',
+    mid: 'notice',
+    name: 'Notice',
+    config: null,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockHeadersGet.mockImplementation((key: string) => {
+      if (key === 'x-site-id') return '1';
+      return null;
+    });
+    mockGetModuleInstanceByMid.mockResolvedValue(mockInstance);
+  });
+
+  it('returns board name as title and board description as description', async () => {
+    mockBoardFindUnique.mockResolvedValueOnce({
+      moduleInstanceId: 1,
+      name: '공지사항',
+      description: '공지사항 게시판입니다.',
+      feedConfig: {},
+    });
+
+    const { generateMetadata } = await import('./page');
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ mid: 'notice' }),
+      searchParams: Promise.resolve({}),
+    });
+
+    expect(metadata.title).toBe('공지사항');
+    expect(metadata.description).toBe('공지사항 게시판입니다.');
+  });
+
+  it('omits description when the board has none', async () => {
+    mockBoardFindUnique.mockResolvedValueOnce({
+      moduleInstanceId: 1,
+      name: '공지사항',
+      description: null,
+      feedConfig: {},
+    });
+
+    const { generateMetadata } = await import('./page');
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ mid: 'notice' }),
+      searchParams: Promise.resolve({}),
+    });
+
+    expect(metadata.title).toBe('공지사항');
+    expect(metadata.description).toBeUndefined();
+  });
+
+  it('returns empty metadata when the board is not found', async () => {
+    mockBoardFindUnique.mockResolvedValueOnce(null);
+
+    const { generateMetadata } = await import('./page');
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ mid: 'notice' }),
+      searchParams: Promise.resolve({}),
+    });
+
+    expect(metadata).toEqual({});
   });
 });

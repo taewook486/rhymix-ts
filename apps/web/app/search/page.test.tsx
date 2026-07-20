@@ -177,3 +177,21 @@ describe('/search page', () => {
     expect(container.textContent).toContain('3');
   });
 });
+
+describe('/search generateMetadata (SPEC-SEO-001 REQ-SEO-001)', () => {
+  it("returns title \"'{검색어}' 검색 결과\" when q is present", async () => {
+    const { generateMetadata } = await import('./page');
+
+    const metadata = await generateMetadata({ searchParams: { q: '테스트' } });
+
+    expect(metadata.title).toBe("'테스트' 검색 결과");
+  });
+
+  it('returns empty metadata when q is missing', async () => {
+    const { generateMetadata } = await import('./page');
+
+    const metadata = await generateMetadata({ searchParams: {} });
+
+    expect(metadata).toEqual({});
+  });
+});

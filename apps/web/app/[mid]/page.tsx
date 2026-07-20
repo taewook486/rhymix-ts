@@ -55,14 +55,22 @@ export async function generateMetadata({ params }: MidPageProps): Promise<Metada
     return {};
   }
 
+  // SPEC-SEO-001 REQ-SEO-001: 게시판 목록 title/description
+  // (title.template이 layout.tsx에서 "%s | Rhymix-TS"를 자동으로 붙인다)
+  const seoMetadata: Metadata = {
+    title: board.name,
+    description: board.description || undefined,
+  };
+
   const feedConfig = boardFeedConfigSchema.parse(board.feedConfig ?? {});
   const alternates = resolveFeedAlternates(feedConfig, mid);
 
   if (!alternates) {
-    return {};
+    return seoMetadata;
   }
 
   return {
+    ...seoMetadata,
     alternates: {
       types: alternates,
     },

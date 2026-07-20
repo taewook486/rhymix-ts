@@ -3,6 +3,7 @@
  *
  * Server Component for displaying search results grouped by board.
  */
+import type { Metadata } from 'next';
 import { createCallerFactory } from '@/server/api/trpc';
 import { contentSearchRouter } from '@/server/api/routers/content/search';
 import { auth } from '@/lib/auth/config';
@@ -19,6 +20,20 @@ interface SearchPageProps {
     field?: 'title' | 'content' | 'author';
     sort?: 'relevance' | 'latest';
     page?: string;
+  };
+}
+
+/**
+ * SPEC-SEO-001 REQ-SEO-001: 검색 결과 title="'{검색어}' 검색 결과 | {사이트명}"
+ * (title.template이 layout.tsx에서 "%s | Rhymix-TS"를 자동으로 붙인다)
+ */
+export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
+  const { q = '' } = searchParams;
+  if (!q) {
+    return {};
+  }
+  return {
+    title: `'${q}' 검색 결과`,
   };
 }
 
