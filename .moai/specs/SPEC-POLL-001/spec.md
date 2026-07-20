@@ -4,7 +4,7 @@ title: 설문(투표) 모듈 — 게시물 연동 및 독립 설문 위젯
 version: 1.0.0
 status: in-progress
 created: 2026-06-27
-updated: 2026-07-19
+updated: 2026-07-20
 author: MoAI gap-analysis
 priority: P3
 phase: 6
