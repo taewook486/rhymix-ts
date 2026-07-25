@@ -2,9 +2,9 @@
 id: SPEC-POLL-001
 title: 설문(투표) 모듈 — 게시물 연동 및 독립 설문 위젯
 version: 1.0.0
-status: in-progress
+status: completed
 created: 2026-06-27
-updated: 2026-07-20
+updated: 2026-07-25
 author: MoAI gap-analysis
 priority: P3
 phase: 6
@@ -22,6 +22,7 @@ language: ko
 ## HISTORY
 
 - 2026-06-27 (v1.0.0): 최초 작성. 레거시 Rhymix poll 모듈은 게시물에 설문을 첨부하거나 독립 설문 위젯으로 운영하는 기능을 제공. SPEC-MODULE-BACKLOG-001에서 KEEP 분류. 커뮤니티의 의사결정/의견수렴에 핵심적인 기능.
+- 2026-07-25: status를 completed로 갱신. REQ-POLL-001~005 전부 구현 확인 (마지막 REQ-POLL-004 독립 설문 위젯 커밋 3f27281).
 
 ---
 
