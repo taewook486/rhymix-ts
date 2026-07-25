@@ -2,9 +2,9 @@
 id: SPEC-SOCIAL-LOGIN-001
 title: 소셜 로그인 통합 (카카오 / 구글 OAuth2)
 version: 1.0.0
-status: in-progress
+status: completed
 created: 2026-06-27
-updated: 2026-07-19
+updated: 2026-07-25
 author: MoAI gap-analysis
 priority: P1
 phase: 4
@@ -20,6 +20,7 @@ language: ko
 ## HISTORY
 
 - 2026-06-27 (v1.0.0): 최초 작성. Gap Analysis 결과, 레거시 Rhymix는 카카오/네이버/구글/페이스북 소셜 로그인을 지원하나 뉴버전에는 없음. 한국 서비스에서 소셜 로그인은 사실상 필수. 뉴버전은 Auth.js(NextAuth.js v5) 기반으로, OAuth Provider 추가가 Auth.js 패턴으로 구현 가능하다.
+- 2026-07-25: status를 completed로 갱신. REQ-SOCIAL-001~006 전부 구현 확인 (마지막 REQ-SOCIAL-005 관리자 설정 기반 동적 자격증명 커밋 2b4f84a).
 
 ---
 
