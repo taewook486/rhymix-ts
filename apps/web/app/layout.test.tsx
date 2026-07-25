@@ -182,6 +182,35 @@ describe('Root Layout - SPEC-INSTALL-003 Group 5', () => {
 
     expect(meta).toBeNull();
   });
+
+  /**
+   * SPEC-SEO-001 REQ-SEO-001, AC-SEO-005
+   * 관리자가 기본 설명을 변경하면 홈페이지 meta description에 반영된다.
+   */
+  it('관리자가 defaultMetaDescription을 설정하면 홈페이지 meta description에 반영된다', async () => {
+    mockGetSeoSettings.mockResolvedValue({
+      googleAnalyticsId: '',
+      naverSiteVerificationCode: '',
+      defaultMetaDescription: '관리자가 설정한 사이트 설명',
+    });
+
+    const { generateMetadata } = await import('./layout');
+    const metadata = await generateMetadata();
+
+    expect(metadata.description).toBe('관리자가 설정한 사이트 설명');
+  });
+
+  it('defaultMetaDescription 미설정 시 기본 설명으로 대체된다', async () => {
+    mockGetSeoSettings.mockResolvedValue({
+      googleAnalyticsId: '',
+      naverSiteVerificationCode: '',
+    });
+
+    const { generateMetadata } = await import('./layout');
+    const metadata = await generateMetadata();
+
+    expect(metadata.description).toBe('TypeScript + Next.js 16 redesign of Rhymix CMS');
+  });
 });
 
 /**

@@ -14,15 +14,22 @@ import { colorSchemeScript } from '@/lib/theme/color-scheme-script';
 import { prisma } from '@/lib/db/prisma';
 import { getSeoSettings } from '@rhymix-ts/admin';
 
-export const metadata: Metadata = {
-  title: {
-    default: 'Rhymix-TS',
-    template: '%s | Rhymix-TS',
-  },
-  description: 'TypeScript + Next.js 16 redesign of Rhymix CMS',
-  generator: 'Rhymix-TS',
-  robots: { index: false, follow: false },
-};
+// SPEC-SEO-001 REQ-SEO-001, AC-SEO-005: 관리자 SEO 설정의 기본 설명이
+// 변경되면 홈페이지 meta description에 반영되어야 하므로, 정적 객체 대신
+// generateMetadata()로 매 요청마다 admin 설정을 읽는다.
+export async function generateMetadata(): Promise<Metadata> {
+  const { defaultMetaDescription } = await getSeoSettings({ prisma });
+
+  return {
+    title: {
+      default: 'Rhymix-TS',
+      template: '%s | Rhymix-TS',
+    },
+    description: defaultMetaDescription || 'TypeScript + Next.js 16 redesign of Rhymix CMS',
+    generator: 'Rhymix-TS',
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function RootLayout({
   children,
