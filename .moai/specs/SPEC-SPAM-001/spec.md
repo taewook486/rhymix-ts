@@ -4,7 +4,7 @@ title: 스팸 필터 — 게시물/댓글/회원 자동 스팸 탐지 및 차단
 version: 1.0.0
 status: completed
 created: 2026-06-27
-updated: 2026-07-19
+updated: 2026-07-25
 author: MoAI gap-analysis
 priority: P3
 phase: 6
