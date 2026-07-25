@@ -19,6 +19,7 @@ import { getSeoSettings } from '@rhymix-ts/admin';
 import { SendMessageButton } from '@/components/message/SendMessageButton';
 import { PollWidget } from '@/components/poll/PollWidget';
 import { ArticleJsonLd } from '@/components/seo/ArticleJsonLd';
+import { ReportButton } from '@/components/report/ReportButton';
 
 interface ViewPageProps {
   params: Promise<{ mid: string; id: string }>;
@@ -208,6 +209,14 @@ export default async function ViewPage({ params, searchParams }: ViewPageProps) 
     renderPoll: documentPoll
       ? () => <PollWidget pollId={documentPoll.pollId} memberId={typedSession?.user.id ?? null} />
       : undefined,
+    // SPEC-SPAM-001 REQ-SPAM-003: 액션바에 "신고" 액션 주입
+    renderReportAction: (docId: number, authorId?: number | null) => (
+      <ReportButton
+        documentId={docId}
+        authorId={authorId}
+        currentUserId={typedSession?.user.id ?? null}
+      />
+    ),
   } as Parameters<typeof def.routes.view>[0]);
 
   return (

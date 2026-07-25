@@ -50,6 +50,12 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
    * apps/web 레이어가 문서에 연결된 설문 존재 여부를 조회해 주입한다.
    */
   renderPoll?: () => React.ReactNode;
+  /**
+   * SPEC-SPAM-001 REQ-SPAM-003: 액션바에 표시할 "신고" 액션.
+   * apps/web 레이어에서 주입되는 render-prop — packages/board 는 실제 신고
+   * 접수 로직을 알지 못하고, 상위(apps/web)에서 렌더링을 위임받아 표시만 한다.
+   */
+  renderReportAction?: (documentId: number, authorId?: number | null) => React.ReactNode;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,7 +70,7 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
  * @MX:SPEC: SPEC-CONTENT-001, SPEC-BOARD-UI-001 REQ-BUI-006, REQ-BUI-007
  */
 export async function BoardViewPage(props: BoardViewPageProps): Promise<React.ReactElement> {
-  const { instance, documentId, prisma, session, renderSendMessageAction, renderPoll } = props;
+  const { instance, documentId, prisma, session, renderSendMessageAction, renderPoll, renderReportAction } = props;
   const mid = instance.mid;
 
   // 병렬 데이터 로드 — 문서/댓글/첨부파일
@@ -243,6 +249,8 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
             </button>
           </>
         )}
+        {/* SPEC-SPAM-001 REQ-SPAM-003: 신고 액션 */}
+        {renderReportAction?.(documentId, doc.authorId)}
       </div>
     </main>
   );
