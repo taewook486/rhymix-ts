@@ -50,7 +50,7 @@ vi.mock('@rhymix-ts/db', () => ({
 }));
 
 // Auth.js NextAuth 인스턴스 부수효과를 피하기 위해 next-auth 자체를 흉내낸다.
-// authConfig 만 import 하면 NextAuth() 가 실행되므로, 그 결과는 무시한다.
+// config.ts 를 import 하면 buildAuthConfig 경유로 NextAuth() 가 실행되므로, 그 결과는 무시한다.
 vi.mock('next-auth', () => {
   return {
     default: (_config: unknown) => ({
@@ -77,13 +77,14 @@ vi.mock('./callbacks', () => ({
 // SUT import (must be after vi.mock)
 // ---------------------------------------------------------------------------
 
-import { authConfig } from './config';
+import { credentialsProvider } from './config';
 
-// SPEC-SOCIAL-LOGIN-001로 Kakao/Google OAuth provider가 앞에 추가되어 더 이상
-// providers[0]이 Credentials가 아니므로, name으로 찾는다.
-// Credentials()의 config가 그대로 반환되므로 authorize 함수에 직접 접근 가능.
+// SPEC-SOCIAL-LOGIN-001 REQ-SOCIAL-005: Kakao/Google provider는 socialAuth()로
+// 매 요청마다 동적으로 구성되므로(async config-factory), config.ts는 Credentials
+// provider만 별도 상수로 export한다. Credentials()의 config가 그대로 반환되므로
+// authorize 함수에 직접 접근 가능하다.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const provider = (authConfig.providers as any[]).find((p) => p.name === 'credentials');
+const provider = credentialsProvider as any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const authorize: (
   credentials: Record<string, unknown> | undefined,
@@ -100,7 +101,7 @@ function makeReq(): Request {
   });
 }
 
-describe('authConfig.providers[0].authorize — Slice H', () => {
+describe('credentialsProvider.authorize — Slice H', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
