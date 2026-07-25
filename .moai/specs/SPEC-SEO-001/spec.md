@@ -2,9 +2,9 @@
 id: SPEC-SEO-001
 title: SEO 기반 구축 — sitemap.xml / robots.txt / Open Graph / JSON-LD
 version: 1.0.0
-status: in-progress
+status: completed
 created: 2026-06-27
-updated: 2026-07-20
+updated: 2026-07-25
 author: MoAI gap-analysis
 priority: P2
 phase: 5
@@ -21,6 +21,7 @@ language: ko
 ## HISTORY
 
 - 2026-06-27 (v1.0.0): 최초 작성. 레거시 Rhymix는 sitemap 모듈과 SEO 설정으로 검색 엔진 최적화를 지원. 뉴버전은 Next.js App Router를 사용하므로 Metadata API, sitemap.ts, robots.ts로 네이티브 구현이 가능하다. 현재 SEO 관련 구현이 전혀 없어 신규 작성.
+- 2026-07-25: status를 completed로 갱신. AC-SEO-001~006 전부 통과 확인 (마지막 AC-SEO-005 관리자 기본 설명 반영 커밋 39a3345). REQ-SEO-001의 "사용자 프로필" title/description 메타태그는 미구현 상태로 남겨둔다 — 공개 프로필 페이지 자체가 아직 존재하지 않고, 이 항목을 검증하는 AC도 없어 SPEC 완료를 막지 않는다. 프로필 페이지가 신설되면 별도 SPEC 또는 이 SPEC의 amendment로 후속 처리.
 
 ---
 
