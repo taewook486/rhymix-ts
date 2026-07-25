@@ -197,7 +197,9 @@ export async function renderBodyWithWidgets(
         // resolveContextProps가 있으면 컨텍스트 파생 props를 토큰 props에 병합한다.
         // 컨텍스트 props(인증 상태 등)가 토큰 속성 기본값을 오버라이드한다.
         // DB 조회가 필요한 위젯(tag-cloud 등)을 위해 Promise 반환도 await 한다.
-        const ctxProps = def.resolveContextProps ? await def.resolveContextProps(ctx) : {}
+        const ctxProps = def.resolveContextProps
+          ? await def.resolveContextProps(ctx, validation.props as Record<string, unknown>)
+          : {}
         const fn = def.Component as (props: Record<string, unknown>) => React.ReactNode
         const finalProps = { ...(validation.props as Record<string, unknown>), ...ctxProps }
         const element = fn(finalProps)

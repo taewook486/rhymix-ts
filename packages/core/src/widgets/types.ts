@@ -33,8 +33,13 @@ export interface WidgetDefinition<P = Record<string, unknown>> {
    * 세션 기반 위젯(login_info 등)이 인증 상태를 주입받을 때 사용한다.
    * DB 조회가 필요한 위젯(tag-cloud 등)을 위해 Promise 반환도 허용한다 —
    * 호출부(renderBodyWithWidgets)가 await 하므로 동기 반환도 그대로 호환된다.
+   * 두 번째 인자로 검증된 토큰 props를 받는다 — poll-widget처럼 인스턴스별
+   * 설정값(pollId 등)을 기준으로 DB 조회를 해야 하는 위젯을 위한 것이다.
    */
-  resolveContextProps?: (ctx: WidgetRenderContext) => Partial<P> | Promise<Partial<P>>
+  resolveContextProps?: (
+    ctx: WidgetRenderContext,
+    props?: P,
+  ) => Partial<P> | Promise<Partial<P>>
 }
 
 /**

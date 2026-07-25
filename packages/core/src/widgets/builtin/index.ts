@@ -17,6 +17,7 @@ import { registerWidget } from '../registry'
 import { loginInfoWidget } from './login-info'
 import { contentWidget } from './content'
 import { tagCloudWidget } from './tag-cloud'
+import { pollWidget } from './poll'
 
 let _initialized = false
 
@@ -29,6 +30,7 @@ export function registerBuiltinWidgets(): void {
   registerWidget(loginInfoWidget)
   registerWidget(contentWidget)
   registerWidget(tagCloudWidget)
+  registerWidget(pollWidget)
   _initialized = true
 }
 
@@ -40,4 +42,4 @@ export function resetBuiltinWidgetsInit(): void {
   _initialized = false
 }
 
-export { loginInfoWidget, contentWidget, tagCloudWidget }
+export { loginInfoWidget, contentWidget, tagCloudWidget, pollWidget }
