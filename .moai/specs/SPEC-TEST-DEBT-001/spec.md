@@ -4,7 +4,7 @@ title: 사전 존재 단위 테스트 실패 90건 Triage
 version: 1.0.0
 status: evaluated
 created: 2026-06-21
-updated: 2026-06-21
+updated: 2026-07-25
 author: MoAI manager-spec
 priority: P2
 phase: 7+
@@ -19,6 +19,7 @@ language: ko
 ## HISTORY
 
 - 2026-06-21 (v1.0.0): 최초 작성. 저장소 루트에서 `npx vitest run`(전체 모노레포)을 실행한 결과 발견된 **사전 존재(pre-existing)** 단위 테스트 실패 90건을 카탈로그화. 24개 테스트 파일 실패 / 199 통과(총 223 파일), 90개 테스트 실패 / 1724 통과 / 7 skip(총 1821 테스트). 90건 전수가 최근 작업과 **무관함을 독립 검증**함 — 일부는 직전 커밋(989fb65)의 변경 파일을 그대로 체크아웃해 동일 테스트를 재실행하여 동일 실패를 확인했고, 나머지는 최근 누구도 손대지 않은 코드 경로/파일에서 발생함을 확인. 본 SPEC은 **triage/평가 문서**이며 어떤 테스트 파일·소스 파일도 수정하지 않는다(코드 변경 0건). 4개 근본 원인 카테고리로 분류하고, 수정 우선순위와 다음 단계만 권고한다.
+- 2026-07-25: 전체 스위트(`pnpm test`, 병렬) 최종 재확인. 276 파일(271 통과/5 실패), 2490 테스트(2467 통과/8 실패/15 skip) — 파일·테스트 수 증가는 2026-06-21 이후 완료된 다수 SPEC(MEMBER-ADMIN, MENU, SEARCH, STATS, TAG, MESSAGE, POLL, SEO, SOCIAL-LOGIN, SPAM 등)의 테스트가 반영된 결과. 실패 5개 파일을 개별/소규모 재실행으로 검증: `packages/board/src/index.test.ts`(A-1), `default-tab.test.tsx`(AC-D1), `two-factor.test.ts`(M3-E1) 3건은 격리 재실행 시 전부 통과 — 카테고리 2와 동일한 WSL2 병렬 자원 경합에 의한 가짜 타임아웃으로 확인(재유도하지 않음, REQ-TDEBT-020 원칙 준용). 남은 2건은 미해결로 기록: `apps/web/server/api/routers/admin/user.test.ts`(E-5-1)는 축소된 병렬 재실행에서도 재실패(단순 경합이 아닐 가능성, 완전 단독 재실행 재확인 필요); `TokenEditor.test.tsx`(4건)는 다른 4건과 다른 에러 시그니처(`vi.mock`에 `loadTokens` export 누락 — 카테고리 1과 동일한 mock 불완전 패턴)로, 타임아웃이 아닌 재현 가능한 결함으로 보임(미검증). 본 SPEC은 triage-only 원칙(REQ-TDEBT-004, 코드 변경 0건)에 따라 이번 확인에서도 코드를 수정하지 않았다 — 두 미해결 항목은 후속 조사/수정 대상으로 남긴다.
 
 ---
 
