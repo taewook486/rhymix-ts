@@ -165,7 +165,11 @@ describe('admin.user tRPC router (Slice E-5)', () => {
     expect(result).toMatchObject({ total: 1 });
     expect(result.users).toHaveLength(1);
     expect(result.users[0]).toMatchObject({ userId: 'user1' });
-  });
+    // 이 파일의 첫 테스트로서 ./user + @rhymix-ts/auth 의존성 트리를 최초로
+    // dynamic import한다 — WSL2 D: 드라이브 콜드 트랜스파일 비용이 실측
+    // ~14초로, 전역 testTimeout(15000ms)을 근소하게 초과해 flaky하게 실패했다.
+    // 실제 요청 로직(caller.list)은 60ms 미만이므로 로직 문제가 아니다.
+  }, 30000);
 
   it('E-5-2: admin.user.list q 검색 → userId/email/nickName 포함 행만 (US-7)', async () => {
     mockUserFindMany.mockResolvedValue([]);

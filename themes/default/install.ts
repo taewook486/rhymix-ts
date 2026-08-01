@@ -92,7 +92,13 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err: unknown) => {
-  console.error('[seed] 시드 실패:', err);
-  process.exit(1);
-});
+// 이 파일은 @rhymix-ts/theme-default 패키지의 유일한 export이므로
+// `import { seedDefaultTheme } from '@rhymix-ts/theme-default'` 형태로도 로드된다.
+// 아래는 `pnpm seed:default-theme`(tsx themes/default/install.ts) CLI 실행 시에만
+// 동작해야 하며, 단순 import 시점에 실제 DB 연결을 시도해서는 안 된다.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err: unknown) => {
+    console.error('[seed] 시드 실패:', err);
+    process.exit(1);
+  });
+}
