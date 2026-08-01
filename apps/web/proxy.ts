@@ -24,7 +24,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import NextAuth from 'next-auth';
 
-import { authConfig } from './lib/auth/config';
+import { baseAuthConfig } from './lib/auth/config';
 import { prisma } from './lib/db/prisma';
 import { extractClientIp } from './lib/install/extract-ip';
 import { HSTS_HEADER_VALUE } from './lib/install/headers';
@@ -43,7 +43,7 @@ import { isMobile } from './lib/stats/bot-detector';
 
 // next-auth v5 beta31 + TS 5.9: default import resolves as namespace; cast needed
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { auth } = (NextAuth as any)(authConfig);
+const { auth } = (NextAuth as any)(baseAuthConfig);
 
 const REWRITE_TEST_PREFIX = '/api/install/rewrite-test/';
 

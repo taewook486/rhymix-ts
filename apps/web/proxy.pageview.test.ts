@@ -24,7 +24,7 @@ vi.mock('next-auth', () => ({
 }));
 
 vi.mock('./lib/auth/config', () => ({
-  authConfig: { providers: [] },
+  baseAuthConfig: { providers: [] },
 }));
 
 vi.mock('./lib/db/prisma', () => ({
