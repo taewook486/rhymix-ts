@@ -10,8 +10,9 @@ import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TokenEditor } from './TokenEditor';
 
-// Mock saveTokens Server Action
+// Mock loadTokens/saveTokens Server Actions
 vi.mock('@/app/admin/site/design/actions', () => ({
+  loadTokens: vi.fn().mockResolvedValue({ success: true, tokens: {} }),
   saveTokens: vi.fn().mockResolvedValue({ success: true }),
 }));
 
