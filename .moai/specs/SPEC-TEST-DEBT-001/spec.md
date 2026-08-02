@@ -4,7 +4,7 @@ title: 사전 존재 단위 테스트 실패 90건 Triage
 version: 1.0.0
 status: evaluated
 created: 2026-06-21
-updated: 2026-08-01
+updated: 2026-08-02
 author: MoAI manager-spec
 priority: P2
 phase: 7+
@@ -20,6 +20,7 @@ language: ko
 
 - 2026-06-21 (v1.0.0): 최초 작성. 저장소 루트에서 `npx vitest run`(전체 모노레포)을 실행한 결과 발견된 **사전 존재(pre-existing)** 단위 테스트 실패 90건을 카탈로그화. 24개 테스트 파일 실패 / 199 통과(총 223 파일), 90개 테스트 실패 / 1724 통과 / 7 skip(총 1821 테스트). 90건 전수가 최근 작업과 **무관함을 독립 검증**함 — 일부는 직전 커밋(989fb65)의 변경 파일을 그대로 체크아웃해 동일 테스트를 재실행하여 동일 실패를 확인했고, 나머지는 최근 누구도 손대지 않은 코드 경로/파일에서 발생함을 확인. 본 SPEC은 **triage/평가 문서**이며 어떤 테스트 파일·소스 파일도 수정하지 않는다(코드 변경 0건). 4개 근본 원인 카테고리로 분류하고, 수정 우선순위와 다음 단계만 권고한다.
 - 2026-07-25: 전체 스위트(`pnpm test`, 병렬) 최종 재확인. 276 파일(271 통과/5 실패), 2490 테스트(2467 통과/8 실패/15 skip) — 파일·테스트 수 증가는 2026-06-21 이후 완료된 다수 SPEC(MEMBER-ADMIN, MENU, SEARCH, STATS, TAG, MESSAGE, POLL, SEO, SOCIAL-LOGIN, SPAM 등)의 테스트가 반영된 결과. 실패 5개 파일을 개별/소규모 재실행으로 검증: `packages/board/src/index.test.ts`(A-1), `default-tab.test.tsx`(AC-D1), `two-factor.test.ts`(M3-E1) 3건은 격리 재실행 시 전부 통과 — 카테고리 2와 동일한 WSL2 병렬 자원 경합에 의한 가짜 타임아웃으로 확인(재유도하지 않음, REQ-TDEBT-020 원칙 준용). 남은 2건은 미해결로 기록: `apps/web/server/api/routers/admin/user.test.ts`(E-5-1)는 축소된 병렬 재실행에서도 재실패(단순 경합이 아닐 가능성, 완전 단독 재실행 재확인 필요); `TokenEditor.test.tsx`(4건)는 다른 4건과 다른 에러 시그니처(`vi.mock`에 `loadTokens` export 누락 — 카테고리 1과 동일한 mock 불완전 패턴)로, 타임아웃이 아닌 재현 가능한 결함으로 보임(미검증). 본 SPEC은 triage-only 원칙(REQ-TDEBT-004, 코드 변경 0건)에 따라 이번 확인에서도 코드를 수정하지 않았다 — 두 미해결 항목은 후속 조사/수정 대상으로 남긴다.
+- 2026-08-02: 본 문서가 누락하고 있던 카테고리 1 해소 사실을 추가 기록. 카테고리 1(Prisma mock 불완전, ~50+건)은 `SPEC-TEST-PRISMA-MOCK-001`(공유 완전 Prisma mock 팩토리, `packages/test-utils/src/prisma-mock.ts`)에서 이미 해소·완료(commit `b1827fe`, 상태 갱신 `18c9bc3`) — 본 SPEC 작성 당시에는 반영되지 않았던 것을 사후 확인.
 - 2026-08-01: 위 2026-07-25 미해결 2건을 후속 조사·수정 완료(본 SPEC 범위 밖, 별도 SPEC 커밋). **`user.test.ts`(E-5-1)**: 단순 경합이 아닌 두 원인의 결합으로 확정 — (a) 제품 코드 버그: `themes/default/install.ts`가 `@rhymix-ts/theme-default` 패키지의 유일한 export라, `import { seedDefaultTheme } from '@rhymix-ts/theme-default'` 형태의 정상적인 import만으로도 파일 하단의 CLI 실행부(`main().catch(...)`)까지 함께 평가되어 실제 DB(127.0.0.1:5444)에 연결을 시도하고 실패 시 `process.exit(1)`까지 호출하던 결함 — `import.meta.url` 엔트리포인트 가드로 수정(commit `1ade00c`, SPEC-ADMIN-001); (b) 테스트 인프라: 이 테스트가 파일 내 최초로 `./user`+`@rhymix-ts/auth` 의존성 트리를 dynamic import하는데, WSL2 D: 드라이브 콜드 트랜스파일 비용이 실측 14~17초로 전역 `testTimeout`(15000ms)을 근소하게 초과 — 해당 테스트 1건에 한해 30000ms로 상향(같은 commit). 격리 재실행 + 전체 22개 재실행 모두 통과 확인. **`TokenEditor.test.tsx`(4건)**: 사전 진단대로 mock 불완전으로 확정 — `vi.mock('@/app/admin/site/design/actions', ...)`이 `saveTokens`만 정의하고 컴포넌트가 함께 import하는 `loadTokens`를 누락해, mount 시 `loadTokens`가 `undefined`라 호출 시점에 에러가 나며 `isLoading`이 `false`로 내려가지 않아 폼이 영원히 렌더되지 않던 결함 — mock에 `loadTokens` 추가로 수정(commit `416fbdd`, SPEC-THEME-POLISH-001). 4/4 재실행 2회 모두 통과 확인. 이로써 2026-07-25 스냅샷의 5개 실패 파일 전건이 해소됨(3건 가짜 타임아웃 확인 + 2건 실제 수정). 본 SPEC 문서 자체는 여전히 코드를 변경하지 않았다(REQ-TDEBT-004 준수) — 실제 수정은 위 2개 커밋에서 별도 SPEC 범위로 수행됨.
 
 ---
@@ -255,5 +256,5 @@ expert-debug + expert-security가 원인을 규명한 결과, 단순 mock 갭이
 ---
 
 Version: 1.0.0
-Status: evaluated (카테고리 3은 2026-06-21 조사+수정 완료 — CRITICAL 보안 결함 확정, fail-closed 적용. 2026-07-25 스냅샷의 실패 5건은 2026-08-01 전건 해소 확인. 나머지 카테고리 1·2·4의 대다수는 평가만, 구현 대기)
-Next Action: 카테고리 1(공유 Prisma mock 팩토리) → 카테고리 2(App Router 테스트 헬퍼) → 카테고리 4(사례별). 별도 후속: SPEC-ADMIN-2FA-OTP-001(가칭, 미작성) — TOTP 백엔드 실구현(현재 TwoFactorVerifyForm.tsx는 stub).
+Status: evaluated (카테고리 3은 2026-06-21 조사+수정 완료 — CRITICAL 보안 결함 확정, fail-closed 적용. 카테고리 1은 SPEC-TEST-PRISMA-MOCK-001에서 완료. 2026-07-25 스냅샷의 실패 5건은 2026-08-01 전건 해소 확인. 나머지 카테고리 2·4는 평가만, 구현 대기)
+Next Action: 카테고리 2(App Router 테스트 헬퍼) → 카테고리 4(사례별). 별도 후속: SPEC-ADMIN-2FA-OTP-001(가칭, 미작성) — TOTP 백엔드 실구현(현재 TwoFactorVerifyForm.tsx는 stub).

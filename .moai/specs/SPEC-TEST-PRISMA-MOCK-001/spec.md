@@ -4,7 +4,7 @@ title: 공유 완전 Prisma mock 팩토리 도입 (사전 존재 테스트 실�
 version: 0.1.0
 status: completed
 created: 2026-06-25
-updated: 2026-06-27
+updated: 2026-08-02
 author: MoAI manager-spec
 priority: P2
 phase: 9
@@ -160,5 +160,5 @@ REQ ID는 `REQ-PMOCK-XXX`. 요구사항은 (3.A) 팩토리 자체의 성질, (3.
 ---
 
 Version: 0.1.0
-Status: draft (구현 대기 — run phase 위임 대상)
-Next Action: `/moai run SPEC-TEST-PRISMA-MOCK-001` — 팩토리 라이브러리·위치 결정(Q1/Q2) 후 영향 파일 마이그레이션, 카테고리 1 실패 0건·회귀 0건 검증.
+Status: completed — `packages/test-utils/src/prisma-mock.ts`(`createMockPrismaClient`, `vitest-mock-extended` `mockDeep` 기반, `$transaction` 콜백/배열 양쪽 형태 처리)로 구현 완료(commit `b1827fe`), 영향 파일 마이그레이션 및 카테고리 1 실패 해소 확인(commit `18c9bc3`에서 상태 completed로 갱신).
+Next Action: 없음 — 카테고리 2(App Router 테스트 헬퍼) 또는 카테고리 4(개별 조사)로 진행.
