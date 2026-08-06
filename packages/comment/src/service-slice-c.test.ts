@@ -1,13 +1,13 @@
 /**
- * packages/comment/src/__tests__/service-slice-c.test.ts — SPEC-COMMENT-001 Slice C (T-007)
+ * packages/comment/src/service-slice-c.test.ts — SPEC-COMMENT-001 Slice C (T-007)
  *
  * Comment service Slice C — depth limit, secret visibility, delete with votes.
  *
  * REQ-COMMENT-050~063: 비밀 댓글 가시성, depth 제한, 삭제 시 vote 카운터 정리.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { createComment, listComments, deleteComment } from '../service';
-import { CommentDepthExceededError } from '../errors';
+import { createComment, listComments, deleteComment } from './service';
+import { CommentDepthExceededError } from './errors';
 import type { Comment } from '@prisma/client';
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /**
- * packages/comment/src/__tests__/tree.test.ts — SPEC-COMMENT-001 Slice B (T-004)
+ * packages/comment/src/tree.test.ts — SPEC-COMMENT-001 Slice B (T-004)
  *
  * Comment tree functions — buildCommentTree / getCommentDepth.
  *
@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Comment } from '@prisma/client';
-import { buildCommentTree, getCommentDepth } from '../tree';
+import { buildCommentTree, getCommentDepth } from './tree';
 
 // ---------------------------------------------------------------------------
 // buildCommentTree

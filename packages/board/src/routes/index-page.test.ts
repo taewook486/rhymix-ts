@@ -11,6 +11,19 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createMockPrismaClient } from '@rhymix-ts/test-utils';
 
+// SortSelect(클라이언트 컴포넌트)가 useRouter를 사용하므로 App Router context 없이
+// renderToStaticMarkup으로 렌더할 때 필요 (SPEC-BOARD-UI-001 REQ-BUI-005 정렬 드롭다운).
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  })),
+}));
+
 describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
   beforeEach(() => {
     vi.resetModules();

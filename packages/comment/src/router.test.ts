@@ -1,12 +1,12 @@
 /**
- * packages/comment/src/__tests__/router.test.ts — SPEC-COMMENT-001 Slice B (T-004)
+ * packages/comment/src/router.test.ts — SPEC-COMMENT-001 Slice B (T-004)
  *
  * Comment tRPC router — procedure validation.
  *
  * Router에 list/create/delete 프로시저가 존재하고 올바른 input 스키마를 갖는지 검증.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { commentRouter } from '../router';
+import { commentRouter } from './router';
 import type { PrismaClient } from '@prisma/client';
 
 // ---------------------------------------------------------------------------

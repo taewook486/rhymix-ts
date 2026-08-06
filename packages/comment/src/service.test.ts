@@ -1,5 +1,5 @@
 /**
- * packages/comment/src/__tests__/service.test.ts — SPEC-COMMENT-001 Slice A (T-007)
+ * packages/comment/src/service.test.ts — SPEC-COMMENT-001 Slice A (T-007)
  *
  * Comment 도메인 함수 — createComment / listComments / deleteComment.
  *
@@ -13,7 +13,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 describe('createComment', () => {
   it('B-501: 트랜잭션 안에서 comment.create + document.update(commentCount++) 호출', async () => {
-    const { createComment } = await import('../service.js');
+    const { createComment } = await import('./service.js');
 
     const fakeDoc = {
       id: 10,
@@ -64,7 +64,7 @@ describe('createComment', () => {
   });
 
   it('B-502: 권한 거부 — guest (groupSrl=0) 가 write_comment=[1] 게시판에서 댓글 작성 시 throw', async () => {
-    const { createComment } = await import('../service.js');
+    const { createComment } = await import('./service.js');
 
     const fakeDoc = {
       id: 10,
@@ -102,7 +102,7 @@ describe('createComment', () => {
 
 describe('listComments', () => {
   it('B-503: comment.findMany 가 documentId 필터 + listOrder asc 로 호출됨', async () => {
-    const { listComments } = await import('../service.js');
+    const { listComments } = await import('./service.js');
 
     const fakeComments = [{ id: 1 }, { id: 2 }];
     const mockFindMany = vi.fn().mockResolvedValue(fakeComments);
@@ -129,7 +129,7 @@ describe('listComments', () => {
 
 describe('deleteComment', () => {
   it('B-504: 본인 작성 댓글 → 트랜잭션 안에서 comment.update(deletedAt) + document.update(commentCount--)', async () => {
-    const { deleteComment } = await import('../service.js');
+    const { deleteComment } = await import('./service.js');
 
     const fakeComment = {
       id: 100,
@@ -176,7 +176,7 @@ describe('deleteComment', () => {
   });
 
   it('B-505: 타인 작성 + non-admin → throw, 트랜잭션 미실행', async () => {
-    const { deleteComment } = await import('../service.js');
+    const { deleteComment } = await import('./service.js');
     const fakeComment = { id: 100, documentId: 10, authorId: 5 };
     const mockPrisma = {
       comment: { findUniqueOrThrow: vi.fn().mockResolvedValue(fakeComment) },

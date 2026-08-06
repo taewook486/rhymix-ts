@@ -1,5 +1,5 @@
 /**
- * packages/comment/src/__tests__/errors.test.ts — SPEC-COMMENT-001 Slice B/C (T-004/T-007)
+ * packages/comment/src/errors.test.ts — SPEC-COMMENT-001 Slice B/C (T-004/T-007)
  *
  * Comment error classes — validation.
  *
@@ -11,7 +11,7 @@ import {
   CommentNotFoundError,
   CommentAlreadyVotedError,
   SelfVoteNotAllowedError,
-} from '../errors';
+} from './errors';
 
 // ---------------------------------------------------------------------------
 // Error Classes

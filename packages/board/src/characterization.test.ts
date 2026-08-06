@@ -1,5 +1,5 @@
 /**
- * packages/board/src/__tests__/characterization.test.ts — SPEC-BOARD-CRUD-001 Slice A
+ * packages/board/src/characterization.test.ts — SPEC-BOARD-CRUD-001 Slice A
  *
  * board 패키지 public API 스냅샷 characterization 테스트.
  *

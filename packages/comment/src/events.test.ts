@@ -1,11 +1,11 @@
 /**
- * packages/comment/src/__tests__/events.test.ts — SPEC-FILE-001 Slice A
+ * packages/comment/src/events.test.ts — SPEC-FILE-001 Slice A
  *
  * commentEvents 이벤트 버스 및 emitCommentDeleted 헬퍼 검증.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { commentEvents, emitCommentDeleted } from '../events';
-import type { CommentDeletedEvent } from '../events';
+import { commentEvents, emitCommentDeleted } from './events';
+import type { CommentDeletedEvent } from './events';
 
 describe('commentEvents EventBus', () => {
   beforeEach(() => {

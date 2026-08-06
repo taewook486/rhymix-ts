@@ -1,13 +1,13 @@
 /**
- * packages/comment/src/__tests__/vote.test.ts — SPEC-COMMENT-001 Slice C (T-007)
+ * packages/comment/src/vote.test.ts — SPEC-COMMENT-001 Slice C (T-007)
  *
  * Comment voting — voteComment.
  *
  * REQ-COMMENT-030~034: 투표 카운터 원자성, 중복 투표, self-vote 거부 검증.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { voteComment } from '../service';
-import { CommentAlreadyVotedError, SelfVoteNotAllowedError } from '../errors';
+import { voteComment } from './service';
+import { CommentAlreadyVotedError, SelfVoteNotAllowedError } from './errors';
 
 // ---------------------------------------------------------------------------
 // voteComment
