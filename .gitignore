@@ -263,3 +263,5 @@ screenshots/
 .playwright-mcp/
 .tmp-report/
 test-results/
+graphify-out/
+**/graphify-out/
