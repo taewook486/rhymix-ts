@@ -102,17 +102,25 @@ async function getOrCreateSiteSetting(
     throw new SiteNotFoundError();
   }
 
-  let setting = await prisma.siteSetting.findUnique({
-    where: { siteId_key: { siteId: site.id, key } },
-  });
-
-  if (!setting) {
-    setting = await prisma.siteSetting.create({
-      data: { siteId: site.id, key, value: {} },
+  // @MX:NOTE [AUTO]: find-then-create는 병렬 요청(예: Next.js generateMetadata와
+  // 페이지 본문이 동시에 호출)에서 둘 다 "없음"을 보고 동시에 create를 호출해
+  // unique constraint 위반을 일으킬 수 있다. upsert()도 이 compound unique key
+  // 조합에서는 완전히 원자적이지 않아 같은 방식으로 실패할 수 있으므로,
+  // 충돌(P2002) 시 승자가 이미 만든 행을 재조회하는 방식으로 확실히 처리한다.
+  try {
+    return await prisma.siteSetting.upsert({
+      where: { siteId_key: { siteId: site.id, key } },
+      create: { siteId: site.id, key, value: {} },
+      update: {},
     });
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && err.code === 'P2002') {
+      return await prisma.siteSetting.findUniqueOrThrow({
+        where: { siteId_key: { siteId: site.id, key } },
+      });
+    }
+    throw err;
   }
-
-  return setting;
 }
 
 /**

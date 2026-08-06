@@ -178,7 +178,9 @@ test('AC-BUI-003: 21번째 게시물부터 페이지2로 이동하고 URL이 ?pa
   await expect(pagination).toBeVisible({ timeout: 10_000 });
 
   // 3. ?page=2 링크가 페이지네이션 안에 있어야 함
-  const page2Link = pagination.locator('a[href*="page=2"]');
+  // 페이지가 2개뿐이면 페이지번호("2")/다음(>)/마지막(>>) 링크가 모두 page=2를
+  // 가리켜 selector가 여러 개에 매칭될 수 있으므로 첫 번째(페이지번호 "2")로 고정한다.
+  const page2Link = pagination.locator('a[href*="page=2"]').first();
   await expect(page2Link, '페이지2 링크가 없습니다. 21개 문서가 있어 2번째 페이지가 필요합니다.').toBeVisible();
 
   // 4. 페이지2 링크 클릭
