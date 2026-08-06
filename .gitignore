@@ -254,6 +254,12 @@ dist-ssr/
 .moai/lessons-inbox.jsonl
 **/.moai/plans/
 **/.moai/state/
+# pnpm 워크스페이스 패키지(apps/*, packages/*, themes/*) 안에 생기는 .moai/ 폴더는
+# 전부 MoAI 툴링이 만드는 세션 스크래치(state/context-usage.json, state/session-memo.md 등)
+# — 루트 .moai/(SPEC, 설정)는 이 패턴에 걸리지 않는다.
+apps/*/.moai/
+packages/*/.moai/
+themes/*/.moai/
 
 # ===========================================
 # Test / E2E Generated Artifacts
