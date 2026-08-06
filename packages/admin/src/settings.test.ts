@@ -782,15 +782,14 @@ describe('getCommunicationSettings', () => {
   });
 
   it('should return stored communication settings', async () => {
+    // getOrCreateSiteSetting은 upsert로 직접 조회+생성한다 (경쟁 조건 방지).
+    // update: {} 는 필드를 바꾸지 않으므로, 기존 행이 있으면 그 값을 그대로 반환한다.
     const settings = new Map();
     settings.set('communication', { enabled: true, inboxLimit: 50 });
-    (mockPrisma as any).siteSetting.findUnique = async ({ where }: any) => {
+    (mockPrisma as any).siteSetting.upsert = async ({ where }: any) => {
       const key = where?.siteId_key?.key;
-      const value = settings.get(key);
-      if (value) {
-        return { id: 1, siteId: 1, key, value };
-      }
-      return null;
+      const value = settings.get(key) ?? {};
+      return { id: 1, siteId: 1, key, value };
     };
 
     const result = await getCommunicationSettings({ prisma: mockPrisma });
@@ -891,13 +890,11 @@ describe('getDebugSettings — REQ-ADMIN2-117/159/160', () => {
       deduplicateErrors: false,
       errorLogLevel: 'all_errors_warnings',
     });
-    (mockPrisma as any).siteSetting.findUnique = async ({ where }: any) => {
+    // getOrCreateSiteSetting은 upsert로 직접 조회+생성한다 (경쟁 조건 방지).
+    (mockPrisma as any).siteSetting.upsert = async ({ where }: any) => {
       const key = where?.siteId_key?.key;
-      const value = settings.get(key);
-      if (value) {
-        return { id: 1, siteId: 1, key, value };
-      }
-      return null;
+      const value = settings.get(key) ?? {};
+      return { id: 1, siteId: 1, key, value };
     };
 
     const result = await getDebugSettings({ prisma: mockPrisma });

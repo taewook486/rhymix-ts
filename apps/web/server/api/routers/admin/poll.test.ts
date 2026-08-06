@@ -303,7 +303,8 @@ describe('admin.poll tRPC router (Slice 3A)', () => {
   });
 
   it('POLL-CONFIG-001: config.get → 전역 기본값 조회', async () => {
-    mockSiteSettingFindUnique.mockResolvedValue({
+    // getOrCreateSiteSetting은 upsert로 직접 조회+생성한다 (경쟁 조건 방지).
+    mockSiteSettingUpsert.mockResolvedValue({
       id: 1,
       siteId: 1,
       key: 'pollConfig',

@@ -118,6 +118,9 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA disabled
     mockSiteSettingFindUnique.mockResolvedValue(null); // Default: no existing settings
     mockSiteSettingCreate.mockResolvedValue({ id: 1, siteId: 1, key: 'test', value: {} });
+    // getOrCreateSiteSetting은 경쟁 조건 방지를 위해 upsert를 사용한다
+    // (packages/admin/src/settings.ts) — findUnique가 null일 때 이 경로를 탄다.
+    mockSiteSettingUpsert.mockResolvedValue({ id: 1, siteId: 1, key: 'test', value: {} });
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
   });
 
@@ -883,7 +886,10 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
   });
 
   it('SETTINGS-TAGS-002: getTags → returns stored values when row exists', async () => {
-    mockSiteSettingFindUnique.mockResolvedValue({
+    // getOrCreateSiteSetting은 findUnique 없이 upsert로 직접 조회+생성한다
+    // (packages/admin/src/settings.ts, 경쟁 조건 방지) — 기존 행이 있으면
+    // update: {}가 아무 필드도 바꾸지 않아 upsert 응답이 곧 현재 저장값이다.
+    mockSiteSettingUpsert.mockResolvedValue({
       value: { cloudDisplayCount: 80, sortBy: 'name', delimiters: ['hash', 'space'] },
     });
 
@@ -978,7 +984,8 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const caller = createCaller(adminCtx as any);
 
-    mockSiteSettingFindUnique.mockResolvedValue({
+    // getOrCreateSiteSetting은 upsert로 직접 조회+생성한다 (경쟁 조건 방지).
+    mockSiteSettingUpsert.mockResolvedValue({
       id: 1,
       siteId: 1,
       key: 'communication',
@@ -1091,7 +1098,8 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const caller = createCaller(adminCtx as any);
 
-    mockSiteSettingFindUnique.mockResolvedValue({
+    // getOrCreateSiteSetting은 upsert로 직접 조회+생성한다 (경쟁 조건 방지).
+    mockSiteSettingUpsert.mockResolvedValue({
       id: 1,
       siteId: 1,
       key: 'debug',
