@@ -37,7 +37,6 @@ export default defineConfig({
         globals: true,
       },
     },
-    setupFiles: ['./apps/web/vitest.setup.ts'],
     environmentMatchGlobs: [
       ['packages/board/src/components/**/*.test.tsx', 'jsdom'],
       // SPEC-FEED-001 Slice C (T-011): board admin feed 설정 페이지 렌더 테스트
