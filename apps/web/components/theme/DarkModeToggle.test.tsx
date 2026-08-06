@@ -50,7 +50,7 @@ describe('DarkModeToggle', () => {
     );
 
     const button = screen.getByRole('button');
-    expect(button.disabled).toBe(true);
+    expect(button).toBeDisabled();
     expect(button.getAttribute('title')).toBe('이 테마는 다크모드를 지원하지 않습니다');
   });
 

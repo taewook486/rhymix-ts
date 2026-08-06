@@ -224,13 +224,13 @@ describe.skip('GlobalHeader search interaction — SPEC-SEARCH-001', () => {
     vi.mocked(mockPrisma.domain.findUnique).mockResolvedValue({
       id: 1,
       defaultMenuId: 1,
-    });
+    } as Awaited<ReturnType<typeof mockPrisma.domain.findUnique>>);
 
     vi.mocked(mockPrisma.menuItem.findMany).mockResolvedValue([
       { id: 1, title: 'Home', url: '/' },
-    ]);
+    ] as Awaited<ReturnType<typeof mockPrisma.menuItem.findMany>>);
 
-    const { default: GlobalHeader } = await import('./GlobalHeader');
+    const { GlobalHeader } = await import('./GlobalHeader');
     render(await GlobalHeader());
 
     // Search icon should be in the document
@@ -245,11 +245,11 @@ describe.skip('GlobalHeader search interaction — SPEC-SEARCH-001', () => {
     vi.mocked(mockPrisma.domain.findUnique).mockResolvedValue({
       id: 1,
       defaultMenuId: 1,
-    });
+    } as Awaited<ReturnType<typeof mockPrisma.domain.findUnique>>);
 
     vi.mocked(mockPrisma.menuItem.findMany).mockResolvedValue([]);
 
-    const { default: GlobalHeader } = await import('./GlobalHeader');
+    const { GlobalHeader } = await import('./GlobalHeader');
     render(await GlobalHeader());
 
     const searchIcon = document.querySelector('button[aria-label="검색"]') as HTMLButtonElement;
@@ -274,11 +274,11 @@ describe.skip('GlobalHeader search interaction — SPEC-SEARCH-001', () => {
     vi.mocked(mockPrisma.domain.findUnique).mockResolvedValue({
       id: 1,
       defaultMenuId: 1,
-    });
+    } as Awaited<ReturnType<typeof mockPrisma.domain.findUnique>>);
 
     vi.mocked(mockPrisma.menuItem.findMany).mockResolvedValue([]);
 
-    const { default: GlobalHeader } = await import('./GlobalHeader');
+    const { GlobalHeader } = await import('./GlobalHeader');
     render(await GlobalHeader());
 
     // Click search icon to expand input
@@ -322,11 +322,11 @@ describe.skip('GlobalHeader search interaction — SPEC-SEARCH-001', () => {
     vi.mocked(mockPrisma.domain.findUnique).mockResolvedValue({
       id: 1,
       defaultMenuId: 1,
-    });
+    } as Awaited<ReturnType<typeof mockPrisma.domain.findUnique>>);
 
     vi.mocked(mockPrisma.menuItem.findMany).mockResolvedValue([]);
 
-    const { default: GlobalHeader } = await import('./GlobalHeader');
+    const { GlobalHeader } = await import('./GlobalHeader');
     render(await GlobalHeader());
 
     // Click search icon to expand
@@ -367,11 +367,11 @@ describe.skip('GlobalHeader search interaction — SPEC-SEARCH-001', () => {
     vi.mocked(mockPrisma.domain.findUnique).mockResolvedValue({
       id: 1,
       defaultMenuId: 1,
-    });
+    } as Awaited<ReturnType<typeof mockPrisma.domain.findUnique>>);
 
     vi.mocked(mockPrisma.menuItem.findMany).mockResolvedValue([]);
 
-    const { default: GlobalHeader } = await import('./GlobalHeader');
+    const { GlobalHeader } = await import('./GlobalHeader');
     render(await GlobalHeader());
 
     // Click search icon

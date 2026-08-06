@@ -211,6 +211,8 @@ function signupErrorMessage(code: SignupErrorCode): string {
       return '필수 약관에 동의해주세요.';
     case 'SIGNUP_CLOSED':
       return '현재 회원가입이 허용되지 않거나, 가입키가 올바르지 않습니다.';
+    case 'EMAIL_HOST_DENIED':
+      return '허용되지 않는 이메일 도메인입니다. 다른 이메일 주소를 사용해주세요.';
   }
 }
 

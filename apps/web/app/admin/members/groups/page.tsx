@@ -95,7 +95,7 @@ export default async function AdminMemberGroupsPage() {
                   >
                     수정
                   </a>
-                  <form action={deleteGroupAction.bind(null, group.id)}>
+                  <form action={async () => { await deleteGroupAction(group.id); }}>
                     <button type="submit" className="text-red-600 hover:text-red-900">
                       삭제
                     </button>

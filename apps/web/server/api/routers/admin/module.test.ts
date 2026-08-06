@@ -86,7 +86,9 @@ const mockPrisma = createMockPrismaClient();
 
 // Set up defaults for audit logger and 2FA check (REQ-PMOCK-004, REQ-PMOCK-021)
 mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
-mockPrisma.adminLog.create.mockResolvedValue({ id: BigInt(1) });
+mockPrisma.adminLog.create.mockResolvedValue(
+  { id: BigInt(1) } as Awaited<ReturnType<typeof mockPrisma.adminLog.create>>,
+);
 
 // ---------------------------------------------------------------------------
 // Context fixtures
@@ -164,7 +166,9 @@ describe('admin.module tRPC router (Slice B)', () => {
 
   it('B-10: admin 세션 + module.list → prisma.moduleInstance.findMany 결과 반환', async () => {
     const rows = [{ id: 1, siteId: 1, moduleCode: 'board', mid: 'notice', name: 'Notice' }];
-    mockPrisma.moduleInstance.findMany.mockResolvedValueOnce(rows);
+    mockPrisma.moduleInstance.findMany.mockResolvedValueOnce(
+      rows as Awaited<ReturnType<typeof mockPrisma.moduleInstance.findMany>>,
+    );
 
     const { adminModuleRouter } = await import('./module');
     const { createCallerFactory } = await import('../../trpc');

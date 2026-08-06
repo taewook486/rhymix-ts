@@ -52,7 +52,9 @@ const mockPrisma = createMockPrismaClient();
 
 // Set up defaults for audit logger (REQ-PMOCK-004, REQ-PMOCK-021)
 mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
-mockPrisma.adminLog.create.mockResolvedValue({ id: BigInt(1) });
+mockPrisma.adminLog.create.mockResolvedValue(
+  { id: BigInt(1) } as Awaited<ReturnType<typeof mockPrisma.adminLog.create>>,
+);
 
 const adminCtx = {
   session: { user: { id: 1, isAdmin: true, groups: [] } },

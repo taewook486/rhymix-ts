@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,13 +37,13 @@ export async function seedDefaultTheme(prisma: PrismaClient): Promise<void> {
       name: 'default',
       displayName: 'Default Theme',
       version: '1.0.0',
-      manifest,
-      tokensSchema: manifest['tokensSchema'] ?? {},
+      manifest: manifest as Prisma.InputJsonValue,
+      tokensSchema: (manifest['tokensSchema'] ?? {}) as Prisma.InputJsonValue,
       status: 'INSTALLED',
     },
     update: {
-      manifest,
-      tokensSchema: manifest['tokensSchema'] ?? {},
+      manifest: manifest as Prisma.InputJsonValue,
+      tokensSchema: (manifest['tokensSchema'] ?? {}) as Prisma.InputJsonValue,
       displayName: 'Default Theme',
       version: '1.0.0',
     },
@@ -67,7 +67,7 @@ export async function seedDefaultTheme(prisma: PrismaClient): Promise<void> {
       layoutPath: 'themes/default/layouts/default',
       layoutType: 'DESKTOP',
       siteSrl: null,
-      extraVars: null,
+      extraVars: Prisma.DbNull,
     },
     update: {
       title: 'Default Layout',

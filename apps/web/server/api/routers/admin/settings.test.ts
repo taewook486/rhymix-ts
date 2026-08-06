@@ -20,6 +20,36 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
 
+// updateDebug 프로시저 입력 스키마와 동일한 형태 — const 변수로 분리 선언된
+// updateData 객체가 문자열 리터럴 필드에서 string으로 넓혀지는 것을 막기 위한 타입.
+// (caller.updateDebug({...})처럼 인라인으로 바로 넘기면 컨텍스트 타입 추론으로
+// 넓혀지지 않지만, const로 먼저 선언하면 넓혀지므로 명시 타입이 필요하다.)
+interface UpdateDebugInput {
+  enabled: boolean;
+  slowQueryThreshold: number;
+  slowTriggerThreshold: number;
+  slowWidgetThreshold: number;
+  slowExternalThreshold: number;
+  displayMethods: ('html_comment' | 'screen_panel' | 'file_log')[];
+  contentTypes: (
+    | 'request_response'
+    | 'debug_message'
+    | 'error'
+    | 'query'
+    | 'slow_query'
+    | 'slow_trigger'
+    | 'slow_widget'
+    | 'slow_external'
+  )[];
+  logFilePath?: string;
+  displayTarget: 'admin_only' | 'allowed_ips' | 'all';
+  allowedIps: string[];
+  addQueryComment: boolean;
+  showFullCallStack: boolean;
+  deduplicateErrors: boolean;
+  errorLogLevel: 'all_errors_warnings' | 'critical_only';
+}
+
 // NextAuth + DB mock
 vi.mock('next-auth', () => ({
   default: () => ({ auth: vi.fn() }),
@@ -1110,7 +1140,7 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const caller = createCaller(adminCtx as any);
 
-    const updateData = {
+    const updateData: UpdateDebugInput = {
       enabled: true,
       slowQueryThreshold: 0.5,
       slowTriggerThreshold: 1.0,
@@ -1144,7 +1174,7 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const caller = createCaller(adminCtx as any);
 
-    const updateData = {
+    const updateData: UpdateDebugInput = {
       enabled: false,
       slowQueryThreshold: 1.0,
       slowTriggerThreshold: 1.0,
@@ -1240,7 +1270,7 @@ describe('admin.settings tRPC router (Slice 2C)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const caller = createCaller(adminCtx as any);
 
-    const updateData = {
+    const updateData: UpdateDebugInput = {
       enabled: true,
       slowQueryThreshold: 0.3,
       slowTriggerThreshold: 0.5,

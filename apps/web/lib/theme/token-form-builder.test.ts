@@ -47,9 +47,9 @@ describe('token-form-builder', () => {
 
       const fields = buildFormFields(schema);
 
-      expect(fields[0].type).toBe('color');
-      expect(fields[1].type).toBe('color');
-      expect(fields[2].type).toBe('text');
+      expect(fields[0]!.type).toBe('color');
+      expect(fields[1]!.type).toBe('color');
+      expect(fields[2]!.type).toBe('text');
     });
 
     it('ZodNumber의 min/max 제약을 FormField min/max로 변환', () => {
@@ -122,12 +122,12 @@ describe('token-form-builder', () => {
       });
 
       const fields = buildFormFields(schema);
-      const themeGroup = fields[0];
+      const themeGroup = fields[0]!;
 
       expect(themeGroup.type).toBe('group');
       expect(themeGroup.children).toHaveLength(2);
-      expect(themeGroup.children![0].type).toBe('color');
-      expect(themeGroup.children![1].type).toBe('text');
+      expect(themeGroup.children![0]!.type).toBe('color');
+      expect(themeGroup.children![1]!.type).toBe('text');
     });
   });
 
@@ -139,7 +139,7 @@ describe('token-form-builder', () => {
 
       const fields = buildFormFields(schema, 'colors');
 
-      expect(fields[0].name).toBe('colors.primary');
+      expect(fields[0]!.name).toBe('colors.primary');
     });
 
     it('nested group에서 prefix 누적', () => {
@@ -151,8 +151,8 @@ describe('token-form-builder', () => {
 
       const fields = buildFormFields(schema, 'theme');
 
-      expect(fields[0].name).toBe('theme.colors');
-      expect(fields[0].children![0].name).toBe('theme.colors.primary');
+      expect(fields[0]!.name).toBe('theme.colors');
+      expect(fields[0]!.children![0]!.name).toBe('theme.colors.primary');
     });
   });
 
@@ -163,7 +163,7 @@ describe('token-form-builder', () => {
       });
 
       const fields = buildFormFields(schema);
-      expect(fields[0].label).toBe('Font Family Base');
+      expect(fields[0]!.label).toBe('Font Family Base');
     });
 
     it('kebab-case → Title Case', () => {
@@ -172,7 +172,7 @@ describe('token-form-builder', () => {
       });
 
       const fields = buildFormFields(schema);
-      expect(fields[0].label).toBe('Font Family Base');
+      expect(fields[0]!.label).toBe('Font Family Base');
     });
 
     it('camelCase → 분리하여 Title Case', () => {
@@ -181,7 +181,7 @@ describe('token-form-builder', () => {
       });
 
       const fields = buildFormFields(schema);
-      expect(fields[0].label).toBe('Font Family Base');
+      expect(fields[0]!.label).toBe('Font Family Base');
     });
   });
 });

@@ -98,7 +98,7 @@ vi.mock('@/lib/db/prisma', () => ({ prisma: {} }));
 const mockPrisma = createMockPrismaClient();
 mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
 mockPrisma.contentRateLimit.count.mockResolvedValue(0);
-mockPrisma.contentRateLimit.create.mockResolvedValue({});
+mockPrisma.contentRateLimit.create.mockResolvedValue({} as Awaited<ReturnType<typeof mockPrisma.contentRateLimit.create>>);
 mockPrisma.contentRateLimit.findFirst.mockResolvedValue(null);
 
 const mockStorage = {
@@ -134,7 +134,7 @@ describe('content.attachment tRPC router (Slice E)', () => {
     // Reset Prisma mocks
     mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
     mockPrisma.contentRateLimit.count.mockResolvedValue(0);
-    mockPrisma.contentRateLimit.create.mockResolvedValue({});
+    mockPrisma.contentRateLimit.create.mockResolvedValue({} as Awaited<ReturnType<typeof mockPrisma.contentRateLimit.create>>);
     mockPrisma.contentRateLimit.findFirst.mockResolvedValue(null);
     // Reset domain mocks
     mockRequestUpload.mockReset();

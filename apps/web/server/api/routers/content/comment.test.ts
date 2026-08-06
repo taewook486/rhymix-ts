@@ -86,9 +86,13 @@ describe('content.comment tRPC router (Slice B)', () => {
     mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
     // Reset Prisma comment mocks
     mockPrisma.comment.findMany.mockResolvedValue([]);
-    mockPrisma.comment.findUniqueOrThrow.mockResolvedValue(null);
+    mockPrisma.comment.findUniqueOrThrow.mockResolvedValue(
+      null as unknown as Awaited<ReturnType<typeof mockPrisma.comment.findUniqueOrThrow>>,
+    );
     // Reset Prisma user mock (needed for create comment)
-    mockPrisma.user.findUnique.mockResolvedValue({ id: 42, nickName: 'test' });
+    mockPrisma.user.findUnique.mockResolvedValue(
+      { id: 42, nickName: 'test' } as Awaited<ReturnType<typeof mockPrisma.user.findUnique>>,
+    );
     // Reset Prisma document mocks (needed for create comment)
     // Default document with board for permission checks
     const defaultDocument = {

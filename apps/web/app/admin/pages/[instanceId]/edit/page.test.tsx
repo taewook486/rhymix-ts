@@ -90,9 +90,9 @@ const mockFindUnique = prisma.moduleInstance.findUnique as ReturnType<typeof vi.
 const mockLoadPageContent = loadPageContent as ReturnType<typeof vi.fn>;
 const mockSavePageContent = savePageContent as ReturnType<typeof vi.fn>;
 const mockAuth = auth as ReturnType<typeof vi.fn>;
-const mockIsAdminSession = isAdminSession as ReturnType<typeof vi.fn>;
-const mockNotFound = notFound as ReturnType<typeof vi.fn>;
-const mockRedirect = redirect as ReturnType<typeof vi.fn>;
+const mockIsAdminSession = isAdminSession as unknown as ReturnType<typeof vi.fn>;
+const mockNotFound = notFound as unknown as ReturnType<typeof vi.fn>;
+const mockRedirect = redirect as unknown as ReturnType<typeof vi.fn>;
 
 // ---------- 테스트 ----------
 

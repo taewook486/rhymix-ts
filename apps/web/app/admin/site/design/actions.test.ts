@@ -76,7 +76,7 @@ describe('actions', () => {
     vi.mocked(themeTokensSchema.safeParse).mockReturnValue({
       success: true,
       data: {},
-    });
+    } as any);
   });
 
   describe('assignTheme', () => {

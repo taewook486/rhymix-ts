@@ -14,8 +14,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-hot-toast';
-import { getServerCaller } from '@/lib/trpc/server';
+import { toast } from 'sonner';
+import { trpc } from '@/providers/TRPCProvider';
 
 const SocialSettingsSchema = z.object({
   kakao: z.object({
@@ -53,11 +53,12 @@ export function SocialSettingsForm({ initial }: SocialSettingsFormProps) {
   const kakaoEnabled = watch('kakao.enabled');
   const googleEnabled = watch('google.enabled');
 
+  const updateSocial = trpc.admin.settings.updateSocial.useMutation();
+
   const onSubmit = async (data: SocialSettingsForm) => {
     setIsSubmitting(true);
     try {
-      const caller = await getServerCaller();
-      await caller.admin.settings.updateSocial.mutate(data);
+      await updateSocial.mutateAsync(data);
 
       toast.success('소셜 로그인 설정이 저장되었습니다.');
       router.refresh();

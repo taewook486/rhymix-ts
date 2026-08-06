@@ -12,7 +12,14 @@ afterEach(() => {
   cleanup();
 });
 
-// jest-dom 매처 확장 — toBeInTheDocument 등
+// jest-dom 매처 확장 — toBeInTheDocument 등.
+// @testing-library/jest-dom/vitest(런타임+타입 일괄 제공) 대신 이 방식을 쓴다:
+// 그 진입점은 내부에서 자체적으로 require('vitest')를 하는데, jest-dom이
+// vitest를 peerDependency로 선언하지 않아 pnpm이 apps/web의 로컬 vitest(v3)가
+// 아니라 루트의 vitest(v2)로 우회 해석할 수 있다 — 이 경우 apps/web 테스트가
+// 실행되는 실제 vitest(v3)의 expect 싱글턴에는 매처가 등록되지 않는다.
+// 여기서는 이미 올바르게 resolve된 로컬 expect를 직접 extend해 이 문제를 피한다.
+// 타입 선언(Assertion 인터페이스 보강)은 types/jest-dom.d.ts에서 별도로 처리한다.
 expect.extend(matchers);
 
 // server-only 모듈 mock — vitest 환경에서는 항상 유효한 것으로 처리
