@@ -52,6 +52,9 @@ const SITELOCK_BYPASS_PREFIXES = ['/admin', '/api/auth'] as const;
 
 const protectedRoutes = ['/dashboard', '/admin', '/settings', '/profile'];
 const authOnlyRoutes = ['/login', '/signup', '/password-reset'];
+// SPEC-BOARD-UI-001 REQ-BUI-008: 게시판 글쓰기(/{mid}/write)는 mid가 가변이라
+// protectedRoutes의 고정 prefix 방식 대신 패턴으로 매칭한다.
+const WRITE_ROUTE_PATTERN = /^\/[^/]+\/write(\/.*)?$/;
 
 /**
  * @MX:ANCHOR: [AUTO] proxy — 설치 게이트·도메인 해석·인증 보호를 순서대로 처리하는 단일 함수.
@@ -194,7 +197,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     // auth 초기화 전 또는 세션 조회 실패 — 비로그인으로 처리.
   }
 
-  const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
+  const isProtected =
+    protectedRoutes.some((r) => pathname.startsWith(r)) || WRITE_ROUTE_PATTERN.test(pathname);
   const isAuthRoute = authOnlyRoutes.some((r) => pathname.startsWith(r));
 
   if (!isLoggedIn && isProtected) {

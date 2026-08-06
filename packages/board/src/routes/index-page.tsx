@@ -11,6 +11,7 @@ import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
 import { listDocuments } from '@rhymix-ts/document';
 import { listCategoryTree } from '@rhymix-ts/document';
 import type { CategoryNode } from '@rhymix-ts/document';
+import { SortSelect } from '../components/SortSelect';
 
 /**
  * 카테고리 목록을 flat하게 변환해 <select> 옵션을 생성하는 헬퍼.
@@ -157,7 +158,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
       <tbody>
         {/* 공지 목록 */}
         {notices.map((doc) => (
-          <tr key={`notice-${doc.id}`} className="bg-gray-50 dark:bg-gray-800">
+          <tr key={`notice-${doc.id}`} data-testid="notice-row" className="bg-gray-50 dark:bg-gray-800">
             <td>
               <span className="text-orange-600 font-semibold">공지</span>
             </td>
@@ -186,7 +187,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
         {items.map((doc, index) => {
           const rowNumber = totalCount - ((currentPage - 1) * validPageSize + index);
           return (
-            <tr key={`item-${doc.id}`}>
+            <tr key={`item-${doc.id}`} data-testid="board-row">
               <td>{rowNumber}</td>
               <td>
                 <a href={`/${props.instance.mid}/${doc.id}`} className="hover:underline">
@@ -300,7 +301,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
       <div className="flex justify-between items-center mb-4 gap-4">
         <div className="flex gap-2">
           {/* 검색 폼 */}
-          <form method="get" action={`/${props.instance.mid}`} className="flex gap-2">
+          <form method="get" action={`/${props.instance.mid}`} data-testid="search-form" className="flex gap-2">
             <input type="hidden" name="sort" value={sort} />
             {rawCategoryId && <input type="hidden" name="categoryId" value={rawCategoryId} />}
             {validPageSize !== listCount && <input type="hidden" name="pageSize" value={String(validPageSize)} />}
@@ -325,24 +326,21 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
         </div>
 
         <div className="flex gap-2 items-center">
-          {/* 정렬 선택 (서버 렌더 링크 — RSC 경계에서 클라이언트 이벤트 핸들러를 쓸 수 없음) */}
-          {(
-            [
-              { value: 'latest', label: '최신순' },
-              { value: 'recommend', label: '추천순' },
-              { value: 'views', label: '조회순' },
-            ] as const
-          ).map((option) => (
-            <a
-              key={option.value}
-              href={buildUrl({ page: 1, sort: option.value === 'latest' ? undefined : option.value })}
-              className={`px-2 py-1 border rounded ${
-                sort === option.value ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'
-              }`}
-            >
-              {option.label}
-            </a>
-          ))}
+          {/* 정렬 선택 (드롭다운 — 클라이언트 컴포넌트로 분리, SortSelect 참고) */}
+          <SortSelect
+            value={sort}
+            options={(
+              [
+                { value: 'latest', label: '최신순' },
+                { value: 'recommend', label: '추천순' },
+                { value: 'views', label: '조회순' },
+              ] as const
+            ).map((option) => ({
+              value: option.value,
+              label: option.label,
+              href: buildUrl({ page: 1, sort: option.value === 'latest' ? undefined : option.value }),
+            }))}
+          />
 
           {/* 뷰 토글 */}
           <a
@@ -421,7 +419,11 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
 
       {/* 글쓰기 버튼 */}
       <div className="mt-4">
-        <a href={`/${props.instance.mid}/write`} className="inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        <a
+          href={`/${props.instance.mid}/write`}
+          data-testid="write-btn"
+          className="inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
           글쓰기
         </a>
       </div>

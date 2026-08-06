@@ -212,6 +212,7 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
         {adjacent.prev && (
           <a
             href={`/${mid}/${adjacent.prev.id}`}
+            data-testid="prev-doc-link"
             className="text-blue-600 hover:underline"
           >
             이전글: {adjacent.prev.title}
@@ -221,6 +222,7 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
         {adjacent.next && (
           <a
             href={`/${mid}/${adjacent.next.id}`}
+            data-testid="next-doc-link"
             className="text-blue-600 hover:underline"
           >
             다음글: {adjacent.next.title}
