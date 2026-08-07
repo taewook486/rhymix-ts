@@ -258,4 +258,4 @@ expert-debug + expert-security가 원인을 규명한 결과, 단순 mock 갭이
 
 Version: 1.0.0
 Status: evaluated (카테고리 1·2·3·4 전체 해소 확인 완료. 카테고리 3은 2026-06-21 조사+수정 완료 — CRITICAL 보안 결함 확정, fail-closed 적용. 카테고리 1은 SPEC-TEST-PRISMA-MOCK-001에서 완료. 카테고리 2는 SPEC-TEST-APP-ROUTER-001에서 완료(2026-08-07). 카테고리 4는 2026-08-07 재검증 결과 원본 목록 전건 해소 확인 + 신규 발견 1건(default-tab.test.tsx AC-D1) 직접 수정 완료)
-Next Action: 없음 — 4개 카테고리 전건 해소. 별도 후속(본 SPEC 범위 밖): SPEC-ADMIN-2FA-OTP-001(가칭, 미작성) — TOTP 백엔드 실구현(현재 TwoFactorVerifyForm.tsx는 stub).
+Next Action: 없음 — 4개 카테고리 전건 해소. [정정, 2026-08-08] 이전 각주의 "SPEC-ADMIN-2FA-OTP-001 미작성 — TwoFactorVerifyForm.tsx는 stub" 서술은 본 SPEC 작성 시점(2026-06-21) 스냅샷이 stale해진 것으로 확인됨 — 해당 SPEC은 2026-06-25 커밋 `22318af`로 이미 전체 구현·완료되어 `.moai/specs/_archive/SPEC-ADMIN-2FA-OTP-001/`에 보관 중(status: completed). TwoFactorVerifyForm.tsx도 현재 실제 `trpc.admin.twoFactor.verify` mutation을 호출하는 실구현이며 stub이 아님. 별도 후속 작업 없음.
