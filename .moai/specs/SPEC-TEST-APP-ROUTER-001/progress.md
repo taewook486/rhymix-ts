@@ -71,4 +71,6 @@ _m1_to_mN_commit_strategy: Single commit for Route A Hybrid Trunk (Tier S)
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
-_<pending sync-phase>_
+_sync_status: audit-ready_
+_sync_complete_at: 2026-08-07_
+_sync_commit_sha: pending-backfill-placeholder_

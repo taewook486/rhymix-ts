@@ -2,7 +2,7 @@
 id: SPEC-TEST-APP-ROUTER-001
 title: "Next.js App Router 테스트 환경 Request-Scope Mock Helper"
 version: "0.1.0"
-status: in-progress
+status: completed
 created: 2026-08-07
 updated: 2026-08-07
 author: MoAI manager-spec

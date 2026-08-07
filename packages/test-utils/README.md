@@ -16,6 +16,8 @@ pnpm add -D @rhymix-ts/test-utils
 |---|---|
 | `createMockPrismaClient` | `vitest-mock-extended` 기반 `PrismaClient` mock 생성 |
 | `MockPrismaClient` (type) | 위 mock의 타입 |
+| `setupAppRouterMocks` | Next.js App Router request-scope context(`headers()`, `cookies()`, `useSearchParams()`) mock 설정 |
+| `AppRouterMockConfig` (type) | `setupAppRouterMocks` 옵션 타입 |
 
 ## 사용 예
 

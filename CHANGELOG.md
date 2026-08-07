@@ -51,6 +51,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **제외됨(백로그)**: unlinked 모듈 목록(REQ-MENU-050), 메뉴 검색(REQ-MENU-051) — 사용자 결정으로 이번
   run 범위 밖, Optional(P2/P3)이므로 MVP 필수 아님
 
+#### SPEC-TEST-APP-ROUTER-001 — App Router 테스트 mock 헬퍼 도입 (완료)
+
+> status: completed — SPEC-TEST-DEBT-001 Category 2(App Router 요청 스코프 비양립) 후속.
+
+- **공유 mock 헬퍼** (`packages/test-utils/src/app-router-mocks.ts`) — `setupAppRouterMocks()` 함수로
+  vitest jsdom 환경에서 `next/headers` (`headers()`, `cookies()`), `next/navigation` (`useSearchParams()`)
+  request-scope context 모델 제공. `AppRouterMockConfig` 타입으로 커스텀 헤더/쿠키/검색파람 옵션 지원.
+- **테스트 파일 적용** — `apps/web/app/(auth)/login/page.test.tsx`,
+  `apps/web/app/admin/layout.test.tsx` 2개 파일에 헬퍼 적용으로 기존 7건 실패 해소.
+- **범위 편차** — 원계획 4개 파일(proxy.test.ts, middleware-gate.test.ts 포함) 중 실제 적용은 2개 파일.
+  재검증 결과 제외 2개 파일은 이미 통과 상태였음(SPEC-TEST-DEBT-001의 2026-06-21 스냅샷 stale).
+- **검증** — 대상 4개 파일 38/38 테스트 통과, test-utils 패키지 타입체크 통과.
+
 #### SPEC-FEED-001 — 게시판별 RSS 2.0 / Atom 1.0 피드
 
 - **피드 빌더 + 라우트** (`packages/board/src/feed/`, `apps/web/app/[mid]/{rss,atom}/route.ts`)
