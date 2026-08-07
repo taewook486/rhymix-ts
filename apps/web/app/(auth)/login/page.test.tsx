@@ -67,6 +67,11 @@ vi.mock('next/link', () => ({
   },
 }));
 
+// Setup App Router mocks before importing the page
+import { setupAppRouterMocks } from '@rhymix-ts/test-utils';
+
+setupAppRouterMocks();
+
 // page.tsx가 useSearchParams를 사용하므로 jsdom 환경에서 null 방지
 vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),

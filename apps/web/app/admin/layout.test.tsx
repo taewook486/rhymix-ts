@@ -7,6 +7,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import React from 'react'
 
+// --- Setup App Router mocks ---
+import { setupAppRouterMocks } from '@rhymix-ts/test-utils';
+
+setupAppRouterMocks();
+
 // --- mocks ---
 vi.mock('@/lib/auth/config', () => ({
   auth: vi.fn(),
