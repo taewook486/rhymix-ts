@@ -73,4 +73,4 @@ _m1_to_mN_commit_strategy: Single commit for Route A Hybrid Trunk (Tier S)
 
 _sync_status: audit-ready_
 _sync_complete_at: 2026-08-07_
-_sync_commit_sha: pending-backfill-placeholder_
+_sync_commit_sha: c02a85f_
