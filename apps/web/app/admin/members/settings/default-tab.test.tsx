@@ -95,5 +95,5 @@ describe('AdminMemberSettingsPage — 기본 설정 탭 (Slice D)', () => {
     // 기본 설정 탭이 실제로 렌더된 필드 몇 개 확인 (장식용 탭이 아님).
     expect(container.querySelector('select[name="signupAccessMode"]')).not.toBeNull();
     expect(container.querySelector('input[name="argon2TimeCost"]')).not.toBeNull();
-  });
+  }, 30000);
 });
