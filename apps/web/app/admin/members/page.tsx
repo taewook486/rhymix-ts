@@ -177,7 +177,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
         users={data.users}
         total={data.total}
         showProfilePhoto={showProfilePhoto}
-        searchParams={searchParams}
+        searchParams={sp}
       />
     </div>
   )

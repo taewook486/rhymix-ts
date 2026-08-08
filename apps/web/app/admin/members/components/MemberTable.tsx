@@ -105,13 +105,26 @@ export function MemberTable({ users, total, showProfilePhoto, searchParams }: Me
     const sortOrder = searchParams.sortOrder || 'asc'
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc'
 
+    // 쿼리 파라미터가 배열이면 첫 값만 사용 (Next.js App Router 다중값 처리)
+    const normalize = (value: string | string[] | undefined): string | undefined => {
+      if (Array.isArray(value)) return value[0]
+      return value
+    }
+
     const params = new URLSearchParams()
-    if (searchParams.searchTarget) params.set('searchTarget', searchParams.searchTarget)
-    if (searchParams.searchQuery) params.set('searchQuery', searchParams.searchQuery)
-    if (searchParams.filter) params.set('filter', searchParams.filter)
-    if (searchParams.status) params.set('status', searchParams.status)
-    if (searchParams.groupId) params.set('groupId', searchParams.groupId)
-    if (searchParams.page) params.set('page', searchParams.page)
+    const searchTarget = normalize(searchParams.searchTarget)
+    const searchQuery = normalize(searchParams.searchQuery)
+    const filter = normalize(searchParams.filter)
+    const status = normalize(searchParams.status)
+    const groupId = normalize(searchParams.groupId)
+    const page = normalize(searchParams.page)
+
+    if (searchTarget) params.set('searchTarget', searchTarget)
+    if (searchQuery) params.set('searchQuery', searchQuery)
+    if (filter) params.set('filter', filter)
+    if (status) params.set('status', status)
+    if (groupId) params.set('groupId', groupId)
+    if (page) params.set('page', page)
     params.set('sortBy', column)
     params.set('sortOrder', newSortOrder)
 
