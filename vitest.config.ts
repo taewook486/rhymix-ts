@@ -48,6 +48,8 @@ export default defineConfig({
       ['apps/web/lib/widgets/**/*.test.ts', 'jsdom'],
       ['apps/web/lib/widgets/**/*.test.tsx', 'jsdom'],
       ['apps/web/app/admin/widgets/**/*.test.tsx', 'jsdom'],
+      // SPEC-MEMBER-ADMIN-001: 회원 관리 페이지 렌더 테스트
+      ['apps/web/app/admin/members/**/*.test.tsx', 'jsdom'],
       // SPEC-THEME-POLISH-001: 다크모드 및 admin site design 컴포넌트 테스트
       ['apps/web/components/theme/**/*.test.tsx', 'jsdom'],
       ['apps/web/components/admin/site-design/**/*.test.tsx', 'jsdom'],

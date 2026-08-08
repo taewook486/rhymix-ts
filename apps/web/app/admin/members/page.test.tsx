@@ -22,6 +22,18 @@ const mockUserList = vi.fn().mockResolvedValue({
   total: 1,
 });
 const mockGetDefault = vi.fn().mockResolvedValue({ showProfilePhotoInList: true });
+const mockGroupList = vi.fn().mockResolvedValue([
+  {
+    id: 1,
+    title: '기본 그룹',
+    description: null,
+    isDefault: true,
+    isAdmin: false,
+    imageMark: null,
+    listOrder: 0,
+    memberCount: 0,
+  },
+]);
 
 vi.mock('@/lib/trpc/server', () => ({
   getServerCaller: vi.fn().mockResolvedValue({
@@ -31,6 +43,9 @@ vi.mock('@/lib/trpc/server', () => ({
       },
       settings: {
         getDefault: (...args: unknown[]) => mockGetDefault(...args),
+      },
+      group: {
+        list: (...args: unknown[]) => mockGroupList(...args),
       },
     },
   }),
