@@ -74,6 +74,7 @@ export const adminUserRouter = router({
         filterAdmin: z.boolean().optional(),
         sortBy: z.enum(['userId', 'emailAddress', 'nickName', 'createdAt', 'lastLoginAt']).optional(),
         sortOrder: z.enum(['asc', 'desc']).optional(),
+        groupId: z.number().int().positive().optional(),
         page: z.number().int().positive().default(1),
         pageSize: z.number().int().positive().max(100).default(50),
       }),
@@ -82,6 +83,7 @@ export const adminUserRouter = router({
       const where = {
         ...(input.status ? { status: input.status } : {}),
         ...(input.filterAdmin ? { isAdmin: true } : {}),
+        ...(input.groupId ? { memberGroups: { some: { groupId: input.groupId } } } : {}),
         ...(input.q
           ? {
               OR: [

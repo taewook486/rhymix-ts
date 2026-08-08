@@ -22,6 +22,7 @@ interface PageProps {
     page?: string
     sortBy?: string
     sortOrder?: string
+    groupId?: string
   }>
 }
 
@@ -46,6 +47,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
   const page = sp.page ? Number(sp.page) : 1
   const sortBy = sp.sortBy
   const sortOrder = sp.sortOrder || 'asc'
+  const groupId = sp.groupId ? Number(sp.groupId) : undefined
   const caller = await getServerCaller()
 
   // 필터 탭 로직
@@ -54,7 +56,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
   const statusFromFilter = activeFilter && activeFilter !== 'admin' ? activeFilter : sp.status
 
   // REQ-MADM-019: "기본 설정" 탭의 프로필사진 노출 토글을 실제로 반영한다.
-  const [data, defaultSettings] = await Promise.all([
+  const [data, defaultSettings, memberGroups] = await Promise.all([
     caller.admin.user.list({
       q: sp.q ?? undefined,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,10 +66,12 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
       sortBy: sortBy ? (sortBy as any) : undefined,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sortOrder: sortOrder ? (sortOrder as any) : undefined,
+      groupId,
       page,
       pageSize: 50,
     }),
     caller.admin.settings.getDefault(),
+    caller.admin.group.list(),
   ])
   const showProfilePhoto = defaultSettings.showProfilePhotoInList
 
@@ -87,6 +91,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
       ...(sp.q ? { q: sp.q } : {}),
       ...(sp.filter ? { filter: sp.filter } : {}),
       ...(sp.status ? { status: sp.status } : {}),
+      ...(groupId ? { groupId: groupId.toString() } : {}),
       ...(page ? { page: page.toString() } : {}),
       sortBy: column,
       sortOrder: newSortOrder,
@@ -108,6 +113,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
               : `?${new URLSearchParams({
                   ...(sp.q ? { q: sp.q } : {}),
                   ...(tab.value ? { filter: tab.value } : {}),
+                  ...(sp.groupId ? { groupId: sp.groupId } : {}),
                   ...(sp.page ? { page: sp.page } : {}),
                 }).toString()}`
 
@@ -147,6 +153,18 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
           <option value="">전체 상태</option>
           {Object.entries(STATUS_LABELS).map(([val, label]) => (
             <option key={val} value={val}>{label}</option>
+          ))}
+        </select>
+        <select
+          name="groupId"
+          defaultValue={sp.groupId ?? ''}
+          className="border border-zinc-300 rounded px-3 py-1 text-sm"
+        >
+          <option value="">그룹전체</option>
+          {memberGroups.map((group: { id: number; title: string }) => (
+            <option key={group.id} value={group.id.toString()}>
+              {group.title}
+            </option>
           ))}
         </select>
         <button
@@ -238,7 +256,7 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
           </tr>
         </thead>
         <tbody>
-          {data.users.map((user) => (
+          {data.users.map((user: { id: number; userId: string; nickName: string; emailAddress: string; status: string; isAdmin: boolean; lastLoginAt: Date | null; createdAt: Date | null }) => (
             <tr key={user.id} className="border-t border-zinc-200 hover:bg-zinc-50">
               {showProfilePhoto && (
                 <td className="px-3 py-2">
