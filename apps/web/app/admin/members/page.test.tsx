@@ -51,6 +51,30 @@ vi.mock('@/lib/trpc/server', () => ({
   }),
 }));
 
+// Mock client-side trpc hooks for MemberTable.tsx (Client Component)
+vi.mock('@/providers/TRPCProvider', () => ({
+  trpc: {
+    admin: {
+      user: {
+        bulk: {
+          useMutation: () => ({
+            mutate: vi.fn(),
+            isPending: false,
+          }),
+        },
+      },
+    },
+  },
+}));
+
+// Mock toast from sonner
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 describe('AdminMembersPage (Slice E-5)', () => {
   it('E-5-UI: 회원 목록을 렌더한다', async () => {
     const { default: AdminMembersPage } = await import('./page');
