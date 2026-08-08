@@ -72,6 +72,8 @@ export const adminUserRouter = router({
         q: z.string().optional(),
         status: UserStatusEnum.optional(),
         filterAdmin: z.boolean().optional(),
+        sortBy: z.enum(['userId', 'emailAddress', 'nickName', 'createdAt', 'lastLoginAt']).optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional(),
         page: z.number().int().positive().default(1),
         pageSize: z.number().int().positive().max(100).default(50),
       }),
@@ -91,12 +93,18 @@ export const adminUserRouter = router({
           : {}),
       };
 
+      // 정렬: sortBy가 없으면 createdAt 내림차순(기존 동작 유지)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const orderBy: any = input.sortBy
+        ? { [input.sortBy]: input.sortOrder || 'asc' }
+        : { createdAt: 'desc' };
+
       const [users, total] = await Promise.all([
         ctx.prisma.user.findMany({
           where,
           skip: (input.page - 1) * input.pageSize,
           take: input.pageSize,
-          orderBy: { createdAt: 'desc' },
+          orderBy,
           select: {
             id: true,
             userId: true,

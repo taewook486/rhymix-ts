@@ -20,6 +20,8 @@ interface PageProps {
     status?: string
     filter?: string
     page?: string
+    sortBy?: string
+    sortOrder?: string
   }>
 }
 
@@ -42,6 +44,8 @@ const FILTER_TABS = [
 export default async function AdminMembersPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const page = sp.page ? Number(sp.page) : 1
+  const sortBy = sp.sortBy
+  const sortOrder = sp.sortOrder || 'asc'
   const caller = await getServerCaller()
 
   // 필터 탭 로직
@@ -56,12 +60,39 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       status: statusFromFilter ? (statusFromFilter as any) : undefined,
       filterAdmin: isFilterAdmin ? true : undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sortBy: sortBy ? (sortBy as any) : undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      sortOrder: sortOrder ? (sortOrder as any) : undefined,
       page,
       pageSize: 50,
     }),
     caller.admin.settings.getDefault(),
   ])
   const showProfilePhoto = defaultSettings.showProfilePhotoInList
+
+  // 정렬 가능한 컬럼 정의
+  const sortableColumns = {
+    userId: 'ID',
+    nickName: '닉네임',
+    emailAddress: '이메일',
+    createdAt: '가입일',
+    lastLoginAt: '최근 로그인',
+  } as const
+
+  // 정렬 링크 생성 헬퍼
+  const createSortLink = (column: string) => {
+    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc'
+    const params = new URLSearchParams({
+      ...(sp.q ? { q: sp.q } : {}),
+      ...(sp.filter ? { filter: sp.filter } : {}),
+      ...(sp.status ? { status: sp.status } : {}),
+      ...(page ? { page: page.toString() } : {}),
+      sortBy: column,
+      sortOrder: newSortOrder,
+    })
+    return `?${params.toString()}`
+  }
 
   return (
     <div>
@@ -132,12 +163,78 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
         <thead>
           <tr className="bg-zinc-100">
             {showProfilePhoto && <th className="text-left px-3 py-2 font-medium">프로필</th>}
-            <th className="text-left px-3 py-2 font-medium">ID</th>
-            <th className="text-left px-3 py-2 font-medium">닉네임</th>
-            <th className="text-left px-3 py-2 font-medium">이메일</th>
+            <th className="text-left px-3 py-2 font-medium">
+              <Link
+                href={createSortLink('userId')}
+                className="hover:underline group"
+              >
+                ID
+                {sortBy === 'userId' && (
+                  <span className="ml-1 text-zinc-600">
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
+              </Link>
+            </th>
+            <th className="text-left px-3 py-2 font-medium">
+              <Link
+                href={createSortLink('nickName')}
+                className="hover:underline group"
+              >
+                닉네임
+                {sortBy === 'nickName' && (
+                  <span className="ml-1 text-zinc-600">
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
+              </Link>
+            </th>
+            <th className="text-left px-3 py-2 font-medium">
+              <Link
+                href={createSortLink('emailAddress')}
+                className="hover:underline group"
+              >
+                이메일
+                {sortBy === 'emailAddress' && (
+                  <span className="ml-1 text-zinc-600">
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
+              </Link>
+            </th>
             <th className="text-left px-3 py-2 font-medium">상태</th>
             <th className="text-left px-3 py-2 font-medium">관리자</th>
-            <th className="text-left px-3 py-2 font-medium">최근 로그인</th>
+            <th className="text-left px-3 py-2 font-medium">
+              <Link
+                href={createSortLink('lastLoginAt')}
+                className="hover:underline group"
+              >
+                최근 로그인
+                {sortBy === 'lastLoginAt' && (
+                  <span className="ml-1 text-zinc-600">
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
+              </Link>
+            </th>
+            <th className="text-left px-3 py-2 font-medium">
+              <Link
+                href={createSortLink('createdAt')}
+                className="hover:underline group"
+              >
+                가입일
+                {sortBy === 'createdAt' && (
+                  <span className="ml-1 text-zinc-600">
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
+                )}
+                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
+              </Link>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -175,11 +272,14 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
               <td className="px-3 py-2 text-zinc-400">
                 {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ko-KR') : '—'}
               </td>
+              <td className="px-3 py-2 text-zinc-400">
+                {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : '—'}
+              </td>
             </tr>
           ))}
           {data.users.length === 0 && (
             <tr>
-              <td colSpan={showProfilePhoto ? 7 : 6} className="px-3 py-8 text-center text-zinc-400">
+              <td colSpan={showProfilePhoto ? 8 : 7} className="px-3 py-8 text-center text-zinc-400">
                 회원이 없습니다.
               </td>
             </tr>
