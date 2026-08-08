@@ -7,10 +7,12 @@
  *
  * @MX:NOTE: [AUTO] 회원 상태 변경(suspend/deny/approve)은 클라이언트 컴포넌트에서
  *           admin.user.update tRPC mutation 으로 처리한다 (US-7).
- * @MX:SPEC: SPEC-ADMIN-001 US-7, SPEC-ADMIN-002 REQ-ADMIN2-152
+ * @MX:SPEC: SPEC-ADMIN-001 US-7, SPEC-ADMIN-002 REQ-ADMIN2-152,
+ *           SPEC-MEMBER-PARITY-001 REQ-MPAR-016~020
  */
 import { getServerCaller } from '@/lib/trpc/server'
 import Link from 'next/link'
+import { MemberTable } from './components/MemberTable'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,13 +29,6 @@ interface PageProps {
   }>
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  APPROVED: '승인',
-  UNAUTHED: '미인증',
-  SUSPENDED: '정지',
-  DENIED: '차단',
-  DELETED: '삭제',
-}
 
 const FILTER_TABS = [
   { value: '', label: '전체' },
@@ -42,6 +37,14 @@ const FILTER_TABS = [
   { value: 'DENIED', label: '거부' },
   { value: 'UNAUTHED', label: '미인증' },
 ] as const
+
+const STATUS_LABELS: Record<string, string> = {
+  APPROVED: '승인',
+  UNAUTHED: '미인증',
+  SUSPENDED: '정지',
+  DENIED: '차단',
+  DELETED: '삭제',
+}
 
 export default async function AdminMembersPage({ searchParams }: PageProps) {
   const sp = await searchParams
@@ -77,31 +80,6 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
     caller.admin.group.list(),
   ])
   const showProfilePhoto = defaultSettings.showProfilePhotoInList
-
-  // 정렬 가능한 컬럼 정의
-  const sortableColumns = {
-    userId: 'ID',
-    nickName: '닉네임',
-    emailAddress: '이메일',
-    createdAt: '가입일',
-    lastLoginAt: '최근 로그인',
-  } as const
-
-  // 정렬 링크 생성 헬퍼
-  const createSortLink = (column: string) => {
-    const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc'
-    const params = new URLSearchParams({
-      ...(sp.searchTarget ? { searchTarget: sp.searchTarget } : {}),
-      ...(sp.searchQuery ? { searchQuery: sp.searchQuery } : {}),
-      ...(sp.filter ? { filter: sp.filter } : {}),
-      ...(sp.status ? { status: sp.status } : {}),
-      ...(groupId ? { groupId: groupId.toString() } : {}),
-      ...(page ? { page: page.toString() } : {}),
-      sortBy: column,
-      sortOrder: newSortOrder,
-    })
-    return `?${params.toString()}`
-  }
 
   return (
     <div>
@@ -194,135 +172,13 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
         </button>
       </form>
 
-      {/* 회원 목록 테이블 */}
-      <div className="text-sm text-zinc-500 mb-2">총 {data.total}명</div>
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="bg-zinc-100">
-            {showProfilePhoto && <th className="text-left px-3 py-2 font-medium">프로필</th>}
-            <th className="text-left px-3 py-2 font-medium">
-              <Link
-                href={createSortLink('userId')}
-                className="hover:underline group"
-              >
-                ID
-                {sortBy === 'userId' && (
-                  <span className="ml-1 text-zinc-600">
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
-              </Link>
-            </th>
-            <th className="text-left px-3 py-2 font-medium">
-              <Link
-                href={createSortLink('nickName')}
-                className="hover:underline group"
-              >
-                닉네임
-                {sortBy === 'nickName' && (
-                  <span className="ml-1 text-zinc-600">
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
-              </Link>
-            </th>
-            <th className="text-left px-3 py-2 font-medium">
-              <Link
-                href={createSortLink('emailAddress')}
-                className="hover:underline group"
-              >
-                이메일
-                {sortBy === 'emailAddress' && (
-                  <span className="ml-1 text-zinc-600">
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
-              </Link>
-            </th>
-            <th className="text-left px-3 py-2 font-medium">상태</th>
-            <th className="text-left px-3 py-2 font-medium">관리자</th>
-            <th className="text-left px-3 py-2 font-medium">
-              <Link
-                href={createSortLink('lastLoginAt')}
-                className="hover:underline group"
-              >
-                최근 로그인
-                {sortBy === 'lastLoginAt' && (
-                  <span className="ml-1 text-zinc-600">
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
-              </Link>
-            </th>
-            <th className="text-left px-3 py-2 font-medium">
-              <Link
-                href={createSortLink('createdAt')}
-                className="hover:underline group"
-              >
-                가입일
-                {sortBy === 'createdAt' && (
-                  <span className="ml-1 text-zinc-600">
-                    {sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-                {!sortBy && <span className="ml-1 text-zinc-300 opacity-0 group-hover:opacity-50">↕</span>}
-              </Link>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.users.map((user: { id: number; userId: string; nickName: string; emailAddress: string; status: string; isAdmin: boolean; lastLoginAt: Date | null; createdAt: Date | null }) => (
-            <tr key={user.id} className="border-t border-zinc-200 hover:bg-zinc-50">
-              {showProfilePhoto && (
-                <td className="px-3 py-2">
-                  {/* 프로필 사진 원본 컬럼(User.profileImage 등)이 아직 없어 닉네임
-                      첫 글자 기반 아바타로 대체 표시한다 — REQ-MADM-019는 노출
-                      토글의 실제 반영을 요구할 뿐, 신규 이미지 업로드 기능을
-                      요구하지 않는다(§5 범위 밖 원칙 준용). */}
-                  <span
-                    data-testid="member-avatar"
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-200 text-xs font-medium text-zinc-700"
-                    aria-hidden
-                  >
-                    {(user.nickName || user.userId).slice(0, 1).toUpperCase()}
-                  </span>
-                </td>
-              )}
-              <td className="px-3 py-2 font-mono text-xs">{user.userId}</td>
-              <td className="px-3 py-2">{user.nickName}</td>
-              <td className="px-3 py-2 text-zinc-600">{user.emailAddress}</td>
-              <td className="px-3 py-2">
-                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                  user.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                  user.status === 'SUSPENDED' ? 'bg-orange-100 text-orange-800' :
-                  user.status === 'DENIED' ? 'bg-red-100 text-red-800' :
-                  'bg-zinc-100 text-zinc-600'
-                }`}>
-                  {STATUS_LABELS[user.status] ?? user.status}
-                </span>
-              </td>
-              <td className="px-3 py-2">{user.isAdmin ? '✓' : '—'}</td>
-              <td className="px-3 py-2 text-zinc-400">
-                {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString('ko-KR') : '—'}
-              </td>
-              <td className="px-3 py-2 text-zinc-400">
-                {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : '—'}
-              </td>
-            </tr>
-          ))}
-          {data.users.length === 0 && (
-            <tr>
-              <td colSpan={showProfilePhoto ? 8 : 7} className="px-3 py-8 text-center text-zinc-400">
-                회원이 없습니다.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      {/* 회원 목록 테이블 - M5: 체크박스 + bulk 삭제 */}
+      <MemberTable
+        users={data.users}
+        total={data.total}
+        showProfilePhoto={showProfilePhoto}
+        searchParams={searchParams}
+      />
     </div>
   )
 }
