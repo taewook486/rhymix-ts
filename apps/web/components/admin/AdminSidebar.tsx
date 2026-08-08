@@ -35,6 +35,7 @@ import {
   UserPlus,
   SlidersHorizontal,
   BarChart3,
+  Target,
 } from 'lucide-react'
 import { trpc } from '@/providers/TRPCProvider'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -101,6 +102,7 @@ const NAV: ReadonlyArray<NavSection> = [
       { href: '/admin/members/groups', label: '회원 그룹', icon: Users },
       { href: '/admin/members/new', label: '회원 등록', icon: UserPlus },
       { href: '/admin/members/settings', label: '회원 설정', icon: SlidersHorizontal },
+      { href: '/admin/site/points', label: '포인트', icon: Target },
     ],
   },
   {
