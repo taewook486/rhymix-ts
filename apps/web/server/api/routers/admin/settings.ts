@@ -48,7 +48,7 @@ const SignupSettingsSchema = z.object({
   enabled: z.boolean().default(false),
   requireEmailVerification: z.boolean().default(true),
   requireAdminApproval: z.boolean().default(false),
-  defaultGroupId: z.number().int().positive().optional(),
+  defaultGroupId: z.number().int().positive().nullable().optional(),
   allowDuplicateNickname: z.boolean().default(false),
 });
 

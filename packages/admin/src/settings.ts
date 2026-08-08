@@ -516,10 +516,19 @@ export interface SeoSettings {
 export async function getSeoSettings(
   ctx: { prisma: PrismaClient },
 ): Promise<SeoSettings> {
-  const setting = await getOrCreateSiteSetting(ctx.prisma, 'seo');
+  // @MX:NOTE [AUTO]: RootLayout이 모든 라우트(/install 포함)에서 이 함수를 호출하므로,
+  // Site 행이 아직 없는 설치 전 상태에서도 예외 없이 기본값을 반환해야 한다.
+  let value: Record<string, unknown> = {};
+  try {
+    const setting = await getOrCreateSiteSetting(ctx.prisma, 'seo');
+    value = setting.value as Record<string, unknown>;
+  } catch (err) {
+    if (!(err instanceof SiteNotFoundError)) {
+      throw err;
+    }
+  }
 
   // 기본값 반환
-  const value = setting.value as Record<string, unknown>;
   return {
     defaultMetaTitle: (value.defaultMetaTitle as string) || '',
     defaultMetaDescription: (value.defaultMetaDescription as string) || '',

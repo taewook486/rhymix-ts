@@ -69,6 +69,9 @@ export function AdminConfigForm({ timeZones, defaultTimeZone }: AdminConfigFormP
   const formError = state.ok === false ? state.formError : undefined;
   const [siteLockConfirmed, setSiteLockConfirmed] = useState(false);
   const [siteLockModalOpen, setSiteLockModalOpen] = useState(false);
+  // 비제어(defaultChecked) 라디오는 액션 제출 후 폼이 리셋될 때 기본값(always)으로
+  // 되돌아가 로컬 개발 환경에서 강제 HTTPS 리다이렉트 루프를 유발했다 — 제어 컴포넌트로 전환.
+  const [useSsl, setUseSsl] = useState<'always' | 'none'>('always');
 
   return (
     <form action={formAction} className="mt-8 flex flex-col gap-4">
@@ -125,11 +128,23 @@ export function AdminConfigForm({ timeZones, defaultTimeZone }: AdminConfigFormP
       <fieldset className="mt-2 flex flex-col gap-2 rounded-md border p-3 text-sm">
         <legend className="px-1 text-xs">SSL 사용</legend>
         <label className="flex items-center gap-2">
-          <input type="radio" name="useSsl" value="always" defaultChecked />
+          <input
+            type="radio"
+            name="useSsl"
+            value="always"
+            checked={useSsl === 'always'}
+            onChange={() => setUseSsl('always')}
+          />
           <span>항상 HTTPS 사용 (권장)</span>
         </label>
         <label className="flex items-center gap-2">
-          <input type="radio" name="useSsl" value="none" />
+          <input
+            type="radio"
+            name="useSsl"
+            value="none"
+            checked={useSsl === 'none'}
+            onChange={() => setUseSsl('none')}
+          />
           <span>HTTPS 미사용 (개발/로컬 전용)</span>
         </label>
       </fieldset>
