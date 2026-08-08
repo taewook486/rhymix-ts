@@ -171,7 +171,7 @@ describe('admin.user tRPC router (Slice E-5)', () => {
     // 실제 요청 로직(caller.list)은 60ms 미만이므로 로직 문제가 아니다.
   }, 30000);
 
-  it('E-5-2: admin.user.list q 검색 → userId/email/nickName 포함 행만 (US-7)', async () => {
+  it('E-5-2: admin.user.list searchTarget/searchQuery → 지정 필드 검색 (US-7)', async () => {
     mockUserFindMany.mockResolvedValue([]);
     mockUserCount.mockResolvedValue(0);
 
@@ -181,14 +181,13 @@ describe('admin.user tRPC router (Slice E-5)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const caller = createCaller(adminCtx as any);
 
-    await caller.list({ q: 'searchterm', page: 1, pageSize: 50 });
+    // userId 필드에서만 검색 (SPEC-MEMBER-PARITY-001 REQ-MPAR-012~015)
+    await caller.list({ searchTarget: 'userId', searchQuery: 'searchterm', page: 1, pageSize: 50 });
 
     expect(mockUserFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          OR: expect.arrayContaining([
-            expect.objectContaining({ userId: expect.objectContaining({ contains: 'searchterm' }) }),
-          ]),
+          userId: expect.objectContaining({ contains: 'searchterm', mode: 'insensitive' }),
         }),
       }),
     );

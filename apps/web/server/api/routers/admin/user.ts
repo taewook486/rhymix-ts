@@ -69,7 +69,8 @@ export const adminUserRouter = router({
   list: protectedAdminProcedure
     .input(
       z.object({
-        q: z.string().optional(),
+        searchTarget: z.enum(['userId', 'emailAddress', 'nickName', 'phoneNumber', 'lastLoginAt', 'description']).optional(),
+        searchQuery: z.string().optional(),
         status: UserStatusEnum.optional(),
         filterAdmin: z.boolean().optional(),
         sortBy: z.enum(['userId', 'emailAddress', 'nickName', 'createdAt', 'lastLoginAt']).optional(),
@@ -84,13 +85,9 @@ export const adminUserRouter = router({
         ...(input.status ? { status: input.status } : {}),
         ...(input.filterAdmin ? { isAdmin: true } : {}),
         ...(input.groupId ? { memberGroups: { some: { groupId: input.groupId } } } : {}),
-        ...(input.q
+        ...(input.searchQuery && input.searchTarget
           ? {
-              OR: [
-                { userId: { contains: input.q } },
-                { emailAddress: { contains: input.q } },
-                { nickName: { contains: input.q } },
-              ],
+              [input.searchTarget]: { contains: input.searchQuery, mode: 'insensitive' },
             }
           : {}),
       };

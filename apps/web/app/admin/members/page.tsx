@@ -16,7 +16,8 @@ export const dynamic = 'force-dynamic'
 
 interface PageProps {
   searchParams: Promise<{
-    q?: string
+    searchTarget?: string
+    searchQuery?: string
     status?: string
     filter?: string
     page?: string
@@ -58,7 +59,9 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
   // REQ-MADM-019: "기본 설정" 탭의 프로필사진 노출 토글을 실제로 반영한다.
   const [data, defaultSettings, memberGroups] = await Promise.all([
     caller.admin.user.list({
-      q: sp.q ?? undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      searchTarget: sp.searchTarget ? (sp.searchTarget as any) : undefined,
+      searchQuery: sp.searchQuery,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       status: statusFromFilter ? (statusFromFilter as any) : undefined,
       filterAdmin: isFilterAdmin ? true : undefined,
@@ -88,7 +91,8 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
   const createSortLink = (column: string) => {
     const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc'
     const params = new URLSearchParams({
-      ...(sp.q ? { q: sp.q } : {}),
+      ...(sp.searchTarget ? { searchTarget: sp.searchTarget } : {}),
+      ...(sp.searchQuery ? { searchQuery: sp.searchQuery } : {}),
       ...(sp.filter ? { filter: sp.filter } : {}),
       ...(sp.status ? { status: sp.status } : {}),
       ...(groupId ? { groupId: groupId.toString() } : {}),
@@ -111,8 +115,10 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
             const href = isActive
               ? undefined // 현재 탭이면 링크 없음
               : `?${new URLSearchParams({
-                  ...(sp.q ? { q: sp.q } : {}),
+                  ...(sp.searchTarget ? { searchTarget: sp.searchTarget } : {}),
+                  ...(sp.searchQuery ? { searchQuery: sp.searchQuery } : {}),
                   ...(tab.value ? { filter: tab.value } : {}),
+                  ...(sp.status ? { status: sp.status } : {}),
                   ...(sp.groupId ? { groupId: sp.groupId } : {}),
                   ...(sp.page ? { page: sp.page } : {}),
                 }).toString()}`
@@ -138,11 +144,24 @@ export default async function AdminMembersPage({ searchParams }: PageProps) {
       </div>
 
       {/* 검색 / 필터 */}
-      <form className="flex gap-2 mb-4">
+      <form className="flex gap-2 mb-4 flex-wrap">
+        <select
+          name="searchTarget"
+          defaultValue={sp.searchTarget ?? ''}
+          className="border border-zinc-300 rounded px-3 py-1 text-sm"
+        >
+          <option value="">전체</option>
+          <option value="userId">아이디</option>
+          <option value="emailAddress">이메일</option>
+          <option value="nickName">닉네임</option>
+          <option value="phoneNumber">전화번호</option>
+          <option value="lastLoginAt">최근 로그인일시</option>
+          <option value="description">관리자 메모</option>
+        </select>
         <input
-          name="q"
-          defaultValue={sp.q}
-          placeholder="ID, 이메일, 닉네임 검색"
+          name="searchQuery"
+          defaultValue={sp.searchQuery ?? ''}
+          placeholder="검색어 입력"
           className="border border-zinc-300 rounded px-3 py-1 text-sm flex-1 max-w-xs"
         />
         <select
