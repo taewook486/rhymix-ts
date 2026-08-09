@@ -38,7 +38,7 @@
 
 ```yaml
 run_complete_at: null  # 전체 SPEC 미완료 — M1/M2만 완료
-run_commit_sha: <M1·M2 커밋 SHA — git log 참조, placeholder 아님>
+run_commit_sha: "80b034c (M1), 5062c70 (M2)"
 run_status: in-progress  # M3~M7 잔여
 ac_pass_count: 4  # AC-CPAR-001, 002, 003, 004 (부분 PASS-WITH-DEBT 2건 별도 표기)
 ac_pass_with_debt_count: 2  # AC-CPAR-005, 006 — FK cascade 실제 DB 재현 미실시
