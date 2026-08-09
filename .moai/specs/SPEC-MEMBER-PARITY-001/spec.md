@@ -2,7 +2,7 @@
 id: SPEC-MEMBER-PARITY-001
 title: "관리자 회원 메뉴 레거시 parity — 포인트 사이드바 링크 + 회원 목록 고급 기능"
 version: "0.1.0"
-status: in-progress
+status: completed
 created: 2026-08-08
 updated: 2026-08-09
 author: manager-spec

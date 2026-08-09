@@ -94,3 +94,15 @@ Implementation Kickoff Approval (plan→run human gate) required before `/moai r
 - cross_platform_build.status: not-applicable (TypeScript/Next.js project, no cross-platform build tags)
 - total_run_phase_files: 4 (apps/web/server/api/routers/admin/user.ts, apps/web/server/api/routers/admin/user.test.ts, .moai/specs/SPEC-MEMBER-PARITY-001/spec.md, .moai/specs/SPEC-MEMBER-PARITY-001/progress.md)
 - m1_to_mN_commit_strategy: per-milestone separate commits (M1~M5) + one follow-up fix commit for lastLoginAt crash + run-phase frontmatter/progress.md close, all pushed directly to `main` (Route A)
+
+## §E.4 Sync-phase Audit-Ready Signal
+
+- sync_complete_at: 2026-08-09T00:00:00+09:00
+- sync_commit_sha: pending-backfill-SPEC-MEMBER-PARITY-001-sync
+- sync_status: audit-ready
+- b12_self_test_a: PASS — `grep -c 'MEMBER-PARITY' CHANGELOG.md` was 0 before this sync commit (no duplicate entry)
+- b12_self_test_b: PASS — CHANGELOG entry references 5 AC (AC-MPAR-001~005), matching `acceptance.md` §D AC Matrix count (SSOT, not progress.md's 6-row PASS/FAIL matrix which additionally lists the lastLoginAt bugfix as a non-AC row)
+- b12_self_test_c: PASS — all 6 implementation file paths referenced in the CHANGELOG entry verified via `ls` against the actual working tree
+- changelog_entry_position: inserted as the first `####` sub-entry under `## [Unreleased]` → `### Added`, immediately before the pre-existing `SPEC-MEMBER-ADMIN-001` entry
+- frontmatter_status_transitions.spec_md: in-progress → completed (this sync commit)
+- canary_compliance_check: not-applicable (this SPEC defines no forward-looking policy requiring self-test)

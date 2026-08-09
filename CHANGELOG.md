@@ -8,6 +8,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### SPEC-MEMBER-PARITY-001 — 관리자 회원 메뉴 레거시 parity (완료)
+
+> status: completed — 레거시 Rhymix(PHP) admin 대비 확인된 2개 기능 격차(AC-MPAR-001~005) 전체 구현+검증
+> 완료. 5개 마일스톤(M1~M5) + 후속 버그 수정 1건, 전부 main에 직접 push(Route A — Hybrid Trunk 1인 OSS).
+
+- **M1 — 포인트 사이드바 링크** (`7fefa0f`) — `apps/web/components/admin/AdminSidebar.tsx`의 "회원"
+  섹션에 이미 완료된 `/admin/site/points`(SPEC-POINT-001) 페이지로의 링크 추가, 사이드바에서 고립되어
+  있던 포인트 관리 화면을 접근 가능하게 함
+- **M2 — 정렬 가능한 컬럼 헤더** (`0bfe0b1`) — `apps/web/app/admin/members/page.tsx` +
+  `MemberTable.tsx`에 5개 컬럼(userId/emailAddress/nickName/createdAt/lastLoginAt) 정렬 기능 구현,
+  URL 쿼리 파라미터(`searchParams.sortBy`/`sortOrder`) 기반 상태 관리, `admin.user.list` 프로시저에
+  `sortBy`/`sortOrder` 파라미터 확장
+- **M3 — 회원 그룹 필터** (`c7293c3`) — 회원 목록 화면에 "그룹전체" + `MemberGroup` 동적 조회 드롭다운
+  추가, `admin.user.list`에 `groupId` 파라미터 확장(기존 상태 필터와 AND 조합)
+- **M4 — 다중 필드 검색 대상 선택** (`ee0cf5c`) — 검색 대상 드롭다운(userId/emailAddress/nickName/
+  phoneNumber/lastLoginAt/description 6개 필드) + 검색어 입력창 조합 구현, `admin.user.list`에
+  `searchTarget` 파라미터 확장(case-insensitive 부분 일치)
+- **M5 — 체크박스 + 일괄 삭제** (`5049675`) — `MemberTable.tsx`에 per-row 체크박스 + "Check All" 헤더
+  체크박스 + 확인 다이얼로그 구현, 기존 `admin.user.bulk` 프로시저를
+  `action: z.enum(['suspend', 'deny', 'approve', 'delete'])`로 확장하여 `action === 'delete'`일 때
+  `softDeleteUser()`로 일괄 soft delete(`status → DELETED`) 처리(AuditLog 자동 기록)
+- **버그 수정 — lastLoginAt 검색 크래시** (`58ba3ef`) — M4에서 도입한 `lastLoginAt` 검색 대상이
+  실제로는 `PrismaClientValidationError`로 `admin.user.list`를 500 크래시시키는 버그였음(DateTime?
+  컬럼은 문자열 `contains` 필터를 지원하지 않음). `parseSearchDayRange()` 헬퍼로 검색어를 UTC 하루
+  범위(`gte`/`lt`)로 파싱하는 방식으로 수정, 파싱 불가능한 검색어는 크래시 대신 빈 결과 반환
+- 5개 AC(AC-MPAR-001~005) 전부 실제 구현 코드 기준 PASS 확인.
+  `apps/web/server/api/routers/admin/user.test.ts` 24개 테스트 전부 GREEN(lastLoginAt 크래시 수정
+  신규 케이스 2건 포함)
+
 #### SPEC-MEMBER-ADMIN-001 — 관리자 회원 메뉴 레거시 기능 완성 (완료)
 
 > status: completed — 5개 슬라이스(A~E) 전체 구현+검증 완료(REQ-MADM-001~035).
