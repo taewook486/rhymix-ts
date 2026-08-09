@@ -69,7 +69,7 @@ AdminLog를 기록하지 않는 기존 결함을 M3에서 발견했으나, M2부
 
 ```yaml
 run_complete_at: null  # 전체 SPEC 미완료 — M1/M2/M3/M4만 완료
-run_commit_sha: "80b034c (M1), 5062c70 (M2), e911afc (M3), pending-backfill-M4"
+run_commit_sha: "80b034c (M1), 5062c70 (M2), e911afc (M3), bcdc4cb (M4)"
 run_status: in-progress  # M5~M7 잔여
 ac_pass_count: 6  # AC-CPAR-001,002,003,004(M1/M2) + AC-CPAR-006,009(M3 필터 배선)
 ac_pass_with_debt_count: 7  # AC-CPAR-005,006(M2 FK) + AC-CPAR-007,008,010(M3 런타임 재현 미실시) + AC-CPAR-011,012(M4 런타임 재현 미실시)
@@ -82,7 +82,7 @@ cross_platform_build:
   status: not_applicable
   reason: "TypeScript/Next.js 웹 프로젝트 — OS별 syscall 분기 없음"
 total_run_phase_files: 36  # M1~M3 누적 29 + M4 신규 2(FileManagementClient.test.tsx, admin/file.test.ts) + 수정 5(FileManagementClient.tsx, admin/file.ts, packages/file/src/{admin.ts,admin.test.ts,index.ts})
-m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 80b034c, M2(휴지통) 5062c70, M3(문서·댓글 배선) e911afc, M4(파일 목록 완성) 본 커밋. M5~M7은 후속 세션 커밋 예정"
+m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 80b034c, M2(휴지통) 5062c70, M3(문서·댓글 배선) e911afc, M4(파일 목록 완성) bcdc4cb. M5~M7은 후속 세션 커밋 예정"
 ```
 
 ## §E.4 Sync-phase Audit-Ready Signal
