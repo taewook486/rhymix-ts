@@ -147,6 +147,7 @@ export const adminDocumentRouter = router({
         authorId: z.number().int().positive().optional(),
         status: z.enum(['PUBLIC', 'SECRET', 'TEMP', 'DECLARED']).optional(),
         search: z.string().min(1).optional(),
+        ip: z.string().min(1).optional(),
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(100).optional(),
       }),

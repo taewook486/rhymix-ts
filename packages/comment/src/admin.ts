@@ -57,6 +57,7 @@ export async function listCommentsAcrossAllBoards(
     moduleInstanceId?: number;
     authorId?: number;
     search?: string;
+    isSecret?: boolean;
     cursor?: string;
     limit?: number;
     actor: Actor;
@@ -81,6 +82,11 @@ export async function listCommentsAcrossAllBoards(
 
   if (input.search && input.search.length > 0) {
     where.content = { contains: input.search, mode: 'insensitive' };
+  }
+
+  // REQ-CPAR-017: 상태 필터 (전체/공개/비밀 — isSecret 기준)
+  if (input.isSecret !== undefined) {
+    where.isSecret = input.isSecret;
   }
 
   // 커서 페이지네이션

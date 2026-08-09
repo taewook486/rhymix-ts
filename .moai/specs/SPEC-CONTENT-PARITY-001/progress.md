@@ -11,7 +11,7 @@
 
 ## §E.2 Run-phase Evidence
 
-> 부분 진행 — M1(그룹 A)·M2(그룹 B) 완료. M3~M7(그룹 C~H)은 미착수(추후 세션에서 계속).
+> 부분 진행 — M1(그룹 A)·M2(그룹 B)·M3(그룹 C·D) 완료. M4~M7(그룹 E~H)은 미착수(추후 세션에서 계속).
 
 ### M1 — 사이드바 '콘텐츠' 섹션 재구성 (REQ-CPAR-001~002)
 
@@ -29,29 +29,53 @@
 | AC-CPAR-005 복원 영속 | `admin.trash.restoreComment`(신규, `packages/comment/src/trash.ts`) + 기존 `admin.trash.restore`(문서). AuditLog는 `protectedAdminProcedure`의 `auditLogger` 미들웨어가 모든 mutation에 대해 자동 기록(REQ-ADMIN-070 기존 메커니즘 재사용) — 런타임 실제 클릭 재현은 M1~M2 세션에서 미실시(mock 기반 라우터/도메인 테스트로 검증, dev DB 실제 재현은 잔여 항목) | PASS-WITH-DEBT |
 | AC-CPAR-006 개별 영구 삭제 + 비우기 | `admin.trash.purgeComment`(자식 답글 트리 깊이-역순 cascade, design.md D-3) + `admin.trash.empty({scope})`(신규, 이미 cascade로 삭제된 댓글은 CommentNotFoundError를 건너뜀). FK cascade는 mock 테스트(CT-4/CT-5)로 트리 순서만 검증 — **AC-CPAR-005 Edge가 요구하는 격리 임시 DB 실제 실행 검증은 미실시**(design.md/plan.md §3 리스크 항목, dev DB 127.0.0.1:5444로 후속 세션에서 재현 필요) | PASS-WITH-DEBT |
 
-### 잔여 마일스톤 (M3~M7, 그룹 C~H)
+### M3 — 문서·댓글 관리 화면 배선 완성 (REQ-CPAR-009~020)
 
-미착수. REQ-CPAR-009~030, AC-CPAR-006~016(문서/댓글 배선, 파일, 모듈, 알림 매트릭스, 메일 로그)은
+| AC | Actual Output | Status |
+|---|---|---|
+| AC-CPAR-006 필터 배선 | `documents/page.tsx`: 게시판 select를 `caller.admin.board.list()` 동적 옵션으로 렌더(정적 placeholder 주석 제거), 상태/검색/작성자 ID/IP 필터를 URL `searchParams`(GET form, design.md D-5) 기반으로 재조회. `grep -c "Dynamic board options" documents/page.tsx` → 0. `page.test.tsx` M3-DOC-1(동적 게시판 옵션)·M3-DOC-4(status/boardId/ip/search가 `admin.document.listAcrossAllBoards` 실호출 인자로 전달됨, 5/5 PASS) | PASS |
+| AC-CPAR-007 일괄 작업 영속 | `DocumentTableClient.tsx` 신규 — 체크박스 선택 + 일괄 작업 바(휴지통 이동/삭제/이동/상태 변경) → 확인 다이얼로그 → `admin.document.bulkUpdate` 호출(기존 서비스 재사용, AdminLog 자체 기록). `DocumentTableClient.test.tsx` DOC-TBL-1(선택된 documentIds로 정확히 mutate 호출됨) PASS. 선택 0건 상태는 바 자체가 렌더되지 않아 "오류 없이 안내" 충족(AC Edge) — **실제 브라우저 클릭→새로고침 영속 재현은 본 세션에서 미실시**(mock tRPC 훅 기반 단위 검증만 수행, 백엔드 `bulkUpdateDocuments`는 Slice 1E부터 기존 테스트로 커버됨) | PASS-WITH-DEBT |
+| AC-CPAR-008 TEMP 복구/삭제 + 페이지네이션 + IP + 신고 링크 | TEMP 행에 복구(`recoverTemp`, 확인 없음)/삭제(`deleteTemp`, `confirm()` 확인 후 호출) 버튼 배선. `grep -c "TODO: Server Action 연동 필요" documents/page.tsx` → 0. IP 컬럼 + IP 클릭 시 `?ip=<addr>` 링크(REQ-CPAR-014b), '더 보기' → `?cursor=<nextCursor>` 링크(REQ-CPAR-013, 기존 필터 파라미터 보존), 신고 문서 링크(`/admin/documents/declared`, 기존 화면 재사용) 추가. `DocumentTableClient.test.tsx` DOC-TBL-2/3(복구·삭제 mutate 호출 + confirm 게이팅)·DOC-TBL-4(cursor+기존 필터 보존)·DOC-TBL-5(IP 링크) PASS. `page.test.tsx` M3-DOC-2(IP 컬럼 렌더 + 신고 링크 존재) PASS — **실제 브라우저 재현(TEMP 복구 후 목록 반영, IP 클릭 후 필터 결과)은 미실시** | PASS-WITH-DEBT |
+| AC-CPAR-009 필터 + 상태 필터 | `comments/page.tsx`: 게시판 select 동적화(admin.board.list), `isSecret`(공개/비밀) 상태 필터 + 작성자 ID/검색을 URL `searchParams` 기반으로 재조회. `packages/comment/src/admin.ts` `listCommentsAcrossAllBoards`에 `isSecret?: boolean` 필터 추가(additive, REQ-CPAR-017) + 라우터 `comment.ts` 파라미터 노출. `packages/comment/src/admin.test.ts` 신규 케이스("should filter by isSecret") PASS, `admin/comment.test.ts`(신규 라우터 테스트 파일, 이전 부재) COMMENT-LIST-002(isSecret pass-through) PASS, `page.test.tsx` M3-CMT-1(동적 게시판 옵션)·M3-CMT-3(boardId/isSecret/search 실호출 인자 전달) PASS | PASS |
+| AC-CPAR-010 일괄 삭제 영속 | `CommentTableClient.tsx` 신규 — 체크박스 선택 + 일괄 삭제 → 확인 다이얼로그 → `admin.comment.bulkDelete`(기존 서비스, AdminLog 자체 기록). '더 보기' cursor 페이지네이션 + 신고 댓글 링크(`/admin/comments/declared`) 추가. `CommentTableClient.test.tsx` CMT-TBL-1(선택 commentIds로 정확히 mutate 호출)·CMT-TBL-3(cursor+필터 보존)·CMT-TBL-4(공개/비밀 라벨) PASS, CMT-TBL-2(0건 선택 시 바 미렌더로 "오류 없이 안내" 충족) PASS — **실제 브라우저 클릭→새로고침 영속 재현은 미실시**(AC-CPAR-007과 동일 사유) | PASS-WITH-DEBT |
+
+문서 관리 화면(`admin/document.ts`)에 REQ-CPAR-014a `ip?: string` 필터 파라미터 추가
+(`packages/document/src/admin.ts` `listDocumentsAcrossAllBoards`, additive) — `packages/document/src/admin.test.ts`
+신규 케이스("should filter by ip address") + 라우터 `document.test.ts` DOCUMENT-IP-FILTER-001 PASS.
+
+작성자 필터는 REQ-CPAR-009/016이 명시한 `authorId`(design.md D-5 searchParams 목록)를 그대로
+사용 — 백엔드가 회원 닉네임 텍스트 검색을 제공하지 않으므로(기존 스키마 제약) "작성자 ID"
+숫자 입력으로 구현. 레거시 텍스트 검색 UX와 다르나 REQ 문언(파라미터명 authorId)과 기존
+서비스 시그니처(PRESERVE 원칙)를 그대로 따른 결정.
+
+`purgeDocument`(TEMP 영구 삭제·M2 trash purge 공용, `packages/document/src/trash.ts`)가
+AdminLog를 기록하지 않는 기존 결함을 M3에서 발견했으나, M2부터 존재하던 공유 함수이며
+본 SPEC의 M3 배선 범위(REQ-CPAR-012 "recoverTemp/deleteTemp 호출 배선")를 벗어나는
+수정이라 판단해 **범위 규율(Scope Discipline)에 따라 수정하지 않음** — 잔여 항목으로 기록.
+
+### 잔여 마일스톤 (M4~M7, 그룹 E~H)
+
+미착수. REQ-CPAR-021~030, AC-CPAR-011~016(파일, 모듈, 알림 매트릭스, 메일 로그)은
 다음 세션에서 이어서 진행.
 
 ## §E.3 Run-phase Audit-Ready Signal
 
 ```yaml
-run_complete_at: null  # 전체 SPEC 미완료 — M1/M2만 완료
-run_commit_sha: "80b034c (M1), 5062c70 (M2)"
-run_status: in-progress  # M3~M7 잔여
-ac_pass_count: 4  # AC-CPAR-001, 002, 003, 004 (부분 PASS-WITH-DEBT 2건 별도 표기)
-ac_pass_with_debt_count: 2  # AC-CPAR-005, 006 — FK cascade 실제 DB 재현 미실시
+run_complete_at: null  # 전체 SPEC 미완료 — M1/M2/M3만 완료
+run_commit_sha: "80b034c (M1), 5062c70 (M2), pending-backfill-M3 (M3)"
+run_status: in-progress  # M4~M7 잔여
+ac_pass_count: 6  # AC-CPAR-001,002,003,004(M1/M2) + AC-CPAR-006,009(M3 필터 배선)
+ac_pass_with_debt_count: 5  # AC-CPAR-005,006(M2 FK) + AC-CPAR-007,008,010(M3 런타임 재현 미실시)
 ac_fail_count: 0
-preserve_list_post_run_count: 5  # plan.md §2 PRESERVE 목록 5건 — 위반 없음 확인
+preserve_list_post_run_count: 5  # plan.md §2 PRESERVE 목록 5건 — M3도 위반 없음 확인(document/comment 서비스 시그니처 additive만)
 l44_pre_commit_fetch: true  # git fetch origin main 수행, 0 0 (동기 상태) 확인
 l44_post_push_fetch: null  # 오케스트레이터가 push 후 확인 예정(본 세션은 push 안 함)
-new_warnings_or_lints_introduced: 0  # ESLint 미설정 프로젝트(next lint 미작동) — tsc --noEmit만 게이트, 0 errors
+new_warnings_or_lints_introduced: 0  # tsc --noEmit 0 errors (M1/M2 baseline과 동일)
 cross_platform_build:
   status: not_applicable
   reason: "TypeScript/Next.js 웹 프로젝트 — OS별 syscall 분기 없음"
-total_run_phase_files: 13  # 신규 7 + 수정 6
-m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 커밋 1건, M2(휴지통) 커밋 1건. M3~M7은 후속 세션 커밋 예정"
+total_run_phase_files: 29  # M1/M2 누적 13 + M3 신규 7(DocumentTableClient.tsx/.test.tsx, documents/page.test.tsx, CommentTableClient.tsx/.test.tsx, comments/page.test.tsx, admin/comment.test.ts) + 수정 9
+m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 80b034c, M2(휴지통) 5062c70, M3(문서·댓글 배선) 커밋 예정. M4~M7은 후속 세션 커밋 예정"
 ```
 
 ## §E.4 Sync-phase Audit-Ready Signal

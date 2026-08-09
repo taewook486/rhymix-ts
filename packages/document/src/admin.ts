@@ -72,6 +72,7 @@ export async function listDocumentsAcrossAllBoards(
     authorId?: number;
     status?: 'PUBLIC' | 'SECRET' | 'TEMP' | 'DECLARED';
     search?: string;
+    ip?: string;
     cursor?: string;
     limit?: number;
     actor: Actor;
@@ -108,6 +109,11 @@ export async function listDocumentsAcrossAllBoards(
       { title: { contains: input.search, mode: 'insensitive' } },
       { content: { contains: input.search, mode: 'insensitive' } },
     ];
+  }
+
+  // REQ-CPAR-014a: IP 주소 필터 (목록 IP 클릭 → 해당 IP로 필터링, REQ-CPAR-014b)
+  if (input.ip && input.ip.length > 0) {
+    where.ipAddress = input.ip;
   }
 
   // 커서 페이지네이션

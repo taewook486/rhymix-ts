@@ -21,6 +21,7 @@ function createMockPrisma() {
       authorId: 10,
       content: 'First comment',
       parentId: null,
+      isSecret: false,
       document: { id: 100, title: 'Test Document', boardId: 1 },
     },
     {
@@ -30,6 +31,7 @@ function createMockPrisma() {
       authorId: 11,
       content: 'Second comment',
       parentId: 1,
+      isSecret: true,
       document: { id: 100, title: 'Test Document', boardId: 1 },
     },
     {
@@ -39,6 +41,7 @@ function createMockPrisma() {
       authorId: 10,
       content: 'Another comment',
       parentId: null,
+      isSecret: false,
       document: { id: 101, title: 'Another Document', boardId: 2 },
     },
   ];
@@ -69,6 +72,11 @@ function createMockPrisma() {
           );
         }
 
+        // Filter by isSecret (REQ-CPAR-017)
+        if (where?.isSecret !== undefined) {
+          filtered = filtered.filter((c: any) => c.isSecret === where.isSecret);
+        }
+
         // Cursor pagination
         if (where?.id?.gt) {
           filtered = filtered.filter((c: any) => c.id > where.id.gt);
@@ -88,6 +96,9 @@ function createMockPrisma() {
         }
         if (where?.content?.contains) {
           filtered = filtered.filter((c: any) => c.content.includes(where.content.contains));
+        }
+        if (where?.isSecret !== undefined) {
+          filtered = filtered.filter((c: any) => c.isSecret === where.isSecret);
         }
 
         return filtered.length;
@@ -174,6 +185,16 @@ describe('listCommentsAcrossAllBoards', () => {
 
     expect(result.items).toHaveLength(2);
     expect(result.items.every((c: any) => c.authorId === 10)).toBe(true);
+  });
+
+  it('should filter by isSecret (REQ-CPAR-017)', async () => {
+    const result = await listCommentsAcrossAllBoards(
+      { isSecret: true, limit: 10, actor: adminActor },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.isSecret).toBe(true);
   });
 
   it('should search in comment content', async () => {

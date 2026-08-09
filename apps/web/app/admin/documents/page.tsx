@@ -1,24 +1,32 @@
 /**
  * 전체 문서 관리 페이지 — SPEC-ADMIN-002 Slice 1E (REQ-ADMIN2-070, REQ-ADMIN2-071)
  *                     SPEC-ADMIN-002 Slice 2C (REQ-ADMIN2-153, REQ-ADMIN2-074)
+ *                     SPEC-CONTENT-PARITY-001 M3 (REQ-CPAR-009~015)
  *
  * Cross-board document list with filters and bulk actions.
  *
- * @MX:NOTE [AUTO]: TEMP 문서의 복구/삭제 버튼은 Server Actions 연동 필요.
- *                 admin.document.recoverTemp / deleteTemp 프로시저를 호출하도록 구현해야 함.
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-070, REQ-ADMIN2-071, REQ-ADMIN2-153, REQ-ADMIN2-074
+ * design.md D-5: 필터 상태는 URL searchParams가 SSOT — 서버 컴포넌트가 매 요청마다
+ * admin.document.listAcrossAllBoards / admin.board.list 를 재조회한다. 체크박스 선택과
+ * 다이얼로그 상태만 DocumentTableClient의 클라이언트 상태로 관리한다.
+ *
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-070, REQ-ADMIN2-071, REQ-ADMIN2-153, REQ-ADMIN2-074,
+ *           SPEC-CONTENT-PARITY-001 REQ-CPAR-009~015
  */
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
 import { isAdminSession } from '@/lib/auth/admin-middleware';
 import { getServerCaller } from '@/lib/trpc/server';
 import Link from 'next/link';
+import { DocumentTableClient } from './DocumentTableClient';
 
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
   searchParams: Promise<{
     status?: string
+    boardId?: string
+    authorId?: string
+    ip?: string
     search?: string
     cursor?: string
   }>
@@ -34,53 +42,85 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const caller = await getServerCaller();
 
-  // status=TEMP 필터 적용 (REQ-ADMIN2-153)
-  const documents = await caller.admin.document.listAcrossAllBoards({
-    status: sp.status as 'PUBLIC' | 'SECRET' | 'TEMP' | 'DECLARED' | undefined,
-    search: sp.search,
-    cursor: sp.cursor,
-    limit: 50,
-  });
+  const boardId = sp.boardId ? Number(sp.boardId) : undefined;
+  const authorId = sp.authorId ? Number(sp.authorId) : undefined;
+
+  const [documents, boards] = await Promise.all([
+    caller.admin.document.listAcrossAllBoards({
+      moduleInstanceId: boardId,
+      authorId,
+      status: sp.status as 'PUBLIC' | 'SECRET' | 'TEMP' | 'DECLARED' | undefined,
+      search: sp.search,
+      ip: sp.ip,
+      cursor: sp.cursor,
+      limit: 50,
+    }),
+    caller.admin.board.list(),
+  ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const boardOptions = (boards as any[]).map((board) => ({ id: board.id, name: board.name }));
 
   return (
     <section>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">전체 문서 관리</h1>
-        <Link href="/admin/documents/config" className="text-sm text-blue-600 hover:underline">
-          문서 설정 →
-        </Link>
+        <div className="flex gap-4 text-sm">
+          <Link href="/admin/documents/declared" className="text-blue-600 hover:underline">
+            신고 문서 →
+          </Link>
+          <Link href="/admin/documents/config" className="text-blue-600 hover:underline">
+            문서 설정 →
+          </Link>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="mb-4 p-4 border rounded bg-white">
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label htmlFor="module-filter" className="block text-sm font-medium mb-1">
+      {/* Filters — URL searchParams SSOT (design.md D-5, REQ-CPAR-009~010) */}
+      <form method="GET" className="mb-4 p-4 border rounded bg-white">
+        <div className="flex gap-4 flex-wrap">
+          <div className="flex-1 min-w-[160px]">
+            <label htmlFor="boardId-filter" className="block text-sm font-medium mb-1">
               게시판
             </label>
-            <select id="module-filter" className="w-full border rounded px-3 py-2">
+            <select
+              id="boardId-filter"
+              name="boardId"
+              defaultValue={sp.boardId ?? ''}
+              className="w-full border rounded px-3 py-2"
+            >
               <option value="">전체</option>
-              {/* Dynamic board options will be populated here */}
+              {boardOptions.map((board) => (
+                <option key={board.id} value={board.id}>
+                  {board.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="flex-1">
-            <label htmlFor="author-filter" className="block text-sm font-medium mb-1">
-              작성자
+          <div className="flex-1 min-w-[140px]">
+            <label htmlFor="authorId-filter" className="block text-sm font-medium mb-1">
+              작성자 ID
             </label>
             <input
-              id="author-filter"
-              type="text"
+              id="authorId-filter"
+              name="authorId"
+              type="number"
+              defaultValue={sp.authorId ?? ''}
               className="w-full border rounded px-3 py-2"
-              placeholder="작성자 검색"
+              placeholder="작성자 회원 ID"
             />
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-[140px]">
             <label htmlFor="status-filter" className="block text-sm font-medium mb-1">
               상태
             </label>
-            <select id="status-filter" className="w-full border rounded px-3 py-2">
+            <select
+              id="status-filter"
+              name="status"
+              defaultValue={sp.status ?? ''}
+              className="w-full border rounded px-3 py-2"
+            >
               <option value="">전체</option>
               <option value="PUBLIC">공개</option>
               <option value="SECRET">비밀</option>
@@ -89,111 +129,51 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps) {
             </select>
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-[160px]">
             <label htmlFor="search-input" className="block text-sm font-medium mb-1">
               검색
             </label>
             <input
               id="search-input"
+              name="search"
               type="text"
+              defaultValue={sp.search ?? ''}
               className="w-full border rounded px-3 py-2"
               placeholder="제목 또는 내용 검색"
             />
           </div>
+
+          {sp.ip && <input type="hidden" name="ip" value={sp.ip} />}
+
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-zinc-800 text-white rounded hover:bg-zinc-700 text-sm"
+            >
+              검색
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Document List */}
-      <div className="border rounded bg-white">
-        <table className="w-full">
-          <thead className="border-b bg-gray-50">
-            <tr>
-              <th className="px-4 py-2 text-left">
-                <input type="checkbox" className="rounded" />
-              </th>
-              <th className="px-4 py-2 text-left">ID</th>
-              <th className="px-4 py-2 text-left">제목</th>
-              <th className="px-4 py-2 text-left">게시판</th>
-              <th className="px-4 py-2 text-left">작성자</th>
-              <th className="px-4 py-2 text-left">상태</th>
-              <th className="px-4 py-2 text-left">작성일</th>
-              <th className="px-4 py-2 text-left">작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.items.map((doc: any) => (
-              <tr key={doc.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2">
-                  <input type="checkbox" className="rounded" value={doc.id} />
-                </td>
-                <td className="px-4 py-2">{doc.id}</td>
-                <td className="px-4 py-2">
-                  <a
-                    href={`/board/${doc.board.mid}/${doc.id}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    {doc.title}
-                  </a>
-                </td>
-                <td className="px-4 py-2">{doc.board.name}</td>
-                <td className="px-4 py-2">{doc.nickName || '익명'}</td>
-                <td className="px-4 py-2">{doc.status}</td>
-                <td className="px-4 py-2">
-                  {new Date(doc.regdate).toLocaleDateString('ko-KR')}
-                </td>
-                <td className="px-4 py-2">
-                  {doc.status === 'TEMP' ? (
-                    <div className="flex gap-2">
-                      <button
-                        className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
-                        // TODO: Server Action 연동 필요
-                      >
-                        복구
-                      </button>
-                      <button
-                        className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
-                        // TODO: Server Action 연동 필요
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-400">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Pagination */}
-        {documents.nextCursor && (
-          <div className="px-4 py-3 border-t">
-            <button className="text-blue-600 hover:underline">더 보기</button>
+        {sp.ip && (
+          <div className="mt-2 text-xs text-zinc-500">
+            IP 필터: {sp.ip}{' '}
+            <Link
+              href={`?${new URLSearchParams({
+                ...(sp.status ? { status: sp.status } : {}),
+                ...(sp.boardId ? { boardId: sp.boardId } : {}),
+                ...(sp.authorId ? { authorId: sp.authorId } : {}),
+                ...(sp.search ? { search: sp.search } : {}),
+              }).toString()}`}
+              className="text-blue-600 hover:underline"
+            >
+              해제
+            </Link>
           </div>
         )}
-      </div>
+      </form>
 
-      {/* Bulk Actions */}
-      <div className="mt-4 flex gap-2">
-        <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-          삭제
-        </button>
-        <button className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700">
-          휴지통 이동
-        </button>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-          이동
-        </button>
-        <button className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-          상태 변경
-        </button>
-      </div>
-
-      {/* Total Count */}
-      <div className="mt-4 text-sm text-gray-600">
-        총 {documents.total}개의 문서
-      </div>
+      <DocumentTableClient documents={documents} boards={boardOptions} searchParams={sp} />
     </section>
   );
 }

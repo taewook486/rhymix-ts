@@ -221,6 +221,32 @@ describe('admin.document tRPC router (Slice 2C)', () => {
   });
 
   // ==========================================================================
+  // listAcrossAllBoards ip 필터 파라미터 전달 (REQ-CPAR-014a, SPEC-CONTENT-PARITY-001 M3)
+  // ==========================================================================
+
+  it('DOCUMENT-IP-FILTER-001: listAcrossAllBoards → ip 파라미터를 listDocumentsAcrossAllBoards로 전달한다', async () => {
+    const { adminDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    const { listDocumentsAcrossAllBoards } = await import('@rhymix-ts/document');
+    (listDocumentsAcrossAllBoards as ReturnType<typeof vi.fn>).mockResolvedValue({
+      items: [],
+      nextCursor: null,
+      total: 0,
+    });
+
+    const createCaller = createCallerFactory(adminDocumentRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await caller.listAcrossAllBoards({ ip: '127.0.0.1', limit: 10 });
+
+    expect(listDocumentsAcrossAllBoards).toHaveBeenCalledWith(
+      expect.objectContaining({ ip: '127.0.0.1' }),
+      expect.objectContaining({ prisma: mockPrisma }),
+    );
+  });
+
+  // ==========================================================================
   // 문서 별칭 관리 (REQ-ADMIN2-073)
   // ==========================================================================
 

@@ -23,6 +23,7 @@ function createMockPrisma() {
       title: 'Test Document 1',
       content: 'Content 1',
       blamedCount: 0,
+      ipAddress: '127.0.0.1',
       board: { id: 1, name: '자유게시판', moduleInstance: { mid: 'freeboard', moduleCode: 'board' } },
     },
     {
@@ -33,6 +34,7 @@ function createMockPrisma() {
       title: 'Test Document 2',
       content: 'Content 2',
       blamedCount: 0,
+      ipAddress: '10.0.0.5',
       board: { id: 1, name: '자유게시판', moduleInstance: { mid: 'freeboard', moduleCode: 'board' } },
     },
     {
@@ -43,6 +45,7 @@ function createMockPrisma() {
       title: 'Draft Document',
       content: 'Draft content',
       blamedCount: 0,
+      ipAddress: '127.0.0.1',
       board: { id: 2, name: '공지사항', moduleInstance: { mid: 'notice', moduleCode: 'board' } },
     },
   ];
@@ -76,6 +79,11 @@ function createMockPrisma() {
           filtered = filtered.filter((d: any) => d.blamedCount > 0);
         }
 
+        // Filter by ipAddress (REQ-CPAR-014a)
+        if (where?.ipAddress !== undefined) {
+          filtered = filtered.filter((d: any) => d.ipAddress === where.ipAddress);
+        }
+
         // Search filter
         if (where?.OR) {
           filtered = filtered.filter((d: any) =>
@@ -105,6 +113,9 @@ function createMockPrisma() {
         }
         if (where?.blamedCount?.gt !== undefined) {
           filtered = filtered.filter((d: any) => d.blamedCount > 0);
+        }
+        if (where?.ipAddress !== undefined) {
+          filtered = filtered.filter((d: any) => d.ipAddress === where.ipAddress);
         }
 
         return filtered.length;
@@ -227,6 +238,16 @@ describe('listDocumentsAcrossAllBoards', () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.status).toBe('PUBLIC');
+  });
+
+  it('should filter by ip address (REQ-CPAR-014a)', async () => {
+    const result = await listDocumentsAcrossAllBoards(
+      { ip: '127.0.0.1', limit: 10, actor: adminActor },
+      { prisma: mockPrisma },
+    );
+
+    expect(result.items).toHaveLength(2);
+    expect(result.items.every((d: any) => d.ipAddress === '127.0.0.1')).toBe(true);
   });
 
   it('should search in title and content', async () => {

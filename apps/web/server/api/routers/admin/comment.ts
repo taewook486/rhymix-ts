@@ -37,6 +37,7 @@ export const adminCommentRouter = router({
         moduleInstanceId: z.number().int().positive().optional(),
         authorId: z.number().int().positive().optional(),
         search: z.string().min(1).optional(),
+        isSecret: z.boolean().optional(),
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(100).optional(),
       }),
