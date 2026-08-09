@@ -17,7 +17,7 @@
  */
 import type { PrismaClient, FileAttachment } from '@prisma/client';
 import type { FileStorage } from './storage/types';
-import { AttachmentOwnershipError } from './attachment';
+import { AttachmentOwnershipError, deleteAttachment } from './attachment';
 
 // Prisma 확장 타입 (FileAttachment + Document 모델)
 interface PrismaWithFileAttachment {
@@ -369,16 +369,34 @@ export async function migrateStorage(
   throw new Error('migrateStorage not implemented yet - SPEC-FILE-057');
 }
 
+// 정렬 키 → Prisma 컬럼 매핑 (REQ-CPAR-022)
+const FILE_SORT_FIELD_MAP = {
+  size: 'fileSize',
+  downloads: 'downloadCount',
+  regdate: 'regdate',
+} as const;
+
+export type FileSortBy = keyof typeof FILE_SORT_FIELD_MAP;
+export type FileSortOrder = 'asc' | 'desc';
+
 /**
  * 관리자용 파일 목록 조회.
  *
  * REQ-ADMIN2-078: 이름, 크기, 업로더, 첨부 문서, 다운로드 수 포함.
  * uploader(Member) + document(Document) join.
+ * REQ-CPAR-022: sortBy(size/downloads/regdate) + sortOrder(asc/desc) 지원.
+ *               미지정 시 기본값 regdate desc (하위 호환).
  *
  * @MX:NOTE [AUTO]: 필터/검색 기능은 tRPC 라우터 레벨에서 구현 (Prisma where 조건).
  */
 export async function listFiles(
-  input: { cursor?: string; limit?: number; where?: Record<string, unknown> },
+  input: {
+    cursor?: string;
+    limit?: number;
+    where?: Record<string, unknown>;
+    sortBy?: FileSortBy;
+    sortOrder?: FileSortOrder;
+  },
   ctx: { prisma: PrismaClient },
 ): Promise<{ items: (FileAttachment & { uploader?: { id: string; nickname: string }; document?: { id: number; title: string } })[]; nextCursor: string | null; totalCount: number }> {
   const prisma = ctx.prisma as unknown as PrismaWithFileAttachment;
@@ -397,13 +415,17 @@ export async function listFiles(
     ...input.where,
   };
 
+  // 정렬 조건 (REQ-CPAR-022) — 미지정 시 regdate desc
+  const sortField = FILE_SORT_FIELD_MAP[input.sortBy ?? 'regdate'];
+  const sortOrder = input.sortOrder ?? 'desc';
+
   // totalCount 조회 (pagination 메타데이터용)
   const totalCount = await prisma.fileAttachment.count({ where });
 
   // cursor pagination + uploader + document join
   const items = await (prisma.fileAttachment.findMany as any)({
     where,
-    orderBy: { regdate: 'desc' },
+    orderBy: { [sortField]: sortOrder },
     take: limit + 1, // nextCursor 확인용 +1
     include: {
       uploader: { select: { id: true, nickname: true } },
@@ -423,4 +445,87 @@ export async function listFiles(
   }
 
   return { items, nextCursor, totalCount };
+}
+
+// ---------------------------------------------------------------------------
+// bulkDeleteFiles — REQ-CPAR-023
+// ---------------------------------------------------------------------------
+
+export interface BulkDeleteFilesInput {
+  fileIds: number[];
+  actor: { userId: number; isAdmin: boolean };
+}
+
+export interface BulkDeleteFilesResult {
+  success: number;
+  failed: number;
+  failedIds: number[];
+  adminLogIds: bigint[];
+}
+
+// Prisma 확장 타입 (AdminLog 모델)
+interface PrismaWithAdminLog {
+  adminLog: {
+    create(args: { data: Record<string, unknown> }): Promise<{ id: bigint }>;
+  };
+}
+
+/**
+ * 파일 일괄 삭제 (admin 전용).
+ *
+ * REQ-CPAR-023: 선택한 파일을 SPEC-FILE-001의 기존 cascade 삭제 서비스
+ * (deleteAttachment — storage.delete + DB delete)를 경유해 삭제하고,
+ * 성공 건마다 AdminLog에 기록한다.
+ *
+ * @MX:WARN [AUTO]: storage I/O가 포함되어 단일 DB 트랜잭션으로 묶지 않는다 — best-effort.
+ * @MX:REASON: deleteAttachment는 항목별로 외부 storage.delete 후 DB delete를 수행한다.
+ *             여러 파일을 하나의 Prisma $transaction 안에 넣으면 외부 I/O 지연이 트랜잭션
+ *             타임아웃을 유발할 수 있어, purgeOrphans와 동일한 per-item best-effort 패턴
+ *             (개별 실패는 warn 후 계속 진행)을 따른다.
+ */
+export async function bulkDeleteFiles(
+  input: BulkDeleteFilesInput,
+  ctx: { prisma: PrismaClient; storage: FileStorage },
+): Promise<BulkDeleteFilesResult> {
+  if (!input.actor.isAdmin) {
+    throw new AttachmentOwnershipError();
+  }
+
+  if (input.fileIds.length === 0) {
+    return { success: 0, failed: 0, failedIds: [], adminLogIds: [] };
+  }
+
+  const prismaWithAdminLog = ctx.prisma as unknown as PrismaWithAdminLog;
+
+  const failedIds: number[] = [];
+  let success = 0;
+  const adminLogIds: bigint[] = [];
+  const now = new Date();
+
+  for (const fileId of input.fileIds) {
+    try {
+      await deleteAttachment(
+        { attachmentId: fileId, actor: { userId: input.actor.userId, isAdmin: true } },
+        { prisma: ctx.prisma, storage: ctx.storage },
+      );
+
+      const log = await prismaWithAdminLog.adminLog.create({
+        data: {
+          actorId: input.actor.userId,
+          action: 'bulk_delete_file',
+          target: `file:${fileId}`,
+          diff: {},
+          createdAt: now,
+        },
+      });
+      adminLogIds.push(log.id);
+
+      success++;
+    } catch (error) {
+      console.warn(`[bulkDeleteFiles] Failed to delete file ${fileId}:`, error);
+      failedIds.push(fileId);
+    }
+  }
+
+  return { success, failed: failedIds.length, failedIds, adminLogIds };
 }

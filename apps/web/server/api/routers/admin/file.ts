@@ -13,7 +13,7 @@
  */
 import { z } from 'zod';
 import { router, protectedAdminProcedure } from '../../trpc';
-import { listFiles, listOrphans, purgeOrphans, InMemoryStorage } from '@rhymix-ts/file';
+import { listFiles, listOrphans, purgeOrphans, bulkDeleteFiles, InMemoryStorage } from '@rhymix-ts/file';
 import {
   getFileUploadSettings,
   updateFileUploadSettings,
@@ -27,7 +27,8 @@ export const adminFileRouter = router({
   /**
    * 파일 목록 조회
    * - REQ-ADMIN2-078: 이름, 크기, 업로더, 첨부 문서, 다운로드 수
-   * - 필터/검색 지원
+   * - REQ-CPAR-021: 파일명 검색 + 파일 타입 필터 UI 배선
+   * - REQ-CPAR-022: 정렬(파일 크기/다운로드 수/등록일)
    */
   list: protectedAdminProcedure
     .input(z.object({
@@ -35,6 +36,8 @@ export const adminFileRouter = router({
       limit: z.number().int().min(1).max(100).optional(),
       search: z.string().optional(), // 파일명 검색
       fileType: z.string().optional(), // 이미지/비디오 등 필터
+      sortBy: z.enum(['size', 'downloads', 'regdate']).optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       // 검색 조건 변환
@@ -47,11 +50,36 @@ export const adminFileRouter = router({
       }
 
       const result = await listFiles(
-        { cursor: input.cursor, limit: input.limit, where },
+        {
+          cursor: input.cursor,
+          limit: input.limit,
+          where,
+          sortBy: input.sortBy,
+          sortOrder: input.sortOrder,
+        },
         { prisma: ctx.prisma },
       );
 
       return result;
+    }),
+
+  /**
+   * 파일 일괄 삭제
+   * - REQ-CPAR-023: 확인 다이얼로그 승인 후 선택 파일을 SPEC-FILE-001 cascade 삭제
+   *   서비스 경유로 삭제하고 AdminLog에 기록한다.
+   */
+  bulkDelete: protectedAdminProcedure
+    .input(z.object({
+      fileIds: z.array(z.number().int().positive()).min(1).max(100),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return bulkDeleteFiles(
+        {
+          fileIds: input.fileIds,
+          actor: { userId: ctx.session.user.id, isAdmin: ctx.session.user.isAdmin },
+        },
+        { prisma: ctx.prisma, storage: ctx.storage },
+      );
     }),
 
   /**

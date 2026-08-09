@@ -19,6 +19,7 @@ import {
   orphanCleanupTask,
   migrateStorage,
   listFiles,
+  bulkDeleteFiles,
 } from './admin';
 
 // ---------------------------------------------------------------------------
@@ -624,6 +625,75 @@ describe('admin.ts — REQ-FILE-092', () => {
       expect(result.totalCount).toBe(1);
     });
 
+    it('sortBy=size, sortOrder=asc → orderBy fileSize asc (REQ-CPAR-022)', async () => {
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findMany: vi.fn().mockResolvedValue([]),
+          count: vi.fn().mockResolvedValue(0),
+        },
+      });
+
+      await listFiles(
+        { limit: 20, sortBy: 'size', sortOrder: 'asc' },
+        { prisma: mockPrisma as never },
+      );
+
+      expect(mockPrisma.fileAttachment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { fileSize: 'asc' } }),
+      );
+    });
+
+    it('sortBy=downloads, sortOrder=desc → orderBy downloadCount desc (REQ-CPAR-022)', async () => {
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findMany: vi.fn().mockResolvedValue([]),
+          count: vi.fn().mockResolvedValue(0),
+        },
+      });
+
+      await listFiles(
+        { limit: 20, sortBy: 'downloads', sortOrder: 'desc' },
+        { prisma: mockPrisma as never },
+      );
+
+      expect(mockPrisma.fileAttachment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { downloadCount: 'desc' } }),
+      );
+    });
+
+    it('sortBy 미지정 시 기본값 regdate desc 유지 — 하위 호환 (REQ-CPAR-022)', async () => {
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findMany: vi.fn().mockResolvedValue([]),
+          count: vi.fn().mockResolvedValue(0),
+        },
+      });
+
+      await listFiles({ limit: 20 }, { prisma: mockPrisma as never });
+
+      expect(mockPrisma.fileAttachment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { regdate: 'desc' } }),
+      );
+    });
+
+    it('sortBy=regdate, sortOrder=asc → orderBy regdate asc (REQ-CPAR-022)', async () => {
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findMany: vi.fn().mockResolvedValue([]),
+          count: vi.fn().mockResolvedValue(0),
+        },
+      });
+
+      await listFiles(
+        { limit: 20, sortBy: 'regdate', sortOrder: 'asc' },
+        { prisma: mockPrisma as never },
+      );
+
+      expect(mockPrisma.fileAttachment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ orderBy: { regdate: 'asc' } }),
+      );
+    });
+
     it('cursor pagination을 지원한다', async () => {
       const mockFiles = Array.from({ length: 21 }, (_, i) => ({
         id: i + 1,
@@ -648,6 +718,114 @@ describe('admin.ts — REQ-FILE-092', () => {
       expect(result.items).toHaveLength(20); // 21개 중 1개 제거되어 20개 반환
       expect(result.nextCursor).toBeTruthy();
       expect(result.totalCount).toBe(25);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // bulkDeleteFiles — REQ-CPAR-023
+  // ---------------------------------------------------------------------------
+
+  describe('bulkDeleteFiles — REQ-CPAR-023', () => {
+    it('성공: deleteAttachment cascade 경유로 삭제하고 AdminLog에 기록한다', async () => {
+      const attachments: Record<number, FileAttachment> = {
+        1: makeAttachment({ id: 1, storageKey: 'attachments/1.png' }),
+        2: makeAttachment({ id: 2, storageKey: 'attachments/2.png' }),
+      };
+      const mockAdminLogCreate = vi
+        .fn()
+        .mockResolvedValueOnce({ id: BigInt(1) })
+        .mockResolvedValueOnce({ id: BigInt(2) });
+
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findUniqueOrThrow: vi
+            .fn()
+            .mockImplementation(({ where }: { where: { id: number } }) =>
+              Promise.resolve(attachments[where.id]),
+            ),
+          delete: vi
+            .fn()
+            .mockImplementation(({ where }: { where: { id: number } }) =>
+              Promise.resolve(attachments[where.id]),
+            ),
+        },
+        adminLog: { create: mockAdminLogCreate },
+      });
+
+      const localStorage = new InMemoryStorage();
+      localStorage.put('attachments/1.png', Buffer.alloc(10), 'image/png');
+      localStorage.put('attachments/2.png', Buffer.alloc(10), 'image/png');
+
+      const result = await bulkDeleteFiles(
+        { fileIds: [1, 2], actor: { userId: 1, isAdmin: true } },
+        { prisma: mockPrisma as never, storage: localStorage },
+      );
+
+      expect(result.success).toBe(2);
+      expect(result.failed).toBe(0);
+      expect(result.failedIds).toEqual([]);
+      expect(result.adminLogIds).toEqual([BigInt(1), BigInt(2)]);
+      expect(mockPrisma.fileAttachment.delete).toHaveBeenCalledTimes(2);
+      expect(mockAdminLogCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ action: 'bulk_delete_file', target: 'file:1' }),
+        }),
+      );
+    });
+
+    it('관리자 아님: !actor.isAdmin → AttachmentOwnershipError', async () => {
+      await expect(
+        bulkDeleteFiles(
+          { fileIds: [1], actor: { userId: 1, isAdmin: false } },
+          { prisma: prisma as never, storage },
+        ),
+      ).rejects.toThrow(AttachmentOwnershipError);
+    });
+
+    it('빈 배열: { success: 0, failed: 0, failedIds: [], adminLogIds: [] }', async () => {
+      const result = await bulkDeleteFiles(
+        { fileIds: [], actor: { userId: 1, isAdmin: true } },
+        { prisma: prisma as never, storage },
+      );
+
+      expect(result).toEqual({ success: 0, failed: 0, failedIds: [], adminLogIds: [] });
+    });
+
+    it('부분 실패: best-effort로 계속 진행하고 failedIds를 반환한다', async () => {
+      const attachments: Record<number, FileAttachment> = {
+        1: makeAttachment({ id: 1, storageKey: 'attachments/1.png' }),
+      };
+
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findUniqueOrThrow: vi.fn().mockImplementation(({ where }: { where: { id: number } }) => {
+            const found = attachments[where.id];
+            return found ? Promise.resolve(found) : Promise.reject(new Error('not found'));
+          }),
+          delete: vi
+            .fn()
+            .mockImplementation(({ where }: { where: { id: number } }) =>
+              Promise.resolve(attachments[where.id]),
+            ),
+        },
+        adminLog: { create: vi.fn().mockResolvedValue({ id: BigInt(1) }) },
+      });
+
+      const localStorage = new InMemoryStorage();
+      localStorage.put('attachments/1.png', Buffer.alloc(10), 'image/png');
+
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const result = await bulkDeleteFiles(
+        { fileIds: [1, 999], actor: { userId: 1, isAdmin: true } },
+        { prisma: mockPrisma as never, storage: localStorage },
+      );
+
+      expect(result.success).toBe(1);
+      expect(result.failed).toBe(1);
+      expect(result.failedIds).toEqual([999]);
+      expect(consoleWarnSpy).toHaveBeenCalled();
+      consoleWarnSpy.mockRestore();
     });
   });
 });

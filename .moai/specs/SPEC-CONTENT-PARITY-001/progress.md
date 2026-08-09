@@ -53,29 +53,36 @@ AdminLog를 기록하지 않는 기존 결함을 M3에서 발견했으나, M2부
 본 SPEC의 M3 배선 범위(REQ-CPAR-012 "recoverTemp/deleteTemp 호출 배선")를 벗어나는
 수정이라 판단해 **범위 규율(Scope Discipline)에 따라 수정하지 않음** — 잔여 항목으로 기록.
 
-### 잔여 마일스톤 (M4~M7, 그룹 E~H)
+### M4 — 파일 목록 완성 (REQ-CPAR-021~023)
 
-미착수. REQ-CPAR-021~030, AC-CPAR-011~016(파일, 모듈, 알림 매트릭스, 메일 로그)은
+| AC | Actual Output | Status |
+|---|---|---|
+| AC-CPAR-011 검색/필터/정렬 | `FileManagementClient.tsx`: 파일명 검색(`search`)·타입 필터(`fileType`, 기존 `admin.file.list` 파라미터 재사용) UI 배선 + 정렬 컨트롤(등록일/파일 크기/다운로드 수 select + asc/desc 토글 버튼) 신규 추가. `packages/file/src/admin.ts` `listFiles`에 `sortBy: 'size'\|'downloads'\|'regdate'` + `sortOrder` 파라미터 추가(additive, 미지정 시 기존 `regdate desc` 하위 호환 유지) — Prisma `orderBy` 필드 매핑(`fileSize`/`downloadCount`/`regdate`). `packages/file/src/admin.test.ts` 4건(sortBy=size/downloads/regdate 각 orderBy 확인 + 미지정 기본값) PASS, `apps/web/server/api/routers/admin/file.test.ts`(신규 라우터 테스트 파일, 이전 부재) FILE-LIST-001(search/fileType/sortBy/sortOrder 실호출 인자 전달) PASS, `FileManagementClient.test.tsx`(신규) FILE-UI-1~4(검색/타입 필터/정렬 select/asc-desc 토글이 쿼리 입력에 즉시 반영) PASS — **실제 브라우저 재현(검색·정렬 결과 목록 갱신)은 본 세션에서 미실시**(mock tRPC 훅 기반 단위 검증만 수행, M1~M3와 동일 관례) | PASS-WITH-DEBT |
+| AC-CPAR-012 파일 일괄 삭제 | `FileManagementClient.tsx`: 체크박스(개별 + 전체 선택) + "선택 삭제 (N)" 버튼 → `confirm()` 확인 다이얼로그 → `admin.file.bulkDelete({fileIds})` 호출, 성공 시 선택 초기화 + 재조회. 백엔드 `packages/file/src/admin.ts` `bulkDeleteFiles` 신규 — SPEC-FILE-001 기존 cascade 삭제 서비스 `deleteAttachment`(storage.delete + DB delete)를 파일당 재사용(raw `prisma.fileAttachment.delete` 직접 호출 없음), 성공 건마다 `AdminLog`(`bulk_delete_file`, target=`file:{id}`) 기록. storage I/O가 포함되어 단일 DB 트랜잭션 대신 `purgeOrphans`와 동일한 per-item best-effort 패턴(개별 실패는 warn 후 계속 진행) 채택 — `@MX:WARN`+`@MX:REASON` 주석으로 사유 기록. `admin.test.ts` 4건(성공 2건+AdminLog 기록, 비관리자 거부, 빈 배열, 부분 실패 best-effort) PASS, `file.test.ts` FILE-BULK-001(bulkDeleteFiles 위임) PASS, `FileManagementClient.test.tsx` FILE-UI-5~8(전체 선택, confirm 승인 후 mutate 호출, confirm 거부 시 미호출, 선택 없으면 버튼 미렌더) PASS — **실제 브라우저 재현(삭제 후 새로고침 영속, 연관 문서 첨부 목록 반영)은 미실시**(AC-CPAR-005/007과 동일 사유). AuditLog는 `protectedAdminProcedure`의 `auditLogger` 미들웨어가 모든 admin mutation에 자동 기록(기존 메커니즘, M2와 동일) + 파일별 fine-grained AdminLog 병행 기록 | PASS-WITH-DEBT |
+
+### 잔여 마일스톤 (M5~M7, 그룹 F~H)
+
+미착수. REQ-CPAR-024~030, AC-CPAR-013~016(모듈, 알림 매트릭스, 메일 로그)은
 다음 세션에서 이어서 진행.
 
 ## §E.3 Run-phase Audit-Ready Signal
 
 ```yaml
-run_complete_at: null  # 전체 SPEC 미완료 — M1/M2/M3만 완료
-run_commit_sha: "80b034c (M1), 5062c70 (M2), e911afc (M3)"
-run_status: in-progress  # M4~M7 잔여
+run_complete_at: null  # 전체 SPEC 미완료 — M1/M2/M3/M4만 완료
+run_commit_sha: "80b034c (M1), 5062c70 (M2), e911afc (M3), pending-backfill-M4"
+run_status: in-progress  # M5~M7 잔여
 ac_pass_count: 6  # AC-CPAR-001,002,003,004(M1/M2) + AC-CPAR-006,009(M3 필터 배선)
-ac_pass_with_debt_count: 5  # AC-CPAR-005,006(M2 FK) + AC-CPAR-007,008,010(M3 런타임 재현 미실시)
+ac_pass_with_debt_count: 7  # AC-CPAR-005,006(M2 FK) + AC-CPAR-007,008,010(M3 런타임 재현 미실시) + AC-CPAR-011,012(M4 런타임 재현 미실시)
 ac_fail_count: 0
-preserve_list_post_run_count: 5  # plan.md §2 PRESERVE 목록 5건 — M3도 위반 없음 확인(document/comment 서비스 시그니처 additive만)
+preserve_list_post_run_count: 5  # plan.md §2 PRESERVE 목록 5건 — M4도 위반 없음 확인(document/comment 서비스, spamfilter, Trash 모델, 회원용 알림 화면 미변경)
 l44_pre_commit_fetch: true  # git fetch origin main 수행, 0 0 (동기 상태) 확인
 l44_post_push_fetch: null  # 오케스트레이터가 push 후 확인 예정(본 세션은 push 안 함)
-new_warnings_or_lints_introduced: 0  # tsc --noEmit 0 errors (M1/M2 baseline과 동일)
+new_warnings_or_lints_introduced: 0  # tsc --noEmit -p apps/web 0 errors
 cross_platform_build:
   status: not_applicable
   reason: "TypeScript/Next.js 웹 프로젝트 — OS별 syscall 분기 없음"
-total_run_phase_files: 29  # M1/M2 누적 13 + M3 신규 7(DocumentTableClient.tsx/.test.tsx, documents/page.test.tsx, CommentTableClient.tsx/.test.tsx, comments/page.test.tsx, admin/comment.test.ts) + 수정 9
-m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 80b034c, M2(휴지통) 5062c70, M3(문서·댓글 배선) e911afc. M4~M7은 후속 세션 커밋 예정"
+total_run_phase_files: 36  # M1~M3 누적 29 + M4 신규 2(FileManagementClient.test.tsx, admin/file.test.ts) + 수정 5(FileManagementClient.tsx, admin/file.ts, packages/file/src/{admin.ts,admin.test.ts,index.ts})
+m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 80b034c, M2(휴지통) 5062c70, M3(문서·댓글 배선) e911afc, M4(파일 목록 완성) 본 커밋. M5~M7은 후속 세션 커밋 예정"
 ```
 
 ## §E.4 Sync-phase Audit-Ready Signal

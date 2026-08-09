@@ -24,8 +24,15 @@ export {
   cascadeRebuild,
   orphanCleanupTask,
   migrateStorage,
+  bulkDeleteFiles,
 } from './admin';
-export type { MigrateStorageOptions } from './admin';
+export type {
+  MigrateStorageOptions,
+  FileSortBy,
+  FileSortOrder,
+  BulkDeleteFilesInput,
+  BulkDeleteFilesResult,
+} from './admin';
 
 // Server layer exports
 export { createFileRouter } from './server/router';
