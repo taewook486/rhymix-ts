@@ -217,6 +217,7 @@ export async function purgeDocument(
 
 export interface TrashWithDocument extends Trash {
   document: Document;
+  deletedBy: { id: number; nickName: string } | null;
 }
 
 export interface ListTrashResult {
@@ -249,7 +250,9 @@ export async function listTrash(
 
   const items = await ctx.prisma.trash.findMany({
     where,
-    include: { document: true },
+    // SPEC-CONTENT-PARITY-001 M2(REQ-CPAR-003): "삭제한 관리자" 컬럼 표시를 위해
+    // deletedBy 관계를 additive로 include (기존 document include는 유지).
+    include: { document: true, deletedBy: { select: { id: true, nickName: true } } },
     orderBy: { expiresAt: 'asc' },
     take: limit + 1,
   });
