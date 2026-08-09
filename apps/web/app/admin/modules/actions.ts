@@ -65,6 +65,52 @@ export async function createModuleAction(
   redirect('/admin/modules')
 }
 
+const UpdateSchema = z.object({
+  title: z.string().min(1, '제목을 입력하세요'),
+  browserTitle: z.string().optional(),
+  description: z.string().optional(),
+})
+
+/**
+ * 모듈 인스턴스 편집 폼 제출 — SPEC-CONTENT-PARITY-001 M5 (REQ-CPAR-024).
+ *
+ * `/admin/modules/[id]/edit` 의 dead link 를 해소하는 실제 편집 폼이 호출하는
+ * Server Action. admin.module.update 와 연동하며, instanceId 는
+ * `updateModuleAction.bind(null, instanceId)` 형태로 클라이언트에서 바인딩된다.
+ */
+export async function updateModuleAction(
+  instanceId: number,
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = UpdateSchema.safeParse({
+    title: formData.get('title'),
+    browserTitle: formData.get('browserTitle') || undefined,
+    description: formData.get('description') || undefined,
+  })
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors }
+  }
+
+  try {
+    const caller = await getServerCaller()
+    await caller.admin.module.update({
+      instanceId,
+      title: parsed.data.title,
+      browserTitle: parsed.data.browserTitle,
+      description: parsed.data.description,
+    })
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message }
+    }
+    return { error: '모듈 수정 중 오류가 발생했습니다.' }
+  }
+  revalidatePath(`/admin/modules/${instanceId}`)
+  revalidatePath('/admin/modules')
+  redirect(`/admin/modules/${instanceId}`)
+}
+
 export async function deleteModuleAction(
   instanceId: number,
 ): Promise<{ ok: true } | { error: string }> {

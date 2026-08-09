@@ -133,3 +133,91 @@ describe('deleteModuleAction', () => {
     expect(result).toEqual({ error: 'this instance is the index module' })
   })
 })
+
+describe('updateModuleAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('M5-1: 유효 FormData 로 updateModuleAction 을 호출하면 tRPC admin.module.update 가 호출되고 상세 페이지로 redirect 된다 (REQ-CPAR-024)', async () => {
+    // Arrange
+    const mockUpdate = vi.fn().mockResolvedValue({ id: 7 })
+    const mockCaller = {
+      admin: { module: { update: mockUpdate } },
+    }
+    mockGetServerCaller.mockResolvedValue(mockCaller)
+    mockRedirect.mockImplementation((url: string) => {
+      throw new Error(`NEXT_REDIRECT:${url}`)
+    })
+
+    const formData = new FormData()
+    formData.set('title', '새 제목')
+    formData.set('browserTitle', '새 브라우저 제목')
+    formData.set('description', '새 설명')
+
+    // Act
+    const { updateModuleAction } = await import('./actions')
+    let redirectError: Error | null = null
+    try {
+      await updateModuleAction(7, null, formData)
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('NEXT_REDIRECT:')) {
+        redirectError = e
+      }
+    }
+
+    // Assert
+    expect(mockUpdate).toHaveBeenCalledWith({
+      instanceId: 7,
+      title: '새 제목',
+      browserTitle: '새 브라우저 제목',
+      description: '새 설명',
+    })
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/modules/7')
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/modules')
+    expect(redirectError).not.toBeNull()
+    expect(redirectError!.message).toBe('NEXT_REDIRECT:/admin/modules/7')
+  })
+
+  it('M5-2: title 이 빈 문자열이면 fieldErrors 를 반환하고 update 를 호출하지 않는다 (REQ-CPAR-024)', async () => {
+    // Arrange
+    const mockUpdate = vi.fn()
+    const mockCaller = {
+      admin: { module: { update: mockUpdate } },
+    }
+    mockGetServerCaller.mockResolvedValue(mockCaller)
+
+    const formData = new FormData()
+    formData.set('title', '')
+
+    // Act
+    const { updateModuleAction } = await import('./actions')
+    const result = await updateModuleAction(7, null, formData)
+
+    // Assert
+    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(result.fieldErrors?.title).toBeTruthy()
+  })
+
+  it('M5-3: tRPC 가 TRPCError 를 throw 하면 { error: string } 을 반환한다 (REQ-CPAR-024)', async () => {
+    // Arrange
+    const { TRPCError } = await import('@trpc/server')
+    const mockUpdate = vi.fn().mockRejectedValue(
+      new TRPCError({ code: 'NOT_FOUND', message: 'module instance not found' })
+    )
+    const mockCaller = {
+      admin: { module: { update: mockUpdate } },
+    }
+    mockGetServerCaller.mockResolvedValue(mockCaller)
+
+    const formData = new FormData()
+    formData.set('title', '새 제목')
+
+    // Act
+    const { updateModuleAction } = await import('./actions')
+    const result = await updateModuleAction(7, null, formData)
+
+    // Assert
+    expect(result).toEqual({ error: 'module instance not found' })
+  })
+})

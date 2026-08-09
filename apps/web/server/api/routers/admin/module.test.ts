@@ -207,4 +207,81 @@ describe('admin.module tRPC router (Slice B)', () => {
     expect(mockDeleteModuleInstance).toHaveBeenCalledOnce();
     expect(result).toMatchObject({ ok: true, deletedId: 1 });
   });
+
+  // ---------------------------------------------------------------------
+  // SPEC-CONTENT-PARITY-001 M5 (REQ-CPAR-024) — module.getById/update의
+  // description 필드 노출. ModuleInstance.description 컬럼은 이미 존재하나
+  // getById/update가 노출하지 않던 gap을 additive로 확장.
+  // ---------------------------------------------------------------------
+
+  it('M5-1: admin 세션 + module.getById → description 필드가 결과에 포함된다 (REQ-CPAR-024)', async () => {
+    mockPrisma.moduleInstance.findUnique.mockResolvedValueOnce({
+      id: 1,
+      mid: 'notice',
+      name: '공지사항',
+      description: '공지사항 게시판입니다',
+      browserTitle: null,
+      moduleCode: 'board',
+      layoutId: null,
+      mobileLayoutId: null,
+      skin: null,
+      mobileSkin: null,
+      menuId: null,
+      config: null,
+      rssEnabled: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    const { adminModuleRouter } = await import('./module');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminModuleRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+    const result = await caller.getById({ instanceId: 1 });
+
+    expect(result.description).toBe('공지사항 게시판입니다');
+  });
+
+  it('M5-2: admin 세션 + module.update({ description }) → prisma.update에 description이 전달된다 (REQ-CPAR-024)', async () => {
+    mockPrisma.moduleInstance.update.mockResolvedValueOnce(
+      { id: 1 } as Awaited<ReturnType<typeof mockPrisma.moduleInstance.update>>,
+    );
+
+    const { adminModuleRouter } = await import('./module');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminModuleRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+    await caller.update({
+      instanceId: 1,
+      title: '새 제목',
+      browserTitle: '새 브라우저 제목',
+      description: '새 설명',
+    });
+
+    expect(mockPrisma.moduleInstance.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { name: '새 제목', browserTitle: '새 브라우저 제목', description: '새 설명' },
+    });
+  });
+
+  it('M5-3: admin 세션 + module.update({ title 미지정 }) → prisma.update data에 name 키가 없다 (REQ-CPAR-024 회귀 방지)', async () => {
+    mockPrisma.moduleInstance.update.mockResolvedValueOnce(
+      { id: 1 } as Awaited<ReturnType<typeof mockPrisma.moduleInstance.update>>,
+    );
+
+    const { adminModuleRouter } = await import('./module');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminModuleRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+    await caller.update({ instanceId: 1, browserTitle: '브라우저 제목만' });
+
+    expect(mockPrisma.moduleInstance.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { browserTitle: '브라우저 제목만' },
+    });
+  });
 });

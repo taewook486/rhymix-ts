@@ -135,6 +135,7 @@ export const adminModuleRouter = router({
         mid: instance.mid,
         title: instance.name,
         browserTitle: instance.browserTitle,
+        description: instance.description,
         moduleCode: instance.moduleCode,
         moduleName: instance.moduleCode, // Use moduleCode as name since there's no separate module relation
         layoutId: instance.layoutId,
@@ -152,10 +153,15 @@ export const adminModuleRouter = router({
     }),
 
   /**
-   * 모듈 인스턴스 수정 — 페이지 설정 (REQ-ADMIN2-027).
+   * 모듈 인스턴스 수정 — 페이지 설정 (REQ-ADMIN2-027, SPEC-CONTENT-PARITY-001 REQ-CPAR-024).
    *
-   * title, browserTitle, layoutId, grant 등의 기본 설정을 수정한다.
+   * title, browserTitle, description, layoutId, grant 등의 기본 설정을 수정한다.
    * config 필드에 추가 JSON 데이터를 저장할 수 있다.
+   *
+   * @MX:NOTE: [AUTO] `title` 입력 필드는 ModuleInstance.name 컬럼에 매핑된다(getById의
+   *           `title: instance.name` 노출과 대칭). SPEC-CONTENT-PARITY-001 M5에서 발견 —
+   *           과거 이 procedure에 실제 호출부가 없어(grep 0건) `data.title` 오기입이
+   *           런타임에서 한 번도 트리거되지 않았던 결함을 함께 수정.
    */
   update: protectedAdminProcedure
     .input(
@@ -163,6 +169,7 @@ export const adminModuleRouter = router({
         instanceId: z.number().int().positive(),
         title: z.string().min(1).optional(),
         browserTitle: z.string().optional(),
+        description: z.string().nullable().optional(),
         layoutId: z.string().nullable().optional(),
         mobileLayoutId: z.string().nullable().optional(),
         skin: z.string().nullable().optional(),
@@ -172,10 +179,15 @@ export const adminModuleRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { instanceId, grant, ...patch } = input;
+      const { instanceId, grant, title, ...patch } = input;
+
+      const data: Record<string, unknown> = { ...patch };
+      if (title !== undefined) {
+        // ModuleInstance 모델의 실제 컬럼명은 name (title은 API/UI 레이어의 별칭)
+        data.name = title;
+      }
 
       // grant 정보는 config 필드에 병합 저장
-      const data: Record<string, unknown> = { ...patch };
       if (grant !== undefined) {
         const existing = await ctx.prisma.moduleInstance.findUnique({
           where: { id: instanceId },

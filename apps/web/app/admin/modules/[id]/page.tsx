@@ -3,8 +3,10 @@
  *
  * 모듈 상세 정보 표시:
  * - REQ-ADMIN2-146: Module detail/info view showing config, grant settings, category assignment
+ * - REQ-CPAR-025 (SPEC-CONTENT-PARITY-001 M5): board 타입 모듈은 per-board 관리 화면
+ *   (분류/확장 변수/권한/피드) 진입 링크를 노출한다.
  *
- * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-146
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-146, SPEC-CONTENT-PARITY-001 REQ-CPAR-025
  */
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -101,6 +103,27 @@ export default async function ModuleDetailPage({
               )}
             </div>
           </div>
+
+          {/* per-board 관리 화면 링크 (REQ-CPAR-025) — board 타입 모듈에만 노출 */}
+          {instance.moduleCode === 'board' && (
+            <div className="bg-white rounded-lg border border-zinc-200 p-6">
+              <h2 className="text-lg font-semibold mb-4">게시판 관리</h2>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild variant="outline">
+                  <Link href={`/admin/boards/${instance.mid}/categories`}>분류 관리</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href={`/admin/boards/${instance.mid}/extra-keys`}>확장 변수</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href={`/admin/boards/${instance.mid}/permissions`}>권한 관리</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href={`/admin/boards/${instance.mid}/feed`}>피드 설정</Link>
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* 추가 설정 */}
           {instance.config && Object.keys(instance.config).length > 0 && (
