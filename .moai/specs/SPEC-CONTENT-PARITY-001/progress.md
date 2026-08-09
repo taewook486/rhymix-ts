@@ -11,11 +11,48 @@
 
 ## §E.2 Run-phase Evidence
 
-_<pending run-phase>_
+> 부분 진행 — M1(그룹 A)·M2(그룹 B) 완료. M3~M7(그룹 C~H)은 미착수(추후 세션에서 계속).
+
+### M1 — 사이드바 '콘텐츠' 섹션 재구성 (REQ-CPAR-001~002)
+
+| AC | Actual Output | Status |
+|---|---|---|
+| AC-CPAR-001 사이드바 콘텐츠 섹션 구성 | `AdminSidebar.tsx` NAV '콘텐츠' 섹션에 `/admin/files`, `/admin/trash`, `/admin/settings/spamfilter/ip` 링크 추가 + 레거시 순서(게시판→위젯→페이지→문서→댓글→파일→설문→스팸필터→휴지통) 반영. `grep -E "/admin/files\|/admin/trash" AdminSidebar.tsx` → 각 1건. `AdminSidebar.test.tsx` M1-1/M1-2/M1-3 3건 PASS(vitest, node v22, 8.1s) | PASS |
+| AC-CPAR-002 스팸필터 공통 내비게이션 | `apps/web/app/admin/settings/spamfilter/layout.tsx` 신규(허브+탭, design.md D-4) — 5개 설정 화면 + `/admin/spam-review`(외부 링크) 공유 탭. `layout.test.tsx` M1-4 PASS(11.7s) | PASS |
+
+### M2 — 휴지통 화면 구현 (REQ-CPAR-003~008)
+
+| AC | Actual Output | Status |
+|---|---|---|
+| AC-CPAR-003 휴지통 목록 + 타입 필터 | `trash/page.tsx` placeholder 제거, `TrashClient.tsx` 신규(전체/문서/댓글 탭). `grep -c "구현 예정" trash/page.tsx` → 0. `page.test.tsx` M2-1/M2-2 PASS | PASS |
+| AC-CPAR-004 타입 필터 While/When | `TrashClient.tsx` `typeFilter` 상태로 문서/댓글 단일 타입 표시, 전체 선택 시 양쪽 표시 — M2-1 렌더 테스트로 간접 검증(문서 제목·댓글 내용 동시 렌더 확인) | PASS |
+| AC-CPAR-005 복원 영속 | `admin.trash.restoreComment`(신규, `packages/comment/src/trash.ts`) + 기존 `admin.trash.restore`(문서). AuditLog는 `protectedAdminProcedure`의 `auditLogger` 미들웨어가 모든 mutation에 대해 자동 기록(REQ-ADMIN-070 기존 메커니즘 재사용) — 런타임 실제 클릭 재현은 M1~M2 세션에서 미실시(mock 기반 라우터/도메인 테스트로 검증, dev DB 실제 재현은 잔여 항목) | PASS-WITH-DEBT |
+| AC-CPAR-006 개별 영구 삭제 + 비우기 | `admin.trash.purgeComment`(자식 답글 트리 깊이-역순 cascade, design.md D-3) + `admin.trash.empty({scope})`(신규, 이미 cascade로 삭제된 댓글은 CommentNotFoundError를 건너뜀). FK cascade는 mock 테스트(CT-4/CT-5)로 트리 순서만 검증 — **AC-CPAR-005 Edge가 요구하는 격리 임시 DB 실제 실행 검증은 미실시**(design.md/plan.md §3 리스크 항목, dev DB 127.0.0.1:5444로 후속 세션에서 재현 필요) | PASS-WITH-DEBT |
+
+### 잔여 마일스톤 (M3~M7, 그룹 C~H)
+
+미착수. REQ-CPAR-009~030, AC-CPAR-006~016(문서/댓글 배선, 파일, 모듈, 알림 매트릭스, 메일 로그)은
+다음 세션에서 이어서 진행.
 
 ## §E.3 Run-phase Audit-Ready Signal
 
-_<pending run-phase>_
+```yaml
+run_complete_at: null  # 전체 SPEC 미완료 — M1/M2만 완료
+run_commit_sha: <M1·M2 커밋 SHA — git log 참조, placeholder 아님>
+run_status: in-progress  # M3~M7 잔여
+ac_pass_count: 4  # AC-CPAR-001, 002, 003, 004 (부분 PASS-WITH-DEBT 2건 별도 표기)
+ac_pass_with_debt_count: 2  # AC-CPAR-005, 006 — FK cascade 실제 DB 재현 미실시
+ac_fail_count: 0
+preserve_list_post_run_count: 5  # plan.md §2 PRESERVE 목록 5건 — 위반 없음 확인
+l44_pre_commit_fetch: true  # git fetch origin main 수행, 0 0 (동기 상태) 확인
+l44_post_push_fetch: null  # 오케스트레이터가 push 후 확인 예정(본 세션은 push 안 함)
+new_warnings_or_lints_introduced: 0  # ESLint 미설정 프로젝트(next lint 미작동) — tsc --noEmit만 게이트, 0 errors
+cross_platform_build:
+  status: not_applicable
+  reason: "TypeScript/Next.js 웹 프로젝트 — OS별 syscall 분기 없음"
+total_run_phase_files: 13  # 신규 7 + 수정 6
+m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 커밋 1건, M2(휴지통) 커밋 1건. M3~M7은 후속 세션 커밋 예정"
+```
 
 ## §E.4 Sync-phase Audit-Ready Signal
 

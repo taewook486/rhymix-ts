@@ -2,7 +2,7 @@
 id: SPEC-CONTENT-PARITY-001
 title: "관리자 콘텐츠 메뉴 레거시 parity — 휴지통/파일/스팸필터 노출 + 문서·댓글 관리 배선 + 알림·메일 로그"
 version: "0.1.1"
-status: draft
+status: in-progress
 created: 2026-08-09
 updated: 2026-08-09
 author: manager-spec

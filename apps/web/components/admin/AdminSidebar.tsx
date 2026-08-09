@@ -1,13 +1,18 @@
 'use client'
 /**
- * Admin 사이드바 컴포넌트 — SPEC-ADMIN-001 Slice C + Slice D + SPEC-ADMIN-EXTRAS-001 Slice A+B.
+ * Admin 사이드바 컴포넌트 — SPEC-ADMIN-001 Slice C + Slice D + SPEC-ADMIN-EXTRAS-001 Slice A+B
+ *                     + SPEC-CONTENT-PARITY-001 M1.
  *
  * @MX:NOTE: [AUTO] sidebar IA 의 single source of truth.
  *           spec.md line 904-926 과 1:1 매핑.
  *           Slice D: /admin/menu, /admin/logs 활성화.
  *           Slice A: /admin/settings/export, /admin/settings/import 추가.
  *           Slice B: favorites section 추가 (DnD 지원).
- * @MX:SPEC: SPEC-ADMIN-001 Admin Shell IA
+ *           SPEC-CONTENT-PARITY-001 M1(REQ-CPAR-001~002): '콘텐츠' 섹션에 파일/휴지통/
+ *           스팸필터 링크 추가 + 레거시 순서(게시판→페이지→문서→댓글→파일→설문→스팸필터→
+ *           휴지통) 반영. 스팸필터는 허브+탭(design.md D-4)이므로 사이드바는 첫 탭
+ *           (/admin/settings/spamfilter/ip)으로 연결.
+ * @MX:SPEC: SPEC-ADMIN-001 Admin Shell IA, SPEC-CONTENT-PARITY-001 REQ-CPAR-001~002
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -36,6 +41,8 @@ import {
   SlidersHorizontal,
   BarChart3,
   Target,
+  FolderArchive,
+  Shield,
 } from 'lucide-react'
 import { trpc } from '@/providers/TRPCProvider'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -73,6 +80,9 @@ const NAV: ReadonlyArray<NavSection> = [
     ],
   },
   {
+    // SPEC-CONTENT-PARITY-001 REQ-CPAR-001: 레거시 콘텐츠 메뉴 순서
+    // (게시판→페이지→문서→댓글→파일→설문→스팸필터→휴지통)를 참고해 재배열.
+    // 위젯 시스템은 rhymix-ts 고유 항목으로 유지(위치는 구현 결정 — 게시판 다음 배치).
     section: '콘텐츠',
     items: [
       { href: '/admin/modules', label: '게시판(모듈)', icon: Package },
@@ -80,7 +90,11 @@ const NAV: ReadonlyArray<NavSection> = [
       { href: '/admin/pages', label: '페이지', icon: FileText },
       { href: '/admin/documents', label: '전체 문서 관리', icon: FileText },
       { href: '/admin/comments', label: '전체 댓글 관리', icon: MessageSquare },
+      { href: '/admin/files', label: '파일 관리', icon: FolderArchive },
       { href: '/admin/polls', label: '설문', icon: BarChart3 },
+      // REQ-CPAR-002: 허브+탭 확정 — 사이드바는 단일 링크만, 첫 탭(ip)으로 연결.
+      { href: '/admin/settings/spamfilter/ip', label: '스팸필터', icon: Shield },
+      { href: '/admin/trash', label: '휴지통', icon: Trash2 },
     ],
   },
   {
