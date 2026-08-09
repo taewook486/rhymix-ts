@@ -2,9 +2,9 @@
 id: SPEC-MEMBER-PARITY-001
 title: "관리자 회원 메뉴 레거시 parity — 포인트 사이드바 링크 + 회원 목록 고급 기능"
 version: "0.1.0"
-status: draft
+status: in-progress
 created: 2026-08-08
-updated: 2026-08-08
+updated: 2026-08-09
 author: manager-spec
 priority: P1
 phase: "Phase 11 — 관리자 회원 메뉴 레거시 parity"
@@ -276,21 +276,26 @@ SPEC-POINT-001 범위로 이미 완료 상태(completed)이다. 이 페이지는
 
 ---
 
-## 8. 미해결 질문 (run phase에서 확정)
+## 8. 미해결 질문 (모두 run phase에서 확정됨)
 
-> REQ-MPAR-007(정렬 변경 시 페이지네이션 유지)과 REQ-MPAR-018(soft delete 채택)은 각각
-> REQ 본문, plan.md M2/M5, acceptance.md D.8에서 이미 확정되었으므로 아래 목록에서 제외한다.
-
-1. **REQ-MPAR-001 포인트 링크 순서/아이콘**: 레거시 순서(회원목록/회원설정/회원그룹/포인트)를
-   그대로 따를 것인지, 아니면 rhymix-ts의 IA에 맞게 재배치할 것인지. 또한 사용할 아이콘은
-   Lucide의 무엇으로 할 것인지(예: `Target`, `Award`, `Trophy` 등).
-2. **REQ-MPAR-004 정렬 상태 저장 메커니즘**: 정렬 컬럼/방향을 URL 쿼리 파라미터로 저장할지,
-   컴포넌트 로컬 상태로만 유지할지. plan.md M2 백엔드 설계는 `sortBy`/`sortOrder` Zod 입력
-   스키마만 명시하며, 클라이언트 측 저장 메커니즘 자체는 아직 미확정 — run phase에서 결정한다.
-3. **REQ-MPAR-020 bulk 프로시저 이름**: 새 bulk 삭제 프로시저의 정확한 이름(예: `admin.user.bulkDelete`,
-   `admin.user.bulkSoftDelete`, 또는 기타 명명 규칙).
-4. **REQ-MPAR-011 그룹 없는 경우 UX**: `MemberGroup`이 하나도 없는 경우 "그룹전체"만 표시할지,
-   아니면 안내 메시지를 추가할지.
-5. **REQ-MPAR-015 제외 대상 명확화**: 가입일시 범위 검색의 "이상/이하"는 가입일시 자체는 검색
-   대상에 포함하되 범위 연산자만 제외하는 방식으로 구현할지, 아니면 가입일시 자체를 검색
-   대상에서 완전히 제외할지.
+> 아래 5개 항목은 모두 run phase의 실제 구현을 통해 확정되었으므로 목록에서 제외한다.
+> (REQ-MPAR-007(정렬 변경 시 페이지네이션 유지)과 REQ-MPAR-018(soft delete 채택)도 각각
+> REQ 본문, plan.md M2/M5, acceptance.md D.8에서 이미 확정되어 있었다 — 동일 사유로 목록에서 제외.)
+>
+> - **REQ-MPAR-001 포인트 링크 순서/아이콘**: Lucide `Target` 아이콘을 채택했고, "회원" 섹션 내
+>   순서는 레거시 순서(회원목록/회원설정/회원그룹/포인트, 포인트가 마지막)를 그대로 따랐다.
+>   근거: `apps/web/components/admin/AdminSidebar.tsx` 105행, 커밋 7fefa0f (M1).
+> - **REQ-MPAR-004 정렬 상태 저장 메커니즘**: 컴포넌트 로컬 상태가 아닌 URL 쿼리 파라미터
+>   (`searchParams.sortBy`, `searchParams.sortOrder`) 방식을 채택했다.
+>   근거: `apps/web/app/admin/members/page.tsx` 20~74행, 커밋 0bfe0b1 (M2).
+> - **REQ-MPAR-020 bulk 프로시저 이름**: 별도의 `bulkDelete`/`bulkSoftDelete` 프로시저 대신,
+>   기존 `admin.user.bulk` 프로시저를 `action: z.enum(['suspend', 'deny', 'approve', 'delete'])`로
+>   확장하여 통합했다. `action === 'delete'`일 때 `softDeleteUser()`를 호출한다.
+>   근거: `apps/web/server/api/routers/admin/user.ts` 257행, 커밋 5049675 (M5).
+> - **REQ-MPAR-011 그룹 없는 경우 UX**: `MemberGroup`이 0개여도 별도 안내 메시지 없이
+>   `<option value="">그룹전체</option>`만 표시하는 방식(질문의 옵션 1)을 채택했다.
+>   근거: `apps/web/app/admin/members/page.tsx` 160행, 커밋 c7293c3 (M3).
+> - **REQ-MPAR-015 제외 대상 명확화**: 가입일시(createdAt) 자체를 검색 대상에서 완전히
+>   제외하는 방식(질문의 옵션 2)을 채택했다. plan.md M4 "Out-of-Scope 명확화" 절에서 이미
+>   확정되어 있었고, 실제 구현(`apps/web/server/api/routers/admin/user.ts`)도 이를 따른다.
+>   근거: 커밋 ee0cf5c (M4).

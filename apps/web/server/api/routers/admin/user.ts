@@ -24,6 +24,23 @@ import { hashPassword } from '@rhymix-ts/auth';
 const UserStatusEnum = z.enum(['APPROVED', 'UNAUTHED', 'SUSPENDED', 'DENIED', 'DELETED']);
 
 /**
+ * SPEC-MEMBER-PARITY-001: lastLoginAt 검색어를 UTC 하루 범위(gte/lt)로 변환한다.
+ *
+ * lastLoginAt은 DateTime? 컬럼이라 Prisma DateTime 필터가 contains를 지원하지
+ * 않는다(PrismaClientValidationError → admin.user.list 500 크래시). 날짜로
+ * 파싱할 수 없는 입력이면 null을 반환한다.
+ */
+function parseSearchDayRange(searchQuery: string): { gte: Date; lt: Date } | null {
+  const parsed = new Date(searchQuery.trim());
+  if (Number.isNaN(parsed.getTime())) return null;
+  const gte = new Date(parsed);
+  gte.setUTCHours(0, 0, 0, 0);
+  const lt = new Date(gte);
+  lt.setUTCDate(lt.getUTCDate() + 1);
+  return { gte, lt };
+}
+
+/**
  * SPEC-MEMBER-ADMIN-001 REQ-MADM-020~023: "기본 설정" 탭에서 저장한 닉네임 변경
  * 정책을 조회한다. `admin.settings.ts`의 getSiteSetting과 동일한 패턴이지만
  * 라우터 내부 헬퍼가 export되어 있지 않아 이 파일에서 최소한으로 재구현한다.
@@ -81,15 +98,31 @@ export const adminUserRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
+      // SPEC-MEMBER-PARITY-001: lastLoginAt(DateTime?)은 문자열 contains 필터를
+      // 지원하지 않으므로 날짜 파싱 후 하루 범위(gte/lt) 필터로 분기한다.
+      // 나머지 5개 문자열 필드는 기존 contains 로직을 유지한다.
+      let searchWhere: Record<string, unknown> = {};
+      if (input.searchQuery && input.searchTarget) {
+        if (input.searchTarget === 'lastLoginAt') {
+          const range = parseSearchDayRange(input.searchQuery);
+          if (!range) {
+            // 날짜로 파싱할 수 없는 검색어는 어떤 lastLoginAt과도 매칭될 수
+            // 없다 — 크래시 대신 빈 결과를 반환한다(쿼리 생략).
+            return { users: [], total: 0 };
+          }
+          searchWhere = { lastLoginAt: { gte: range.gte, lt: range.lt } };
+        } else {
+          searchWhere = {
+            [input.searchTarget]: { contains: input.searchQuery, mode: 'insensitive' },
+          };
+        }
+      }
+
       const where = {
         ...(input.status ? { status: input.status } : {}),
         ...(input.filterAdmin ? { isAdmin: true } : {}),
         ...(input.groupId ? { memberGroups: { some: { groupId: input.groupId } } } : {}),
-        ...(input.searchQuery && input.searchTarget
-          ? {
-              [input.searchTarget]: { contains: input.searchQuery, mode: 'insensitive' },
-            }
-          : {}),
+        ...searchWhere,
       };
 
       // 정렬: sortBy가 없으면 createdAt 내림차순(기존 동작 유지)

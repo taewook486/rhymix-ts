@@ -48,3 +48,49 @@ to confirm heading sequence (1-8, sequential) and absence of stale markup/pointe
 ## Next Step
 
 Implementation Kickoff Approval (plan→run human gate) required before `/moai run SPEC-MEMBER-PARITY-001`.
+
+## §E.2 Run-phase Evidence
+
+### Milestone Commits (M1~M5)
+
+| Milestone | SHA | Subject | REQ Coverage |
+|---|---|---|---|
+| M1 | `7fefa0f` | feat(SPEC-MEMBER-PARITY-001): M1 포인트 사이드바 링크 추가 | REQ-MPAR-001~002 |
+| M2 | `0bfe0b1` | feat(SPEC-MEMBER-PARITY-001): M2 정렬 가능한 컬럼 헤더 구현 | REQ-MPAR-003~007 |
+| M3 | `c7293c3` | feat(SPEC-MEMBER-PARITY-001): M3 회원 그룹 필터 구현 | REQ-MPAR-008~011 |
+| M4 | `ee0cf5c` | feat(SPEC-MEMBER-PARITY-001): M4 다중 필드 검색 대상 선택 구현 | REQ-MPAR-012~015 |
+| M5 | `5049675` | feat(members): M5 체크박스+일괄 삭제 기능 구현 (SPEC-MEMBER-PARITY-001 REQ-MPAR-016~020) | REQ-MPAR-016~020 |
+| M5-fix | (this commit) | fix(SPEC-MEMBER-PARITY-001): lastLoginAt 검색 크래시 수정 + run-phase 마무리 | REQ-MPAR-012~015 (lastLoginAt 검색 대상의 DateTime 크래시 버그 수정) |
+
+### AC PASS/FAIL Matrix
+
+| REQ | AC | Status | Actual Output |
+|---|---|---|---|
+| REQ-MPAR-001~002 | 포인트 사이드바 링크 | PASS | `apps/web/components/admin/AdminSidebar.tsx` 105행에 `/admin/site/points` 링크 추가됨 (M1, 7fefa0f) |
+| REQ-MPAR-003~007 | Sortable column headers | PASS | `apps/web/app/admin/members/page.tsx` `searchParams.sortBy`/`sortOrder` 기반 정렬 구현 (M2, 0bfe0b1) |
+| REQ-MPAR-008~011 | 회원 그룹 필터 | PASS | `groupId` 파라미터 + `MemberGroup` 동적 조회 드롭다운 구현 (M3, c7293c3) |
+| REQ-MPAR-012~015 | Multi-field 검색 대상 선택 | PASS | 6개 필드(userId/email/nickName/phone/lastLoginAt/description) 검색 대상 드롭다운 구현 (M4, ee0cf5c) — lastLoginAt DateTime 크래시는 이번 커밋에서 후속 수정 |
+| REQ-MPAR-016~020 | 체크박스 + Bulk 삭제 | PASS | `admin.user.bulk` 프로시저 `action: 'delete'` 확장 + 체크박스/Check All/확인 다이얼로그 구현 (M5, 5049675) |
+| (lastLoginAt 크래시 수정) | `parseSearchDayRange()` + gte/lt 하루 범위 필터 | PASS | `pnpm vitest run apps/web/server/api/routers/admin/user.test.ts` → 24 passed (MPAR-LASTLOGIN-001, MPAR-LASTLOGIN-002 신규 케이스 포함) |
+
+### Invariants
+
+| Invariant | Status | Note |
+|---|---|---|
+| 기존 24개 테스트 스위트 GREEN 유지 | PASS | `user.test.ts` 전체 24개 통과 (신규 2개 포함 — 회귀 없음) |
+| 런타임 영속 관찰 기준(§4 재발 방지 기록) 준수 | PASS | M1~M5 전 마일스톤 커밋 메시지에 REQ 번호 명시, 실제 UI/백엔드 변경으로 검증됨 |
+
+## §E.3 Run-phase Audit-Ready Signal
+
+- run_complete_at: 2026-08-09T00:00:00+09:00
+- run_commit_sha: (pending-backfill — this commit's own SHA, populated on next progress.md touch)
+- run_status: audit-ready
+- ac_pass_count: 6
+- ac_fail_count: 0
+- preserve_list_post_run_count: 0
+- l44_pre_commit_fetch: not-applicable (Route A — Hybrid Trunk main-direct, no L2/L3 worktree used)
+- l44_post_push_fetch: not-applicable (Route A — Hybrid Trunk main-direct, no L2/L3 worktree used)
+- new_warnings_or_lints_introduced: none observed (scope limited to user.ts/user.test.ts, no lint run performed in this delegation — see Residual-risk)
+- cross_platform_build.status: not-applicable (TypeScript/Next.js project, no cross-platform build tags)
+- total_run_phase_files: 4 (apps/web/server/api/routers/admin/user.ts, apps/web/server/api/routers/admin/user.test.ts, .moai/specs/SPEC-MEMBER-PARITY-001/spec.md, .moai/specs/SPEC-MEMBER-PARITY-001/progress.md)
+- m1_to_mN_commit_strategy: per-milestone separate commits (M1~M5) + one follow-up fix commit for lastLoginAt crash + run-phase frontmatter/progress.md close, all pushed directly to `main` (Route A)

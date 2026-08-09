@@ -193,6 +193,74 @@ describe('admin.user tRPC router (Slice E-5)', () => {
     );
   });
 
+  it('MPAR-LASTLOGIN-001: searchTarget=lastLoginAt + 날짜 검색어 → contains 대신 gte/lt 하루 범위 필터 (SPEC-MEMBER-PARITY-001)', async () => {
+    // lastLoginAt은 DateTime? 컬럼 — Prisma DateTime 필터는 contains를 지원하지
+    // 않아(PrismaClientValidationError) 문자열 필드와 동일한 contains 적용 시
+    // admin.user.list가 500으로 크래시한다. 날짜 파싱 후 UTC 하루 범위로
+    // 변환되어야 한다.
+    mockUserFindMany.mockResolvedValue([]);
+    mockUserCount.mockResolvedValue(0);
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    await caller.list({
+      searchTarget: 'lastLoginAt',
+      searchQuery: '2026-08-08',
+      page: 1,
+      pageSize: 50,
+    });
+
+    expect(mockUserFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          lastLoginAt: {
+            gte: new Date('2026-08-08T00:00:00.000Z'),
+            lt: new Date('2026-08-09T00:00:00.000Z'),
+          },
+        }),
+      }),
+    );
+    // count 쿼리에도 동일한 where가 전달되어야 한다.
+    expect(mockUserCount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          lastLoginAt: {
+            gte: new Date('2026-08-08T00:00:00.000Z'),
+            lt: new Date('2026-08-09T00:00:00.000Z'),
+          },
+        }),
+      }),
+    );
+  });
+
+  it('MPAR-LASTLOGIN-002: searchTarget=lastLoginAt + 비날짜 검색어 → 크래시 없이 빈 결과 반환, prisma 미호출 (SPEC-MEMBER-PARITY-001)', async () => {
+    // 선택한 동작: 날짜로 파싱할 수 없는 입력은 어떤 lastLoginAt과도 매칭될 수
+    // 없으므로 빈 결과를 반환한다(쿼리 자체를 생략).
+    mockUserFindMany.mockResolvedValue([]);
+    mockUserCount.mockResolvedValue(0);
+
+    const { adminUserRouter } = await import('./user');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminUserRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(adminCtx as any);
+
+    const result = await caller.list({
+      searchTarget: 'lastLoginAt',
+      searchQuery: '홍길동',
+      page: 1,
+      pageSize: 50,
+    });
+
+    expect(result).toEqual({ users: [], total: 0 });
+    expect(mockUserFindMany).not.toHaveBeenCalled();
+    expect(mockUserCount).not.toHaveBeenCalled();
+  });
+
   it('E-5-3: admin.user.list status 필터 (US-7)', async () => {
     mockUserFindMany.mockResolvedValue([]);
     mockUserCount.mockResolvedValue(0);
