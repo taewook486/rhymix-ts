@@ -21,6 +21,7 @@ vi.mock('@/lib/db/prisma', () => ({
 
 const mockSiteSettingFindFirst = vi.fn();
 const mockAdminLogCreate = vi.fn();
+const mockUserFindUnique = vi.fn();
 
 const mockPrisma = {
   siteSetting: {
@@ -32,6 +33,9 @@ const mockPrisma = {
   mailLog: {
     count: vi.fn(),
     findMany: vi.fn(),
+  },
+  user: {
+    findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
   },
 };
 
@@ -48,6 +52,9 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
   });
 
   it('list: 상태 필터 없이 전체 목록 반환 (REQ-CPAR-016)', async () => {
+    // 2FA 정책 비활성 (기본값)
+    mockSiteSettingFindFirst.mockResolvedValueOnce(null);
+
     const mockLogs = [
       {
         id: 1,
@@ -96,6 +103,9 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
   });
 
   it('list: 상태 필터 SENT (성공만 조회)', async () => {
+    // 2FA 정책 비활성
+    mockSiteSettingFindFirst.mockResolvedValueOnce(null);
+
     const mockLogs = [
       {
         id: 1,
@@ -134,6 +144,9 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
   });
 
   it('list: 상태 필터 FAILED (실패만 조회)', async () => {
+    // 2FA 정책 비활성
+    mockSiteSettingFindFirst.mockResolvedValueOnce(null);
+
     const mockLogs = [
       {
         id: 2,
@@ -168,6 +181,9 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
   });
 
   it('list: cursor pagination (REQ-CPAR-016)', async () => {
+    // 2FA 정책 비활성
+    mockSiteSettingFindFirst.mockResolvedValueOnce(null);
+
     // 첫 페이지: 3개 아이템 (limit=2, take=3) → 2개 반환 + nextCursor
     const firstPageLogs = [
       { id: 1, siteId: null, recipient: 'user1@example.com', subject: 'S1', status: 'SENT' as const, error: null, createdAt: new Date() },
