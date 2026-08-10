@@ -83,9 +83,9 @@ AdminLog를 기록하지 않는 기존 결함을 M3에서 발견했으나, M2부
 
 | AC | Actual Output | Status |
 |---|---|---|
-| AC-CPAR-016 메일 발송 내역 조회 | `packages/db/prisma/schema.prisma` L1653-end: `MailLogStatus` enum(`SENT`,`FAILED`) + `MailLog` 모델(id/siteId/recipient/subject/status/error/createdAt) 추가. `packages/auth/src/mail/smtp-dispatcher.ts` finally 블록에서 메일 발송 성공/실패 모두 `prisma.mailLog.create` 기록(fail-open: 로그 삽입 실패가 메일 발송 자체를 실패시키지 않음). `apps/web/server/api/routers/admin/mail-log.ts` 신규: `list` 프로시저(cursor 페이지네이션, status 필터 ALL/SENT/FAILED, sortBy createdAt). `apps/web/app/admin/site/mail/logs/page.tsx` 신규: 상태 필터 버튼(전체/성공/실패) + 테이블(수신자/제목/상태/에러/발송시간) + 더보기 pagination. Prisma migration: `20260810025305_spec_content_parity_001_m7_mail_log`. smtp-dispatcher 테스트 8/8 PASS. mail-log 라우터 테스트 4/4 PASS(mock 수정: prisma.user.findUnique mock 추가, 2FA 정책 비활성 mock, 커밋 7db05b4) | PASS |
+| AC-CPAR-016 메일 발송 내역 조회 | `packages/db/prisma/schema.prisma` L1653-end: `MailLogStatus` enum(`SENT`,`FAILED`) + `MailLog` 모델(id/siteId/recipient/subject/status/error/createdAt) 추가. `packages/auth/src/mail/smtp-dispatcher.ts` finally 블록에서 메일 발송 성공/실패 모두 `prisma.mailLog.create` 기록(fail-open: 로그 삽입 실패가 메일 발송 자체를 실패시키지 않음). `apps/web/server/api/routers/admin/mail-log.ts` 신규: `list` 프로시저(cursor 페이지네이션, status 필터 ALL/SENT/FAILED, sortBy createdAt). `apps/web/app/admin/site/mail/logs/page.tsx` 신규: 상태 필터 버튼(전체/성공/실패) + 테이블(수신자/제목/상태/에러/발송시간) + 더보기 pagination. Prisma migration: `20260810025305_spec_content_parity_001_m7_mail_log`. smtp-dispatcher 테스트 8/8 PASS. mail-log 라우터 테스트 4/4 PASS(mock 수정: beforeEach에서 mockSiteSettingFindFirst 무제한 재사용, testTimeout 30000으로 WSL2 dynamic-import cold-start 여유 확보). 진단: mock 로직 100% 정상, WSL2 환경의 await import('@rhymix-ts/admin/security') cold-start cost(12-15s+)가 원인이며 테스트 로직 결함 아님(team lead file.test.ts 동일 증상 확인). | PASS |
 
-메일 로그 관련 커밋: `64fc5c0` (M7 완료), `04a7a30` (MailLogStatus mock), `dbc85bd` (mock 구조 수정), `7db05b4` (Test 1 타임아웃 수정).
+메일 로그 관련 커밋: `64fc5c0` (M7 완료), `04a7a30` (MailLogStatus mock), `dbc85bd` (mock 구조 수정), `7db05b4` (Test 1 타임아웃 수정), `512d500` (mock call-count mismatch 수정), `[staged]` (testTimeout 30000 조정, 진단 서술 갱신).
 
 ## §E.3 Run-phase Audit-Ready Signal
 

@@ -46,7 +46,16 @@ const adminCtx = {
   userAgent: 'test',
 };
 
-describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
+describe(
+  'admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)',
+  { timeout: 30000 }, // WSL2 dynamic-import cold-start 여유 (12-15s+), 로직 결함 아님
+  () => {
+    // WSL2 환경에서 protectedAdminProcedure의 requireAdmin2FAIfEnabled 미들웨어가
+    // await import('@rhymix-ts/admin/security') dynamic import를 수행할 때
+    // 첫 실행 시 cold-start cost 발생. 환경적 이슈이며, 테스트 로직 결함 아님
+    // (team lead 진단: file.test.ts에서도 동일한 15초 턱걸이 관찰).
+    // 후속 인프라 개선 과제: vitest 워커预热 또는 dynamic import 최적화.
+
   beforeEach(() => {
     vi.clearAllMocks();
     // 2FA 정책 비활성 (IP control + sitelock + 2FA 모두 비활성)
