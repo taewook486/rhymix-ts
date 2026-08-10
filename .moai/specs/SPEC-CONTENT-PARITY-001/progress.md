@@ -88,7 +88,7 @@ AdminLog를 기록하지 않는 기존 결함을 M3에서 발견했으나, M2부
 
 ```yaml
 run_complete_at: null  # 전체 SPEC 미완료 — M1~M6 완료, M7 잔여
-run_commit_sha: "80b034c (M1), 5062c70 (M2), e911afc (M3), bcdc4cb (M4), 5266612 (M5), <PENDING> (M6)"
+run_commit_sha: "80b034c (M1), 5062c70 (M2), e911afc (M3), bcdc4cb (M4), 5266612 (M5), 9af1042 (M6)"
 run_status: in-progress  # M7 잔여
 ac_pass_count: 9  # AC-CPAR-001,002,003,004(M1/M2) + AC-CPAR-006,009(M3 필터 배선) + AC-CPAR-013(M5) + AC-CPAR-015(M6)
 ac_pass_with_debt_count: 7  # AC-CPAR-005,006(M2 FK) + AC-CPAR-007,008,010(M3 런타임 재현 미실시) + AC-CPAR-011,012(M4 런타임 재현 미실시)
