@@ -2,7 +2,7 @@
  * Addon 시스템 타입 정의 — SPEC-ADDON-001 REQ-ADDON-001~009
  */
 
-import type { PrismaClient } from '@rhymix-ts/db'
+import type { PrismaClient } from '@prisma/client'
 
 // 4개 Hook 타입 정의
 export type HookType = 'onContentTransform' | 'onUserRender' | 'onPageView' | 'onAdminAction'

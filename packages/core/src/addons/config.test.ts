@@ -11,11 +11,11 @@ import {
   clearAutoDisableCache,
 } from './config'
 import { registerAddon, resetAddonRegistry, type AddonDefinition } from './registry'
-import { prisma } from '@rhymix-ts/db'
 
-// @rhymix-ts/db 모의 설정
-vi.mock('@rhymix-ts/db', () => ({
-  prisma: {
+describe('Addon Config', () => {
+  // core 는 @rhymix-ts/db 를 의존하지 않는다 (core → db → theme-default → core 순환 방지).
+  // 대상 함수들이 prisma 를 인자로 받으므로 로컬 모의 객체로 충분하다.
+  const mockPrisma = {
     addonConfig: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -24,11 +24,7 @@ vi.mock('@rhymix-ts/db', () => ({
     adminLog: {
       create: vi.fn(),
     },
-  },
-}))
-
-describe('Addon Config', () => {
-  const mockPrisma = prisma as any
+  } as any
 
   beforeEach(() => {
     resetAddonRegistry()

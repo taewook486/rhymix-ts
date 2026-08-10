@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { z } from 'zod';
-import { prisma } from '@rhymix-ts/db';
+import { PrismaClient } from '@prisma/client';
 import type { ModuleDefinition } from './types';
 import {
   createModuleInstance,
@@ -28,6 +28,10 @@ import {
 
 // DB 테스트 skip 조건
 const skipDb = process.env.SKIP_DB_TESTS !== '0';
+
+// core 는 @rhymix-ts/db 를 의존하지 않는다 (core → db → theme-default → core 순환 방지).
+// DB 통합 테스트를 실제로 실행할 때만 PrismaClient 를 생성한다.
+const prisma = skipDb ? (null as unknown as PrismaClient) : new PrismaClient();
 
 // 테스트용 ModuleDefinition 픽스처
 const makeBoard = () => ({

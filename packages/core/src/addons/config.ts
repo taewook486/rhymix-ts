@@ -2,7 +2,7 @@
  * AddonConfig 관리 — SPEC-ADDON-001 REQ-ADDON-020~029
  */
 
-import type { PrismaClient } from '@rhymix-ts/db'
+import type { PrismaClient } from '@prisma/client'
 import type { AddonDefinition } from './types'
 import { getAddon, listAddons } from './registry'
 

@@ -10,16 +10,6 @@ import {
 } from './executor'
 import { registerAddon, resetAddonRegistry, type AddonDefinition, type AddonContext } from './registry'
 import { listEffectiveAddons } from './config'
-import { prisma } from '@rhymix-ts/db'
-
-// @rhymix-ts/db 모의 설정
-vi.mock('@rhymix-ts/db', () => ({
-  prisma: {
-    addonConfig: {
-      findMany: vi.fn(),
-    },
-  },
-}))
 
 // config 모의 설정
 vi.mock('./config', () => ({
@@ -28,7 +18,13 @@ vi.mock('./config', () => ({
 }))
 
 describe('Hook Executor', () => {
-  const mockPrisma = prisma as any
+  // core 는 @rhymix-ts/db 를 의존하지 않는다 (core → db → theme-default → core 순환 방지).
+  // AddonContext 가 prisma 를 주입받으므로 로컬 모의 객체로 충분하다.
+  const mockPrisma = {
+    addonConfig: {
+      findMany: vi.fn(),
+    },
+  } as any
   const mockContext: AddonContext = {
     prisma: mockPrisma,
     request: {
