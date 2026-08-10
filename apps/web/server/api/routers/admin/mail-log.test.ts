@@ -70,7 +70,7 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
     ];
 
     (mockPrisma.mailLog.count as any).mockResolvedValueOnce(2);
-    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce([...mockLogs, {}]);
+    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce(mockLogs);
 
     const { adminMailLogRouter } = await import('./mail-log');
     const caller = adminMailLogRouter.createCaller(adminCtx);
@@ -109,7 +109,7 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
     ];
 
     (mockPrisma.mailLog.count as any).mockResolvedValueOnce(1);
-    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce([...mockLogs, {}]);
+    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce(mockLogs);
 
     const { adminMailLogRouter } = await import('./mail-log');
     const caller = adminMailLogRouter.createCaller(adminCtx);
@@ -147,7 +147,7 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
     ];
 
     (mockPrisma.mailLog.count as any).mockResolvedValueOnce(1);
-    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce([...mockLogs, {}]);
+    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce(mockLogs);
 
     const { adminMailLogRouter } = await import('./mail-log');
     const caller = adminMailLogRouter.createCaller(adminCtx);
@@ -168,7 +168,7 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
   });
 
   it('list: cursor pagination (REQ-CPAR-016)', async () => {
-    // 첫 페이지: 2개 아이템 + nextCursor
+    // 첫 페이지: 3개 아이템 (limit=2, take=3) → 2개 반환 + nextCursor
     const firstPageLogs = [
       { id: 1, siteId: null, recipient: 'user1@example.com', subject: 'S1', status: 'SENT' as const, error: null, createdAt: new Date() },
       { id: 2, siteId: null, recipient: 'user2@example.com', subject: 'S2', status: 'FAILED' as const, error: 'E2', createdAt: new Date() },
@@ -176,7 +176,7 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
     ];
 
     (mockPrisma.mailLog.count as any).mockResolvedValueOnce(3);
-    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce([...firstPageLogs, {}]);
+    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce(firstPageLogs);
 
     const { adminMailLogRouter } = await import('./mail-log');
     const caller = adminMailLogRouter.createCaller(adminCtx);
@@ -192,13 +192,13 @@ describe('admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)', () => {
     expect(result.nextCursor).toBeTruthy();
     expect(result.totalCount).toBe(3);
 
-    // nextCursor로 두 번째 페이지 조회
+    // nextCursor로 두 번째 페이지 조회 (1개만 남음)
     const secondPageLogs = [
       { id: 3, siteId: null, recipient: 'user3@example.com', subject: 'S3', status: 'SENT' as const, error: null, createdAt: new Date() },
     ];
 
     (mockPrisma.mailLog.count as any).mockResolvedValueOnce(3);
-    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce([...secondPageLogs]);
+    (mockPrisma.mailLog.findMany as any).mockResolvedValueOnce(secondPageLogs);
 
     const cursor = result.nextCursor!;
     const result2 = await caller.list({
