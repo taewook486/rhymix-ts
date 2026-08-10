@@ -13,6 +13,10 @@ const mockMailLogs: Array<{ recipient: string; subject: string; status: string; 
 
 // Mock @rhymix-ts/db to export the mock prisma
 vi.mock('@rhymix-ts/db', () => ({
+  MailLogStatus: {
+    SENT: 'SENT',
+    FAILED: 'FAILED',
+  },
   prisma: {
     auditLog: {
       create: vi.fn().mockImplementation(async ({ data }) => {

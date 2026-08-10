@@ -19,7 +19,16 @@ vi.mock('@/lib/db/prisma', () => ({
   prisma: {},
 }));
 
+const mockSiteSettingFindFirst = vi.fn();
+const mockAdminLogCreate = vi.fn();
+
 const mockPrisma = {
+  siteSetting: {
+    findFirst: (...args: unknown[]) => mockSiteSettingFindFirst(...args),
+  },
+  adminLog: {
+    create: (...args: unknown[]) => mockAdminLogCreate(...args),
+  },
   mailLog: {
     count: vi.fn(),
     findMany: vi.fn(),
