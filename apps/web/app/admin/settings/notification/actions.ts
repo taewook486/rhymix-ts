@@ -1,8 +1,10 @@
 'use server';
 /**
  * Admin 알림 설정 Server Actions — SPEC-ADMIN-002 Slice 1F + Slice 2G (REQ-ADMIN2-110, REQ-ADMIN2-111).
+ * SPEC-CONTENT-PARITY-001 M6 (REQ-CPAR-026~028): 전역 알림 이벤트 설정 추가.
  *
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-110, REQ-ADMIN2-111
+ * @MX:SPEC: SPEC-CONTENT-PARITY-001 REQ-CPAR-026~028
  */
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -133,4 +135,47 @@ export async function sendTestEmailAction(
     }
     return { error: '테스트 메일 발송 중 오류가 발생했습니다.' };
   }
+}
+
+/**
+ * 전역 알림 이벤트 설정 업데이트 Server Action — SPEC-CONTENT-PARITY-001 M6 (REQ-CPAR-026).
+ *
+ * @MX:SPEC: SPEC-CONTENT-PARITY-001 REQ-CPAR-026~028
+ */
+const UpdateGlobalEventsSchema = z.object({
+  comment: z.boolean(),
+  reply: z.boolean(),
+  mention: z.boolean(),
+  message: z.boolean(),
+});
+
+export async function updateGlobalEventsAction(
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = UpdateGlobalEventsSchema.safeParse({
+    comment: formData.get('comment') === 'on',
+    reply: formData.get('reply') === 'on',
+    mention: formData.get('mention') === 'on',
+    message: formData.get('message') === 'on',
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+
+  try {
+    const caller = await getServerCaller();
+    await caller.admin.settings.notificationGlobalEvents.update({
+      ...parsed.data,
+    });
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message };
+    }
+    return { error: '전역 알림 이벤트 설정 저장 중 오류가 발생했습니다.' };
+  }
+
+  revalidatePath('/admin/settings/notification');
+  return {};
 }

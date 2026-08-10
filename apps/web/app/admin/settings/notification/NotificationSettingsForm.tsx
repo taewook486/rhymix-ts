@@ -1,14 +1,23 @@
 'use client';
 /**
  * 알림 설정 폼 (Client Component) — SPEC-ADMIN-002 Slice 1F + Slice 2G (REQ-ADMIN2-110, REQ-ADMIN2-111).
+ * SPEC-CONTENT-PARITY-001 M6 (REQ-CPAR-026~028): 전역 알림 이벤트 설정 추가.
+ * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-110, REQ-ADMIN2-111
+ * @MX:SPEC: SPEC-CONTENT-PARITY-001 REQ-CPAR-026~028
  */
 import { useActionState } from 'react';
-import { updateNotificationSettingsAction, sendTestEmailAction, type ActionState } from './actions';
+import {
+  updateNotificationSettingsAction,
+  updateGlobalEventsAction,
+  sendTestEmailAction,
+  type ActionState,
+} from './actions';
 
 const initialActionState: ActionState = {};
 
 export function NotificationSettingsForm({
   initial,
+  globalEvents,
 }: {
   initial: {
     senderName: string;
@@ -20,9 +29,20 @@ export function NotificationSettingsForm({
     hasPassword?: boolean;
     smtpFrom?: string | null;
   };
+  globalEvents: {
+    comment: boolean;
+    reply: boolean;
+    mention: boolean;
+    message: boolean;
+  };
 }) {
   const [state, formAction, isPending] = useActionState(
     updateNotificationSettingsAction,
+    initialActionState,
+  );
+
+  const [globalState, globalFormAction, globalPending] = useActionState(
+    updateGlobalEventsAction,
     initialActionState,
   );
 
@@ -32,15 +52,89 @@ export function NotificationSettingsForm({
   );
 
   return (
-    <form action={formAction} className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl">
       {state.error && (
         <p className="text-sm text-red-600" role="alert">
           {state.error}
         </p>
       )}
 
-      <div className="border rounded bg-white p-6">
-        <h2 className="text-lg font-semibold mb-4">발신자 설정</h2>
+      {/* Global Events Section - SPEC-CONTENT-PARITY-001 M6 */}
+      <form action={globalFormAction} className="border rounded bg-white p-6">
+        <h2 className="text-lg font-semibold mb-4">전역 알림 이벤트</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          사이트 전체에서 사용할 알림 이벤트를 설정합니다. 개인 설정보다 우선 적용됩니다.
+        </p>
+
+        <div className="space-y-3">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="comment"
+              className="rounded mr-2"
+              defaultChecked={globalEvents.comment}
+            />
+            <span className="text-sm font-medium">댓글 알림</span>
+            <span className="text-sm text-gray-500 ml-2">(내 문서에 댓글이 달리면)</span>
+          </label>
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="reply"
+              className="rounded mr-2"
+              defaultChecked={globalEvents.reply}
+            />
+            <span className="text-sm font-medium">대댓글 알림</span>
+            <span className="text-sm text-gray-500 ml-2">(내 댓글에 대댓글이 달리면)</span>
+          </label>
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="mention"
+              className="rounded mr-2"
+              defaultChecked={globalEvents.mention}
+            />
+            <span className="text-sm font-medium">@멘션 알림</span>
+            <span className="text-sm text-gray-500 ml-2">(@멘션을 받으면)</span>
+          </label>
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="message"
+              className="rounded mr-2"
+              defaultChecked={globalEvents.message}
+            />
+            <span className="text-sm font-medium">쪽지 알림</span>
+            <span className="text-sm text-gray-500 ml-2">(쪽지를 받으면)</span>
+          </label>
+        </div>
+
+        <p className="text-xs text-gray-500 mt-4">
+          @MX:NOTE: web(인앱) 채널만 해당합니다. 채널 범위가 확정되었습니다 (REQ-CPAR-026).
+        </p>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            type="submit"
+            disabled={globalPending}
+            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {globalPending ? '저장 중...' : '저장'}
+          </button>
+        </div>
+        {globalState.error && (
+          <p className="text-sm text-red-600 mt-2" role="alert">
+            {globalState.error}
+          </p>
+        )}
+      </form>
+
+      <form action={formAction} className="space-y-6 max-w-2xl">
+        <div className="border rounded bg-white p-6">
+          <h2 className="text-lg font-semibold mb-4">발신자 설정</h2>
 
         <div className="space-y-4">
           <div>

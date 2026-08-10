@@ -35,13 +35,54 @@ export class NotificationService {
   /**
    * REQ-NOTIF-002/003/004/008: 알림 생성
    * - self-notification 제외 (actor === recipient)
+   * - 전역 알림 게이트 (REQ-CPAR-027: 전역 비활성 시 억제, 개인 설정보다 우선)
    * - preference 게이트 (disabled 카테고리는 생성하지 않음)
    * - 탈퇴/비활성 회원에 대한 알림 생성 건너뜀 (REQ-NOTIF-005 + EC-3)
+   *
+   * @MX:SPEC: SPEC-CONTENT-PARITY-001 REQ-CPAR-026~028
+   * @MX:REASON: [M6] 전역 알림 게이트는 create() 진입부에서 검사하며,
+   *   SiteSetting 조회는 고빈도 경로이므로 향후 요청 단위 memoize 검토 필요
    *
    * @returns 생성된 알림 ID 또는 skip 시 undefined
    */
   async create(input: NotificationCreateInput, tx?: Prisma.TransactionClient): Promise<number | undefined> {
     const db = this.db(tx);
+
+    // REQ-CPAR-027: 전역 알림 게이트 (개인 preference보다 우선)
+    // @MX:NOTE: SiteSetting 조회는 고빈도 경로이므로 요청 단위로 memoize 검토 필요
+    // SiteSetting에서 'notification.globalEvents' 키로 저장된 설정 조회
+    const globalEventsSetting = await db.siteSetting.findUnique({
+      where: { key: 'notification.globalEvents' },
+    });
+
+    // 기본값: 모든 이벤트 활성 (true)
+    const globalEvents = (globalEventsSetting?.value as { comment?: boolean; reply?: boolean; mention?: boolean; message?: boolean }) ?? {
+      comment: true,
+      reply: true,
+      mention: true,
+      message: true,
+    };
+
+    // 카테고리별 전역 활성/비활성 체크
+    const categoryEnabled = (() => {
+      switch (input.category) {
+        case 'COMMENT':
+          return globalEvents.comment ?? true;
+        case 'COMMENT_REPLY':
+          return globalEvents.reply ?? true;
+        case 'MENTION':
+          return globalEvents.mention ?? true;
+        case 'MESSAGE':
+          return globalEvents.message ?? true;
+        default:
+          return true;
+      }
+    })();
+
+    // 전역 비활성 시 즉시 skip (개인 설정보다 우선)
+    if (!categoryEnabled) {
+      return undefined;
+    }
 
     // REQ-NOTIF-004: self-notification 제외
     if (input.actorId === input.recipientId) {

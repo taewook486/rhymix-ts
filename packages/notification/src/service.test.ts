@@ -25,6 +25,9 @@ describe('NotificationService', () => {
       user: {
         findUnique: vi.fn(),
       },
+      siteSetting: {
+        findUnique: vi.fn(),
+      },
     };
 
     service = new NotificationService(mockPrisma as PrismaClient);
@@ -123,6 +126,184 @@ describe('NotificationService', () => {
 
       expect(result).toBe(5);
       expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+    });
+
+    // AC-CPAR-015: Global notification gate tests
+    describe('global notification events gate (REQ-CPAR-026~028, AC-CPAR-015)', () => {
+      beforeEach(() => {
+        // Default: all global events enabled (true)
+        mockPrisma.siteSetting.findUnique.mockResolvedValue({
+          value: {
+            comment: true,
+            reply: true,
+            mention: true,
+            message: true,
+          },
+        });
+      });
+
+      it('should create notification when global event is enabled and no personal preference', async () => {
+        mockPrisma.notificationPreference.findUnique.mockResolvedValue(null);
+        mockPrisma.user.findUnique.mockResolvedValue({ id: 1 });
+        mockPrisma.notification.findUnique.mockResolvedValue(null);
+        mockPrisma.notification.create.mockResolvedValue({ id: 1 });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'COMMENT',
+          sourceType: 'COMMENT',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        expect(result).toBe(1);
+        expect(mockPrisma.notification.create).toHaveBeenCalled();
+      });
+
+      it('should skip notification creation when global comment event is disabled', async () => {
+        // Global comment disabled
+        mockPrisma.siteSetting.findUnique.mockResolvedValue({
+          value: {
+            comment: false, // DISABLED
+            reply: true,
+            mention: true,
+            message: true,
+          },
+        });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'COMMENT',
+          sourceType: 'COMMENT',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        expect(result).toBeUndefined();
+        expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+        // Global gate checked BEFORE personal preference
+        expect(mockPrisma.siteSetting.findUnique).toHaveBeenCalled();
+      });
+
+      it('should skip notification when global reply event is disabled', async () => {
+        mockPrisma.siteSetting.findUnique.mockResolvedValue({
+          value: {
+            comment: true,
+            reply: false, // DISABLED
+            mention: true,
+            message: true,
+          },
+        });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'COMMENT_REPLY',
+          sourceType: 'COMMENT',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        expect(result).toBeUndefined();
+        expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+      });
+
+      it('should skip notification when global mention event is disabled', async () => {
+        mockPrisma.siteSetting.findUnique.mockResolvedValue({
+          value: {
+            comment: true,
+            reply: true,
+            mention: false, // DISABLED
+            message: true,
+          },
+        });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'MENTION',
+          sourceType: 'MENTION',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        expect(result).toBeUndefined();
+        expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+      });
+
+      it('should skip notification when global message event is disabled', async () => {
+        mockPrisma.siteSetting.findUnique.mockResolvedValue({
+          value: {
+            comment: true,
+            reply: true,
+            mention: true,
+            message: false, // DISABLED
+          },
+        });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'MESSAGE',
+          sourceType: 'MESSAGE',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        expect(result).toBeUndefined();
+        expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+      });
+
+      it('should respect personal preference when global event is enabled (AC-CPAR-015 Edge)', async () => {
+        // Global ON + Personal OFF = Personal OFF (existing behavior)
+        mockPrisma.siteSetting.findUnique.mockResolvedValue({
+          value: {
+            comment: true, // Global ON
+            reply: true,
+            mention: true,
+            message: true,
+          },
+        });
+        mockPrisma.notificationPreference.findUnique.mockResolvedValue({
+          enabled: false, // Personal OFF
+        });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'COMMENT',
+          sourceType: 'COMMENT',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        // Personal preference should still be respected
+        expect(result).toBeUndefined();
+        expect(mockPrisma.notification.create).not.toHaveBeenCalled();
+      });
+
+      it('should use default true values when SiteSetting returns null', async () => {
+        mockPrisma.siteSetting.findUnique.mockResolvedValue(null);
+        mockPrisma.notificationPreference.findUnique.mockResolvedValue(null);
+        mockPrisma.user.findUnique.mockResolvedValue({ id: 1 });
+        mockPrisma.notification.findUnique.mockResolvedValue(null);
+        mockPrisma.notification.create.mockResolvedValue({ id: 1 });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'COMMENT',
+          sourceType: 'COMMENT',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        // Default all enabled = should create
+        expect(result).toBe(1);
+        expect(mockPrisma.notification.create).toHaveBeenCalled();
+      });
     });
   });
 

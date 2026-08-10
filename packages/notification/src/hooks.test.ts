@@ -23,6 +23,10 @@ describe('notificationHooks', () => {
       },
       user: {
         findUnique: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      siteSetting: {
+        findUnique: vi.fn(),
       },
     };
 
@@ -30,6 +34,16 @@ describe('notificationHooks', () => {
 
     // SPEC-NOTIFICATION-001 Slice B: 닉네임 해석용 findFirst (citext 대소문자 무시)
     mockPrisma.user.findFirst = vi.fn();
+
+    // Default: all global events enabled
+    mockPrisma.siteSetting.findUnique.mockResolvedValue({
+      value: {
+        comment: true,
+        reply: true,
+        mention: true,
+        message: true,
+      },
+    });
   });
 
   describe('onCommentCreated', () => {

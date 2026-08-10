@@ -1439,4 +1439,100 @@ export const adminSettingsRouter = router({
 
       return { success: true };
     }),
+
+  // ==========================================================================
+  // Global Notification Events — SPEC-CONTENT-PARITY-001 M6 (REQ-CPAR-026~028)
+  // ==========================================================================
+
+  /**
+   * 전역 알림 이벤트 설정 관리 (REQ-CPAR-026).
+   *
+   * 댓글/대댓글/멘션/쪽지 이벤트별 사이트 전역 사용 여부를 설정한다.
+   * 채널 범위는 web(인앱) 단독 (REQ-CPAR-026).
+   */
+  notificationGlobalEvents: router({
+    /**
+     * 전역 알림 이벤트 설정 조회 (REQ-CPAR-028).
+     *
+     * @returns 4개 boolean 값 (comment, reply, mention, message)
+     */
+    get: protectedAdminProcedure
+      .query(async ({ ctx }) => {
+        const siteId = await resolveSiteId(ctx);
+        const setting = await ctx.prisma.siteSetting.findUnique({
+          where: { siteId_key: { siteId, key: 'notification.globalEvents' } },
+        });
+
+        // 기본값: 모든 이벤트 활성
+        const value = setting?.value as
+          | { comment?: boolean; reply?: boolean; mention?: boolean; message?: boolean }
+          | undefined ?? {};
+
+        return {
+          comment: value.comment ?? true,
+          reply: value.reply ?? true,
+          mention: value.mention ?? true,
+          message: value.message ?? true,
+        };
+      }),
+
+    /**
+     * 전역 알림 이벤트 설정 업데이트 (REQ-CPAR-026).
+     *
+     * SiteSetting.upsert + AdminLog 기록 (spamfilter captcha 패턴 참조).
+     */
+    update: protectedAdminProcedure
+      .input(
+        z.object({
+          comment: z.boolean(),
+          reply: z.boolean(),
+          mention: z.boolean(),
+          message: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const siteId = await resolveSiteId(ctx);
+
+        // 기존 설정 조회
+        const existing = await ctx.prisma.siteSetting.findUnique({
+          where: { siteId_key: { siteId, key: 'notification.globalEvents' } },
+        });
+
+        const value = {
+          comment: input.comment,
+          reply: input.reply,
+          mention: input.mention,
+          message: input.message,
+        };
+
+        const result = await ctx.prisma.siteSetting.upsert({
+          where: { siteId_key: { siteId, key: 'notification.globalEvents' } },
+          create: {
+            siteId,
+            key: 'notification.globalEvents',
+            value,
+          },
+          update: {
+            value,
+          },
+        });
+
+        // AdminLog 기록
+        await ctx.prisma.adminLog.create({
+          data: {
+            actorId: Number(ctx.session.user.id),
+            action: 'configure',
+            target: 'notification.globalEvents',
+            diff: {
+              before: existing?.value ?? null,
+              after: value,
+            },
+            ip: ctx.ip ?? null,
+            userAgent: ctx.userAgent ?? null,
+          },
+        });
+
+        return { success: true };
+      }),
+  }),
 });

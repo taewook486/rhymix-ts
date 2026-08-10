@@ -21,11 +21,12 @@ export default async function AdminNotificationSettingsPage() {
 
   const caller = await getServerCaller();
   const settings = await caller.admin.settings.getNotification();
+  const globalEvents = await caller.admin.settings.notificationGlobalEvents.get();
 
   return (
     <section>
       <h1 className="text-2xl font-bold mb-4">알림 설정</h1>
-      <NotificationSettingsForm initial={settings} />
+      <NotificationSettingsForm initial={settings} globalEvents={globalEvents} />
     </section>
   );
 }
