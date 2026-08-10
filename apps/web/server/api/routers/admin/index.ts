@@ -54,6 +54,7 @@ import { adminTermsRouter } from './terms';
 import { adminPollRouter } from './poll';
 import { adminTwoFactorRouter } from './two-factor';
 import { adminTagRouter } from './tag';
+import { adminMailLogRouter } from './mail-log';
 
 export const adminRouter = router({
   module:          adminModuleRouter,
@@ -88,4 +89,5 @@ export const adminRouter = router({
   poll:             adminPollRouter,
   twoFactor:        adminTwoFactorRouter,
   tag:              adminTagRouter,
+  mailLog:          adminMailLogRouter,
 });

@@ -1649,3 +1649,42 @@ model Message {
   @@index([createdAt(sort: Desc)])
   @@map("messages")
 }
+
+// =====================================================================
+// SPEC-CONTENT-PARITY-001: Mail Sending History Logs (M7)
+// =====================================================================
+
+/**
+ * MailLogStatus — 메일 발송 상태
+ *
+ * REQ-CPAR-016: 메일 발송 성공/실패 상태 기록
+ */
+enum MailLogStatus {
+  SENT
+  FAILED
+}
+
+/**
+ * MailLog — 메일 발송 내역 로그
+ *
+ * REQ-CPAR-016: 메일 발송 시도마다 수신자/제목/상태/에러 메시지 기록
+ * - recipient: 수신자 이메일 주소 (citext for case-insensitive search)
+ * - subject: 메일 제목 (300자 제한)
+ * - status: SENT | FAILED
+ * - error: 실패 시 에러 메시지 (스택 아님 message만)
+ * - createdAt: 발송 시도 타임스탬프
+ *
+ * @MX:SPEC: SPEC-CONTENT-PARITY-001 REQ-CPAR-016
+ */
+model MailLog {
+  id        Int          @id @default(autoincrement())
+  siteId    Int?
+  recipient String       @db.Citext
+  subject   String       @db.VarChar(300)
+  status    MailLogStatus
+  error     String?                  // 실패 시 오류 메시지 (스택 아님 message만)
+  createdAt DateTime     @default(now()) @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@map("mail_logs")
+}

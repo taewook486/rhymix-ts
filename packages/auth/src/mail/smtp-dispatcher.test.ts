@@ -9,6 +9,7 @@ import { MailValidationError, MailDeliveryError } from './errors';
 
 // PrismaClient mock storage
 const mockAuditLogs: Array<{ action: string; metadata: Record<string, unknown> }> = [];
+const mockMailLogs: Array<{ recipient: string; subject: string; status: string; error: string | null }> = [];
 
 // Mock @rhymix-ts/db to export the mock prisma
 vi.mock('@rhymix-ts/db', () => ({
@@ -18,6 +19,17 @@ vi.mock('@rhymix-ts/db', () => ({
         mockAuditLogs.push({
           action: data.action,
           metadata: data.metadata,
+        });
+        return {};
+      }),
+    },
+    mailLog: {
+      create: vi.fn().mockImplementation(async ({ data }) => {
+        mockMailLogs.push({
+          recipient: data.recipient,
+          subject: data.subject,
+          status: data.status,
+          error: data.error,
         });
         return {};
       }),
@@ -65,6 +77,15 @@ describe('SmtpMailDispatcher', () => {
     const dispatcher = makeDispatcher();
     await expect(dispatcher.dispatch(validMessage)).resolves.toBeUndefined();
     expect(mockSendMail).toHaveBeenCalledOnce();
+
+    // REQ-CPAR-016: 메일 발송 로그 기록 (성공)
+    const { prisma } = await import('@rhymix-ts/db');
+    expect(prisma.mailLog.create).toHaveBeenCalledOnce();
+    const mailLogCall = (prisma.mailLog.create as any).mock.calls[0][0];
+    expect(mailLogCall.data.recipient).toBe('a@b.com');
+    expect(mailLogCall.data.subject).toBe('Test Subject');
+    expect(mailLogCall.data.status).toBe('SENT');
+    expect(mailLogCall.data.error).toBeNull();
   });
 
   it('잘못된 이메일 → MailValidationError 즉시 (REQ-MAIL-025)', async () => {
@@ -97,7 +118,7 @@ describe('SmtpMailDispatcher', () => {
     vi.useRealTimers();
   });
 
-  it('모든 재시도 소진 → MailDeliveryError + AuditLog 기록 (AC-MAIL-A3)', async () => {
+  it('모든 재시도 소진 → MailDeliveryError + AuditLog 기록 + MailLog 기록 (AC-MAIL-A3, REQ-CPAR-016)', async () => {
     const transientErr = Object.assign(new Error('ECONNRESET'), { code: 'ECONNRESET' });
     mockSendMail
       .mockRejectedValueOnce(transientErr)
@@ -119,13 +140,23 @@ describe('SmtpMailDispatcher', () => {
 
     // Get prisma mock from the mocked module
     const { prisma } = await import('@rhymix-ts/db');
-    expect(prisma.auditLog.create).toHaveBeenCalledOnce();
 
+    // AuditLog 기록 검증
+    expect(prisma.auditLog.create).toHaveBeenCalledOnce();
     const auditCall = (prisma.auditLog.create as any).mock.calls[0][0];
     expect(auditCall.data.action).toBe('MAIL_DELIVERY_FAILED');
     expect(auditCall.data.metadata.recipient).toBe('a@b.com');
     expect(auditCall.data.metadata.template).toBe('signup-verify');
     expect(auditCall.data.metadata.attempts).toBe(3);
+
+    // REQ-CPAR-016: MailLog 기록 검증 (실패)
+    expect(prisma.mailLog.create).toHaveBeenCalledOnce();
+    const mailLogCall = (prisma.mailLog.create as any).mock.calls[0][0];
+    expect(mailLogCall.data.recipient).toBe('a@b.com');
+    expect(mailLogCall.data.subject).toBe('Test Subject');
+    expect(mailLogCall.data.status).toBe('FAILED');
+    expect(mailLogCall.data.error).toBeTruthy();
+
     vi.useRealTimers();
   });
 

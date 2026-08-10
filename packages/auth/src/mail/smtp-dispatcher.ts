@@ -12,6 +12,7 @@ import type { MailDispatcher, MailMessage } from '../mail';
 import { MailValidationError, MailDeliveryError } from './errors';
 import { renderTemplate } from './templates/render';
 import { writeMailFailureAudit } from './audit';
+import { MailLogStatus } from '@rhymix-ts/db';
 
 const EMAIL_RE = z.string().email();
 
@@ -79,44 +80,74 @@ export class SmtpMailDispatcher implements MailDispatcher {
 
     let lastError: unknown;
     let attempts = 0;
+    let deliveryStatus: MailLogStatus = MailLogStatus.FAILED;
+    let errorMessage: string | null = null;
 
-    // 재시도 루프 — REQ-MAIL-040
-    for (let i = 0; i < RETRY_DELAYS_MS.length; i++) {
-      const delay = RETRY_DELAYS_MS[i]!; // Non-null assertion - i is always within bounds
-      if (delay > 0) {
-        await sleep(delay);
-      }
-      attempts++;
+    try {
+      // 재시도 루프 — REQ-MAIL-040
+      for (let i = 0; i < RETRY_DELAYS_MS.length; i++) {
+        const delay = RETRY_DELAYS_MS[i]!; // Non-null assertion - i is always within bounds
+        if (delay > 0) {
+          await sleep(delay);
+        }
+        attempts++;
 
-      try {
-        await this.transporter.sendMail({
-          from: this.from,
-          to: message.to,
-          subject: message.subject,
-          html,
-          text,
-        });
-        return; // 성공 — 함수 종료
-      } catch (err) {
-        lastError = err;
-        // 영구적 에러는 즉시 실패 — REQ-MAIL-041
-        if (isPermanentError(err)) {
-          break;
+        try {
+          await this.transporter.sendMail({
+            from: this.from,
+            to: message.to,
+            subject: message.subject,
+            html,
+            text,
+          });
+          deliveryStatus = MailLogStatus.SENT;
+          return; // 성공 — 함수 종료
+        } catch (err) {
+          lastError = err;
+          // 영구적 에러는 즉시 실패 — REQ-MAIL-041
+          if (isPermanentError(err)) {
+            break;
+          }
         }
       }
-    }
 
-    // 모든 재시도 소진 — AuditLog 기록 — REQ-MAIL-042
-    try {
-      await writeMailFailureAudit(prisma, message, lastError, attempts);
-    } catch (auditErr) {
-      console.error('[mail] AuditLog write failed:', auditErr);
-    }
+      // 모든 재시도 실패 — 에러 메시지 추출 (스택 아님 message만)
+      if (lastError instanceof Error) {
+        errorMessage = lastError.message;
+      } else if (typeof lastError === 'string') {
+        errorMessage = lastError;
+      } else {
+        errorMessage = 'Unknown error';
+      }
 
-    throw new MailDeliveryError(
-      `mail delivery failed after ${attempts} attempts`,
-      lastError
-    );
+      // AuditLog 기록 — REQ-MAIL-042
+      try {
+        await writeMailFailureAudit(prisma, message, lastError, attempts);
+      } catch (auditErr) {
+        console.error('[mail] AuditLog write failed:', auditErr);
+      }
+
+      throw new MailDeliveryError(
+        `mail delivery failed after ${attempts} attempts`,
+        lastError
+      );
+    } finally {
+      // 메일 발송 로그 기록 — REQ-CPAR-016 (성공/실프 모두 기록)
+      // Fail-open: 로그 삽입 실패가 메일 발송 자체를 실패시키지 않음
+      try {
+        await prisma.mailLog.create({
+          data: {
+            siteId: null, // TODO: multi-site 지원 시 siteId 연결
+            recipient: message.to,
+            subject: message.subject,
+            status: deliveryStatus,
+            error: errorMessage,
+          },
+        });
+      } catch (logErr) {
+        console.error('[mail] MailLog insert failed:', logErr);
+      }
+    }
   }
 
   /**
