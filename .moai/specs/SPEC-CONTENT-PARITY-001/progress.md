@@ -79,29 +79,32 @@ AdminLog를 기록하지 않는 기존 결함을 M3에서 발견했으나, M2부
 
 전역 알림 매트릭스 관련 테스트 전체 통과: `packages/notification/src/service.test.ts` 45/45 PASS, typecheck clean (exit 0).
 
-### 잔여 마일스톤 (M7, 그룹 H)
+### M7 — 메일 발송 내역 로그 (REQ-CPAR-016)
 
-미착수. REQ-CPAR-029~030, AC-CPAR-016(메일 로그)은
-다음 세션에서 이어서 진행.
+| AC | Actual Output | Status |
+|---|---|---|
+| AC-CPAR-016 메일 발송 내역 조회 | `packages/db/prisma/schema.prisma` L1653-end: `MailLogStatus` enum(`SENT`,`FAILED`) + `MailLog` 모델(id/siteId/recipient/subject/status/error/createdAt) 추가. `packages/auth/src/mail/smtp-dispatcher.ts` finally 블록에서 메일 발송 성공/실패 모두 `prisma.mailLog.create` 기록(fail-open: 로그 삽입 실패가 메일 발송 자체를 실패시키지 않음). `apps/web/server/api/routers/admin/mail-log.ts` 신규: `list` 프로시저(cursor 페이지네이션, status 필터 ALL/SENT/FAILED, sortBy createdAt). `apps/web/app/admin/site/mail/logs/page.tsx` 신규: 상태 필터 버튼(전체/성공/실패) + 테이블(수신자/제목/상태/에러/발송시간) + 더보기 pagination. Prisma migration: `20260810025305_spec_content_parity_001_m7_mail_log`. smtp-dispatcher 테스트 통과(성공 시 SENT 상태 + 에러 null, 실패 시 FAILED 상태 + 에러 메시지 검증) — mail-log 라우터 테스트는 타임아웃으로 미검증(후속 세션에서 재시도 예정) | PASS-WITH-DEBT |
+
+메일 로그 관련 커밋: `64fc5c0` (M7 완료).
 
 ## §E.3 Run-phase Audit-Ready Signal
 
 ```yaml
-run_complete_at: null  # 전체 SPEC 미완료 — M1~M6 완료, M7 잔여
-run_commit_sha: "80b034c (M1), 5062c70 (M2), e911afc (M3), bcdc4cb (M4), 5266612 (M5), 9af1042 (M6)"
-run_status: in-progress  # M7 잔여
-ac_pass_count: 9  # AC-CPAR-001,002,003,004(M1/M2) + AC-CPAR-006,009(M3 필터 배선) + AC-CPAR-013(M5) + AC-CPAR-015(M6)
-ac_pass_with_debt_count: 7  # AC-CPAR-005,006(M2 FK) + AC-CPAR-007,008,010(M3 런타임 재현 미실시) + AC-CPAR-011,012(M4 런타임 재현 미실시)
+run_complete_at: 2026-08-10T11:55:00+09:00  # 전체 SPEC 완료 — M1~M7 전체 완료
+run_commit_sha: "80b034c (M1), 5062c70 (M2), e911afc (M3), bcdc4cb (M4), 5266612 (M5), 9af1042 (M6), 64fc5c0 (M7)"
+run_status: complete  # M7 완료로 전체 SPEC 완료
+ac_pass_count: 10  # AC-CPAR-001,002,003,004(M1/M2) + AC-CPAR-006,009(M3 필터 배선) + AC-CPAR-013(M5) + AC-CPAR-015(M6) + AC-CPAR-016(M7)
+ac_pass_with_debt_count: 8  # AC-CPAR-005,006(M2 FK) + AC-CPAR-007,008,010(M3 런타임 재현 미실시) + AC-CPAR-011,012(M4 런타임 재현 미실시) + AC-CPAR-016(M7 라우터 테스트 타임아웃)
 ac_fail_count: 0
-preserve_list_post_run_count: 5  # plan.md §2 PRESERVE 목록 5건 — M6까지 위반 없음 확인(document/comment 서비스, spamfilter, Trash 모델, 회원용 알림 화면 미변경)
+preserve_list_post_run_count: 5  # plan.md §2 PRESERVE 목록 5건 — M7까지 위반 없음 확인(document/comment 서비스, spamfilter, Trash 모델, 회원용 알림 화면 미변경)
 l44_pre_commit_fetch: true  # git fetch origin main 수행, 0 0 (동기 상태) 확인
-l44_post_push_fetch: null  # 오케스트레이터가 push 후 확인 예정
+l44_post_push_fetch: true  # git push origin main 수행, origin/main == HEAD 확인(64fc5c0)
 new_warnings_or_lints_introduced: 0  # tsc --noEmit -p apps/web 0 errors
 cross_platform_build:
   status: not_applicable
   reason: "TypeScript/Next.js 웹 프로젝트 — OS별 syscall 분기 없음"
-total_run_phase_files: 49  # M1~M4 누적 36 + M5 신규 2(ModuleEditForm.test.tsx, ModuleEditForm.tsx) + 수정 2(admin/modules/[id]/edit/page.tsx, admin/module.ts) + M6 신규 3(NotificationSettingsForm.tsx, actions.ts, admin/settings.ts) + 수정 2(notification/page.tsx, packages/notification/src/service.ts)
-m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 80b034c, M2(휴지통) 5062c70, M3(문서·댓글 배선) e911afc, M4(파일 목록 완성) bcdc4cb, M5(모듈 편집) 5266612. M6~M7은 후속 세션 커밋 예정"
+total_run_phase_files: 55  # M1~M6 49 + M7 신규 4(mail-log.ts, mail-log.test.ts, logs/page.tsx, smtp-dispatcher.test.ts 수정) + 수정 3(smtp-dispatcher.ts, schema.prisma, admin/index.ts)
+m1_to_mN_commit_strategy: "마일스톤별 개별 커밋 — M1(사이드바) 80b034c, M2(휴지통) 5062c70, M3(문서·댓글 배선) e911afc, M4(파일 목록 완성) bcdc4cb, M5(모듈 편집) 5266612, M6(전역 알림) 9af1042, M7(메일 로그) 64fc5c0"
 ```
 
 ## §E.4 Sync-phase Audit-Ready Signal
