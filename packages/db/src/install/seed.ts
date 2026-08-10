@@ -32,8 +32,47 @@
  *            SPEC-MENU-001 REQ-MENU-060
  */
 import type { PrismaClient } from '@prisma/client';
-import { DEFAULT_THEME_TOKENS } from '@rhymix-ts/core';
 import { seedDefaultTheme } from '@rhymix-ts/theme-default';
+
+/**
+ * 기본 디자인 토큰 로컬 복제본.
+ *
+ * @rhymix-ts/core의 DEFAULT_THEME_TOKENS와 동일한 값.
+ *
+ * @MX:WARN
+ * @MX:REASON 순환 의존성 방지를 위해 @rhymix-ts/core에서 값을 복제했습니다.
+ *             packages/core/src/theme/default-tokens.ts의 DEFAULT_THEME_TOKENS가 변경되면
+ *             이 값도 수동으로 동기화해야 합니다.
+ */
+const DEFAULT_THEME_TOKENS = {
+  colors: {
+    primary: '#3B82F6',
+    background: '#FFFFFF',
+    foreground: '#0F172A',
+    accent: '#8B5CF6',
+  },
+  typography: {
+    fontFamilyBase: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamilyHeading: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    baseSize: 16,
+  },
+  spacing: {
+    unit: 4,
+  },
+  radii: {
+    sm: '4px',
+    md: '8px',
+    lg: '12px',
+  },
+  dark: {
+    colors: {
+      primary: '#60A5FA',
+      background: '#0F172A',
+      foreground: '#F8FAFC',
+      accent: '#A78BFA',
+    },
+  },
+};
 
 /**
  * 호출자가 주입하는 패스워드 해시 버전 태그.
