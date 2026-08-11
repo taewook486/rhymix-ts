@@ -22,6 +22,9 @@ if (process.env.NODE_ENV !== 'production') {
 // `import { Prisma } from '@prisma/client'` 를 그대로 재내보낸다.
 export { Prisma, PrismaClient } from '@prisma/client';
 
+// SPEC-CONTENT-PARITY-001 M7: 메일 발송 로그 상태 enum.
+export { MailLogStatus } from '@prisma/client';
+
 // SPEC-INSTALL-001 REQ-INSTALL-053: advisory lock (procInstall 동시 실행 차단).
 export { acquireInstallLock, type InstallLock } from './install/lock';
 

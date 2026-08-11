@@ -11,9 +11,6 @@ DROP INDEX "documents_search_vector_idx";
 ALTER TABLE "admin_favorites" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 -- AlterTable
-ALTER TABLE "documents" ALTER COLUMN "searchVector" DROP DEFAULT;
-
--- AlterTable
 ALTER TABLE "domains" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 -- AlterTable
