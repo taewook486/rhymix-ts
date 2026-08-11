@@ -72,6 +72,11 @@ interface FavoriteItem {
   listOrder: number
 }
 
+// SPEC-ADMIN-MENU-PARITY-001 REQ-AMP-001: 레거시 admin GNB 6그룹 순서
+// (사이트 제작/편집→회원→콘텐츠→즐겨찾기→설정→고급)에 맞춰 5개 고정 그룹으로 재배치.
+// 대시보드는 그룹 목록과 별도 랜딩 링크로 유지. 즐겨찾기는 NAV 배열에 없고 렌더 로직에서
+// '콘텐츠' 그룹 직후에 조건부 삽입한다(REQ-AMP-004, 아래 렌더 부분 참고).
+// 전체 href 값은 재배치 전과 동일 집합을 유지한다(REQ-AMP-008) — 순서·그룹 소속만 변경.
 const NAV: ReadonlyArray<NavSection> = [
   {
     section: '대시보드',
@@ -80,9 +85,28 @@ const NAV: ReadonlyArray<NavSection> = [
     ],
   },
   {
+    // REQ-AMP-002: "사이트 제작/편집" 그룹 — 기존 "사이트 설정"에서 메뉴 편집/디자인 이동.
+    section: '사이트 제작/편집',
+    items: [
+      { href: '/admin/menu', label: '메뉴 편집', icon: Menu },
+      { href: '/admin/site/design', label: '디자인', icon: Palette },
+    ],
+  },
+  {
+    section: '회원',
+    items: [
+      { href: '/admin/members', label: '회원 관리', icon: Users },
+      { href: '/admin/members/groups', label: '회원 그룹', icon: Users },
+      { href: '/admin/members/new', label: '회원 등록', icon: UserPlus },
+      { href: '/admin/members/settings', label: '회원 설정', icon: SlidersHorizontal },
+      { href: '/admin/site/points', label: '포인트', icon: Target },
+    ],
+  },
+  {
     // SPEC-CONTENT-PARITY-001 REQ-CPAR-001: 레거시 콘텐츠 메뉴 순서
     // (게시판→페이지→문서→댓글→파일→설문→스팸필터→휴지통)를 참고해 재배열.
     // 위젯 시스템은 rhymix-ts 고유 항목으로 유지(위치는 구현 결정 — 게시판 다음 배치).
+    // SPEC-ADMIN-MENU-PARITY-001 §2: 위젯 시스템은 이 그룹에 그대로 유지한다(이동하지 않음).
     section: '콘텐츠',
     items: [
       { href: '/admin/modules', label: '게시판(모듈)', icon: Package },
@@ -98,30 +122,21 @@ const NAV: ReadonlyArray<NavSection> = [
     ],
   },
   {
-    section: '사이트 설정',
+    // REQ-AMP-005: "설정" 그룹 — 메뉴 편집/디자인/내보내기/가져오기는 다른 그룹으로 이동.
+    section: '설정',
     items: [
       { href: '/admin/settings/site', label: '일반 설정', icon: Settings },
-      { href: '/admin/menu', label: '메뉴 편집', icon: Menu },
-      { href: '/admin/site/design', label: '디자인', icon: Palette },
       { href: '/admin/settings/notification', label: '알림 설정', icon: Bell },
       { href: '/admin/settings/security', label: '보안 설정', icon: ShieldCheck },
+    ],
+  },
+  {
+    // REQ-AMP-003: "고급" 그룹 — 내보내기/가져오기(구 "사이트 설정") + 기존 "시스템" 3항목.
+    // 위젯 시스템은 포함하지 않는다(콘텐츠 그룹에 유지, §2 참고).
+    section: '고급',
+    items: [
       { href: '/admin/settings/export', label: '내보내기', icon: Download },
       { href: '/admin/settings/import', label: '가져오기', icon: Upload },
-    ],
-  },
-  {
-    section: '회원',
-    items: [
-      { href: '/admin/members', label: '회원 관리', icon: Users },
-      { href: '/admin/members/groups', label: '회원 그룹', icon: Users },
-      { href: '/admin/members/new', label: '회원 등록', icon: UserPlus },
-      { href: '/admin/members/settings', label: '회원 설정', icon: SlidersHorizontal },
-      { href: '/admin/site/points', label: '포인트', icon: Target },
-    ],
-  },
-  {
-    section: '시스템',
-    items: [
       { href: '/admin/logs', label: '관리자 로그', icon: ScrollText },
       { href: '/admin/system', label: '시스템 헬스', icon: Activity },
       { href: '/admin/system/cache', label: '캐시 관리', icon: Trash2 },
@@ -282,80 +297,86 @@ export function AdminSidebar() {
         <span className="text-sm font-bold text-zinc-100">Rhymix 관리자</span>
       </div>
 
-      {/* 즐겨찾기 섹션 */}
-      {favorites.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-xs font-semibold uppercase text-zinc-400 mb-2 px-3 flex items-center gap-2">
-            <Star className="h-3 w-3 text-amber-400" />
-            즐겨찾기
-          </h3>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            modifiers={[restrictToVerticalAxis]}
-          >
-            <SortableContext items={favorites.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-              <ul className="space-y-1">
-                {favorites.map((favorite) => (
-                  <li key={favorite.id}>
-                    <SortableFavoriteItem
-                      favorite={favorite}
-                      isActive={pathname === favorite.href}
-                      onRemove={handleRemove}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
-        </div>
-      )}
-
       {/* 네비게이션 섹션 */}
       {NAV.map((group) => (
-        <div key={group.section} className="mb-6">
-          <h3 className="text-xs font-semibold uppercase text-zinc-400 mb-2 px-3">
-            {group.section}
-          </h3>
-          <ul className="space-y-1">
-            {group.items.map((item) => {
-              const isActive = pathname === item.href
-              const Icon = item.icon
+        <div key={group.section}>
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold uppercase text-zinc-400 mb-2 px-3">
+              {group.section}
+            </h3>
+            <ul className="space-y-1">
+              {group.items.map((item) => {
+                const isActive = pathname === item.href
+                const Icon = item.icon
 
-              if (item.disabled) {
+                if (item.disabled) {
+                  return (
+                    <li key={item.href}>
+                      <span
+                        aria-disabled="true"
+                        className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500 cursor-not-allowed rounded"
+                      >
+                        {Icon && <Icon className="h-4 w-4" />}
+                        {item.label}
+                        <span className="ml-auto text-xs text-zinc-600">(준비중)</span>
+                      </span>
+                    </li>
+                  )
+                }
+
                 return (
                   <li key={item.href}>
-                    <span
-                      aria-disabled="true"
-                      className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-500 cursor-not-allowed rounded"
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-2 text-sm rounded transition-colors',
+                        isActive
+                          ? 'bg-zinc-700 text-white'
+                          : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                      )}
                     >
                       {Icon && <Icon className="h-4 w-4" />}
                       {item.label}
-                      <span className="ml-auto text-xs text-zinc-600">(준비중)</span>
-                    </span>
+                    </Link>
                   </li>
                 )
-              }
+              })}
+            </ul>
+          </div>
 
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-2 text-sm rounded transition-colors',
-                      isActive
-                        ? 'bg-zinc-700 text-white'
-                        : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
-                    )}
-                  >
-                    {Icon && <Icon className="h-4 w-4" />}
-                    {item.label}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+          {/*
+            REQ-AMP-004: 즐겨찾기 섹션은 '콘텐츠' 그룹 렌더링 직후 & '설정' 그룹 이전에
+            조건부 렌더(1건 이상일 때만). 레거시 GNB의 즐겨찾기 삽입 위치(설정류 그룹 직전)와
+            동일한 DOM 순서를 재현한다.
+          */}
+          {group.section === '콘텐츠' && favorites.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xs font-semibold uppercase text-zinc-400 mb-2 px-3 flex items-center gap-2">
+                <Star className="h-3 w-3 text-amber-400" />
+                즐겨찾기
+              </h3>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+                modifiers={[restrictToVerticalAxis]}
+              >
+                <SortableContext items={favorites.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+                  <ul className="space-y-1">
+                    {favorites.map((favorite) => (
+                      <li key={favorite.id}>
+                        <SortableFavoriteItem
+                          favorite={favorite}
+                          isActive={pathname === favorite.href}
+                          onRemove={handleRemove}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
+            </div>
+          )}
         </div>
       ))}
     </nav>
