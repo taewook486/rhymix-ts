@@ -8,19 +8,20 @@
  *
  * 시퀀스:
  *   1) Site (installedAt=NOW, installedBy=null 임시)
- *   2) Domain (생성 id 보관 → 11단계에서 인덱스 모듈/메뉴 연결)
+ *   2) Domain (생성 id 보관 → 12단계에서 인덱스 모듈/메뉴 연결)
  *   3) MemberGroup × 2 (admin, member)
  *   4) admin User
  *   5) Site.installedBy ← admin user id
  *   6) MemberGroupMember (admin user → admin group)
- *   7) ModuleInstance × 3 (notice, qna, board) — 생성 id 보관
- *   8) SiteSetting × 3 (sitelock_enabled, sitelock_allowlist, install_lock=true)
- *   9) Board × 3 (board 모듈마다 backing Board; Document FK 선행 조건)
- *  10) Menu × 1 + MenuItem × 3 (board/notice/qna → /{mid}) — REQ-INSTALL-017
- *  11) Domain.update: indexModuleInstanceId=board(REQ-016), defaultMenuId=menu(REQ-017)
- *  12) Theme (default) — ThemeAssignment FK 선행 조건
- *  13) ThemeAssignment (기본 디자인 토큰) — SPEC-MENU-001 REQ-MENU-060
- *  14) 샘플 Document (board/notice 각 1건) — REQ-INSTALL-018, seedSampleContent 기본 true
+ *   7) AdminFavorite × 2 (레거시 parity 기본 즐겨찾기) — SPEC-ADMIN-MENU-PARITY-001 REQ-AMP-006
+ *   8) ModuleInstance × 3 (notice, qna, board) — 생성 id 보관
+ *   9) SiteSetting × 3 (sitelock_enabled, sitelock_allowlist, install_lock=true)
+ *  10) Board × 3 (board 모듈마다 backing Board; Document FK 선행 조건)
+ *  11) Menu × 1 + MenuItem × 3 (board/notice/qna → /{mid}) — REQ-INSTALL-017
+ *  12) Domain.update: indexModuleInstanceId=board(REQ-016), defaultMenuId=menu(REQ-017)
+ *  13) Theme (default) — ThemeAssignment FK 선행 조건
+ *  14) ThemeAssignment (기본 디자인 토큰) — SPEC-MENU-001 REQ-MENU-060
+ *  15) 샘플 Document (board/notice 각 1건) — REQ-INSTALL-018, seedSampleContent 기본 true
  *
  * 주의: `prisma migrate deploy`는 자체 트랜잭션 관리 때문에 본 트랜잭션
  * 안으로 이식할 수 없습니다. 본 시드는 스키마가 사전 적용된 상태(prisma db
@@ -30,6 +31,7 @@
  * @MX:REASON: 본 함수가 부분 성공 시 중간 상태를 남기면 install lock과 결합되어 사이트 잠금이 발생한다.
  * @MX:SPEC: SPEC-INSTALL-001 REQ-INSTALL-014, REQ-INSTALL-015, REQ-INSTALL-016, REQ-INSTALL-017, REQ-INSTALL-018
  *            SPEC-MENU-001 REQ-MENU-060
+ *            SPEC-ADMIN-MENU-PARITY-001 REQ-AMP-006
  */
 import type { PrismaClient } from '@prisma/client';
 import { seedDefaultTheme } from '@rhymix-ts/theme-default';
@@ -205,7 +207,31 @@ export async function seedInstall(
       data: { groupId: adminGroup.id, userId: adminUser.id },
     });
 
-    // 7) ModuleInstance × 3 — notice/qna/board, 모두 isDefault=false.
+    // 7) SPEC-ADMIN-MENU-PARITY-001 REQ-AMP-006: 설치 완료 시 신규 관리자에게 레거시와
+    //    동일한 기본 즐겨찾기 2건을 시딩한다. 레거시의 "알림 센터"(dispNcenterliteAdminConfig)에
+    //    1:1 대응하는 rhymix-ts 화면은 현재 존재하지 않는다(research.md §3 실측 확인 —
+    //    apps/web/app/admin 하위에 별도 notification-center 라우트 없음). 두 항목 모두
+    //    /admin/settings/notification을 가리키게 하고 label로만 레거시 2건을 구분한다
+    //    (acceptance.md AC-AMP-006: href는 `/admin/` 프리픽스만 검증하도록 완화되어 있어
+    //    PASS-WITH-DEBT로 허용됨). 대응 화면이 신설되면 두 번째 항목의 href를 갱신할 것.
+    await tx.adminFavorite.create({
+      data: {
+        memberId: adminUser.id,
+        label: '메일·SMS·알림 발송 설정',
+        href: '/admin/settings/notification',
+        listOrder: 0,
+      },
+    });
+    await tx.adminFavorite.create({
+      data: {
+        memberId: adminUser.id,
+        label: '알림 센터',
+        href: '/admin/settings/notification',
+        listOrder: 1,
+      },
+    });
+
+    // 8) ModuleInstance × 3 — notice/qna/board, 모두 isDefault=false.
     //    이후 단계에서 인덱스 모듈 지정·Board 행 생성에 쓰도록 id를 보관한다.
     const moduleInstanceIds: Record<'notice' | 'qna' | 'board', number> = {
       notice: 0,
@@ -224,7 +250,7 @@ export async function seedInstall(
       moduleInstanceIds[mid] = created.id;
     }
 
-    // 8) SiteSetting × 3
+    // 9) SiteSetting × 3
     await tx.siteSetting.create({
       data: {
         siteId: site.id,
@@ -248,7 +274,7 @@ export async function seedInstall(
       },
     });
 
-    // 9) Board 행 — board 모듈마다 backing Board가 있어야 정상 렌더된다.
+    // 10) Board 행 — board 모듈마다 backing Board가 있어야 정상 렌더된다.
     //    REQ-INSTALL-018: Document.boardId → Board.id 이므로 Document보다 먼저 생성.
     const boardIds: Record<'notice' | 'qna' | 'board', number> = {
       notice: 0,
@@ -265,7 +291,7 @@ export async function seedInstall(
       boardIds[mid] = board.id;
     }
 
-    // 10) REQ-INSTALL-017: 기본 메뉴 1개 + board/notice/qna 연결 MenuItem.
+    // 11) REQ-INSTALL-017: 기본 메뉴 1개 + board/notice/qna 연결 MenuItem.
     const menu = await tx.menu.create({
       data: { siteId: site.id, title: 'Main Menu' },
     });
@@ -286,7 +312,7 @@ export async function seedInstall(
       });
     }
 
-    // 11) REQ-INSTALL-016 + REQ-INSTALL-017: 인덱스 모듈(board)·기본 메뉴를
+    // 12) REQ-INSTALL-016 + REQ-INSTALL-017: 인덱스 모듈(board)·기본 메뉴를
     //     기본 도메인에 연결한다. 본 트랜잭션 내에서 수행(부분 시드 방지).
     await tx.domain.update({
       where: { id: domain.id },
@@ -296,12 +322,12 @@ export async function seedInstall(
       },
     });
 
-    // 12) SPEC-LAYOUT-001 REQ-LAYOUT-035: default 테마 생성.
+    // 13) SPEC-LAYOUT-001 REQ-LAYOUT-035: default 테마 생성.
     //     ThemeAssignment FK 선행 조건 충족을 위해 Theme 먼저 생성.
     //     본 트랜잭션 내에서 수행(부분 시드 방지).
     await seedDefaultTheme(tx as unknown as PrismaClient);
 
-    // 13) SPEC-MENU-001 REQ-MENU-060: 기본 디자인 토큰 시드.
+    // 14) SPEC-MENU-001 REQ-MENU-060: 기본 디자인 토큰 시드.
     //     SITE scope ThemeAssignment를 생성하여 tokensOverride를 채운다.
     //     Theme.id는 FK 제약조건을 위해 실제 Theme 행을 참조.
     //     본 트랜잭션 내에서 수행(부분 시드 방지).
@@ -322,7 +348,7 @@ export async function seedInstall(
       },
     });
 
-    // 14) REQ-INSTALL-018: 환영/공지 샘플 Document(기본 활성).
+    // 15) REQ-INSTALL-018: 환영/공지 샘플 Document(기본 활성).
     //     board/notice 보드에 최소 1건씩. seedSampleContent=false면 건너뛴다.
     if (input.seedSampleContent !== false) {
       const samples: ReadonlyArray<{ mid: 'board' | 'notice'; title: string; content: string }> = [

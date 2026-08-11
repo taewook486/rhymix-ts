@@ -75,6 +75,12 @@ describe('seedInstall (unit)', () => {
           return {};
         }),
       },
+      adminFavorite: {
+        create: vi.fn(async (args: { data: { label: string } }) => {
+          calls.push(`adminFavorite.create:${args.data.label}`);
+          return { id: 1 };
+        }),
+      },
       moduleInstance: {
         create: vi.fn(async (args: { data: { mid: string } }) => {
           calls.push(`moduleInstance.create:${args.data.mid}`);
@@ -210,6 +216,7 @@ interface RecordedTx {
   menuCreateArgs: Array<{ data: { siteId: number; title: string } }>;
   menuItemCreateArgs: Array<{ data: { menuId: number; title: string; url?: string } }>;
   boardCreateArgs: Array<{ data: { moduleInstanceId: number; name: string } }>;
+  adminFavoriteCreateArgs: Array<{ data: { label: string; href: string; listOrder: number } }>;
   tx: unknown;
 }
 
@@ -225,6 +232,7 @@ function makeRecordingTx(): RecordedTx {
   const menuCreateArgs: RecordedTx['menuCreateArgs'] = [];
   const menuItemCreateArgs: RecordedTx['menuItemCreateArgs'] = [];
   const boardCreateArgs: RecordedTx['boardCreateArgs'] = [];
+  const adminFavoriteCreateArgs: RecordedTx['adminFavoriteCreateArgs'] = [];
 
   const tx = {
     site: {
@@ -264,6 +272,13 @@ function makeRecordingTx(): RecordedTx {
       create: vi.fn(async () => {
         calls.push('memberGroupMember.create');
         return {};
+      }),
+    },
+    adminFavorite: {
+      create: vi.fn(async (args: { data: { label: string; href: string; listOrder: number } }) => {
+        calls.push(`adminFavorite.create:${args.data.label}`);
+        adminFavoriteCreateArgs.push(args);
+        return { id: 1 };
       }),
     },
     moduleInstance: {
@@ -338,6 +353,7 @@ function makeRecordingTx(): RecordedTx {
     menuCreateArgs,
     menuItemCreateArgs,
     boardCreateArgs,
+    adminFavoriteCreateArgs,
     tx,
   };
 }
@@ -434,5 +450,50 @@ describe('seedInstall post-install bootstrap (REQ-INSTALL-016/017/018)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await seedInstall(makeInput(), prisma as any);
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * SPEC-ADMIN-MENU-PARITY-001 AC-AMP-006: 설치 완료 시 신규 관리자에게 기본 즐겨찾기 2건이
+ * 생성되고, label/listOrder는 REQ-AMP-006 명시 값과 정확히 일치, href는 `/admin/` 프리픽스만
+ * 검증한다(정확 매치 대신 프리픽스 검증으로 완화 — plan.md M2 "알림 센터" 실측 불확실성 흡수,
+ * PASS-WITH-DEBT 여지).
+ */
+describe('seedInstall admin favorite bootstrap (SPEC-ADMIN-MENU-PARITY-001 REQ-AMP-006)', () => {
+  it('AC-AMP-006: shall create exactly 2 AdminFavorite rows with REQ-AMP-006 label/listOrder and /admin/-prefixed href', async () => {
+    const rec = makeRecordingTx();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await seedInstall(makeInput(), makePrisma(rec) as any);
+
+    expect(rec.adminFavoriteCreateArgs).toHaveLength(2);
+
+    const sorted = [...rec.adminFavoriteCreateArgs].sort(
+      (a, b) => a.data.listOrder - b.data.listOrder,
+    );
+
+    expect(sorted[0]?.data).toMatchObject({
+      label: '메일·SMS·알림 발송 설정',
+      listOrder: 0,
+    });
+    expect(sorted[0]?.data.href).toMatch(/^\/admin\//);
+
+    expect(sorted[1]?.data).toMatchObject({
+      label: '알림 센터',
+      listOrder: 1,
+    });
+    expect(sorted[1]?.data.href).toMatch(/^\/admin\//);
+  });
+
+  it('AC-AMP-006: shall seed favorites for the newly-created admin (memberId propagation via prisma FK)', async () => {
+    const rec = makeRecordingTx();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await seedInstall(makeInput(), makePrisma(rec) as any);
+
+    // adminFavorite.create는 user.create(관리자 계정 생성) 이후에 호출되어야 한다
+    // (REQ-AMP-006: "설치 완료 시 신규 관리자에게" — memberId FK 선행 조건).
+    const firstUser = rec.calls.findIndex((c) => c === 'user.create');
+    const firstFavorite = rec.calls.findIndex((c) => c.startsWith('adminFavorite.create'));
+    expect(firstUser).toBeGreaterThanOrEqual(0);
+    expect(firstFavorite).toBeGreaterThan(firstUser);
   });
 });
