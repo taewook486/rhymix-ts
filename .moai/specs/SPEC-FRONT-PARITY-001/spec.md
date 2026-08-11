@@ -1,7 +1,7 @@
 ---
 id: SPEC-FRONT-PARITY-001
 title: "방문자 화면 레거시 parity 1단계 — 인덱스 모듈 정책 + 중복 마크업 해소"
-version: "0.1.0"
+version: "0.1.1"
 status: draft
 created: 2026-08-11
 updated: 2026-08-11
@@ -25,6 +25,18 @@ related_specs: [SPEC-THEME-001, SPEC-BOARD-CRUD-001, SPEC-ADMIN-MENU-PARITY-001]
 
 ## HISTORY
 
+- 2026-08-12 (v0.1.1): plan-auditor 1차 감사(FAIL, 0.72) 반영. **D1(critical)** —
+  `seed.test.ts:406,469`가 `indexModuleInstanceId === board`를 단언, REQ-FP-001이 뒤집는
+  불변식임을 실측 확인 → plan.md M2 산출물 추가 + acceptance.md에 "의도된 변경 carve-out"
+  신설(회귀와 구분). **D2(critical)** — `Footer.tsx:20`이 `MenuSlotRenderer slot="FOOTER"`의
+  유일 렌더러(SPEC-MENU-001), `GlobalFooter.tsx`가 SPEC-INSTALL-003 REQ-INSTALL3-040~042
+  이행임을 실측 확인 → REQ-FP-006을 (a)(b)(c) 3항으로 확장, plan.md M1에 결정 입력 3종 표
+  추가, PRESERVE 보강. **D3(major)** — `<main>` 실제 영향 22개 파일(계획서 3개로 오기)
+  실측 확인 → "방문자 화면" 범위 정의 신설, 범위 밖 라우트를 Out of Scope로 분리.
+  **D4** — REQ-FP-007 2절을 측정 규정에서 행위 규정으로 재작성. **D5** — AC-FP-005에
+  다크모드 토글 검증 추가, AC-FP-006 위임 해소. **D6** — 메뉴슬롯 시드 출처를
+  `30acfeb`로 정정(2곳). **D7** — AC-FP-002 검증 리터럴 고정. **D8/D9** — 중첩 표현
+  통일, Out of Scope bullet 형식화.
 - 2026-08-11 (v0.1.0): 최초 작성. 양쪽 DB 초기화 + 재설치 후 Playwright로 방문자 화면 대조
   (research.md). 선행 조건으로 연결 버그 3건이 이미 수정됨(`30acfeb`) — 그 수정 없이
   비교했다면 "메뉴/레이아웃 없음"이 디자인 격차로 오분류되었을 것이므로, 본 SPEC의 격차
@@ -39,7 +51,7 @@ related_specs: [SPEC-THEME-001, SPEC-BOARD-CRUD-001, SPEC-ADMIN-MENU-PARITY-001]
 구현되어 있다(SPEC-PAGE-001).
 
 또한 대조 과정에서 디자인과 무관한 마크업 결함 2건이 확인되었다: 푸터가 3중 렌더되고
-(`GlobalFooter` / `Footer` / DefaultLayout 각각), `<main>`이 3중 중첩된다
+(`GlobalFooter` / `Footer` / DefaultLayout 각각), `<main>`이 3개 렌더되어 2단 중첩된다
 (`app/layout.tsx` / DefaultLayout / board 모듈). HTML 명세상 `<main>`은 문서당 1개여야 하며,
 중복 푸터는 사용자에게 동일 문구를 2회 노출한다.
 
@@ -48,8 +60,9 @@ related_specs: [SPEC-THEME-001, SPEC-BOARD-CRUD-001, SPEC-ADMIN-MENU-PARITY-001]
 ### 인덱스 모듈 정책 (research.md §1, G1)
 
 1. 설치 시 **page 모듈 인스턴스를 생성**하고 이를 도메인의 인덱스 모듈로 지정한다
-   (현재는 board가 인덱스). 게시판은 헤더 메뉴(Board/Notice/Q&A)로 접근한다 — 메뉴는
-   `SPEC-ADMIN-MENU-PARITY-001` 수정으로 이미 정상 동작한다.
+   (현재는 board가 인덱스). 게시판은 헤더 메뉴(Board/Notice/Q&A)로 접근한다 — 메뉴 슬롯
+   연결은 `30acfeb`(독립 커밋 `fix(install): 설치 시 레이아웃·메뉴 연결 누락 수정`)로 이미
+   정상 동작한다.
 2. 해당 page에 **환영 콘텐츠**(제목 + 소개 문단 + 관리자 진입 안내)를 시딩한다. 레거시의
    히어로 캐러셀·6카드 가이드·4카드 커뮤니티 섹션을 그대로 재현하지 않는다(§4 Out of Scope).
 
@@ -70,33 +83,64 @@ create a `page` module instance and SHALL set it as the domain's index module
 populate the index page instance with welcome content containing at minimum a heading, an
 introductory paragraph, and a link to the admin dashboard (`/admin`).
 
-**REQ-FP-003 (Ubiquitous)**: Any rendered visitor-facing page SHALL contain exactly one `<footer>`
-element, and SHALL NOT display the same footer text more than once.
+> **"방문자 화면"의 정의 (REQ-FP-003·004의 적용 범위)**: 인증이 필요하지 않은 공개 라우트 —
+> 인덱스(`/`), 게시판 라우트(`/board`, `/notice`, `/qna` 및 그 하위 글 보기). `/admin/**`,
+> `/install/**`, `(member)` 그룹 라우트는 **본 SPEC의 적용 범위 밖**이다. 이들 라우트도
+> 동일한 `<main>` 중첩 문제를 갖지만(현황 22개 파일이 `<main>`을 렌더, plan.md §1 참고),
+> 범위를 한정하지 않으면 Tier M을 벗어나며 관리자/설치 화면 회귀 위험이 커진다. 전역 정리는
+> 후속 SPEC으로 분리한다.
 
-**REQ-FP-004 (Ubiquitous)**: Any rendered visitor-facing page SHALL contain exactly one `<main>`
-element, and SHALL NOT nest a `<main>` element inside another `<main>` element.
+**REQ-FP-003 (Ubiquitous)**: Any rendered visitor-facing page (as defined above) SHALL contain
+exactly one `<footer>` element, and SHALL NOT display the same footer text more than once.
+
+**REQ-FP-004 (Ubiquitous)**: Any rendered visitor-facing page (as defined above) SHALL contain
+exactly one `<main>` element, and SHALL NOT nest a `<main>` element inside another `<main>`
+element.
 
 **REQ-FP-005 (Ubiquitous)**: The board module SHALL remain reachable at its own route
 (`/board`, `/notice`, `/qna`) and via the header menu after the index module changes, and its list
 view SHALL retain its current columns, sorting, and card-view controls.
 
-**REQ-FP-006 (Unwanted)**: The system SHALL NOT remove or regress the following rhymix-ts-only
-capabilities while implementing REQ-FP-001~005: the dark-mode toggle, the board list sort controls
-(최신순 / 추천순 / 조회순), the card-view toggle, and the 추천수 column.
+**REQ-FP-006 (Unwanted)**: The system SHALL NOT remove or regress the following capabilities while
+implementing REQ-FP-001~005:
+(a) the dark-mode toggle, the board list sort controls (최신순 / 추천순 / 조회순), the card-view
+toggle, and the 추천수 column (rhymix-ts-only advantages over legacy);
+(b) **the FOOTER menu slot rendering path** — `MenuSlotRenderer slot="FOOTER"` is currently
+rendered by exactly one component (`apps/web/components/layout/Footer.tsx`), fulfilling
+`SPEC-MENU-001` REQ-MENU-030~034. WHERE footer consolidation removes that component, the system
+SHALL relocate the FOOTER slot rendering to the surviving footer, so that a FOOTER slot assignment
+made in the admin UI (`SlotAssignmentTable`) continues to render;
+(c) **the always-rendered attribution footer** — `apps/web/components/layout/GlobalFooter.tsx`
+fulfills `SPEC-INSTALL-003` REQ-INSTALL3-040~042 (온보딩 해제 여부와 무관하게 항상 렌더) and is
+covered by dedicated tests. WHERE footer consolidation removes it, the surviving footer SHALL
+satisfy the same always-render obligation.
 
 **REQ-FP-007 (State-Driven)**: WHILE an authenticated administrator views the index page, the
 system SHALL continue to render the operator onboarding panel above the page content
-(existing SPEC-INSTALL-003 behavior), and that panel SHALL NOT be counted as a duplicate `<main>`
-or `<footer>` under REQ-FP-003/004.
+(existing SPEC-INSTALL-003 behavior), AND the onboarding panel SHALL NOT render a `<main>` or
+`<footer>` element of its own.
 
 ## 4. Out of Scope
 
 ### Out of Scope — 디자인 자산 제작 (후속 SPEC)
 
-레거시 XEDITION의 히어로 캐러셀(슬라이드 6개, swiper), intro/guide(6카드)/connect(4카드)
-섹션, 웹폰트(`webfont.css`), 모듈별 스킨 CSS 계층은 본 SPEC에서 다루지 않는다. 실제 디자인
-자산 제작이 필요한 영역으로, 구조·버그 수정과 작업 성격 및 검증 방식이 다르다
+- 히어로 캐러셀 — 레거시 `div.visual.swiper-container`, 슬라이드 6개
+- 메인 콘텐츠 섹션 — `section.intro` / `section.guide`(카드 6개) / `section.connect`(카드 4개)
+- 웹폰트 — 레거시 `webfont.css`
+- 모듈별 스킨 CSS 계층 — 레거시 `modules/board/skins/xedition/board.default.css`
+
+실제 디자인 자산 제작이 필요한 영역으로, 구조·버그 수정과 작업 성격 및 검증 방식이 다르다
 (research.md §5 판정 참고). 본 SPEC은 그 작업이 올라갈 **구조적 토대**만 마련한다.
+
+### Out of Scope — 방문자 화면 외 라우트의 `<main>` 정리
+
+- `/admin/**` — 현재 `<main>` 3중 렌더(`app/layout.tsx` + `admin/layout.tsx` + 페이지)
+- `/install/**` — 5개 파일이 자체 `<main>` 렌더
+- `(member)` 그룹 — 6개 파일이 자체 `<main>` 렌더
+
+전역 `<main>` 정리는 22개 파일에 영향을 주어 Tier M을 벗어나고 관리자/설치 화면 회귀 위험이
+크다. spec.md §3의 "방문자 화면" 정의에 따라 인덱스·게시판 라우트로 한정하며, 전역 정리는
+후속 SPEC으로 분리한다.
 
 ### Out of Scope — 게시판 목록 컬럼 변경
 
