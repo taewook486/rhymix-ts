@@ -8,6 +8,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### SPEC-ADMIN-MENU-PARITY-001 — 관리자 메뉴 레거시 parity (완료)
+
+> status: completed — 레거시 Rhymix(PHP) admin GNB 6그룹 구조(사이트 제작/편집→회원→콘텐츠→
+> 즐겨찾기→설정→고급) 대비 rhymix-ts `AdminSidebar.tsx`를 재배치하고, 설치 시 기본 즐겨찾기
+> 시딩(격차 1건)을 보강. 8개 AC(AC-AMP-001~008) 중 7개 PASS + 1개 PASS-WITH-DEBT. 2개
+> 마일스톤(M1~M2), 전부 main에 직접 push(Route A — Hybrid Trunk 1인 OSS).
+
+- **M1 — 관리자 사이드바 6그룹 재배치** (`2354bf0`) — `AdminSidebar.tsx`의 NAV 배열을 5개 고정
+  그룹(사이트 제작/편집, 회원, 콘텐츠, 설정, 고급)으로 재편(REQ-AMP-001~003, 005), "메뉴 편집"/
+  "디자인"을 "사이트 제작/편집"으로, "내보내기"/"가져오기"를 "고급"으로 이동, 기존 "시스템" 섹션을
+  "고급" 그룹 하위로 편입. 즐겨찾기 렌더 블록을 콘텐츠 그룹과 설정 그룹 사이로 이동(REQ-AMP-004,
+  즐겨찾기 1건 이상일 때만 조건부 렌더 — 기존 동작 유지). 위젯 시스템은 콘텐츠 그룹에 유지
+  (`SPEC-CONTENT-PARITY-001` 기존 결정 존중). 전체 href 22개가 재배치 전후 동일 집합 유지
+  (REQ-AMP-008), label/icon 변경 없음. RTL 테스트 7건 추가(AC-AMP-001~005, 008, 004b)
+- **M2 — 설치 시 기본 즐겨찾기 시딩** (`e8f3ec6`) — `seedInstall`에 관리자 계정 생성 직후,
+  `ModuleInstance` 생성 이전(단일 트랜잭션 내부, 부분 시드 방지)으로 `AdminFavorite` 2건 생성
+  단계 추가(REQ-AMP-006). `seed.test.ts`에 AC-AMP-006 검증 케이스 2건 추가
+- **PASS-WITH-DEBT (AC-AMP-006)**: 레거시 "알림 센터"(`dispNcenterliteAdminConfig`) 1:1 대응
+  화면이 rhymix-ts에 없음을 실측(`apps/web/app/admin` 하위 라우트) 재확인 — 두 즐겨찾기 모두
+  `/admin/settings/notification`을 가리키도록 구현하고 label로만 구분("메일·SMS·알림 발송 설정"
+  / "알림 센터"). `acceptance.md`가 이 완화(href 정확값 대신 `/admin/` 프리픽스 검증)를 사전에
+  명시적으로 허용
+- 나머지 7개 AC(AC-AMP-001~005, 007~008) 전부 실제 구현 코드 기준 PASS 확인(`AdminSidebar.test.tsx`
+  RTL 전수 재검증). `AddToFavoritesButton`, DnD 재정렬, 임의 `/admin/` URL 즐겨찾기 등 기존 rhymix-ts
+  고유 기능은 이번 SPEC에서 전혀 수정하지 않아 회귀 없음(REQ-AMP-007)
+
 #### SPEC-MEMBER-PARITY-001 — 관리자 회원 메뉴 레거시 parity (완료)
 
 > status: completed — 레거시 Rhymix(PHP) admin 대비 확인된 2개 기능 격차(AC-MPAR-001~005) 전체 구현+검증

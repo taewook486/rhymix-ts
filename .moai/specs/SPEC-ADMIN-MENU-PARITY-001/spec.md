@@ -2,7 +2,7 @@
 id: SPEC-ADMIN-MENU-PARITY-001
 title: "관리자 메뉴 레거시 parity — 사이드바 6그룹 재배치 + 즐겨찾기 기본 시딩"
 version: "0.1.1"
-status: in-progress
+status: completed
 created: 2026-08-11
 updated: 2026-08-11
 author: manager-spec
