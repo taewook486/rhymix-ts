@@ -1,10 +1,10 @@
 ---
 id: SPEC-FRONT-PARITY-001
 title: "방문자 화면 레거시 parity 1단계 — 인덱스 모듈 정책 + 중복 마크업 해소"
-version: "0.1.1"
+version: "0.1.2"
 status: draft
 created: 2026-08-11
-updated: 2026-08-11
+updated: 2026-08-12
 author: manager-spec
 priority: P1
 phase: "Phase 14 — 방문자 화면 레거시 parity"
@@ -25,6 +25,19 @@ related_specs: [SPEC-THEME-001, SPEC-BOARD-CRUD-001, SPEC-ADMIN-MENU-PARITY-001]
 
 ## HISTORY
 
+- 2026-08-12 (v0.1.2): plan-auditor 2차 감사(PASS, 0.83) 반영. **D11(major, v0.1.1 수정이
+  유발한 신규 모순)** — 범위 정의에 "하위 글 보기"를 넣었으나 `/board/[id]`는
+  `renderModuleWithLayout`을 타지 않는 별도 경로(`app/[mid]/[id]/page.tsx`가 미호출)여서,
+  plan.md가 권고한 "레이아웃 쪽만 낮추기" 전략으로는 해당 라우트의 `<main>` 중첩을 고칠 수
+  없고 AC 샘플(`/`·`/board`)로도 탐지되지 않았음. 실측 후 **범위 유지(넓히는 쪽) 선택** —
+  글 보기는 방문자 핵심 화면이며 수정량은 `<main>` 2개로 작음. plan.md §1에 라우트별 실측
+  표 추가(모듈 쪽 `<main>`을 낮추고 루트는 유지하는 방향 확정), §2 M1 결정 입력 3행에
+  글 보기를 레이아웃 미적용 대표 사례로 명시, §4 M1에 `view-page.tsx` 추가, acceptance.md
+  Edge Cases에 해당 라우트의 양방향 위반 시나리오 기술 + AC 샘플 3라우트로 확대.
+  **D12** — §4 M2에 `seed.test.ts` 누락 보완. **D13** — AC-FP-007을 REQ와 동일한 행위
+  규정으로 수정 + `.operator-onboarding` 직접 단언 추가. **D16** — AC-FP-006(c)의
+  "동등 단언"을 `layout.test.tsx` 3개 단언으로 고정. **D14/D15** — Out of Scope 6절 전부
+  bullet 형식화, `updated` 날짜 정정.
 - 2026-08-12 (v0.1.1): plan-auditor 1차 감사(FAIL, 0.72) 반영. **D1(critical)** —
   `seed.test.ts:406,469`가 `indexModuleInstanceId === board`를 단언, REQ-FP-001이 뒤집는
   불변식임을 실측 확인 → plan.md M2 산출물 추가 + acceptance.md에 "의도된 변경 carve-out"
@@ -84,7 +97,9 @@ populate the index page instance with welcome content containing at minimum a he
 introductory paragraph, and a link to the admin dashboard (`/admin`).
 
 > **"방문자 화면"의 정의 (REQ-FP-003·004의 적용 범위)**: 인증이 필요하지 않은 공개 라우트 —
-> 인덱스(`/`), 게시판 라우트(`/board`, `/notice`, `/qna` 및 그 하위 글 보기). `/admin/**`,
+> 인덱스(`/`), 게시판 목록(`/board`, `/notice`, `/qna`), **글 보기(`/board/[id]` 등
+> `[mid]/[id]`)**. 글 보기는 `renderModuleWithLayout`을 타지 않는 별도 렌더 경로이므로
+> 마크업 정리 시 별도 처리가 필요하다(plan.md §1 라우트별 실측 표 참고). `/admin/**`,
 > `/install/**`, `(member)` 그룹 라우트는 **본 SPEC의 적용 범위 밖**이다. 이들 라우트도
 > 동일한 `<main>` 중첩 문제를 갖지만(현황 22개 파일이 `<main>`을 렌더, plan.md §1 참고),
 > 범위를 한정하지 않으면 Tier M을 벗어나며 관리자/설치 화면 회귀 위험이 커진다. 전역 정리는
@@ -144,23 +159,33 @@ system SHALL continue to render the operator onboarding panel above the page con
 
 ### Out of Scope — 게시판 목록 컬럼 변경
 
-레거시 6컬럼(번호/제목/글쓴이/날짜/조회 수/+)과 뉴버전 6컬럼(번호/제목/작성자/작성일/
-조회수/추천수)은 이미 동등하다(research.md G6). 라벨 표기 차이만 있으며 변경하지 않는다.
+- 레거시 6컬럼: 번호 / 제목 / 글쓴이 / 날짜 / 조회 수 / (빈 컬럼)
+- 뉴버전 6컬럼: 번호 / 제목 / 작성자 / 작성일 / 조회수 / 추천수
+
+이미 동등하며(research.md G6) 라벨 표기 차이만 있다. 변경하지 않는다.
 
 ### Out of Scope — 레거시 회귀 금지 항목
 
-다크모드 토글(레거시는 `color_scheme_light` 고정), 정렬 컨트롤, 카드형 보기는 뉴버전 우위
-항목이다(research.md G12). REQ-FP-006으로 보호하며 레거시에 맞춰 제거하지 않는다.
+- 다크모드 토글 (레거시는 `color_scheme_light` 고정)
+- 정렬 컨트롤 (최신순 / 추천순 / 조회순)
+- 카드형 보기 토글
+
+뉴버전 우위 항목이다(research.md G12). REQ-FP-006 (a)로 보호하며 레거시에 맞춰 제거하지
+않는다.
 
 ### Out of Scope — 로그인 위젯 메인 노출
 
-레거시는 메인에 `section.login_widget`을 노출하나(research.md G9), 뉴버전은 헤더 로그인
-링크 방식을 채택하고 있다. 우선순위가 낮아 본 SPEC에서 다루지 않는다.
+- 레거시: 메인에 `section.login_widget` 노출 (research.md G9)
+- 뉴버전: 헤더 로그인 링크 방식
+
+우선순위가 낮아 본 SPEC에서 다루지 않는다.
 
 ### Out of Scope — 관리자 바
 
-레거시 하단 고정 관리자 바는 뉴버전의 온보딩 패널과 성격이 다른 설계 선택이며 격차로
-분류하지 않는다(research.md G11).
+- 레거시: 하단 고정 관리자 바 (`div.xe-widget-wrapper`)
+- 뉴버전: 온보딩 패널 (성격이 다른 설계 선택)
+
+격차로 분류하지 않는다(research.md G11).
 
 ## §F Phase 4 Mode Selection
 

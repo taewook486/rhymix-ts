@@ -28,10 +28,21 @@
 > --include="*.tsx" | grep -v test` → **22개 파일**. `app/layout.tsx`가 루트이므로 자체
 > `<main>`을 렌더하는 모든 라우트가 이미 2중이다: `(member)` 그룹 6개, `admin/**` 2개,
 > `install/**` 5개, `tags`, `[mid]/write`, board `view/edit/write-page` 등.
-> 본 SPEC은 spec.md §3의 "방문자 화면" 정의에 따라 **인덱스 + 게시판 라우트만** 대상으로
-> 한다. 루트 `<main>`을 건드리면 범위 밖 라우트까지 영향을 주므로, **모듈/레이아웃 쪽에서
-> 낮추는 방향을 우선 검토**하고 루트 변경은 최후 수단으로 두되 선택 시 범위 밖 라우트
-> 회귀 검증을 반드시 포함한다.
+> 본 SPEC은 spec.md §3의 "방문자 화면" 정의에 따라 **인덱스 + 게시판 목록 + 글 보기**를
+> 대상으로 한다.
+>
+> **모듈 쪽만 낮추는 것으로는 범위 내 요구를 충족할 수 없다.** 라우트별 실측:
+>
+> | 라우트 | 렌더 경로 | 현재 `<main>` |
+> |---|---|---|
+> | `/` (인덱스) | `app/layout.tsx` → DefaultLayout → 모듈 | 3개(2단 중첩) |
+> | `/board` (목록) | `app/layout.tsx` → DefaultLayout → `index-page.tsx` | 3개(2단 중첩) |
+> | `/board/[id]` (글 보기) | `app/layout.tsx` → `view-page.tsx` (**DefaultLayout 미적용** — `app/[mid]/[id]/page.tsx`가 `renderModuleWithLayout` 미호출) | 2개(2단 중첩) |
+>
+> 글 보기는 DefaultLayout을 타지 않으므로 "레이아웃 쪽을 낮추는" 전략이 닿지 않는다.
+> 따라서 **모듈 3개(`index-page`·`view-page`)의 자체 `<main>`을 낮추는 것이 기본 방향**이며,
+> 루트 `app/layout.tsx:71`의 `<main>`은 유지한다(범위 밖 22개 파일에 영향을 주지 않기 위함).
+> 결과적으로 모든 범위 내 라우트에서 `<main>`은 루트 1개만 남는다.
 
 ## §2. 파일별 변경 계획
 
@@ -47,7 +58,7 @@
   |---|---|---|---|
   | 1 | 각 푸터가 어느 완료 SPEC의 REQ를 이행하는가 | `Footer.tsx:20` = `MenuSlotRenderer slot="FOOTER"` **유일 렌더러**(SPEC-MENU-001 REQ-MENU-030~034) / `GlobalFooter.tsx:11` = SPEC-INSTALL-003 REQ-INSTALL3-040~042(항상 렌더) | 이행 주체를 살아남는 푸터로 **이전**(REQ-FP-006 b·c) |
   | 2 | 각 푸터를 검증하는 기존 테스트 | `GlobalFooter.test.tsx` + `app/layout.test.tsx`(3건) | 테스트 갱신을 산출물에 포함 |
-  | 3 | 레이아웃 미적용 라우트에서의 렌더 | DefaultLayout은 인덱스 모듈 경로에서만 적용 | 로그인/에러 등에서 푸터가 사라지지 않는지 확인 |
+  | 3 | 레이아웃 미적용 라우트에서의 렌더 | **`/board/[id]`(글 보기)가 실측 확인된 대표 사례** — `apps/web/app/[mid]/[id]/page.tsx`는 `renderModuleWithLayout`을 호출하지 않아 DefaultLayout 자체가 적용되지 않는다. 현재 이 라우트의 푸터는 `Footer` + `GlobalFooter` 2개뿐 | DefaultLayout 푸터만 남기면 이 라우트는 푸터가 **0개**가 되어 REQ-FP-006(c) 위반. 로그인/에러 라우트도 동일 부류 |
 
   — 무조건 삭제 금지. 특히 `Footer.tsx` 삭제 시 관리자 UI(`SlotAssignmentTable`)에서 FOOTER
   슬롯 배정이 여전히 가능한데 화면에는 아무것도 렌더되지 않는 무증상 실패가 발생한다.
@@ -90,9 +101,12 @@
 
 ## §4. 마일스톤
 
-- M1: 중복 마크업 해소 (`app/layout.tsx`, `themes/default/layouts/default.tsx`,
-  `packages/board/src/routes/index-page.tsx`, 푸터 컴포넌트 중 1개)
-- M2: 인덱스 모듈 page 전환 + 환영 콘텐츠 시딩 (`packages/db/src/install/seed.ts`)
+- M1: 중복 마크업 해소 — `app/layout.tsx`, `themes/default/layouts/default.tsx`,
+  `packages/board/src/routes/index-page.tsx`, **`packages/board/src/routes/view-page.tsx`**
+  (L107·L119 자체 `<main>` — `/board/[id]`가 범위 내이며 레이아웃 미적용 라우트라 별도 처리
+  필요), 푸터 컴포넌트 중 1개, 관련 테스트
+- M2: 인덱스 모듈 page 전환 + 환영 콘텐츠 시딩 — `packages/db/src/install/seed.ts`,
+  **`packages/db/src/install/seed.test.ts`**(§2 M2의 선행 필독 참고 — 단언 2건 갱신 필수)
 
 M1 → M2 순서 권장: M2가 인덱스 화면을 page로 바꾸므로, 마크업 정리를 먼저 끝내면 M2 검증 시
 "푸터/main이 몇 개인가"를 깨끗한 상태에서 확인할 수 있다.
