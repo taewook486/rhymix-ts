@@ -348,6 +348,40 @@ export async function seedInstall(
       },
     });
 
+    // 14-b) 설치 연결 마감 — 생성된 레이아웃/메뉴를 실제로 "활성화"한다.
+    //
+    // @MX:WARN: 이 두 연결이 빠지면 모든 구성 요소가 존재함에도 화면에 전혀
+    //   반영되지 않는다(무증상 실패). 2026-08-11 재설치 검증에서 실측된 결함:
+    //   - domains.defaultLayoutId=NULL → resolveLayoutFromInstance가 매번 fallback으로
+    //     빠져 DefaultLayout(컨테이너/푸터)이 적용되지 않음
+    //     (dev 로그 `[Layout] no layout resolved` 30회 관측)
+    //   - menu_slot_assignments 0행 → GlobalHeader의 MenuSlotRenderer가 빈 nav 렌더
+    // @MX:REASON: 두 연결 모두 "행 생성"과 "연결"이 분리된 구조라 생성만으로는
+    //   기능이 켜지지 않는다. 연결 자체가 기능 활성화 조건이므로 시드에 포함한다.
+
+    // 레이아웃 연결: seedDefaultTheme가 upsert한 default 레이아웃을 도메인 기본값으로.
+    // 반드시 seedDefaultTheme(13단계) 이후에 조회해야 FK가 성립한다.
+    const defaultLayout = await tx.layout.findFirst({
+      where: { name: 'default' },
+      select: { id: true },
+    });
+    if (!defaultLayout) {
+      throw new Error('Default layout not found after seedDefaultTheme');
+    }
+    await tx.domain.update({
+      where: { id: domain.id },
+      data: { defaultLayoutId: defaultLayout.id },
+    });
+
+    // 메뉴 슬롯 연결: 기본 메뉴를 헤더 주 메뉴 슬롯에 배치.
+    await tx.menuSlotAssignment.create({
+      data: {
+        domainId: domain.id,
+        slot: 'HEADER_PRIMARY',
+        menuId: menu.id,
+      },
+    });
+
     // 15) REQ-INSTALL-018: 환영/공지 샘플 Document(기본 활성).
     //     board/notice 보드에 최소 1건씩. seedSampleContent=false면 건너뛴다.
     if (input.seedSampleContent !== false) {

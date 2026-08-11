@@ -133,11 +133,21 @@ describe('seedInstall (unit)', () => {
           id: 'layout-default-id',
           name: 'default',
         })),
+        findFirst: vi.fn(async () => ({
+          id: 'layout-default-id',
+          name: 'default',
+        })),
       },
       themeAssignment: {
         create: vi.fn(async () => {
           calls.push('themeAssignment.create');
           return {};
+        }),
+      },
+      menuSlotAssignment: {
+        create: vi.fn(async (args: { data: { slot: string } }) => {
+          calls.push(`menuSlotAssignment.create:${args.data.slot}`);
+          return { id: 1 };
         }),
       },
     };
@@ -217,6 +227,9 @@ interface RecordedTx {
   menuItemCreateArgs: Array<{ data: { menuId: number; title: string; url?: string } }>;
   boardCreateArgs: Array<{ data: { moduleInstanceId: number; name: string } }>;
   adminFavoriteCreateArgs: Array<{ data: { label: string; href: string; listOrder: number } }>;
+  menuSlotAssignmentCreateArgs: Array<{
+    data: { domainId: number; slot: string; menuId: number };
+  }>;
   tx: unknown;
 }
 
@@ -233,6 +246,7 @@ function makeRecordingTx(): RecordedTx {
   const menuItemCreateArgs: RecordedTx['menuItemCreateArgs'] = [];
   const boardCreateArgs: RecordedTx['boardCreateArgs'] = [];
   const adminFavoriteCreateArgs: RecordedTx['adminFavoriteCreateArgs'] = [];
+  const menuSlotAssignmentCreateArgs: RecordedTx['menuSlotAssignmentCreateArgs'] = [];
 
   const tx = {
     site: {
@@ -337,12 +351,25 @@ function makeRecordingTx(): RecordedTx {
         id: 'layout-default-id',
         name: 'default',
       })),
+      findFirst: vi.fn(async () => ({
+        id: 'layout-default-id',
+        name: 'default',
+      })),
     },
     themeAssignment: {
       create: vi.fn(async () => {
         calls.push('themeAssignment.create');
         return {};
       }),
+    },
+    menuSlotAssignment: {
+      create: vi.fn(
+        async (args: { data: { domainId: number; slot: string; menuId: number } }) => {
+          calls.push(`menuSlotAssignment.create:${args.data.slot}`);
+          menuSlotAssignmentCreateArgs.push(args);
+          return { id: 1 };
+        },
+      ),
     },
   };
 
@@ -354,6 +381,7 @@ function makeRecordingTx(): RecordedTx {
     menuItemCreateArgs,
     boardCreateArgs,
     adminFavoriteCreateArgs,
+    menuSlotAssignmentCreateArgs,
     tx,
   };
 }
@@ -495,5 +523,58 @@ describe('seedInstall admin favorite bootstrap (SPEC-ADMIN-MENU-PARITY-001 REQ-A
     const firstFavorite = rec.calls.findIndex((c) => c.startsWith('adminFavorite.create'));
     expect(firstUser).toBeGreaterThanOrEqual(0);
     expect(firstFavorite).toBeGreaterThan(firstUser);
+  });
+});
+
+/**
+ * 설치 시 "만들기"는 하되 "연결"을 빠뜨려 기능이 활성화되지 않던 결함 회귀 방지.
+ *
+ * 발견 경위(2026-08-11): 재설치 후 방문자 첫 화면에서 (a) 헤더 메뉴가 비어 있고
+ * (b) 레이아웃이 적용되지 않아 본문이 컨테이너 밖으로 벗어나는 현상을 실측.
+ * 원인은 두 건 모두 "행은 생성되나 연결 행/FK가 비어 있음"이었다:
+ *   - domains.defaultLayoutId = NULL  → resolveLayoutFromInstance가 매번 fallback
+ *     (dev 서버 로그에 `[Layout] no layout resolved` 30회 관측)
+ *   - menu_slot_assignments 0행 → MenuSlotRenderer(slot=HEADER_PRIMARY)가 빈 렌더
+ */
+describe('seedInstall wiring completeness (설치 연결 누락 회귀 방지)', () => {
+  it('shall link the default layout to the domain (domains.defaultLayoutId)', async () => {
+    const rec = makeRecordingTx();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await seedInstall(makeInput(), makePrisma(rec) as any);
+
+    const layoutUpdate = rec.domainUpdateArgs.find(
+      (a) => a.data.defaultLayoutId !== undefined,
+    );
+    expect(layoutUpdate).toBeDefined();
+    expect(layoutUpdate?.data.defaultLayoutId).toBe('layout-default-id');
+  });
+
+  it('shall assign the default menu to the HEADER_PRIMARY slot', async () => {
+    const rec = makeRecordingTx();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await seedInstall(makeInput(), makePrisma(rec) as any);
+
+    const header = rec.menuSlotAssignmentCreateArgs.find(
+      (a) => a.data.slot === 'HEADER_PRIMARY',
+    );
+    expect(header).toBeDefined();
+    // menu.create mock이 반환하는 결정적 id(55)와 일치해야 한다.
+    expect(header?.data.menuId).toBe(55);
+    expect(header?.data.domainId).toBe(1);
+  });
+
+  it('shall create the layout link only after the default layout exists', async () => {
+    const rec = makeRecordingTx();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await seedInstall(makeInput(), makePrisma(rec) as any);
+
+    // 레이아웃 생성(themeAssignment.create 직전 단계)보다 뒤에 연결되어야 FK가 성립한다.
+    const themeAssign = rec.calls.findIndex((c) => c === 'themeAssignment.create');
+    const domainUpdates = rec.calls
+      .map((c, i) => (c === 'domain.update' ? i : -1))
+      .filter((i) => i >= 0);
+    const layoutLinkIndex = domainUpdates[domainUpdates.length - 1];
+    expect(themeAssign).toBeGreaterThanOrEqual(0);
+    expect(layoutLinkIndex).toBeGreaterThan(themeAssign);
   });
 });

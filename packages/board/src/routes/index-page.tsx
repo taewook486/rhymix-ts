@@ -143,8 +143,21 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
   const adjustedStart = Math.max(1, pageWindowEnd - pageCount + 1);
 
   // 테이블형 뷰
+  //
+  // 목록 표 스타일 — 셀 19개를 개별 수정하지 않고 Tailwind v4 arbitrary variant로
+  // th/td에 일괄 적용한다(테두리·여백 없이는 컬럼이 서로 붙어 판독 불가).
+  // @MX:NOTE: 시각적 기본치만 제공한다. 테마별 표 디자인은 테마 레이어 담당.
   const tableView = (
-    <table data-testid="board-table">
+    <table
+      data-testid="board-table"
+      className={
+        'w-full border-collapse text-sm ' +
+        '[&_th]:border-b [&_th]:border-gray-300 [&_th]:px-3 [&_th]:py-2 ' +
+        '[&_th]:text-left [&_th]:font-medium ' +
+        '[&_td]:border-b [&_td]:border-gray-200 [&_td]:px-3 [&_td]:py-2 ' +
+        'dark:[&_th]:border-gray-600 dark:[&_td]:border-gray-700'
+      }
+    >
       <thead>
         <tr>
           <th>번호</th>
