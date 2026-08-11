@@ -1,7 +1,7 @@
 ---
 id: SPEC-ADMIN-MENU-PARITY-001
 title: "관리자 메뉴 레거시 parity — 사이드바 6그룹 재배치 + 즐겨찾기 기본 시딩"
-version: "0.1.0"
+version: "0.1.1"
 status: draft
 created: 2026-08-11
 updated: 2026-08-11
@@ -12,8 +12,8 @@ module: "apps/web/components/admin/AdminSidebar.tsx, packages/db/src/install/see
 lifecycle: spec-anchored
 tier: M
 tags: "admin, legacy-parity, sidebar, navigation, favorites, install-seed"
-depends_on: [SPEC-ADMIN-001, SPEC-ADMIN-EXTRAS-001, SPEC-CONTENT-PARITY-001, SPEC-INSTALL-001]
-related_specs: [SPEC-MEMBER-PARITY-001]
+depends_on: [SPEC-ADMIN-001, SPEC-ADMIN-EXTRAS-001, SPEC-INSTALL-001]
+related_specs: [SPEC-MEMBER-PARITY-001, SPEC-CONTENT-PARITY-001]
 ---
 
 # SPEC-ADMIN-MENU-PARITY-001 — 관리자 메뉴 레거시 parity
@@ -27,6 +27,14 @@ related_specs: [SPEC-MEMBER-PARITY-001]
 
 ## HISTORY
 
+- 2026-08-11 (v0.1.1): plan-auditor 1차 감사(FAIL, ~0.75) 반영. D1(acceptance.md GEARS 키워드
+  누락) — acceptance.md 전체 재작성. D2(REQ-AMP-001↔즐겨찾기 조건부 렌더 모순) — REQ-AMP-001을
+  5개 고정 그룹으로 재정의하고 즐겨찾기 조건부 렌더를 REQ-AMP-004(State-Driven)로 명시 분리.
+  D3(AC-AMP-001 검증 명령 비현실적) — RTL 렌더 테스트 기준으로 교체. D4(AC-AMP-006 count만
+  검증) — label/href/listOrder 값 검증으로 보강. D6(SPEC-CONTENT-PARITY-001 크로스-SPEC 충돌) —
+  위젯 시스템 재배치 REQ(구 REQ-AMP-003/004) 전면 삭제, depends_on에서 제거하고
+  related_specs로 이동(§2에 충돌 배경 기록). D5/D7/D8(경미) — REQ 번호 연속 재정렬(9건→8건),
+  헤딩 번호 정정(2→5→6 건너뛰던 것을 1~4 연속으로), Out of Scope 헤딩 컨벤션 통일.
 - 2026-08-11 (v0.1.0): 최초 작성. 양쪽 DB 초기화 + 재설치(research.md §0)로 인프라 버그 2건
   발견·수정(레거시 컨테이너 바인드 마운트 tmpfs 오작동, 뉴버전 `MailLogStatus` re-export 누락 +
   마이그레이션 `searchVector` 잘못된 ALTER 구문). Playwright로 레거시 admin GNB 전체 구조를
@@ -43,26 +51,33 @@ related_specs: [SPEC-MEMBER-PARITY-001]
 
 ## 2. What
 
-### 재배치 대상 (research.md §3, §4 G1-G5)
+### 재배치 대상 (research.md §3, §4 G1, G2, G4, G5)
 
-1. 사이드바 최상위 그룹을 6개로 재편: 사이트 제작/편집, 회원, 콘텐츠, (즐겨찾기 — 기존 유지,
-   위치만 콘텐츠와 설정 사이로 이동), 설정, 고급.
+1. 사이드바 최상위 그룹을 6개로 재편: 사이트 제작/편집, 회원, 콘텐츠, (즐겨찾기 — 관리자에게
+   즐겨찾기가 1건 이상 있을 때만 조건부 렌더, 기존 동작 유지), 설정, 고급.
 2. "메뉴 편집"(`/admin/menu`), "디자인"(`/admin/site/design`)을 "사이트 설정"에서
    "사이트 제작/편집"으로 이동.
-3. "위젯 시스템"(`/admin/widgets`)을 "콘텐츠"에서 "고급"으로 이동.
-4. "내보내기"(`/admin/settings/export`), "가져오기"(`/admin/settings/import`)를
+3. "내보내기"(`/admin/settings/export`), "가져오기"(`/admin/settings/import`)를
    "사이트 설정"에서 "고급"으로 이동.
-5. 현재 "시스템" 섹션(관리자 로그/시스템 헬스/캐시 관리)을 "고급" 그룹의 하위 항목으로 편입
+4. 현재 "시스템" 섹션(관리자 로그/시스템 헬스/캐시 관리)을 "고급" 그룹의 하위 항목으로 편입
    (레거시 6그룹 중 대응 그룹이 없는 rhymix-ts 고유 기능이며, 고급 그룹이 "설치·유지보수성
    기능" 성격과 가장 가까움).
-6. 잔여 "설정" 그룹(일반 설정/알림 설정/보안 설정)은 현행 유지.
+5. 잔여 "설정" 그룹(일반 설정/알림 설정/보안 설정)은 현행 유지.
+
+**"위젯 시스템" 재배치는 본 SPEC 범위에서 제외한다** — plan-auditor 1차 감사(D6)에서 발견된
+크로스-SPEC 충돌: `SPEC-CONTENT-PARITY-001` M1이 "위젯 시스템은 rhymix-ts 고유 항목으로 유지"
+(콘텐츠 섹션, 게시판 다음 배치)를 이미 명시적으로 결정했다. 레거시의 "설치된 위젯"(고급 그룹)은
+다운로드 가능한 위젯 패키지 관리이며, rhymix-ts의 "위젯 시스템"(`/admin/widgets`,
+SPEC-WIDGET-001)은 위젯 인스턴스를 레이아웃 슬롯에 배치하는 별개 개념일 가능성이 높아
+1:1 대응이 불확실하다. 이미 완료·병합된 결정을 강한 근거 없이 뒤집지 않는다(§4 Out of Scope
+참고).
 
 ### 즐겨찾기 기본 시딩 (research.md §4 G9)
 
-7. 설치 완료 시 레거시와 동일하게 기본 즐겨찾기 2건을 관리자 계정에 자동 생성
+6. 설치 완료 시 레거시와 동일하게 기본 즐겨찾기 2건을 관리자 계정에 자동 생성
    ("메일·SMS·알림 발송 설정" → `/admin/settings/notification`, "알림 센터" 대응 화면).
 
-### Out of Scope (research.md §4 G6-G8, G11 — 레거시 회귀 금지)
+### Out of Scope — 레거시 회귀 금지 항목 (research.md §4 G6-G8, G11)
 
 - **즐겨찾기 추가 UI 제거** — 레거시는 추가 UI가 없으나(제거 전용), 뉴버전은 모든 관리자
   화면에 추가 버튼이 있음. 이는 레거시 대비 개선점이므로 절대 제거하지 않는다.
@@ -74,49 +89,50 @@ related_specs: [SPEC-MEMBER-PARITY-001]
 - **다중 사이트 `site_srl` 스코프 이식** — 현재 프로젝트는 단일 사이트 운영을 전제(기존
   코드베이스 관례와 일치). 다중 사이트 지원이 별도로 결정되기 전까지 범위 밖.
 
-## 5. 요구사항 (GEARS)
+## 3. 요구사항 (GEARS)
 
-**REQ-AMP-001 (Ubiquitous)**: The admin sidebar SHALL render exactly six top-level navigation
-groups in this fixed order: 사이트 제작/편집, 회원, 콘텐츠, 즐겨찾기, 설정, 고급.
-(대시보드는 별도 랜딩 링크로 유지 — 레거시도 그룹 목록과 별도로 대시보드 링크를 둠)
+**REQ-AMP-001 (Ubiquitous)**: The admin sidebar SHALL render five fixed non-conditional top-level
+navigation groups in this order: 사이트 제작/편집, 회원, 콘텐츠, 설정, 고급. (대시보드는 별도
+랜딩 링크로 유지 — 레거시도 그룹 목록과 별도로 대시보드 링크를 둠. 즐겨찾기는 조건부 렌더 —
+REQ-AMP-004 참고.)
 
 **REQ-AMP-002 (Ubiquitous)**: The "사이트 제작/편집" group SHALL contain exactly: 메뉴 편집
 (`/admin/menu`), 디자인(`/admin/site/design`).
 
-**REQ-AMP-003 (Ubiquitous)**: The "콘텐츠" group SHALL NOT contain 위젯 시스템
-(`/admin/widgets`); the "고급" group SHALL contain it instead.
-
-**REQ-AMP-004 (Ubiquitous)**: The "고급" group SHALL contain: 위젯 시스템, 내보내기
+**REQ-AMP-003 (Ubiquitous)**: The "고급" group SHALL contain: 내보내기
 (`/admin/settings/export`), 가져오기(`/admin/settings/import`), 관리자 로그(`/admin/logs`),
-시스템 헬스(`/admin/system`), 캐시 관리(`/admin/system/cache`).
+시스템 헬스(`/admin/system`), 캐시 관리(`/admin/system/cache`). ("위젯 시스템"은 포함하지
+않는다 — §2 참고, `SPEC-CONTENT-PARITY-001`의 기존 결정을 존중하여 "콘텐츠" 그룹에 유지)
 
-**REQ-AMP-005 (Ubiquitous)**: The "즐겨찾기" section SHALL render between the "콘텐츠" group and
-the "설정" group when the current admin has one or more favorites, matching legacy's insertion
-point (immediately before the configuration-equivalent group).
+**REQ-AMP-004 (State-Driven)**: WHILE the current administrator has one or more `AdminFavorite`
+rows, the sidebar SHALL render a "즐겨찾기" section positioned in the DOM between the "콘텐츠"
+group and the "설정" group, matching legacy's insertion point (immediately before the
+configuration-equivalent group). WHILE the administrator has zero favorites, the system SHALL NOT
+render the 즐겨찾기 section (기존 `favorites.length > 0` 동작 유지).
 
-**REQ-AMP-006 (Ubiquitous)**: The "설정" group SHALL contain: 일반 설정(`/admin/settings/site`),
-알림 설정(`/admin/settings/notification`), 보안 설정(`/admin/settings/security`).
+**REQ-AMP-005 (Ubiquitous)**: The "설정" group SHALL contain exactly: 일반 설정
+(`/admin/settings/site`), 알림 설정(`/admin/settings/notification`), 보안 설정
+(`/admin/settings/security`).
 
-**REQ-AMP-007 (Event-Driven)**: WHEN the install wizard completes successfully, the system SHALL
+**REQ-AMP-006 (Event-Driven)**: WHEN the install wizard completes successfully, the system SHALL
 create exactly two `AdminFavorite` rows for the newly-created administrator: label "메일·SMS·알림
-발송 설정" pointing to `/admin/settings/notification`, and label "알림 센터" pointing to the
-notification center equivalent route, both with `listOrder` 0 and 1 respectively.
+발송 설정" pointing to `/admin/settings/notification` with `listOrder` 0, and label "알림 센터"
+pointing to the notification center equivalent route with `listOrder` 1.
 
-**REQ-AMP-008 (Unwanted)**: The system SHALL NOT remove, hide, or otherwise regress the following
-rhymix-ts-only favorites capabilities while implementing REQ-AMP-001~007: the per-page "즐겨찾기
-추가" button (`AddToFavoritesButton`), drag-and-drop reordering, and arbitrary `/admin/` URL
-favoriting.
+**REQ-AMP-007 (Unwanted)**: The system SHALL NOT remove, hide, or otherwise regress the following
+rhymix-ts-only favorites capabilities while implementing REQ-AMP-001~006: the per-page favorite-add
+control (`AddToFavoritesButton`), drag-and-drop reordering, and arbitrary `/admin/` URL favoriting.
 
-**REQ-AMP-009 (Ubiquitous)**: Every existing sidebar link (all `href` values currently present in
-`AdminSidebar.tsx` NAV) SHALL remain reachable after the regroup — REQ-AMP-001~006 change section
-membership and order only, never remove a link.
+**REQ-AMP-008 (Ubiquitous)**: Every sidebar link present before the regroup SHALL remain present
+and reachable after the regroup — REQ-AMP-001~005 change section membership and order only, and
+SHALL NOT remove any link (including 위젯 시스템, which stays in 콘텐츠 per §2).
 
-## 6. Out of Scope
+## 4. Out of Scope
 
 ### Out of Scope — 즐겨찾기 기능 자체 재구현
 
 즐겨찾기의 데이터 모델·API·UI 컴포넌트는 `SPEC-ADMIN-EXTRAS-001`에서 이미 완료되어 있으며
-본 SPEC은 재구현하지 않는다. 오직 REQ-AMP-007(설치 시 기본 시딩) 1건만 추가한다.
+본 SPEC은 재구현하지 않는다. 오직 REQ-AMP-006(설치 시 기본 시딩) 1건만 추가한다.
 
 ### Out of Scope — 다중 사이트 즐겨찾기 스코프
 
@@ -137,4 +153,5 @@ membership and order only, never remove a link.
   parallel(아님 — 단일 컴포넌트 순차 편집이 안전), workflow(아님 — 소규모), sub-agent(선택)
 - Decision: sub-agent (Mode 5)
 - Justification: 파일 수가 적고(2개) 상호 의존이 낮아 순차 위임으로 충분. Implementation
-  Kickoff Approval은 아직 미승인 — 사용자 검토 후 진행.
+  Kickoff Approval 사용자 승인됨(2026-08-11). plan-auditor 1차 감사 FAIL(D1/D2/D6 must-fix) →
+  전건 반영 완료(v0.1.1), 2차 감사 대기.
