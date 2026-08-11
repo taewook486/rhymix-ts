@@ -28,7 +28,12 @@ describe('NotificationService', () => {
       siteSetting: {
         findUnique: vi.fn(),
       },
+      site: {
+        findFirst: vi.fn(),
+      },
     };
+    // Default: single-site fallback resolves to site id 1 (resolveGlobalEventsSetting).
+    mockPrisma.site.findFirst.mockResolvedValue({ id: 1 });
 
     service = new NotificationService(mockPrisma as PrismaClient);
   });
@@ -301,6 +306,74 @@ describe('NotificationService', () => {
         });
 
         // Default all enabled = should create
+        expect(result).toBe(1);
+        expect(mockPrisma.notification.create).toHaveBeenCalled();
+      });
+
+      // Reproduction test for sync-audit F1: SiteSetting's real unique constraint
+      // is the compound key siteId_key, not a standalone `key` field. A bare
+      // `{ key: ... }` where-clause does not compile against the real Prisma
+      // client and would throw a Prisma validation error at runtime.
+      it('should query SiteSetting with the siteId_key compound unique shape (sync-audit F1)', async () => {
+        mockPrisma.notificationPreference.findUnique.mockResolvedValue(null);
+        mockPrisma.user.findUnique.mockResolvedValue({ id: 1 });
+        mockPrisma.notification.findUnique.mockResolvedValue(null);
+        mockPrisma.notification.create.mockResolvedValue({ id: 1 });
+
+        await service.create({
+          recipientId: 1,
+          category: 'COMMENT',
+          sourceType: 'COMMENT',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        expect(mockPrisma.siteSetting.findUnique).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { siteId_key: { siteId: 1, key: 'notification.globalEvents' } },
+          }),
+        );
+      });
+
+      it('should fail-open (treat as all-enabled) when no Site row exists', async () => {
+        mockPrisma.site.findFirst.mockResolvedValue(null);
+        mockPrisma.notificationPreference.findUnique.mockResolvedValue(null);
+        mockPrisma.user.findUnique.mockResolvedValue({ id: 1 });
+        mockPrisma.notification.findUnique.mockResolvedValue(null);
+        mockPrisma.notification.create.mockResolvedValue({ id: 1 });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'COMMENT',
+          sourceType: 'COMMENT',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
+        expect(result).toBe(1);
+        expect(mockPrisma.notification.create).toHaveBeenCalled();
+        // No Site row → siteId cannot be resolved → siteSetting.findUnique never called.
+        expect(mockPrisma.siteSetting.findUnique).not.toHaveBeenCalled();
+      });
+
+      it('should fail-open (treat as all-enabled) when the SiteSetting lookup throws', async () => {
+        mockPrisma.siteSetting.findUnique.mockRejectedValue(new Error('DB unavailable'));
+        mockPrisma.notificationPreference.findUnique.mockResolvedValue(null);
+        mockPrisma.user.findUnique.mockResolvedValue({ id: 1 });
+        mockPrisma.notification.findUnique.mockResolvedValue(null);
+        mockPrisma.notification.create.mockResolvedValue({ id: 1 });
+
+        const result = await service.create({
+          recipientId: 1,
+          category: 'COMMENT',
+          sourceType: 'COMMENT',
+          sourceId: 100,
+          actorId: 2,
+          actorNickname: 'testuser',
+        });
+
         expect(result).toBe(1);
         expect(mockPrisma.notification.create).toHaveBeenCalled();
       });
