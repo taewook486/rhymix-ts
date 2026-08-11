@@ -40,7 +40,7 @@ Invariants preserved (per plan.md §2 PRESERVE list): `AdminFavorite` Prisma 모
 
 ```yaml
 run_complete_at: 2026-08-11
-run_commit_sha: pending-backfill-post-M2-push
+run_commit_sha: e8f3ec67bbe19bea80b35bd41ac890cafb7b9625
 run_status: implemented
 ac_pass_count: 7
 ac_fail_count: 0
