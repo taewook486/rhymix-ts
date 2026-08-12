@@ -194,3 +194,75 @@ apps/web/components/layout/GlobalFooter.tsx:30:    <footer data-testid="global-f
   없는 라우트에서는 슬롯이 렌더되지 않으나 attribution 푸터는 유지된다 — REQ-INSTALL3-042 충족.
 - `default.test.tsx`의 신규 가드 테스트는 `JSON.stringify(result)`에 `"footer"`/`"main"`
   문자열이 없음을 단언한다. children 내용에 해당 문자열이 우연히 포함되면 오탐 가능(현재 픽스처는 안전).
+
+---
+
+### M1 실제 렌더 검증 (2026-08-12, DB 전체 재설치 후)
+
+plan.md §5 / acceptance.md의 "DB 재설치 후 실제 렌더" 요구를 이행했다.
+위 "M1 복구" 절의 Gaps 중 **실제 브라우저 렌더 검증**이 이 절로 해소된다.
+
+**Claim (주장)**
+
+- AC-FP-003: `/`·`/board`·`/board/[id]` 3개 라우트 모두 `<footer>` 정확히 1개, 푸터 문구 중복 없음
+- AC-FP-004: 동일 3개 라우트 모두 `<main>` 정확히 1개, `main main` 중첩 0개
+- AC-FP-006(c): 항상 렌더되는 attribution 푸터가 3개 라우트 모두에 존재
+  (레이아웃 미적용 라우트 `/board/[id]` 포함 — 푸터 0개가 되지 않음)
+- AC-FP-007: 온보딩 패널이 자체 `<main>`/`<footer>`를 렌더하지 않음
+- 로그인/비로그인 두 경우 모두 충족 (acceptance.md Edge Cases)
+
+**Evidence (증거)**
+
+DB 전체 재설치: `prisma migrate reset --force --skip-generate` (사용자 승인).
+재설치 후 `theme_assignments`/`sites`/`users` 전부 0행 확인.
+
+```
+$ npx playwright test front-parity --reporter=list --workers=1
+Running 4 tests using 1 worker
+  ✓  1 … › 설치: 빈 DB에서 위저드 4단계 통과 (이후 테스트의 전제) (5.8s)
+  ✓  2 … › AC-FP-003/004: 로그인 상태에서 3개 라우트 모두 footer 1개 · main 1개 (7.6s)
+  ✓  3 … › AC-FP-003/004: 비로그인 방문자도 3개 라우트 모두 footer 1개 · main 1개 (3.8s)
+  ✓  4 … › AC-FP-006(c): 항상 렌더되는 attribution 푸터가 3개 라우트 모두에 존재 (5.0s)
+  4 passed (45.2s)
+```
+
+서빙 HTML 직접 카운트(Playwright와 독립된 2차 확인):
+
+```
+$ curl -s http://localhost:3000/        → <main> 1, <footer> 1
+$ curl -s http://localhost:3000/board   → <main> 1, <footer> 1
+$ curl -s http://localhost:3000/board/1 → <main> 1, <footer> 1, 가시 attribution 1회
+```
+
+검증 스크립트: `apps/web/e2e/front-parity.spec.ts` (신규).
+
+**Baseline-attribution (baseline 귀속)**
+
+- 수정 전 상태(plan.md §1 실측): `/`·`/board` 각 `<footer>` 3개 / `<main>` 3개(2단 중첩),
+  `/board/[id]` `<footer>` 2개 / `<main>` 2개(2단 중첩)
+- 수정 후: 3개 라우트 전부 `<footer>` 1개 / `<main>` 1개 / 중첩 0개
+
+**Gaps (미검증)**
+
+- **AC-FP-006(b) 여전히 미검증**: 관리자 UI에서 FOOTER 슬롯에 메뉴를 배정한 뒤 방문자
+  화면에 렌더되는지는 확인하지 않았다. `FooterMenuSlot`이 `x-domain-id` 헤더 기반으로
+  렌더 경로를 유지하고 있음은 코드상 확인했으나 실측은 남아 있다.
+- **footerText 실제 배선 미완**(변동 없음): 도메인 레이아웃의 `extraVars.footerText`를
+  루트 레이아웃까지 전달하는 배선은 하지 않았다. 현재 항상 기본 attribution이 렌더된다.
+- **AC-FP-001/002/005는 M2 범위**로 이 검증에 포함되지 않았다.
+
+**Residual-risk (잔여 위험)**
+
+- 서빙 HTML의 raw 문자열 검색으로는 `Powered by Rhymix-TS`가 2회 잡히나, 2번째는 RSC
+  flight 페이로드(`self.__next_r` script) 내부의 직렬화 데이터이며 가시 텍스트가 아니다.
+  AC가 규정한 판정 방법(`document.querySelectorAll` 기반 DOM 검사)에는 해당하지 않는다.
+- **e2e 인프라 기존 결함(본 SPEC 범위 밖)**: `e2e/support/db-reset.ts`의 TRUNCATE 목록에
+  `theme_assignments`가 빠져 있어, 한 번 설치된 뒤 재설치를 시도하면
+  `Unique constraint failed on (scope, refType, refId)`로 트랜잭션이 롤백된다.
+  기존 `install-happy-path.spec.ts`도 동일하게 실패한다(M1과 무관). 본 spec은 serial 모드로
+  설치를 1회만 수행해 우회했다. **후속 SPEC에서 db-reset.ts 목록 보강 필요.**
+- **`prisma migrate reset` 후 dev 서버 재시작 필수**: enum 타입 OID가 재생성되어 기존
+  커넥션 풀이 `cache lookup failed for type NNNNN`로 실패한다. 재현·해결 절차로 기록.
+- **범위 밖 사실 기록**: `/install/**` 라우트는 여전히 `<main>` 중첩 상태다
+  (Playwright 스냅샷에서 `main > main` 확인). spec.md의 22개 파일 전역 정리 대상이며
+  본 SPEC의 Out of Scope다.
