@@ -6,6 +6,7 @@
  * - cursor pagination
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { Context } from '../../context';
 
 vi.mock('next-auth', () => ({
   default: () => ({ auth: vi.fn() }),
@@ -39,12 +40,21 @@ const mockPrisma = {
   },
 };
 
+/**
+ * 라우터 호출용 최소 Context.
+ *
+ * 실제 `Context` 타입은 `storage` / `scanner` / `uploadTokenSecret` 도 요구하지만
+ * mailLog 라우터는 `ctx.prisma` / `ctx.session` 만 사용한다(파일 업로드 계열 필드는
+ * 이 라우터의 코드 경로에 등장하지 않는다). 쓰지 않는 필드를 형식만 채우면 오히려
+ * "이 테스트가 storage 를 검증한다"는 오해를 낳으므로, 캐스트 사유를 명시하고
+ * 한 곳에서만 좁힌다 — cache.test.ts 등 형제 admin 라우터 테스트와 동일한 관례다.
+ */
 const adminCtx = {
   session: { user: { id: 1, isAdmin: true, groups: [] } },
   prisma: mockPrisma,
   ip: '::1',
   userAgent: 'test',
-};
+} as unknown as Context;
 
 describe(
   'admin.mailLog tRPC router (SPEC-CONTENT-PARITY-001 M7)',
@@ -137,7 +147,7 @@ describe(
     });
 
     expect(result.items).toHaveLength(1);
-    expect(result.items[0].status).toBe('SENT');
+    expect(result.items[0]!.status).toBe('SENT');
     expect(mockPrisma.mailLog.count).toHaveBeenCalledWith({
       where: { status: 'SENT' },
     });
@@ -175,8 +185,8 @@ describe(
     });
 
     expect(result.items).toHaveLength(1);
-    expect(result.items[0].status).toBe('FAILED');
-    expect(result.items[0].error).toBe('Connection refused');
+    expect(result.items[0]!.status).toBe('FAILED');
+    expect(result.items[0]!.error).toBe('Connection refused');
     expect(mockPrisma.mailLog.count).toHaveBeenCalledWith({
       where: { status: 'FAILED' },
     });
@@ -225,7 +235,7 @@ describe(
     });
 
     expect(result2.items).toHaveLength(1);
-    expect(result2.items[0].id).toBe(3);
+    expect(result2.items[0]!.id).toBe(3);
     expect(result2.nextCursor).toBeNull();
   });
 });

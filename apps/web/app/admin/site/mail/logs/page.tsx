@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { api } from '@/lib/api/client';
-import type { RouterOutput } from '@rhymix-ts/trpc-server';
+import { trpc } from '@/providers/TRPCProvider';
 
-type MailLogItem = RouterOutput['admin']['mailLog']['list']['items'][number];
+type StatusFilter = 'ALL' | 'SENT' | 'FAILED';
 
 /**
  * 관리자 메일 발송 내역 페이지 — SPEC-CONTENT-PARITY-001 M7
@@ -13,49 +12,40 @@ type MailLogItem = RouterOutput['admin']['mailLog']['list']['items'][number];
  * - 수신자, 제목, 상태, 에러 메시지, 발송 시간 표시
  * - 상태 필터 (전체/성공/실패)
  * - Cursor pagination
+ *
+ * 데이터 조회는 tRPC React Query 훅(`trpc.admin.mailLog.list.useQuery`)을 쓴다.
+ * 이전 구현은 수동 fetch + useState 조합이었는데 두 가지 결함이 있었다:
+ *  (a) `useState(() => loadLogs())` 로 마운트 시 1회 실행을 흉내냈다 (useEffect 오용).
+ *  (b) `setStatus` 직후 호출한 `loadLogs()` 가 클로저의 옛 status 를 읽어 필터가 한 박자 밀렸다.
+ * useQuery 는 status 를 쿼리 키에 포함하므로 두 문제가 함께 사라진다.
  */
 export default function AdminMailLogsPage() {
-  const [status, setStatus] = useState<'ALL' | 'SENT' | 'FAILED'>('ALL');
-  const [logs, setLogs] = useState<MailLogItem[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<StatusFilter>('ALL');
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
 
-  const loadLogs = async (cursor?: string) => {
-    setLoading(true);
-    try {
-      const result = await api.admin.mailLog.list.query({
-        cursor,
-        limit: 20,
-        status,
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
-      });
-      setLogs(result.items);
-      setNextCursor(result.nextCursor);
-      setTotalCount(result.totalCount);
-    } catch (err) {
-      console.error('Failed to load mail logs:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 초기 로드
-  useState(() => {
-    loadLogs();
+  const { data, isPending } = trpc.admin.mailLog.list.useQuery({
+    cursor,
+    limit: 20,
+    status,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
   });
 
-  // 상태 필터 변경
-  const handleStatusChange = (newStatus: typeof status) => {
+  const logs = data?.items ?? [];
+  const nextCursor = data?.nextCursor ?? null;
+  const totalCount = data?.totalCount ?? 0;
+  const loading = isPending;
+
+  // 상태 필터 변경 — 필터가 바뀌면 커서를 처음으로 되돌린다.
+  const handleStatusChange = (newStatus: StatusFilter) => {
     setStatus(newStatus);
-    loadLogs();
+    setCursor(undefined);
   };
 
   // 다음 페이지 로드
   const loadNext = () => {
     if (nextCursor) {
-      loadLogs(nextCursor);
+      setCursor(nextCursor);
     }
   };
 
