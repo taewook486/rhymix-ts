@@ -12,7 +12,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 전제 검증:
 1) docker.exe ps → rhymix-app/rhymix-db/rhymix-ts-db 3개 Up (Exited면 docker.exe start <name>)
-2) git log --oneline -1 → 9cf3149 이거나 그 이후 SHA, main == origin/main
+2) git log --oneline -1 → d6de5d1 이거나 그 이후 SHA, main == origin/main
 3) git status --porcelain → 비어있어야 함
 4) pnpm --filter web dev 기동 후 curl localhost:3000 → 200 (첫 컴파일 ~2분)
 
@@ -23,12 +23,12 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 ## 현재 상태 (2026-08-12)
 
-- **main == origin/main (`9cf3149`), 작업 트리 clean.**
+- **main == origin/main (`d6de5d1`), 작업 트리 clean.**
 - 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed** (AC-FP-001~007 7건 전부 PASS)
 - 진행 중인 SPEC: 없음
 - e2e 인프라 수리 완료 (`9cf3149`) — `db-reset.ts`가 `pg_tables` 동적 조회로 전환되어
-  재설치 롤백 결함이 해소됐다. 전체 e2e 19 passed / CI_E2E=1 게이트 spec 14 passed,
-  실패는 `feed.spec.ts` 1건(기존 코드 결함, 아래 후보 1번)뿐이다.
+  재설치 롤백 결함이 해소됐다.
+- RSS 500 수리 완료 (`d6de5d1`) — `feed.spec.ts`가 통과한다. **현재 알려진 e2e 실패는 없다.**
 
 ## SPEC-FRONT-PARITY-001 결과 요약
 
@@ -45,18 +45,10 @@ FOOTER 슬롯은 `FooterMenuSlot.tsx`(async)로 분리해 루트 레이아웃에
 
 ## 다음 작업 후보
 
-### 1. `feed.spec.ts` RSS 500 오류 (권장 — 유일하게 남은 e2e 실패)
+### 1. `NotificationSettingsForm.tsx` JSX 문법 오류 (권장 — typecheck 차단)
 
-`GET /<mid>/rss`가 500을 반환한다. dev 서버 로그:
-
-```
-TypeError: doc.tags is not iterable (cannot read property undefined)
- GET /feedtest/rss 500 in 420ms
-```
-
-`db-reset.ts` 수리(`9cf3149`) 전후 모두 동일하게 실패하므로 **db-reset과 무관한 기존
-코드 결함**이다. 재현: `cd apps/web && CI_E2E=1 npx playwright test feed --workers=1`.
-현재 전체 e2e에서 실패하는 유일한 케이스.
+아래 항목 3번을 참조. `pnpm --filter @rhymix-ts/web typecheck`가 이 3건으로 실패하므로
+타입 검사를 게이트로 쓰려면 먼저 해소해야 한다.
 
 ### 2. `extraVars.footerText` 루트 배선 (SPEC-FRONT-PARITY-001 잔여 부채)
 
