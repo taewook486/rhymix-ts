@@ -1,7 +1,7 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-12 (e2e 인프라 + RSS 500 수리 반영) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
+> 갱신: 2026-08-13 (알림 폼 JSX 수리 반영) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
 
 ## 붙여넣을 메시지
 
@@ -12,7 +12,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 전제 검증:
 1) docker.exe ps → rhymix-app/rhymix-db/rhymix-ts-db 3개 Up (Exited면 docker.exe start <name>)
-2) git log --oneline -1 → cb2d5a6 이거나 그 이후 SHA, main == origin/main
+2) git log --oneline -1 → ed6fb9c 이거나 그 이후 SHA, main == origin/main
 3) git status --porcelain → 비어있어야 함
 4) pnpm --filter web dev 기동 후 curl localhost:3000 → 200 (첫 컴파일 ~2분)
 
@@ -21,14 +21,16 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 후속: plan → run → sync
 ```
 
-## 현재 상태 (2026-08-12)
+## 현재 상태 (2026-08-13)
 
-- **main == origin/main (`cb2d5a6` 이후), 작업 트리 clean.**
+- **main == origin/main (`ed6fb9c` 이후), 작업 트리 clean.**
 - 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed** (AC-FP-001~007 7건 전부 PASS)
 - 진행 중인 SPEC: 없음
 - e2e 인프라 수리 완료 (`9cf3149`) — `db-reset.ts`가 `pg_tables` 동적 조회로 전환되어
   재설치 롤백 결함이 해소됐다.
 - RSS 500 수리 완료 (`d6de5d1`) — `feed.spec.ts`가 통과한다. **현재 알려진 e2e 실패는 없다.**
+- 알림 설정 폼 JSX 수리 완료 (`ed6fb9c`) — 파싱 불가 결함 + form 중첩 hydration 오류 해소.
+  `/admin/settings/notification`이 브라우저 콘솔 오류 0건으로 렌더된다.
 
 ## SPEC-FRONT-PARITY-001 결과 요약
 
@@ -45,17 +47,17 @@ FOOTER 슬롯은 `FooterMenuSlot.tsx`(async)로 분리해 루트 레이아웃에
 
 ## 다음 작업 후보
 
-### 1. `NotificationSettingsForm.tsx` JSX 문법 오류 (권장 — typecheck 차단)
+### 1. 남은 typecheck 오류 10건 (권장 — 타입 검사 게이트화의 마지막 관문)
+
+`pnpm --filter @rhymix-ts/web typecheck`가 아래 10건으로 여전히 실패한다. 전부 커밋
+`baf71b3`(SPEC-CONTENT-PARITY-001 M7 메일 로그)에서 유입된 기존 결함이다.
 
 ```
-app/admin/settings/notification/NotificationSettingsForm.tsx(55,6): error TS17008: JSX element 'div' has no corresponding closing tag.
-app/admin/settings/notification/NotificationSettingsForm.tsx(308,1): error TS1381
-app/admin/settings/notification/NotificationSettingsForm.tsx(309,1): error TS1005
+app/admin/site/mail/logs/page.tsx        2건 — TS2307 모듈 해석 실패
+  ('@/lib/api/client', '@rhymix-ts/trpc-server')
+server/api/routers/admin/mail-log.test.ts 8건 — Context 타입 불일치
+  (storage / scanner / uploadTokenSecret 누락) + TS2532
 ```
-
-커밋 `9af1042`(SPEC-CONTENT-PARITY-001 M6)에서 유입된 기존 결함.
-`pnpm --filter @rhymix-ts/web typecheck`가 이 3건으로 실패하므로, 타입 검사를 품질 게이트로
-쓰려면 먼저 해소해야 한다.
 
 > 참고: `packages/board`의 `TagInput.test.tsx`에도 jest-dom 매처 타입 오류 5건이 있다
 > (`toBeInTheDocument` 미인식). 커밋 `1426861`에서 유입된 별개의 기존 결함이며,
@@ -103,7 +105,19 @@ attribution이 렌더된다. 루트 레이아웃에는 module-instance 컨텍스
 
 ## 이번 세션의 교훈
 
-서브에이전트가 "테스트 전체 통과 / typecheck 0 errors"로 보고했으나 **재실행 결과 테스트
+이 세션에서 반복 확인된 것: 서브에이전트가 "테스트 전체 통과 / typecheck 0 errors"로 보고했으나 **재실행 결과 테스트
 8건 실패**였다. 보고서의 Evidence 블록 자체가 자기모순(`<main>` 2개를 나열해두고 둘 다
 "유지"라 쓴 뒤 "main 정확히 1개" PASS를 주장)이라 정독만으로도 탐지 가능했다.
 완료 보고는 **반드시 같은 명령을 직접 재실행**해 확인할 것.
+
+같은 계열의 결함이 이 세션에서 3건 더 나왔다 — 전부 **정적 검사나 mock이 실제 형태를
+가리고 있던** 경우였다.
+
+| 결함 | 가린 것 |
+|---|---|
+| RSS 500 (`doc.tags is not iterable`) | `as unknown as` 캐스트 + 픽스처가 `tags: []` 손수 주입 |
+| e2e 재설치 롤백 | 손으로 관리하던 TRUNCATE 목록이 스키마 성장을 못 따라감 |
+| 알림 폼 form 중첩 | 파일이 파싱조차 안 돼 hydration 오류가 드러날 기회가 없었음 |
+
+교훈: **컴파일/테스트 통과는 "실제로 렌더된다"의 증거가 아니다.** 화면이 있는 변경은
+브라우저로 열어 콘솔까지 확인할 것.
