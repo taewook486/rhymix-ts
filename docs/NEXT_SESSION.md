@@ -1,7 +1,7 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-12 (e2e 인프라 수리 반영) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
+> 갱신: 2026-08-12 (e2e 인프라 + RSS 500 수리 반영) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
 
 ## 붙여넣을 메시지
 
@@ -12,7 +12,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 전제 검증:
 1) docker.exe ps → rhymix-app/rhymix-db/rhymix-ts-db 3개 Up (Exited면 docker.exe start <name>)
-2) git log --oneline -1 → d6de5d1 이거나 그 이후 SHA, main == origin/main
+2) git log --oneline -1 → cb2d5a6 이거나 그 이후 SHA, main == origin/main
 3) git status --porcelain → 비어있어야 함
 4) pnpm --filter web dev 기동 후 curl localhost:3000 → 200 (첫 컴파일 ~2분)
 
@@ -23,7 +23,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 ## 현재 상태 (2026-08-12)
 
-- **main == origin/main (`d6de5d1`), 작업 트리 clean.**
+- **main == origin/main (`cb2d5a6` 이후), 작업 트리 clean.**
 - 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed** (AC-FP-001~007 7건 전부 PASS)
 - 진행 중인 SPEC: 없음
 - e2e 인프라 수리 완료 (`9cf3149`) — `db-reset.ts`가 `pg_tables` 동적 조회로 전환되어
@@ -47,17 +47,6 @@ FOOTER 슬롯은 `FooterMenuSlot.tsx`(async)로 분리해 루트 레이아웃에
 
 ### 1. `NotificationSettingsForm.tsx` JSX 문법 오류 (권장 — typecheck 차단)
 
-아래 항목 3번을 참조. `pnpm --filter @rhymix-ts/web typecheck`가 이 3건으로 실패하므로
-타입 검사를 게이트로 쓰려면 먼저 해소해야 한다.
-
-### 2. `extraVars.footerText` 루트 배선 (SPEC-FRONT-PARITY-001 잔여 부채)
-
-`GlobalFooter({ footerText })` prop 구조는 갖췄으나, 도메인 레이아웃 레코드의
-`extraVars.footerText`를 루트 레이아웃까지 전달하는 배선이 없어 현재는 항상 기본
-attribution이 렌더된다. 루트 레이아웃에는 module-instance 컨텍스트가 없어 별도 조회가 필요.
-
-### 3. `NotificationSettingsForm.tsx` JSX 문법 오류 (typecheck 차단)
-
 ```
 app/admin/settings/notification/NotificationSettingsForm.tsx(55,6): error TS17008: JSX element 'div' has no corresponding closing tag.
 app/admin/settings/notification/NotificationSettingsForm.tsx(308,1): error TS1381
@@ -65,9 +54,20 @@ app/admin/settings/notification/NotificationSettingsForm.tsx(309,1): error TS100
 ```
 
 커밋 `9af1042`(SPEC-CONTENT-PARITY-001 M6)에서 유입된 기존 결함.
-`pnpm --filter @rhymix-ts/web typecheck`가 이 3건으로 실패한다.
+`pnpm --filter @rhymix-ts/web typecheck`가 이 3건으로 실패하므로, 타입 검사를 품질 게이트로
+쓰려면 먼저 해소해야 한다.
 
-### 4. 방문자 화면 parity 2단계 (SPEC-FRONT-PARITY-001 Out of Scope 분리분)
+> 참고: `packages/board`의 `TagInput.test.tsx`에도 jest-dom 매처 타입 오류 5건이 있다
+> (`toBeInTheDocument` 미인식). 커밋 `1426861`에서 유입된 별개의 기존 결함이며,
+> `[[feedback-jest-dom-vitest-version-mismatch]]` 메모리의 vitest 버전 혼재 문제와 같은 계열이다.
+
+### 2. `extraVars.footerText` 루트 배선 (SPEC-FRONT-PARITY-001 잔여 부채)
+
+`GlobalFooter({ footerText })` prop 구조는 갖췄으나, 도메인 레이아웃 레코드의
+`extraVars.footerText`를 루트 레이아웃까지 전달하는 배선이 없어 현재는 항상 기본
+attribution이 렌더된다. 루트 레이아웃에는 module-instance 컨텍스트가 없어 별도 조회가 필요.
+
+### 3. 방문자 화면 parity 2단계 (SPEC-FRONT-PARITY-001 Out of Scope 분리분)
 
 디자인 자산 제작 영역: 히어로 캐러셀(레거시 슬라이드 6개, swiper), 메인 섹션(intro/가이드
 6카드/커뮤니티 4카드), 웹폰트(`webfont.css`), 모듈별 스킨 CSS 계층.
