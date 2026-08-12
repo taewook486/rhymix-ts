@@ -266,18 +266,23 @@ export function NotificationSettingsForm({
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {isPending ? '저장 중...' : '저장'}
-        </button>
-      </div>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isPending ? '저장 중...' : '저장'}
+          </button>
+        </div>
+      </form>
 
-      {/* 테스트 메일 발송 (REQ-ADMIN2-111) */}
-      <div className="border-t pt-4 mt-4">
+      {/*
+        테스트 메일 발송 (REQ-ADMIN2-111).
+        SMTP 설정 저장 폼의 **바깥**에 두어야 한다 — HTML 에서 <form> 중첩은 무효이며
+        브라우저가 hydration 오류를 발생시킨다("In HTML, <form> cannot be a descendant of <form>").
+      */}
+      <div className="border rounded bg-white p-6">
         <h3 className="text-md font-semibold mb-3">SMTP 설정 테스트</h3>
         {testState.error && (
           <p className="text-sm text-red-600 mb-3" role="alert">
@@ -303,6 +308,6 @@ export function NotificationSettingsForm({
           </p>
         </form>
       </div>
-    </form>
+    </div>
   );
 }

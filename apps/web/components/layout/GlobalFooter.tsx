@@ -25,7 +25,10 @@ interface GlobalFooterProps {
   children?: ReactNode;
 }
 
-export function GlobalFooter({ footerText, children }: GlobalFooterProps = {}) {
+// props 전체에 `= {}` 기본값을 주면 TS가 이 컴포넌트를 FunctionComponent<{}>로 좁혀
+// React.createElement(GlobalFooter, { footerText })가 TS2769로 거부된다. 모든 필드가
+// optional이므로 <GlobalFooter /> 와 createElement(GlobalFooter) 는 그대로 유효하다.
+export function GlobalFooter({ footerText, children }: GlobalFooterProps) {
   return (
     <footer data-testid="global-footer" className="border-t py-6 mt-12">
       <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
