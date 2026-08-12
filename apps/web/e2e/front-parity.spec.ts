@@ -122,9 +122,9 @@ async function assertSingleFooterAndMain(page: Page, label: string): Promise<voi
 
 test.describe('SPEC-FRONT-PARITY-001 M1 — 중복 마크업 해소', () => {
   // 설치 위저드 4단계 통과에 Argon2id 해싱 포함 ~50초가 걸려 config 기본 60초로는 부족하다.
-  // 또한 serial 모드로 **설치는 첫 테스트에서 1회만** 수행하고 이후 테스트는 그 상태를
-  // 재사용한다 — resetDb()는 theme_assignments를 TRUNCATE 대상에 포함하지 않아
-  // 재설치 시 (scope, refType, refId) 유니크 제약에 걸리기 때문이다.
+  // serial 모드로 **설치는 첫 테스트에서 1회만** 수행하고 이후 테스트는 그 상태를
+  // 재사용한다 — 검증 대상이 "설치 직후 방문자 화면의 마크업"이라 매 테스트마다
+  // 재설치할 이유가 없고, 위저드 3회 반복은 순수 낭비이기 때문이다.
   test.describe.configure({ mode: 'serial', timeout: 240_000 });
 
   test('설치: 빈 DB에서 위저드 4단계 통과 (이후 테스트의 전제)', async ({ page }) => {
