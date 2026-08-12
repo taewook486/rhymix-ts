@@ -124,6 +124,22 @@ export interface SeedResult {
   memberGroupId: number;
 }
 
+/**
+ * SPEC-FRONT-PARITY-001 REQ-FP-002: 인덱스 page 모듈의 초기 본문.
+ *
+ * acceptance.md AC-FP-002가 다음 3개 리터럴의 존재를 판정 기준으로 고정한다 —
+ * 구현자 재량에 맡기지 않기 위한 것이므로 임의로 바꾸지 말 것:
+ *   (a) `<h1`  (b) `Rhymix-TS에 오신 것을 환영합니다`  (c) `/admin`
+ *
+ * apps/web/app/page.tsx가 moduleCode==='page'일 때 renderBodyWithWidgets로
+ * 렌더하므로 HTML 문자열로 저장한다.
+ */
+const INDEX_PAGE_CONTENT = [
+  '<h1>Rhymix-TS에 오신 것을 환영합니다</h1>',
+  '<p>설치가 완료되었습니다. 이 페이지는 사이트의 첫 화면이며, 관리자 화면에서 자유롭게 수정할 수 있습니다.</p>',
+  '<p>메뉴의 게시판·공지사항·Q&amp;A로 이동하거나, <a href="/admin">관리자 페이지</a>에서 사이트를 설정해 보세요.</p>',
+].join('\n');
+
 type TxClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0];
 
 /**
@@ -250,6 +266,21 @@ export async function seedInstall(
       moduleInstanceIds[mid] = created.id;
     }
 
+    // 8-b) SPEC-FRONT-PARITY-001 REQ-FP-001/002: 인덱스 전용 page 모듈 인스턴스.
+    //      레거시 Rhymix는 첫 화면에 게시판 목록이 아니라 소개 페이지를 노출한다.
+    //      board/notice/qna 인스턴스는 그대로 두고(REQ-FP-005) 메뉴로 접근한다.
+    //      apps/web/app/page.tsx는 moduleCode==='page'일 때 mcontent를
+    //      renderBodyWithWidgets로 렌더하므로 HTML 문자열로 저장한다.
+    const indexPageInstance = await tx.moduleInstance.create({
+      data: {
+        mid: 'main',
+        moduleCode: 'page',
+        name: 'Main',
+        siteId: site.id,
+        mcontent: INDEX_PAGE_CONTENT,
+      },
+    });
+
     // 9) SiteSetting × 3
     await tx.siteSetting.create({
       data: {
@@ -312,12 +343,15 @@ export async function seedInstall(
       });
     }
 
-    // 12) REQ-INSTALL-016 + REQ-INSTALL-017: 인덱스 모듈(board)·기본 메뉴를
-    //     기본 도메인에 연결한다. 본 트랜잭션 내에서 수행(부분 시드 방지).
+    // 12) REQ-INSTALL-016 + REQ-INSTALL-017: 인덱스 모듈·기본 메뉴를 기본 도메인에
+    //     연결한다. 본 트랜잭션 내에서 수행(부분 시드 방지).
+    //     SPEC-FRONT-PARITY-001 REQ-FP-001: 인덱스는 board가 아니라 page 인스턴스다.
+    //     (기존 seed.test.ts의 board 단언 2건은 이 변경에 맞춰 갱신됨 —
+    //      acceptance.md "의도된 변경 carve-out" 참고)
     await tx.domain.update({
       where: { id: domain.id },
       data: {
-        indexModuleInstanceId: moduleInstanceIds.board,
+        indexModuleInstanceId: indexPageInstance.id,
         defaultMenuId: menu.id,
       },
     });

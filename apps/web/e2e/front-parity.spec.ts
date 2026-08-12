@@ -93,6 +93,12 @@ async function loginAsAdmin(page: Page): Promise<void> {
 
 /** AC-FP-003 + AC-FP-004: footer 1개 / main 1개 / main 중첩 0 / 푸터 문구 중복 없음. */
 async function assertSingleFooterAndMain(page: Page, label: string): Promise<void> {
+  // RSC 스트리밍에서 푸터는 본문 뒤에 도착한다. 도착 전에 세면 0이 나오므로
+  // 카운트 전에 푸터가 DOM에 붙을 때까지 기다린다(단언 완화가 아니라 동기화).
+  await expect(page.getByTestId('global-footer'), `${label}: 푸터 렌더 대기`).toBeAttached({
+    timeout: 15_000,
+  });
+
   const counts = await page.evaluate(() => ({
     footers: document.querySelectorAll('footer').length,
     mains: document.querySelectorAll('main').length,

@@ -226,6 +226,9 @@ interface RecordedTx {
   menuCreateArgs: Array<{ data: { siteId: number; title: string } }>;
   menuItemCreateArgs: Array<{ data: { menuId: number; title: string; url?: string } }>;
   boardCreateArgs: Array<{ data: { moduleInstanceId: number; name: string } }>;
+  moduleInstanceCreateArgs: Array<{
+    data: { mid: string; moduleCode?: string; mcontent?: string };
+  }>;
   adminFavoriteCreateArgs: Array<{ data: { label: string; href: string; listOrder: number } }>;
   menuSlotAssignmentCreateArgs: Array<{
     data: { domainId: number; slot: string; menuId: number };
@@ -234,7 +237,7 @@ interface RecordedTx {
 }
 
 /** mid → 결정적 ModuleInstance id (board=300, notice=100, qna=200). */
-const MODULE_ID = { notice: 100, qna: 200, board: 300 } as const;
+const MODULE_ID = { notice: 100, qna: 200, board: 300, main: 400 } as const;
 /** moduleInstanceId → 결정적 Board id (offset +1000). */
 const boardIdFor = (moduleInstanceId: number) => moduleInstanceId + 1000;
 
@@ -245,6 +248,7 @@ function makeRecordingTx(): RecordedTx {
   const menuCreateArgs: RecordedTx['menuCreateArgs'] = [];
   const menuItemCreateArgs: RecordedTx['menuItemCreateArgs'] = [];
   const boardCreateArgs: RecordedTx['boardCreateArgs'] = [];
+  const moduleInstanceCreateArgs: RecordedTx['moduleInstanceCreateArgs'] = [];
   const adminFavoriteCreateArgs: RecordedTx['adminFavoriteCreateArgs'] = [];
   const menuSlotAssignmentCreateArgs: RecordedTx['menuSlotAssignmentCreateArgs'] = [];
 
@@ -296,11 +300,14 @@ function makeRecordingTx(): RecordedTx {
       }),
     },
     moduleInstance: {
-      create: vi.fn(async (args: { data: { mid: string } }) => {
-        calls.push(`moduleInstance.create:${args.data.mid}`);
-        const known = (MODULE_ID as Record<string, number>)[args.data.mid];
-        return { id: known ?? 999 };
-      }),
+      create: vi.fn(
+        async (args: { data: { mid: string; moduleCode?: string; mcontent?: string } }) => {
+          calls.push(`moduleInstance.create:${args.data.mid}`);
+          moduleInstanceCreateArgs.push(args);
+          const known = (MODULE_ID as Record<string, number>)[args.data.mid];
+          return { id: known ?? 999 };
+        },
+      ),
     },
     board: {
       create: vi.fn(async (args: { data: { moduleInstanceId: number; name: string } }) => {
@@ -380,6 +387,7 @@ function makeRecordingTx(): RecordedTx {
     menuCreateArgs,
     menuItemCreateArgs,
     boardCreateArgs,
+    moduleInstanceCreateArgs,
     adminFavoriteCreateArgs,
     menuSlotAssignmentCreateArgs,
     tx,
@@ -393,17 +401,37 @@ function makePrisma(rec: RecordedTx) {
 }
 
 describe('seedInstall post-install bootstrap (REQ-INSTALL-016/017/018)', () => {
-  it('AC-INSTALL-008: shall designate the board ModuleInstance as the default index module', async () => {
+  // SPEC-FRONT-PARITY-001 REQ-FP-001로 인덱스 모듈이 board → page로 바뀌었다.
+  // 이 단언 변경은 회귀가 아니라 의도된 변경이다
+  // (acceptance.md "의도된 변경 carve-out" — 원래 seed.test.ts:406).
+  it('AC-INSTALL-008 / AC-FP-001: shall designate the page ModuleInstance as the default index module', async () => {
     const rec = makeRecordingTx();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await seedInstall(makeInput(), makePrisma(rec) as any);
 
-    // 인덱스 모듈 = board 인스턴스 id (300).
+    // 인덱스 모듈 = page 인스턴스 id (mid='main', 400).
     const indexUpdate = rec.domainUpdateArgs.find(
       (a) => a.data.indexModuleInstanceId !== undefined,
     );
     expect(indexUpdate).toBeDefined();
-    expect(indexUpdate?.data.indexModuleInstanceId).toBe(MODULE_ID.board);
+    expect(indexUpdate?.data.indexModuleInstanceId).toBe(MODULE_ID.main);
+    // REQ-FP-005: board 인스턴스는 삭제되지 않고 그대로 남아야 한다.
+    expect(rec.calls).toContain('moduleInstance.create:board');
+  });
+
+  // SPEC-FRONT-PARITY-001 AC-FP-002: 인덱스 page 본문에 제목·소개·`/admin` 링크.
+  it('AC-FP-002: shall seed welcome content into the index page module', async () => {
+    const rec = makeRecordingTx();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await seedInstall(makeInput(), makePrisma(rec) as any);
+
+    const pageInstance = rec.moduleInstanceCreateArgs.find((a) => a.data.moduleCode === 'page');
+    expect(pageInstance).toBeDefined();
+
+    const mcontent = pageInstance?.data.mcontent ?? '';
+    expect(mcontent).toContain('<h1');
+    expect(mcontent).toContain('Rhymix-TS에 오신 것을 환영합니다');
+    expect(mcontent).toContain('/admin');
   });
 
   it('AC-INSTALL-009: shall create one default Menu with MenuItems and set Domain.defaultMenuId', async () => {
@@ -463,10 +491,11 @@ describe('seedInstall post-install bootstrap (REQ-INSTALL-016/017/018)', () => {
     expect(rec.documentCreateArgs).toHaveLength(0);
 
     // 인덱스 모듈 + 기본 메뉴는 여전히 설정.
+    // SPEC-FRONT-PARITY-001 REQ-FP-001: 인덱스는 page 인스턴스 (의도된 변경 — 원래 :469).
     const indexUpdate = rec.domainUpdateArgs.find(
       (a) => a.data.indexModuleInstanceId !== undefined,
     );
-    expect(indexUpdate?.data.indexModuleInstanceId).toBe(MODULE_ID.board);
+    expect(indexUpdate?.data.indexModuleInstanceId).toBe(MODULE_ID.main);
     expect(rec.menuCreateArgs).toHaveLength(1);
     const menuUpdate = rec.domainUpdateArgs.find((a) => a.data.defaultMenuId !== undefined);
     expect(menuUpdate?.data.defaultMenuId).toBe(55);

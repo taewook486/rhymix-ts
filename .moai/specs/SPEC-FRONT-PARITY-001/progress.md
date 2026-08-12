@@ -266,3 +266,117 @@ $ curl -s http://localhost:3000/board/1 → <main> 1, <footer> 1, 가시 attribu
 - **범위 밖 사실 기록**: `/install/**` 라우트는 여전히 `<main>` 중첩 상태다
   (Playwright 스냅샷에서 `main > main` 확인). spec.md의 22개 파일 전역 정리 대상이며
   본 SPEC의 Out of Scope다.
+
+---
+
+### M2 인덱스 모듈 page 전환 (2026-08-12, 오케스트레이터 직접 수행)
+
+M1과 동일하게 위임 없이 직접 수행. REQ-FP-001/002/005 구현 + 의도된 테스트 변경 반영.
+
+**Claim (주장)**
+
+| AC | 내용 | 상태 |
+|---|---|---|
+| AC-FP-001 | 설치 후 `indexModuleInstanceId`가 `moduleCode='page'` 인스턴스를 가리킴 | PASS |
+| AC-FP-002 | 인덱스 page 본문에 `<h1`·환영 문구·`/admin` 포함 | PASS |
+| AC-FP-005 | board/notice/qna 라우트 접근 + 컬럼 6종·다크모드 유지 | PASS |
+
+**Evidence (증거) — 실제 재설치 후 DB**
+
+```
+$ psql -c "SELECT m.\"moduleCode\", m.mid, m.name FROM domains d
+           JOIN module_instances m ON m.id = d.\"indexModuleInstanceId\";"
+ moduleCode | mid  | name
+------------+------+------
+ page       | main | Main
+
+$ psql -t -c "SELECT mcontent FROM module_instances WHERE \"moduleCode\"='page';"
+ <h1>Rhymix-TS에 오신 것을 환영합니다</h1>
+ <p>설치가 완료되었습니다. 이 페이지는 사이트의 첫 화면이며, …</p>
+ <p>메뉴의 게시판·공지사항·Q&amp;A로 이동하거나, <a href="/admin">관리자 페이지</a>에서 …</p>
+
+$ psql -c "SELECT mid, \"moduleCode\" FROM module_instances ORDER BY id;"
+  mid   | moduleCode
+--------+------------
+ notice | board
+ qna    | board
+ board  | board
+ main   | page        ← 신규. 기존 3개는 그대로 유지 (REQ-FP-005)
+```
+
+**Evidence (증거) — 실제 렌더**
+
+```
+$ curl -s http://localhost:3000/          → HTTP 200
+  <h1                                  → 1회
+  "Rhymix-TS에 오신 것을 환영합니다"    → 3회 (가시 1 + RSC 페이로드)
+  /admin                                → 3회
+  ">번호<" (게시판 목록 헤더)           → 0회  ← 인덱스가 더 이상 게시판 목록이 아님
+  <main> 1개, <footer> 1개
+
+$ /board /notice /qna                    → 각각 HTTP 200
+$ /board 컬럼: 번호·제목·작성자·작성일·조회수·추천수 전부 존재
+$ /board 다크모드 토글 버튼 존재
+```
+
+**Evidence (증거) — 단위 테스트**
+
+```
+$ pnpm test -- seed --run
+ ✓ packages/db/src/install/seed.test.ts (13 tests) 46ms
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+
+$ pnpm test -- seed install --run
+ Test Files  21 passed (21)
+      Tests  175 passed | 3 skipped (178)
+
+$ pnpm --filter @rhymix-ts/db exec tsc --noEmit   → 오류 없음
+```
+
+M1 렌더 검증 e2e도 M2 시드 위에서 재실행하여 회귀 없음을 확인:
+
+```
+$ npx playwright test front-parity --workers=1
+  ✓ 설치: 빈 DB에서 위저드 4단계 통과 (7.8s)
+  ✓ AC-FP-003/004: 로그인 상태에서 3개 라우트 모두 footer 1개 · main 1개 (6.4s)
+  ✓ AC-FP-003/004: 비로그인 방문자도 3개 라우트 모두 footer 1개 · main 1개 (3.8s)
+  ✓ AC-FP-006(c): 항상 렌더되는 attribution 푸터가 3개 라우트 모두에 존재 (5.0s)
+  4 passed (1.1m)
+```
+
+**Baseline-attribution (baseline 귀속)**
+
+- 변경 전: `indexModuleInstanceId` = board 인스턴스 → 인덱스에 게시판 목록 렌더
+- 변경 후: `indexModuleInstanceId` = page 인스턴스(mid='main') → 환영 콘텐츠 렌더
+- seed.test.ts: 13 tests 통과 (변경 전 11 tests + AC-FP-002 신규 1건, 단언 2건 갱신)
+
+**의도된 변경 (회귀 아님)**
+
+acceptance.md "의도된 변경 carve-out"에 따라 아래 2개 단언을 page 기준으로 갱신했다.
+plan.md §2 M2가 예고한 필수 산출물이다.
+
+| 원 위치 | 기존 단언 | 갱신 결과 |
+|---|---|---|
+| `seed.test.ts:406` | `indexModuleInstanceId === MODULE_ID.board` | `=== MODULE_ID.main` (page 인스턴스) |
+| `seed.test.ts:469` | 동일 | 동일 |
+
+추가로 `MODULE_ID`에 `main: 400`을 넣고, mock에 `moduleInstanceCreateArgs` 기록 배열을
+추가해 AC-FP-002(본문 리터럴 3종) 검증 테스트를 신설했다. REQ-FP-005 보호를 위해
+AC-INSTALL-008 테스트에 `moduleInstance.create:board` 호출 잔존 단언도 함께 넣었다.
+
+**Gaps (미검증)**
+
+- **AC-FP-006(b) 여전히 미검증**: 관리자 UI에서 FOOTER 슬롯에 메뉴를 배정한 뒤 방문자
+  화면에 렌더되는지 실측하지 않았다(M1부터 이월).
+- **footerText 루트 배선 미완**(M1부터 이월): 현재 항상 기본 attribution이 렌더된다.
+- **page 모듈 관리자 편집 경로 미검증**: 환영 콘텐츠를 관리자 화면에서 수정하는 흐름은
+  이 SPEC 범위가 아니며 확인하지 않았다.
+
+**Residual-risk (잔여 위험)**
+
+- `mid: 'main'`을 사용하므로 `/main` 라우트로도 동일 page가 노출된다. 인덱스(`/`)와
+  중복 접근 경로가 생기지만 레거시 Rhymix도 mid 기반 접근을 허용하므로 의도된 동작으로 둔다.
+- 신규 e2e에서 RSC 스트리밍 타이밍으로 푸터 카운트가 0으로 잡히는 flake를 발견해
+  `toBeAttached()` 대기를 추가했다(단언 완화가 아닌 동기화). curl 직접 확인으로는
+  비로그인 `/board/[id]`도 `<footer>` 1개가 정상 렌더됨을 교차 확인했다.
