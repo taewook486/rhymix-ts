@@ -60,20 +60,31 @@ export type ResolveFeedXmlResult =
   | { status: 200; xml: string }
   | { status: 404 };
 
-/** Document(Prisma) 레코드 → FeedDocument 매핑 — author nickname fallback 포함 (REQ-FEED-013). */
-function toFeedDocument(doc: {
-  id: number;
-  title: string;
-  content: string;
-  contentText: string | null;
-  regdate: Date;
-  lastUpdate: Date;
-  commentCount: number;
-  tags: string[];
-  category?: { title: string } | null;
-  author?: { nickName: string } | null;
-  nickName?: string | null;
-}): FeedDocument {
+/**
+ * Document(Prisma) 레코드 → FeedDocument 매핑 — author nickname fallback 포함 (REQ-FEED-013).
+ *
+ * `tags`는 인자로 별도 주입받는다. `listDocuments`는 `Document[]`를 그대로 반환할 뿐
+ * `documentTags` 조인을 포함하지 않으므로(= `doc.tags`가 존재하지 않음), 호출부가
+ * `loadTagsByDocumentId`로 조회한 결과를 넘겨야 한다. 과거에는 이 자리에서
+ * `doc as unknown as ...` 캐스트로 `tags: string[]`가 있다고 단언했고, 그 결과
+ * `resolveCategories`의 `push(...doc.tags)`가 런타임에
+ * `TypeError: doc.tags is not iterable`로 터져 RSS가 500을 반환했다.
+ */
+function toFeedDocument(
+  doc: {
+    id: number;
+    title: string;
+    content: string;
+    contentText: string | null;
+    regdate: Date;
+    lastUpdate: Date;
+    commentCount: number;
+    category?: { title: string } | null;
+    author?: { nickName: string } | null;
+    nickName?: string | null;
+  },
+  tags: string[],
+): FeedDocument {
   return {
     id: doc.id,
     title: doc.title,
@@ -84,8 +95,38 @@ function toFeedDocument(doc: {
     authorNickName: doc.author?.nickName ?? doc.nickName ?? null,
     commentCount: doc.commentCount,
     categoryTitle: doc.category?.title ?? null,
-    tags: doc.tags,
+    tags,
   };
+}
+
+/**
+ * 문서 id 목록에 대한 태그 이름을 한 번의 쿼리로 조회한다 (REQ-FEED-015 category 매핑).
+ *
+ * `listDocuments`에 `documentTags` 조인을 추가하지 않은 이유: 목록 조회는 게시판 목록
+ * 화면·관리자 화면 등 광범위하게 쓰이는데 태그가 필요한 곳은 피드뿐이다. 전역 조인
+ * 비용을 물리는 대신 피드 경로에서만 N+1 없이 단일 쿼리로 채운다.
+ */
+async function loadTagsByDocumentId(
+  documentIds: number[],
+  ctx: { prisma: PrismaClient },
+): Promise<Map<number, string[]>> {
+  const byId = new Map<number, string[]>();
+  if (documentIds.length === 0) return byId;
+
+  const rows = await ctx.prisma.documentTag.findMany({
+    where: { documentId: { in: documentIds } },
+    select: { documentId: true, tag: { select: { name: true } } },
+  });
+
+  for (const row of rows) {
+    const list = byId.get(row.documentId);
+    if (list) {
+      list.push(row.tag.name);
+    } else {
+      byId.set(row.documentId, [row.tag.name]);
+    }
+  }
+  return byId;
 }
 
 export async function resolveFeedXml(args: ResolveFeedXmlArgs): Promise<ResolveFeedXmlResult> {
@@ -125,6 +166,13 @@ export async function resolveFeedXml(args: ResolveFeedXmlArgs): Promise<ResolveF
     { prisma },
   );
 
+  // 5-b. 태그 조회 (REQ-FEED-015) — listDocuments는 documentTags 조인을 포함하지 않으므로
+  //      피드 경로에서 단일 쿼리로 별도 조회한다.
+  const tagsByDocumentId = await loadTagsByDocumentId(
+    items.map((doc) => doc.id),
+    { prisma },
+  );
+
   // 6. 빌더 호출 (REQ-FEED-006)
   const xml = buildFeed({
     format,
@@ -132,7 +180,10 @@ export async function resolveFeedXml(args: ResolveFeedXmlArgs): Promise<ResolveF
     board: { name: board.name, description: board.description },
     feedConfig,
     documents: items.map((doc) =>
-      toFeedDocument(doc as unknown as Parameters<typeof toFeedDocument>[0]),
+      toFeedDocument(
+        doc as unknown as Parameters<typeof toFeedDocument>[0],
+        tagsByDocumentId.get(doc.id) ?? [],
+      ),
     ),
     baseUrl,
   });

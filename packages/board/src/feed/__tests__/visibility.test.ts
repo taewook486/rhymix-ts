@@ -40,6 +40,11 @@ function makeBoard(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/**
+ * `listDocuments`가 실제로 반환하는 형태에 맞춘 픽스처 — **`tags` 필드가 없는 것이 의도된 것이다.**
+ * `listDocuments`는 `documentTags` 조인을 포함하지 않으므로, 태그는 resolveFeedXml이
+ * 별도 쿼리로 채운다(REQ-FEED-015). 자세한 배경은 resolve-feed.test.ts의 makeDoc 주석 참고.
+ */
 function makePublicDoc(id: number, title: string) {
   return {
     id,
@@ -49,11 +54,19 @@ function makePublicDoc(id: number, title: string) {
     regdate: new Date('2026-06-01T00:00:00.000Z'),
     lastUpdate: new Date('2026-06-01T00:00:00.000Z'),
     commentCount: 0,
-    tags: [],
     category: null,
     author: { id: 99, userId: 'author-uid', nickName: '작성자', email: 'secret@example.com' },
     nickName: null,
   };
+}
+
+/** 태그 조회에 쓰이는 최소 prisma 목 (태그 없음). */
+function makePrisma() {
+  return {
+    documentTag: {
+      findMany: vi.fn(async () => []),
+    },
+  } as never;
 }
 
 describe('SPEC-FEED-001 T-007: 가시성/보안 — listDocuments 필터 신뢰 (AC-FEED-A1/A4)', () => {
@@ -73,7 +86,7 @@ describe('SPEC-FEED-001 T-007: 가시성/보안 — listDocuments 필터 신뢰 
       siteId: 1,
       mid: 'notice',
       baseUrl: 'https://example.com',
-      prisma: {} as never,
+      prisma: makePrisma(),
       loadInstance: async () => makeInstance(),
       loadBoard: async () => makeBoard(),
     });
@@ -107,7 +120,7 @@ describe('SPEC-FEED-001 T-007: 가시성/보안 — listDocuments 필터 신뢰 
       siteId: 1,
       mid: 'notice',
       baseUrl: 'https://example.com',
-      prisma: {} as never,
+      prisma: makePrisma(),
       loadInstance: async () => makeInstance(),
       loadBoard: async () => makeBoard(),
     });
@@ -134,7 +147,7 @@ describe('SPEC-FEED-001 T-007: 가시성/보안 — listDocuments 필터 신뢰 
       siteId: 1,
       mid: 'notice',
       baseUrl: 'https://example.com',
-      prisma: {} as never,
+      prisma: makePrisma(),
       loadInstance: async () => makeInstance(),
       loadBoard: async () => makeBoard({ feedConfig: { enabled: false } }),
     });
@@ -156,7 +169,7 @@ describe('SPEC-FEED-001 T-007: 가시성/보안 — listDocuments 필터 신뢰 
       siteId: 1,
       mid: 'notice',
       baseUrl: 'https://example.com',
-      prisma: {} as never,
+      prisma: makePrisma(),
       loadInstance: async () => makeInstance(),
       loadBoard: async () => makeBoard({ permissions: { list: [], view: [] } }),
     });
