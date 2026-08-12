@@ -1,7 +1,7 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-13 (apps/web typecheck 0건 달성) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
+> 갱신: 2026-08-13 (apps/web + board typecheck 0건) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
 
 ## 붙여넣을 메시지
 
@@ -12,7 +12,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 전제 검증:
 1) docker.exe ps → rhymix-app/rhymix-db/rhymix-ts-db 3개 Up (Exited면 docker.exe start <name>)
-2) git log --oneline -1 → 23857a0 이거나 그 이후 SHA, main == origin/main
+2) git log --oneline -1 → 215ff0b 이거나 그 이후 SHA, main == origin/main
 3) git status --porcelain → 비어있어야 함
 4) pnpm --filter web dev 기동 후 curl localhost:3000 → 200 (첫 컴파일 ~2분)
 
@@ -23,7 +23,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 ## 현재 상태 (2026-08-13)
 
-- **main == origin/main (`23857a0` 이후), 작업 트리 clean.**
+- **main == origin/main (`215ff0b` 이후), 작업 트리 clean.**
 - 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed** (AC-FP-001~007 7건 전부 PASS)
 - 진행 중인 SPEC: 없음
 - e2e 인프라 수리 완료 (`9cf3149`) — `db-reset.ts`가 `pg_tables` 동적 조회로 전환되어
@@ -34,6 +34,9 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 - **`apps/web` typecheck 0건 달성** (`23857a0`) — 메일 로그 페이지의 존재하지 않는 import를
   `useQuery` 전환으로 대체하고, mail-log 테스트의 Context 캐스트를 정리했다.
   `pnpm --filter @rhymix-ts/web typecheck` → exit 0.
+- **`packages/board` typecheck 0건 달성** (`215ff0b`) — jest-dom 매처 타입 보강 13건 해소.
+  루트 vitest v2 / 패키지 v3 혼재로 ambient augmentation이 머지되지 않던 문제이며,
+  `apps/web`과 동일한 국소 ambient `.d.ts` 처방을 적용했다.
 
 ## SPEC-FRONT-PARITY-001 결과 요약
 
@@ -50,18 +53,22 @@ FOOTER 슬롯은 `FooterMenuSlot.tsx`(async)로 분리해 루트 레이아웃에
 
 ## 다음 작업 후보
 
-### 1. `packages/board` typecheck 오류 5건 (권장 — 남은 마지막 타입 오류)
+### 1. `@rhymix-ts/page` typecheck 실패 (권장 — 모노레포 전체 게이트화의 남은 관문)
 
-`apps/web`의 typecheck는 이제 통과하지만(`23857a0`), `packages/board`는 아직 실패한다.
+`apps/web`(`23857a0`)과 `packages/board`(`215ff0b`)는 통과하지만, 전체 `pnpm typecheck`는
+아직 실패한다.
 
 ```
-packages/board/src/components/TagInput.test.tsx — jest-dom 매처 5건
-  toBeInTheDocument / toHaveClass 를 Assertion 타입이 인식하지 못함
+$ pnpm typecheck
+@rhymix-ts/page:typecheck: src/module.test.ts(9,38): error TS2307:
+  Cannot find module 'react-dom/server' or its corresponding type declarations.
+ Tasks: 3 successful, 7 total
+ Failed: @rhymix-ts/page#typecheck
 ```
 
-커밋 `1426861`에서 유입된 기존 결함. `[[feedback-jest-dom-vitest-version-mismatch]]`
-메모리의 **모노레포 내 vitest 버전 혼재**(v2/v3) 문제와 같은 계열이며, 그때는 로컬
-ambient `.d.ts`로 해결했다. 같은 처방이 통할 가능성이 높다.
+`packages/page`가 `react-dom`(또는 `@types/react-dom`)을 의존성으로 선언하지 않은 것으로
+보인다. turbo가 실패 지점에서 멈추므로 **나머지 3개 패키지는 아직 검사되지 않았다** —
+이 건을 고친 뒤 전체를 다시 돌려 추가 실패가 있는지 확인할 것.
 
 ### 2. `extraVars.footerText` 루트 배선 (SPEC-FRONT-PARITY-001 잔여 부채)
 
