@@ -380,3 +380,43 @@ AC-INSTALL-008 테스트에 `moduleInstance.create:board` 호출 잔존 단언�
 - 신규 e2e에서 RSC 스트리밍 타이밍으로 푸터 카운트가 0으로 잡히는 flake를 발견해
   `toBeAttached()` 대기를 추가했다(단언 완화가 아닌 동기화). curl 직접 확인으로는
   비로그인 `/board/[id]`도 `<footer>` 1개가 정상 렌더됨을 교차 확인했다.
+
+---
+
+### AC-FP-006(b) 검증 (2026-08-12, sync 직전)
+
+M1·M2에서 이월된 마지막 미검증 항목을 실측으로 해소했다.
+
+**Claim**: FOOTER 슬롯에 메뉴를 배정하면 방문자 화면 푸터에 렌더되며, 푸터 개수는 1개로 유지된다.
+
+**Evidence**
+
+```
+$ psql -c "INSERT INTO menu_slot_assignments (\"domainId\", slot, \"menuId\", \"updatedAt\")
+           VALUES (1, 'FOOTER', 1, CURRENT_TIMESTAMP);"
+INSERT 0 1
+
+$ curl -s http://localhost:3000/        푸터 내부 → href="/board" href="/notice" href="/qna", footer 1개
+$ curl -s http://localhost:3000/board   푸터 내부 → href="/board" href="/notice" href="/qna", footer 1개
+$ curl -s http://localhost:3000/board/1 푸터 내부 → href="/board" href="/notice" href="/qna",
+                                        footer 1개, main 1개, attribution 1회
+```
+
+레이아웃 미적용 라우트(`/board/[id]`)에서도 슬롯 메뉴와 attribution이 함께 렌더되어
+REQ-FP-006(b)와 (c)가 동시에 충족됨을 확인했다.
+
+**Baseline-attribution**: 검증 후 테스트 배정 행은 삭제하여 설치 직후 상태로 되돌렸다
+(`DELETE FROM menu_slot_assignments WHERE slot='FOOTER';` → HEADER_PRIMARY 1행만 잔존).
+
+**Gaps**: 관리자 UI(`SlotAssignmentTable`) 화면을 통한 배정 조작은 거치지 않고 DB 직접
+INSERT로 검증했다. 렌더 경로 검증이 목적이므로 충분하나, 관리자 UI 자체의 조작 흐름은
+SPEC-MENU-001의 범위다.
+
+## §E.4 Sync-phase Audit-Ready Signal
+
+- sync_status: audit-ready
+- sync_commit_sha: pending-backfill-sync
+- AC 최종 결과: AC-FP-001~007 **7건 전부 PASS**
+- 잔여 기술부채: `extraVars.footerText` 루트 배선 미완 (CHANGELOG "알려진 부채"에 기록)
+- 범위 밖 발견 3건: db-reset.ts TRUNCATE 목록 누락 / migrate reset 후 dev 서버 재시작 필요 /
+  `/install/**` `<main>` 중첩 (CHANGELOG "범위 밖 발견 사항"에 기록)

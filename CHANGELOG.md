@@ -8,6 +8,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### SPEC-FRONT-PARITY-001 — 방문자 화면 레거시 parity 1단계 (완료)
+
+> status: completed — 레거시 Rhymix(PHP) 방문자 화면 대비 (a) 인덱스 모듈 정책을 게시판
+> 목록에서 소개 페이지로 전환하고, (b) 문서당 중복 렌더되던 `<footer>` 3개·`<main>` 3개를
+> 각각 1개로 정리. 7개 AC(AC-FP-001~007) 전부 PASS. 2개 마일스톤(M1~M2), 전부 main에
+> 직접 push(Route A — Hybrid Trunk 1인 OSS). 모든 AC는 DB 전체 재설치 후 실제 브라우저
+> 렌더 결과로 검증했다(mock 단위 테스트는 중복 렌더·연결 누락을 잡지 못한다는 실측 교훈).
+
+- **M1 — 중복 마크업 해소** (`64136f5`, `3b003d5`) — 동시에 렌더되던 푸터 3개
+  (`GlobalFooter.tsx`, `Footer.tsx`, `themes/default/layouts/default.tsx`)를 `GlobalFooter`
+  하나로 통합(REQ-FP-003). `GlobalFooter`는 **동기·무의존** 컴포넌트로 유지하고, DB/auth
+  접근이 필요한 FOOTER 슬롯 메뉴는 신규 `FooterMenuSlot.tsx`(async)로 분리해 루트
+  레이아웃에서 children으로 합성 — 테스트 가능성과 런타임 기능을 동시에 만족시킨다.
+  `<main>` 중첩은 게시판 모듈 3곳(`index-page.tsx`, `view-page.tsx` 2곳)과 테마 레이아웃
+  (`default.tsx`)을 `<div>`로 낮춰 루트 `app/layout.tsx` 1개만 남겼다(REQ-FP-004).
+  루트 `<main>`은 범위 밖 22개 파일에 영향을 주므로 유지. dead `Footer.tsx`는 삭제.
+  `extraVars.footerText`(SPEC-LAYOUT-001) 렌더 책임은 `GlobalFooter`로 이전하고 해당
+  테스트도 함께 옮겼다.
+- **M2 — 인덱스 모듈 page 전환** (`068eefb`) — 설치 시드에 page 모듈 인스턴스 1건
+  (`mid='main'`, `moduleCode='page'`)을 추가하고 `domain.indexModuleInstanceId`를 board에서
+  이 인스턴스로 변경(REQ-FP-001). 본문에는 제목·소개 문단·`/admin` 링크를 포함한 환영
+  콘텐츠를 시딩(REQ-FP-002). board/notice/qna 인스턴스와 샘플 문서는 그대로 유지되며
+  헤더 메뉴로 접근한다(REQ-FP-005).
+- **검증 e2e 신설** (`6f69b12`) — `apps/web/e2e/front-parity.spec.ts`. `/`·`/board`·
+  `/board/[id]` 3개 라우트에서 `<footer>` 1개·`<main>` 1개·`main main` 중첩 0개를 실제
+  브라우저 렌더로 판정한다. `/board/[id]`는 `renderModuleWithLayout`을 호출하지 않아
+  DefaultLayout이 적용되지 않는 라우트라 반드시 샘플에 포함해야 한다. 로그인/비로그인
+  두 경우 모두 검증.
+- **의도된 변경 (회귀 아님)** — `seed.test.ts:406`·`:469`의
+  `indexModuleInstanceId === MODULE_ID.board` 단언 2건을 page 인스턴스 기준으로 갱신.
+  REQ-FP-001이 기존 불변식을 의도적으로 뒤집은 결과이며 acceptance.md의
+  "의도된 변경 carve-out"에 명시된 필수 산출물이다.
+- **알려진 부채** — 도메인 레이아웃의 `extraVars.footerText`를 루트 레이아웃까지 전달하는
+  배선은 미완이다(루트에 module-instance 컨텍스트가 없어 별도 조회 필요). `GlobalFooter`가
+  `footerText` prop을 받도록 구조는 갖췄으나 현재는 항상 기본 attribution이 렌더된다.
+- **범위 밖 발견 사항** — (1) `apps/web/e2e/support/db-reset.ts`의 TRUNCATE 목록에
+  `theme_assignments`가 빠져 있어 한 번 설치된 뒤 재설치를 시도하면
+  `Unique constraint failed on (scope, refType, refId)`로 트랜잭션이 롤백된다. 기존
+  `install-happy-path.spec.ts`도 동일하게 실패한다. (2) `prisma migrate reset` 후에는
+  enum 타입 OID가 재생성되어 dev 서버 재시작이 필수다
+  (`cache lookup failed for type NNNNN`). (3) `/install/**` 라우트는 여전히 `<main>`
+  중첩 상태이며, 본 SPEC의 Out of Scope인 22개 파일 전역 정리 대상이다.
+
 #### SPEC-ADMIN-MENU-PARITY-001 — 관리자 메뉴 레거시 parity (완료)
 
 > status: completed — 레거시 Rhymix(PHP) admin GNB 6그룹 구조(사이트 제작/편집→회원→콘텐츠→

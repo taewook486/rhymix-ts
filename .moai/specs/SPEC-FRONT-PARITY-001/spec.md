@@ -2,7 +2,7 @@
 id: SPEC-FRONT-PARITY-001
 title: "방문자 화면 레거시 parity 1단계 — 인덱스 모듈 정책 + 중복 마크업 해소"
 version: "0.1.2"
-status: in-progress
+status: completed
 created: 2026-08-11
 updated: 2026-08-12
 author: manager-spec
