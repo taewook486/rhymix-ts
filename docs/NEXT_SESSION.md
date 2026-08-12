@@ -1,7 +1,7 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-12 / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
+> 갱신: 2026-08-12 (e2e 인프라 수리 반영) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
 
 ## 붙여넣을 메시지
 
@@ -12,7 +12,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 전제 검증:
 1) docker.exe ps → rhymix-app/rhymix-db/rhymix-ts-db 3개 Up (Exited면 docker.exe start <name>)
-2) git log --oneline -1 → fa86b52 이거나 그 이후 SHA, main == origin/main
+2) git log --oneline -1 → 9cf3149 이거나 그 이후 SHA, main == origin/main
 3) git status --porcelain → 비어있어야 함
 4) pnpm --filter web dev 기동 후 curl localhost:3000 → 200 (첫 컴파일 ~2분)
 
@@ -23,9 +23,12 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 ## 현재 상태 (2026-08-12)
 
-- **main == origin/main (`fa86b52`), 작업 트리 clean.**
+- **main == origin/main (`9cf3149`), 작업 트리 clean.**
 - 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed** (AC-FP-001~007 7건 전부 PASS)
 - 진행 중인 SPEC: 없음
+- e2e 인프라 수리 완료 (`9cf3149`) — `db-reset.ts`가 `pg_tables` 동적 조회로 전환되어
+  재설치 롤백 결함이 해소됐다. 전체 e2e 19 passed / CI_E2E=1 게이트 spec 14 passed,
+  실패는 `feed.spec.ts` 1건(기존 코드 결함, 아래 후보 1번)뿐이다.
 
 ## SPEC-FRONT-PARITY-001 결과 요약
 
@@ -42,19 +45,18 @@ FOOTER 슬롯은 `FooterMenuSlot.tsx`(async)로 분리해 루트 레이아웃에
 
 ## 다음 작업 후보
 
-### 1. e2e 인프라 수리 (권장 — 다른 모든 e2e 작업의 선행 조건)
+### 1. `feed.spec.ts` RSS 500 오류 (권장 — 유일하게 남은 e2e 실패)
 
-`apps/web/e2e/support/db-reset.ts`의 TRUNCATE 목록에 `theme_assignments`가 빠져 있다.
-그래서 **한 번 설치된 뒤 재설치를 시도하면 항상 롤백**된다:
+`GET /<mid>/rss`가 500을 반환한다. dev 서버 로그:
 
 ```
-prisma:error Invalid `tx.themeAssignment.create()` invocation
-Unique constraint failed on the fields: (`scope`,`refType`,`refId`)
+TypeError: doc.tags is not iterable (cannot read property undefined)
+ GET /feedtest/rss 500 in 420ms
 ```
 
-기존 `install-happy-path.spec.ts`도 동일하게 실패한다(오래된 결함). 현재는 매번 수동으로
-`DELETE FROM theme_assignments;`를 실행해 우회하고 있다. 스키마가 자란 만큼 목록 전반을
-재점검할 것.
+`db-reset.ts` 수리(`9cf3149`) 전후 모두 동일하게 실패하므로 **db-reset과 무관한 기존
+코드 결함**이다. 재현: `cd apps/web && CI_E2E=1 npx playwright test feed --workers=1`.
+현재 전체 e2e에서 실패하는 유일한 케이스.
 
 ### 2. `extraVars.footerText` 루트 배선 (SPEC-FRONT-PARITY-001 잔여 부채)
 
@@ -96,7 +98,10 @@ app/admin/settings/notification/NotificationSettingsForm.tsx(309,1): error TS100
   ```
   **재설치 후 dev 서버 재시작 필수** — enum 타입 OID가 재생성되어 기존 커넥션 풀이
   `cache lookup failed for type NNNNN`로 실패한다.
-- e2e 실행: `cd apps/web && npx playwright test front-parity --workers=1`
+- e2e 실행: `cd apps/web && npx playwright test --workers=1` (전체)
+  일부 spec은 `CI_E2E=1` 게이트가 걸려 있어 기본 실행에서 skip된다 —
+  `CI_E2E=1 npx playwright test board-ui layout-default page-module widget-login-info feed`
+  `resetDb()`는 이제 public 스키마 전체를 TRUNCATE 하므로 연속 재설치가 정상 동작한다
   (설치 위저드 마지막 버튼은 Playwright click이 안 먹으므로 `form.requestSubmit()` 사용)
 - 레거시 재설치: 컨테이너 안에서 `files/config/{config,db.config,ftp.config}.php` 비활성화
   (config.php만 지우면 구버전 마이그레이션 경로를 잘못 타서 Fatal error) + DB drop/create
