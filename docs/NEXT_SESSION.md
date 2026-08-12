@@ -1,7 +1,7 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-13 (알림 폼 JSX 수리 반영) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
+> 갱신: 2026-08-13 (apps/web typecheck 0건 달성) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
 
 ## 붙여넣을 메시지
 
@@ -12,7 +12,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 전제 검증:
 1) docker.exe ps → rhymix-app/rhymix-db/rhymix-ts-db 3개 Up (Exited면 docker.exe start <name>)
-2) git log --oneline -1 → ed6fb9c 이거나 그 이후 SHA, main == origin/main
+2) git log --oneline -1 → 23857a0 이거나 그 이후 SHA, main == origin/main
 3) git status --porcelain → 비어있어야 함
 4) pnpm --filter web dev 기동 후 curl localhost:3000 → 200 (첫 컴파일 ~2분)
 
@@ -23,7 +23,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 ## 현재 상태 (2026-08-13)
 
-- **main == origin/main (`ed6fb9c` 이후), 작업 트리 clean.**
+- **main == origin/main (`23857a0` 이후), 작업 트리 clean.**
 - 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed** (AC-FP-001~007 7건 전부 PASS)
 - 진행 중인 SPEC: 없음
 - e2e 인프라 수리 완료 (`9cf3149`) — `db-reset.ts`가 `pg_tables` 동적 조회로 전환되어
@@ -31,6 +31,9 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 - RSS 500 수리 완료 (`d6de5d1`) — `feed.spec.ts`가 통과한다. **현재 알려진 e2e 실패는 없다.**
 - 알림 설정 폼 JSX 수리 완료 (`ed6fb9c`) — 파싱 불가 결함 + form 중첩 hydration 오류 해소.
   `/admin/settings/notification`이 브라우저 콘솔 오류 0건으로 렌더된다.
+- **`apps/web` typecheck 0건 달성** (`23857a0`) — 메일 로그 페이지의 존재하지 않는 import를
+  `useQuery` 전환으로 대체하고, mail-log 테스트의 Context 캐스트를 정리했다.
+  `pnpm --filter @rhymix-ts/web typecheck` → exit 0.
 
 ## SPEC-FRONT-PARITY-001 결과 요약
 
@@ -47,21 +50,18 @@ FOOTER 슬롯은 `FooterMenuSlot.tsx`(async)로 분리해 루트 레이아웃에
 
 ## 다음 작업 후보
 
-### 1. 남은 typecheck 오류 10건 (권장 — 타입 검사 게이트화의 마지막 관문)
+### 1. `packages/board` typecheck 오류 5건 (권장 — 남은 마지막 타입 오류)
 
-`pnpm --filter @rhymix-ts/web typecheck`가 아래 10건으로 여전히 실패한다. 전부 커밋
-`baf71b3`(SPEC-CONTENT-PARITY-001 M7 메일 로그)에서 유입된 기존 결함이다.
+`apps/web`의 typecheck는 이제 통과하지만(`23857a0`), `packages/board`는 아직 실패한다.
 
 ```
-app/admin/site/mail/logs/page.tsx        2건 — TS2307 모듈 해석 실패
-  ('@/lib/api/client', '@rhymix-ts/trpc-server')
-server/api/routers/admin/mail-log.test.ts 8건 — Context 타입 불일치
-  (storage / scanner / uploadTokenSecret 누락) + TS2532
+packages/board/src/components/TagInput.test.tsx — jest-dom 매처 5건
+  toBeInTheDocument / toHaveClass 를 Assertion 타입이 인식하지 못함
 ```
 
-> 참고: `packages/board`의 `TagInput.test.tsx`에도 jest-dom 매처 타입 오류 5건이 있다
-> (`toBeInTheDocument` 미인식). 커밋 `1426861`에서 유입된 별개의 기존 결함이며,
-> `[[feedback-jest-dom-vitest-version-mismatch]]` 메모리의 vitest 버전 혼재 문제와 같은 계열이다.
+커밋 `1426861`에서 유입된 기존 결함. `[[feedback-jest-dom-vitest-version-mismatch]]`
+메모리의 **모노레포 내 vitest 버전 혼재**(v2/v3) 문제와 같은 계열이며, 그때는 로컬
+ambient `.d.ts`로 해결했다. 같은 처방이 통할 가능성이 높다.
 
 ### 2. `extraVars.footerText` 루트 배선 (SPEC-FRONT-PARITY-001 잔여 부채)
 
@@ -118,6 +118,7 @@ attribution이 렌더된다. 루트 레이아웃에는 module-instance 컨텍스
 | RSS 500 (`doc.tags is not iterable`) | `as unknown as` 캐스트 + 픽스처가 `tags: []` 손수 주입 |
 | e2e 재설치 롤백 | 손으로 관리하던 TRUNCATE 목록이 스키마 성장을 못 따라감 |
 | 알림 폼 form 중첩 | 파일이 파싱조차 안 돼 hydration 오류가 드러날 기회가 없었음 |
+| 메일 로그 페이지 필터 클로저 | 존재하지 않는 모듈 import 때문에 페이지가 아예 빌드되지 않았음 |
 
 교훈: **컴파일/테스트 통과는 "실제로 렌더된다"의 증거가 아니다.** 화면이 있는 변경은
 브라우저로 열어 콘솔까지 확인할 것.
