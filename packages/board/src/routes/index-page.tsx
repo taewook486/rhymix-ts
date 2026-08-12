@@ -284,7 +284,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
   );
 
   return (
-    <main>
+    <div>
       <h1>{props.instance.name}</h1>
 
       {/* 카테고리 필터 드롭다운 */}
@@ -440,6 +440,6 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
           글쓰기
         </a>
       </div>
-    </main>
+    </div>
   );
 }

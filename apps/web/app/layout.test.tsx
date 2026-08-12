@@ -39,10 +39,6 @@ vi.mock('@/components/layout/Utility', () => ({
   Utility: () => React.createElement('div', { 'data-testid': 'utility-bar' }),
 }));
 
-vi.mock('@/components/layout/Footer', () => ({
-  Footer: () => React.createElement('footer', { 'data-testid': 'menu-footer' }),
-}));
-
 vi.mock('@/components/theme/ColorSchemeProvider', () => ({
   ColorSchemeProvider: ({ children }: { children: React.ReactNode }) =>
     React.createElement('div', { 'data-testid': 'color-scheme-provider' }, children),

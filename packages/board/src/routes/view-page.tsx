@@ -104,19 +104,19 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
   // 비밀글 접근 거부 메시지 (REQ-BUI-006)
   if (!canViewSecret) {
     return (
-      <main className="max-w-3xl mx-auto p-4">
+      <div className="max-w-3xl mx-auto p-4">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-800 font-medium">비밀글입니다</p>
           <p className="text-yellow-600 text-sm mt-2">
             이 글은 작성자와 관리자만 볼 수 있습니다.
           </p>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="max-w-3xl mx-auto p-4">
+    <div className="max-w-3xl mx-auto p-4">
       {/* 문서 제목 */}
       <h1 className="text-2xl font-bold mb-2">{doc.title}</h1>
 
@@ -254,6 +254,6 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
         {/* SPEC-SPAM-001 REQ-SPAM-003: 신고 액션 */}
         {renderReportAction?.(documentId, doc.authorId)}
       </div>
-    </main>
+    </div>
   );
 }

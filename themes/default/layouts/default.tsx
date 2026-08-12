@@ -35,11 +35,6 @@ export default async function DefaultLayout({ children, extraVars }: DefaultLayo
       <main className="container mx-auto px-4 py-8 min-h-screen flex-1 sm:px-6 md:px-8 lg:px-12">
         {children}
       </main>
-
-      {/* 푸터 — extraVars.footerText 또는 기본 텍스트 */}
-      <footer className="border-t py-4 text-center text-sm text-muted-foreground sm:py-6">
-        {extraVars.footerText ?? 'Powered by Rhymix-TS'}
-      </footer>
     </div>
   );
 }
