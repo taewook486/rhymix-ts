@@ -415,7 +415,7 @@ SPEC-MENU-001의 범위다.
 ## §E.4 Sync-phase Audit-Ready Signal
 
 - sync_status: audit-ready
-- sync_commit_sha: pending-backfill-sync
+- sync_commit_sha: 578625d
 - AC 최종 결과: AC-FP-001~007 **7건 전부 PASS**
 - 잔여 기술부채: `extraVars.footerText` 루트 배선 미완 (CHANGELOG "알려진 부채"에 기록)
 - 범위 밖 발견 3건: db-reset.ts TRUNCATE 목록 누락 / migrate reset 후 dev 서버 재시작 필요 /
