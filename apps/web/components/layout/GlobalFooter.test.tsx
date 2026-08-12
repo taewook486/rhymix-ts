@@ -79,4 +79,51 @@ describe('GlobalFooter - SPEC-INSTALL-003 Group 5', () => {
     expect(container.firstChild).not.toBeNull();
     expect(container.firstChild).toBeInstanceOf(HTMLElement);
   });
+
+  /**
+   * SPEC-LAYOUT-001 REQ-LAYOUT-030~033 (구 DefaultLayout DL-6/DL-7에서 이전)
+   *
+   * SPEC-FRONT-PARITY-001 REQ-FP-003(문서당 <footer> 1개)에 따라 DefaultLayout의
+   * 자체 푸터가 제거되면서, footerText 렌더 책임이 GlobalFooter로 이전되었다.
+   * 원 테스트는 themes/default/layouts/default.test.tsx의 DL-6/DL-7이었다.
+   */
+  describe('footerText (SPEC-LAYOUT-001에서 이전)', () => {
+    it('footerText가 없으면 기본 텍스트 "Powered by Rhymix-TS"를 사용한다', async () => {
+      const { GlobalFooter } = await import('./GlobalFooter');
+
+      render(React.createElement(GlobalFooter));
+
+      expect(screen.getByText('Powered by Rhymix-TS')).toBeInTheDocument();
+    });
+
+    it('footerText가 있으면 커스텀 텍스트를 사용하고 기본 텍스트는 렌더하지 않는다', async () => {
+      const { GlobalFooter } = await import('./GlobalFooter');
+
+      render(React.createElement(GlobalFooter, { footerText: '커스텀 푸터 텍스트' }));
+
+      expect(screen.getByText('커스텀 푸터 텍스트')).toBeInTheDocument();
+      expect(screen.queryByText('Powered by Rhymix-TS')).not.toBeInTheDocument();
+    });
+  });
+
+  /**
+   * SPEC-MENU-001 REQ-MENU-030~034 (구 Footer.tsx에서 이전)
+   * FOOTER 슬롯 콘텐츠는 children으로 주입되며, GlobalFooter는 이를 렌더해야 한다.
+   * (실제 슬롯 조회는 FooterMenuSlot.tsx가 담당 — prisma/next-auth 의존 격리)
+   */
+  it('children으로 주입된 FOOTER 슬롯 콘텐츠를 렌더한다', async () => {
+    const { GlobalFooter } = await import('./GlobalFooter');
+
+    render(
+      React.createElement(
+        GlobalFooter,
+        null,
+        React.createElement('nav', { 'data-testid': 'footer-menu-slot' }, '메뉴'),
+      ),
+    );
+
+    expect(screen.getByTestId('footer-menu-slot')).toBeInTheDocument();
+    // attribution도 함께 렌더되어야 한다 (REQ-INSTALL3-042)
+    expect(screen.getByText('Powered by Rhymix-TS')).toBeInTheDocument();
+  });
 });

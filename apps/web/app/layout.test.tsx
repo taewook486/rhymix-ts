@@ -39,6 +39,13 @@ vi.mock('@/components/layout/Utility', () => ({
   Utility: () => React.createElement('div', { 'data-testid': 'utility-bar' }),
 }));
 
+// SPEC-FRONT-PARITY-001 M1: FooterMenuSlot은 MenuRenderer 경유로 prisma/next-auth를
+// 끌어오므로 jsdom 환경에서 목 처리한다. GlobalFooter 자체는 동기·무의존이라
+// 목이 필요 없다 (푸터 렌더 검증은 실제 컴포넌트로 수행).
+vi.mock('@/components/layout/FooterMenuSlot', () => ({
+  FooterMenuSlot: () => React.createElement('nav', { 'data-testid': 'footer-menu-slot' }),
+}));
+
 vi.mock('@/components/theme/ColorSchemeProvider', () => ({
   ColorSchemeProvider: ({ children }: { children: React.ReactNode }) =>
     React.createElement('div', { 'data-testid': 'color-scheme-provider' }, children),

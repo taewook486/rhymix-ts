@@ -31,10 +31,15 @@ export default async function DefaultLayout({ children, extraVars }: DefaultLayo
       data-layout-type={extraVars.layoutType}
       className="min-h-screen flex flex-col"
     >
-      {/* 메인 콘텐츠 영역 — 반응형 컨테이너 */}
-      <main className="container mx-auto px-4 py-8 min-h-screen flex-1 sm:px-6 md:px-8 lg:px-12">
+      {/*
+        메인 콘텐츠 영역 — 반응형 컨테이너.
+        SPEC-FRONT-PARITY-001 REQ-FP-004: 문서당 <main> 1개 원칙에 따라 <div>를 쓴다.
+        시맨틱 <main>은 루트 레이아웃(apps/web/app/layout.tsx)이 소유하며, 이 레이아웃은
+        그 안에 렌더되므로 여기서 <main>을 쓰면 중첩된다.
+      */}
+      <div className="container mx-auto px-4 py-8 min-h-screen flex-1 sm:px-6 md:px-8 lg:px-12">
         {children}
-      </main>
+      </div>
     </div>
   );
 }

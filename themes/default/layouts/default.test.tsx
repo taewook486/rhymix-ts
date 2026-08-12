@@ -66,25 +66,30 @@ describe('DefaultLayout', () => {
     expect(props['data-layout-type']).toBe('SUB_PAGE');
   });
 
-  // DL-6: footerText가 없으면 기본 푸터 텍스트가 렌더되어야 한다
-  it('footerText가 없으면 기본 푸터 텍스트 "Powered by Rhymix-TS"를 사용해야 한다', async () => {
-    const { default: DefaultLayout } = await import('./default');
-    const result = await DefaultLayout({ children: null, extraVars: baseExtraVars });
+  // DL-6/DL-7 (footerText 렌더)은 GlobalFooter.test.tsx로 이전됨.
+  //
+  // SPEC-FRONT-PARITY-001 REQ-FP-003(문서당 <footer> 1개)에 따라 DefaultLayout은
+  // 더 이상 자체 <footer>를 렌더하지 않는다. footerText 렌더 책임은
+  // apps/web/components/layout/GlobalFooter.tsx가 승계했으며, 해당 테스트는
+  // GlobalFooter.test.tsx의 "footerText" describe 블록에 있다.
+  // SPEC-LAYOUT-001의 footerText 요구사항 자체는 유지된다 — 렌더 위치만 이동했다.
 
-    // ReactElement 트리를 JSON으로 직렬화하여 텍스트 확인
-    const serialized = JSON.stringify(result);
-    expect(serialized).toContain('Powered by Rhymix-TS');
-  });
-
-  // DL-7: footerText가 있으면 커스텀 푸터 텍스트가 렌더되어야 한다
-  it('footerText가 있으면 커스텀 푸터 텍스트를 사용해야 한다', async () => {
+  // DL-6': DefaultLayout은 자체 <footer>를 렌더하지 않는다 (REQ-FP-003)
+  it('자체 <footer>를 렌더하지 않아야 한다', async () => {
     const { default: DefaultLayout } = await import('./default');
     const result = await DefaultLayout({ children: null, extraVars: extraVarsWithFooter });
 
     const serialized = JSON.stringify(result);
-    expect(serialized).toContain('커스텀 푸터 텍스트');
-    // 기본 텍스트는 포함되지 않아야 한다
-    expect(serialized).not.toContain('Powered by Rhymix-TS');
+    expect(serialized).not.toContain('"footer"');
+  });
+
+  // DL-7': DefaultLayout은 자체 <main>을 렌더하지 않는다 (REQ-FP-004)
+  it('자체 <main>을 렌더하지 않아야 한다 (루트 레이아웃이 소유)', async () => {
+    const { default: DefaultLayout } = await import('./default');
+    const result = await DefaultLayout({ children: null, extraVars: baseExtraVars });
+
+    const serialized = JSON.stringify(result);
+    expect(serialized).not.toContain('"main"');
   });
 
   // DL-8: children이 ReactNode 트리에 포함되어야 한다

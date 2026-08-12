@@ -7,6 +7,7 @@ import { SessionProviderWrapper } from '@/components/auth/SessionProviderWrapper
 import { TRPCProvider } from '@/providers/TRPCProvider';
 import { GlobalHeader } from '@/components/layout/GlobalHeader';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
+import { FooterMenuSlot } from '@/components/layout/FooterMenuSlot';
 import { Utility } from '@/components/layout/Utility';
 import { ColorSchemeProvider } from '@/components/theme/ColorSchemeProvider';
 import { colorSchemeScript } from '@/lib/theme/color-scheme-script';
@@ -68,7 +69,9 @@ export default async function RootLayout({
               <Utility />
               <GlobalHeader />
               <main>{children}</main>
-              <GlobalFooter />
+              <GlobalFooter>
+                <FooterMenuSlot />
+              </GlobalFooter>
             </SessionProviderWrapper>
           </TRPCProvider>
         </ColorSchemeProvider>
