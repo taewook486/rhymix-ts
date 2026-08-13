@@ -1,7 +1,7 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-13 (apps/web + board typecheck 0건) / source_session_id: 7352565e-ef45-4c59-bb52-cf804324af63
+> 갱신: 2026-08-13 (모노레포 전체 typecheck 0건 달성) / source_session_id: 66162e5b-24ee-4070-be75-d505dcc10501
 
 ## 붙여넣을 메시지
 
@@ -12,7 +12,7 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 
 전제 검증:
 1) docker.exe ps → rhymix-app/rhymix-db/rhymix-ts-db 3개 Up (Exited면 docker.exe start <name>)
-2) git log --oneline -1 → 215ff0b 이거나 그 이후 SHA, main == origin/main
+2) git log --oneline -1 → d291891 이거나 그 이후 SHA, main == origin/main
 3) git status --porcelain → 비어있어야 함
 4) pnpm --filter web dev 기동 후 curl localhost:3000 → 200 (첫 컴파일 ~2분)
 
@@ -21,22 +21,44 @@ feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
 후속: plan → run → sync
 ```
 
-## 현재 상태 (2026-08-13)
+## 현재 상태 (2026-08-13 밤)
 
-- **main == origin/main (`215ff0b` 이후), 작업 트리 clean.**
-- 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed** (AC-FP-001~007 7건 전부 PASS)
-- 진행 중인 SPEC: 없음
-- e2e 인프라 수리 완료 (`9cf3149`) — `db-reset.ts`가 `pg_tables` 동적 조회로 전환되어
-  재설치 롤백 결함이 해소됐다.
-- RSS 500 수리 완료 (`d6de5d1`) — `feed.spec.ts`가 통과한다. **현재 알려진 e2e 실패는 없다.**
-- 알림 설정 폼 JSX 수리 완료 (`ed6fb9c`) — 파싱 불가 결함 + form 중첩 hydration 오류 해소.
-  `/admin/settings/notification`이 브라우저 콘솔 오류 0건으로 렌더된다.
-- **`apps/web` typecheck 0건 달성** (`23857a0`) — 메일 로그 페이지의 존재하지 않는 import를
-  `useQuery` 전환으로 대체하고, mail-log 테스트의 Context 캐스트를 정리했다.
-  `pnpm --filter @rhymix-ts/web typecheck` → exit 0.
-- **`packages/board` typecheck 0건 달성** (`215ff0b`) — jest-dom 매처 타입 보강 13건 해소.
-  루트 vitest v2 / 패키지 v3 혼재로 ambient augmentation이 머지되지 않던 문제이며,
-  `apps/web`과 동일한 국소 ambient `.d.ts` 처방을 적용했다.
+- **main == origin/main, 작업 트리 clean.** 이번 세션 커밋: `e641e8a`, `537b876`, `d291891`
+- 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed**
+- 진행 중인 SPEC: `SPEC-CONTENT-PARITY-001` (in-progress)
+- **`pnpm typecheck` 전체 통과 (17/17, exit 0)** — 모노레포 전체 게이트화 달성.
+  이번 세션에서 남아 있던 72건을 해소했다:
+  - `@rhymix-ts/page` 1건 — `react-dom`/`@types/react-dom` 미선언 (`537b876`)
+  - `@rhymix-ts/notification` 2건 — `noUncheckedIndexedAccess` 옵셔널 체이닝 (`e641e8a`)
+  - `@rhymix-ts/document` 69건 — 부분 픽스처가 Prisma 모델 타입과 불일치 (`e641e8a`)
+- **`packages/document/src/__fixtures__.ts` 신설** — 5개 모델의 완전한 기본값 + 빌더.
+  override 가 `Partial<Model>` 로 검사되므로 **스키마가 바뀌면 테스트가 먼저 깨진다.**
+  기존처럼 `as any` 로 덮는 방식이 아니다.
+- **vitest 이중 설치 해소** (`537b876`) — 루트 `^2.1.9` / 패키지 `^3.0.0` 혼재로
+  `@vitest/expect` 2.1.9 와 3.2.4 가 동시 설치돼 `rejects.toThrow(문자열)` 만
+  오작동하고 있었다. 루트/admin/test-utils 를 `^3.0.0` 으로 통일.
+- **`packages/page` 테스트 최초 배선** (`537b876`) — `vitest.config.ts` 도 `test` 스크립트도
+  없어 테스트 2파일이 한 번도 실행된 적이 없었다. 배선하니 24건 통과.
+  `environment: 'node'` 에서는 `isomorphic-dompurify` 로드가 끝나지 않아 jsdom 필요.
+- **루트 `testTimeout` 15초 → 60초** (`537b876`) — 개별 패키지는 이미 60초였고 루트만
+  뒤처져, WSL2 병렬 실행에서 매번 임의의 파일 4~6개가 타임아웃으로 실패하고 있었다.
+- **`.gitignore` 결함 수리** (`d291891`) — `*-key.*` 가
+  `apps/web/server/api/routers/admin/content-extra-key.ts` 와 그 테스트를 삼켜
+  **한 번도 커밋되지 못하고 있었다.** 다른 PC 에서는 이 파일들이 없었다는 뜻이다.
+
+### ⚠️ 다음 세션에서 먼저 할 일: 전체 스위트 완주 확인
+
+루트 `testTimeout` 상향 후 전체 스위트를 돌렸으나 **255/290 파일 시점에서 중단**했다
+(사용자 PC 종료). **중단 시점까지 실패 0건**이었고, 그 전 실행에서 실패했던 6건
+(`document A-9`, `page SVC-8`, `comment` 2건, `board VP-1`, `AdminSidebar M1-1`)이
+모두 통과로 바뀐 것은 확인했다. 남은 35개 파일은 미검증이다.
+
+```bash
+pnpm test    # 약 1시간. 0 실패면 타임아웃 원인이 최종 확정된다
+```
+
+개별 검증은 모두 통과한 상태다 — `pnpm typecheck` 17/17, document 237건,
+admin 179건, page 24건, notification 48건, test-utils 5건.
 
 ## SPEC-FRONT-PARITY-001 결과 요약
 
@@ -53,22 +75,10 @@ FOOTER 슬롯은 `FooterMenuSlot.tsx`(async)로 분리해 루트 레이아웃에
 
 ## 다음 작업 후보
 
-### 1. `@rhymix-ts/page` typecheck 실패 (권장 — 모노레포 전체 게이트화의 남은 관문)
+### 1. 전체 스위트 완주 확인 (권장 — 위 ⚠️ 항목)
 
-`apps/web`(`23857a0`)과 `packages/board`(`215ff0b`)는 통과하지만, 전체 `pnpm typecheck`는
-아직 실패한다.
-
-```
-$ pnpm typecheck
-@rhymix-ts/page:typecheck: src/module.test.ts(9,38): error TS2307:
-  Cannot find module 'react-dom/server' or its corresponding type declarations.
- Tasks: 3 successful, 7 total
- Failed: @rhymix-ts/page#typecheck
-```
-
-`packages/page`가 `react-dom`(또는 `@types/react-dom`)을 의존성으로 선언하지 않은 것으로
-보인다. turbo가 실패 지점에서 멈추므로 **나머지 3개 패키지는 아직 검사되지 않았다** —
-이 건을 고친 뒤 전체를 다시 돌려 추가 실패가 있는지 확인할 것.
+`pnpm test` 를 끝까지 돌려 0 실패를 확인한다. 실패가 남으면 타임아웃 외의 원인이
+있다는 뜻이므로 개별 조사가 필요하다.
 
 ### 2. `extraVars.footerText` 루트 배선 (SPEC-FRONT-PARITY-001 잔여 부채)
 
@@ -112,20 +122,30 @@ attribution이 렌더된다. 루트 레이아웃에는 module-instance 컨텍스
 
 ## 이번 세션의 교훈
 
-이 세션에서 반복 확인된 것: 서브에이전트가 "테스트 전체 통과 / typecheck 0 errors"로 보고했으나 **재실행 결과 테스트
-8건 실패**였다. 보고서의 Evidence 블록 자체가 자기모순(`<main>` 2개를 나열해두고 둘 다
-"유지"라 쓴 뒤 "main 정확히 1개" PASS를 주장)이라 정독만으로도 탐지 가능했다.
-완료 보고는 **반드시 같은 명령을 직접 재실행**해 확인할 것.
+**비결정적 실패는 단일 대조로 판정할 수 없다.** 전체 스위트에서 6건이 실패해
+"내 변경 탓인가"를 가리려고 baseline worktree 에 변경 전 커밋을 체크아웃해 같은
+스위트를 돌렸다. 변경 전은 4건 실패였는데 **겹치는 것은 1건뿐**이었다. 두 실행의
+실패 집합이 거의 겹치지 않아 대조 자체가 성립하지 않았다. 원인은 전부
+`Test timed out in 15000ms` 하나였고, 어느 파일이 걸리느냐만 실행마다 달랐던 것이다.
 
-같은 계열의 결함이 이 세션에서 3건 더 나왔다 — 전부 **정적 검사나 mock이 실제 형태를
-가리고 있던** 경우였다.
+교훈: 실패 목록을 비교하기 전에 **실패 원인부터 분류**할 것. 전부 타임아웃이면 그
+자체가 비결정성 신호다. 그리고 대조를 반복하지 말고 **원인 가설을 직접 제거해서
+검증**할 것 — 이번엔 `testTimeout` 을 올려 재실행하는 게 답이었다.
 
-| 결함 | 가린 것 |
-|---|---|
-| RSS 500 (`doc.tags is not iterable`) | `as unknown as` 캐스트 + 픽스처가 `tags: []` 손수 주입 |
-| e2e 재설치 롤백 | 손으로 관리하던 TRUNCATE 목록이 스키마 성장을 못 따라감 |
-| 알림 폼 form 중첩 | 파일이 파싱조차 안 돼 hydration 오류가 드러날 기회가 없었음 |
-| 메일 로그 페이지 필터 클로저 | 존재하지 않는 모듈 import 때문에 페이지가 아예 빌드되지 않았음 |
+**넓은 gitignore 패턴은 소스를 조용히 삼킨다.** `*-key.*` 가 `content-extra-key.ts` 와
+그 테스트를 한 번도 커밋되지 못하게 막고 있었다. `git status` 에는 무시된 파일이
+안 나오므로 아무 신호가 없었고, baseline worktree 의 테스트 파일 수가 1개 적은 것
+(290 vs 289)에서 우연히 드러났다. `.gitignore` 에 이미 "overly broad 패턴을 좁혔다"는
+주석이 있었는데도 여전히 넓었다.
 
-교훈: **컴파일/테스트 통과는 "실제로 렌더된다"의 증거가 아니다.** 화면이 있는 변경은
-브라우저로 열어 콘솔까지 확인할 것.
+점검: `git status --porcelain --ignored=matching | grep '^!!'`,
+개별 확인은 `git check-ignore -v <path>`.
+
+---
+
+## 이전 세션의 교훈 (유지)
+
+컴파일/테스트 통과는 "실제로 렌더된다"의 증거가 아니다. 화면이 있는 변경은
+브라우저로 열어 콘솔까지 확인할 것. 그리고 정적 검사나 mock 이 실제 형태를 가리는
+결함이 반복해서 나왔다 — 캐스트(`as unknown as`)와 손수 채운 픽스처가 대표적이다.
+이번 세션의 `__fixtures__.ts` 는 그 대응으로, 픽스처가 실제 모델 타입 검사를 받게 했다.
