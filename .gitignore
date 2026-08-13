@@ -143,6 +143,19 @@ logs/*
 *-api-key.*
 api-key-*
 secret-key-*
+# 위 키 패턴들이 정상 소스까지 삼키는 것을 막는다.
+# 실제 사례: apps/web/server/api/routers/admin/content-extra-key.ts 와 그 테스트가
+# *-key.* 에 걸려 한 번도 커밋되지 못했다(다른 PC 에서 체크아웃하면 빌드가 깨진다).
+# 자격증명은 .pem/.p12/.pfx/.jks 확장자로 관리하므로 소스 확장자만 되살린다.
+!*-key.ts
+!*-key.tsx
+!*_key.ts
+!*_key.tsx
+# .test.ts / .spec.ts 처럼 중간 확장자가 붙는 형태도 되살린다
+!*-key.*.ts
+!*-key.*.tsx
+!*_key.*.ts
+!*_key.*.tsx
 private-key*
 *-secret.*
 *_secret.*
