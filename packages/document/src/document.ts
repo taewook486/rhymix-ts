@@ -810,8 +810,7 @@ export async function getDocument(
   };
 
   // DocumentTag[] → string[] 매핑 (REQ-TAG-003 게시물 상세 뷰 태그 표시)
-  // @MX:NOTE [AUTO]: 테스트 더미 데이터(documentTags 누락) 호환성을 위해 방어적 기본값 사용.
-  // @MX:REASON: 실제 Prisma 호출에서는 항상 채워지지만, document.test.ts A-12 의 가짜 fixture 는 누락.
-  const tags = (doc.documentTags ?? []).map((dt) => dt.tag.name);
+  // 위 include 가 documentTags 를 항상 지정하므로 undefined 일 수 없다.
+  const tags = doc.documentTags.map((dt) => dt.tag.name);
   return { ...doc, tags };
 }

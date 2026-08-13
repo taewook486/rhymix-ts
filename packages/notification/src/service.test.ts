@@ -616,8 +616,8 @@ describe('NotificationService', () => {
       await service.markAllRead({ recipientId: 1 });
 
       expect(updateManyCalls).toHaveLength(1);
-      expect(updateManyCalls[0].where.recipientId).toBe(1);
-      expect(updateManyCalls[0].where.read).toBe(false);
+      expect(updateManyCalls[0]?.where.recipientId).toBe(1);
+      expect(updateManyCalls[0]?.where.read).toBe(false);
     });
   });
 });

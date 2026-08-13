@@ -8,6 +8,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ZodError } from 'zod';
 import { createMockPrismaClient } from '@rhymix-ts/test-utils';
+import {
+  makeBoard,
+  makeDocument,
+  makeDocumentExtraKey,
+  makeDocumentFromInput,
+  makeDocumentUpdateLog,
+  makeTrash,
+} from './__fixtures__.js';
 
 // ---------------------------------------------------------------------------
 // createDocument (A-9, A-10)
@@ -17,15 +25,15 @@ describe('createDocument', () => {
   it('A-9: 정상 입력 → document 생성, status=TEMP, boardId 일치, sanitize 적용된 content', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {} };
-    const fakeDocument = {
+    const fakeBoard = makeBoard({ id: 7, moduleInstanceId: 3, permissions: {} });
+    const fakeDocument = makeDocument({
       id: 1,
       boardId: 7,
       status: 'TEMP',
       title: 'hi',
       content: '<p>x</p>',
       contentText: 'x',
-    };
+    });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
@@ -84,7 +92,7 @@ describe('listDocuments', () => {
     expect(mockPrisma.document.findMany).not.toHaveBeenCalled();
 
     // Board 있는 경우 — findMany 호출 검증 (notices + items)
-    const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+    const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
     const mockPrisma2 = createMockPrismaClient();
     mockPrisma2.board.findUnique.mockResolvedValue(fakeBoard);
     mockPrisma2.document.findMany
@@ -109,17 +117,22 @@ describe('getDocument', () => {
   it('A-12: Document + author { id, userId, nickName } 셀렉트 포함; 없으면 throw', async () => {
     const { getDocument } = await import('./document.js');
 
-    const fakeResult = {
+    // include 로 붙는 관계 필드는 실제 Prisma 응답과 같은 형태로 채운다.
+    // documentTags 를 빠뜨리면 getDocument 의 태그 매핑이 그 누락에 맞춰 물러서게 된다.
+    const fakeResult = makeDocument({
       id: 1,
       title: 'test',
       author: { id: 1, userId: 'user1', nickName: '홍길동' },
-    };
+      documentTags: [{ tag: { name: '공지' } }, { tag: { name: '이벤트' } }],
+    });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeResult);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await getDocument(1, { prisma: mockPrisma as any });
     expect(result).toMatchObject({ id: 1, author: { id: 1, userId: 'user1' } });
+    // REQ-TAG-003: DocumentTag 조인이 string[] 로 매핑돼야 한다
+    expect(result.tags).toEqual(['공지', '이벤트']);
 
     const callArg = mockPrisma.document.findUniqueOrThrow.mock.calls[0]?.[0] as {
       where: unknown;
@@ -144,17 +157,16 @@ describe('createDocument (Slice B)', () => {
   it('B-401: <script> 태그가 sanitize 되어 저장됨 (contentText 도 마찬가지)', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = {
+    const fakeBoard = makeBoard({
       id: 7,
       moduleInstanceId: 3,
       permissions: { write_document: [1] },
-    };
+    });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
-    mockPrisma.document.create.mockImplementation(async ({ data }) => ({
-      id: 1,
-      ...data,
-    }));
+    mockPrisma.document.create.mockImplementation(({ data }) =>
+      makeDocumentFromInput(data, makeDocument({ id: 1 })),
+    );
     mockPrisma.documentExtraKey.findMany.mockResolvedValue([]);
 
     await createDocument(
@@ -180,10 +192,12 @@ describe('createDocument (Slice B)', () => {
 
   it('B-402: status 옵션 = PUBLIC 으로 명시하면 그대로 저장', async () => {
     const { createDocument } = await import('./document.js');
-    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {} };
+    const fakeBoard = makeBoard({ id: 7, moduleInstanceId: 3, permissions: {} });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
-    mockPrisma.document.create.mockImplementation(async ({ data }) => ({ id: 1, ...data }));
+    mockPrisma.document.create.mockImplementation(({ data }) =>
+      makeDocumentFromInput(data, makeDocument({ id: 1 })),
+    );
     mockPrisma.documentExtraKey.findMany.mockResolvedValue([]);
 
     await createDocument(
@@ -206,7 +220,7 @@ describe('createDocument (Slice B)', () => {
 
   it('B-403: 권한 거부 — guest(groupSrl=0) 가 write_document=[1] 게시판에 글 작성 시 throw', async () => {
     const { createDocument } = await import('./document.js');
-    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: { write_document: [1] } };
+    const fakeBoard = makeBoard({ id: 7, moduleInstanceId: 3, permissions: { write_document: [1] } });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
 
@@ -231,7 +245,7 @@ describe('createDocument (Slice B)', () => {
 describe('updateDocument (Slice B)', () => {
   it('B-411: 본인 author 가 title 변경 → prisma.document.update 호출됨', async () => {
     const { updateDocument } = await import('./document.js');
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       boardId: 7,
       authorId: 5,
@@ -240,7 +254,7 @@ describe('updateDocument (Slice B)', () => {
       contentText: '<p>x</p>',
       status: 'PUBLIC',
       board: { id: 7, permissions: {} },
-    };
+    });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
     mockPrisma.document.update.mockResolvedValue({ ...fakeDoc, title: 'new' });
@@ -260,7 +274,7 @@ describe('updateDocument (Slice B)', () => {
 
   it('B-412: 본인이 아닌데 admin 도 아니면 throw', async () => {
     const { updateDocument } = await import('./document.js');
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       boardId: 7,
       authorId: 5,
@@ -269,7 +283,7 @@ describe('updateDocument (Slice B)', () => {
       contentText: '<p>x</p>',
       status: 'PUBLIC',
       board: { id: 7, permissions: {} },
-    };
+    });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
 
@@ -289,7 +303,7 @@ describe('updateDocument (Slice B)', () => {
 
   it('B-413: content 변경 시 sanitize 적용 + contentText 재계산', async () => {
     const { updateDocument } = await import('./document.js');
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       boardId: 7,
       authorId: 5,
@@ -298,10 +312,12 @@ describe('updateDocument (Slice B)', () => {
       contentText: 'old',
       status: 'PUBLIC',
       board: { id: 7, permissions: {} },
-    };
+    });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
-    mockPrisma.document.update.mockImplementation(async ({ data }) => ({ ...fakeDoc, ...data }));
+    mockPrisma.document.update.mockImplementation(({ data }) =>
+      makeDocumentFromInput(data, fakeDoc),
+    );
 
     await updateDocument(
       {
@@ -324,12 +340,12 @@ describe('updateDocument (Slice B)', () => {
 describe('deleteDocument (Slice B)', () => {
   it('B-421: 본인 또는 admin 이면 soft delete (deletedAt 세팅)', async () => {
     const { deleteDocument } = await import('./document.js');
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       authorId: 5,
       categoryId: null,
       board: { id: 7, permissions: {}, trashUse: false },
-    };
+    });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
     mockPrisma.document.update.mockResolvedValue({ ...fakeDoc, deletedAt: new Date() });
@@ -349,11 +365,11 @@ describe('deleteDocument (Slice B)', () => {
 
   it('B-422: 타인 + non-admin 이면 throw, update 미호출', async () => {
     const { deleteDocument } = await import('./document.js');
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       authorId: 5,
       board: { id: 7, permissions: {} },
-    };
+    });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
 
@@ -379,12 +395,12 @@ describe('deleteDocument Slice D 회귀 (DD-1 ~ DD-3)', () => {
   it('DD-1: deleteDocument 기존 시그니처 유지 — Document 반환, deletedAt set', async () => {
     const { deleteDocument } = await import('./document.js');
 
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       authorId: 5,
       categoryId: null,
       board: { id: 7, permissions: {}, trashUse: false },
-    };
+    });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
@@ -409,17 +425,17 @@ describe('deleteDocument Slice D 회귀 (DD-1 ~ DD-3)', () => {
   it('DD-2: deleteDocument + board.trashUse=true → Trash row 생성', async () => {
     const { deleteDocument } = await import('./document.js');
 
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       authorId: 5,
       categoryId: null,
       board: { id: 7, permissions: {}, trashUse: true },
-    };
+    });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
     mockPrisma.document.update.mockResolvedValue({ ...fakeDoc, deletedAt: new Date() });
-    mockPrisma.trash.upsert.mockResolvedValue({ id: 1, documentId: 10 });
+    mockPrisma.trash.upsert.mockResolvedValue(makeTrash({ id: 1, documentId: 10 }));
 
     await deleteDocument(
       { id: 10, actor: { userId: 5, userGroupSrl: 1, isAdmin: false } },
@@ -433,12 +449,12 @@ describe('deleteDocument Slice D 회귀 (DD-1 ~ DD-3)', () => {
   it('DD-3: deleteDocument + board.trashUse=false → Trash row 미생성', async () => {
     const { deleteDocument } = await import('./document.js');
 
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       authorId: 5,
       categoryId: null,
       board: { id: 7, permissions: {}, trashUse: false },
-    };
+    });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
@@ -458,7 +474,7 @@ describe('updateDocument Slice D 확장 (DD-4 ~ DD-5)', () => {
   it('DD-4: updateDocument board.updateLog=false → DocumentUpdateLog 미생성', async () => {
     const { updateDocument } = await import('./document.js');
 
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       boardId: 7,
       authorId: 5,
@@ -467,7 +483,7 @@ describe('updateDocument Slice D 확장 (DD-4 ~ DD-5)', () => {
       contentText: '기존 내용',
       status: 'PUBLIC',
       board: { id: 7, permissions: {}, updateLog: false },
-    };
+    });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
@@ -487,7 +503,7 @@ describe('updateDocument Slice D 확장 (DD-4 ~ DD-5)', () => {
   it('DD-3b (=DD-5): updateDocument board.updateLog=true + title 변경 → DocumentUpdateLog row 1개 추가', async () => {
     const { updateDocument } = await import('./document.js');
 
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       boardId: 7,
       authorId: 5,
@@ -496,12 +512,12 @@ describe('updateDocument Slice D 확장 (DD-4 ~ DD-5)', () => {
       contentText: '기존 내용',
       status: 'PUBLIC',
       board: { id: 7, permissions: {}, updateLog: true },
-    };
+    });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
     mockPrisma.document.update.mockResolvedValue({ ...fakeDoc, title: '새 제목' });
-    mockPrisma.documentUpdateLog.create.mockResolvedValue({ id: 1 });
+    mockPrisma.documentUpdateLog.create.mockResolvedValue(makeDocumentUpdateLog({ id: 1 }));
 
     await updateDocument(
       { id: 10, title: '새 제목', actor: { userId: 5, userGroupSrl: 1, isAdmin: false } },
@@ -522,7 +538,7 @@ describe('updateDocument Slice D 확장 (DD-4 ~ DD-5)', () => {
 describe('listDocuments search (Slice B)', () => {
   it('B-431: search 파라미터가 주어지면 prisma.$queryRaw 가 plainto_tsquery 와 함께 호출됨', async () => {
     const { listDocuments } = await import('./document.js');
-    const fakeBoard = { id: 7, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+    const fakeBoard = makeBoard({ id: 7, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
     mockPrisma.$queryRaw.mockResolvedValue([{ id: 1, title: 'hit', listOrder: BigInt(1000) }]);
@@ -550,11 +566,11 @@ describe('listDocuments (Slice C)', () => {
   it('D-1: cursor 없음 → 첫 페이지 반환, nextCursor 있음 (items.length === limit)', async () => {
     const { listDocuments } = await import('./document.js');
 
-    const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 2, exceptNotice: false };
+    const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 2, exceptNotice: false });
     const fakeDocs = [
-      { id: 3, boardId: 5, isNotice: false, listOrder: BigInt(1000), status: 'PUBLIC', deletedAt: null },
-      { id: 2, boardId: 5, isNotice: false, listOrder: BigInt(999), status: 'PUBLIC', deletedAt: null },
-      { id: 1, boardId: 5, isNotice: false, listOrder: BigInt(998), status: 'PUBLIC', deletedAt: null },
+      makeDocument({ id: 3, boardId: 5, isNotice: false, listOrder: BigInt(1000), status: 'PUBLIC', deletedAt: null }),
+      makeDocument({ id: 2, boardId: 5, isNotice: false, listOrder: BigInt(999), status: 'PUBLIC', deletedAt: null }),
+      makeDocument({ id: 1, boardId: 5, isNotice: false, listOrder: BigInt(998), status: 'PUBLIC', deletedAt: null }),
     ];
 
     const mockPrisma = createMockPrismaClient();
@@ -574,11 +590,11 @@ describe('listDocuments (Slice C)', () => {
   it('D-2: cursor 있음 → 다음 페이지 반환, 이전 페이지와 겹치지 않음', async () => {
     const { listDocuments, encodeCursor } = await import('./document.js');
 
-    const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 2, exceptNotice: false };
+    const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 2, exceptNotice: false });
     const cursor = encodeCursor(BigInt(999), 2);
 
     const fakeDocs = [
-      { id: 1, boardId: 5, isNotice: false, listOrder: BigInt(998), status: 'PUBLIC', deletedAt: null },
+      makeDocument({ id: 1, boardId: 5, isNotice: false, listOrder: BigInt(998), status: 'PUBLIC', deletedAt: null }),
     ];
 
     const mockPrisma = createMockPrismaClient();
@@ -598,8 +614,8 @@ describe('listDocuments (Slice C)', () => {
   it('D-3: isNotice=true 문서가 notices[] 에 분리', async () => {
     const { listDocuments } = await import('./document.js');
 
-    const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
-    const noticeDoc = { id: 10, boardId: 5, isNotice: true, listOrder: BigInt(9999), status: 'PUBLIC', deletedAt: null };
+    const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
+    const noticeDoc = makeDocument({ id: 10, boardId: 5, isNotice: true, listOrder: BigInt(9999), status: 'PUBLIC', deletedAt: null });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
@@ -618,7 +634,7 @@ describe('listDocuments (Slice C)', () => {
   it('D-4: exceptNotice=true 게시판 → notices[] 비어있음', async () => {
     const { listDocuments } = await import('./document.js');
 
-    const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: true };
+    const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: true });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
@@ -633,7 +649,7 @@ describe('listDocuments (Slice C)', () => {
   it('D-5: categoryId 필터 → findMany 에 categoryId 조건 포함', async () => {
     const { listDocuments } = await import('./document.js');
 
-    const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+    const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
@@ -652,7 +668,7 @@ describe('listDocuments (Slice C)', () => {
   it('D-6: tags 필터 → findMany 에 tags 조건 포함', async () => {
     const { listDocuments } = await import('./document.js');
 
-    const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+    const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
@@ -672,8 +688,8 @@ describe('createDocument (Slice C)', () => {
   it('D-7: categoryId 있으면 documentCount +1 확인 (incrementDocumentCount 호출)', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {} };
-    const fakeDoc = { id: 1, boardId: 7, categoryId: 3, title: 'test', status: 'TEMP' };
+    const fakeBoard = makeBoard({ id: 7, moduleInstanceId: 3, permissions: {} });
+    const fakeDoc = makeDocument({ id: 1, boardId: 7, categoryId: 3, title: 'test', status: 'TEMP' });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
@@ -699,12 +715,12 @@ describe('deleteDocument (Slice C)', () => {
   it('D-8: soft delete 후 categoryId 있으면 documentCount -1 확인', async () => {
     const { deleteDocument } = await import('./document.js');
 
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       authorId: 5,
       categoryId: 3,
       board: { id: 7, permissions: {} },
-    };
+    });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.document.findUniqueOrThrow.mockResolvedValue(fakeDoc);
@@ -729,7 +745,7 @@ describe('listDocuments — Breaking Change 회귀 보장 (D-9)', () => {
   it('D-9: { moduleInstanceId, status } 만 전달 → { notices:[], items:[], nextCursor:null } 반환', async () => {
     const { listDocuments } = await import('./document.js');
 
-    const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+    const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
@@ -758,15 +774,17 @@ describe('createDocument + extraVars (Slice F — DD-1 ~ DD-5)', () => {
   it('DD-F1: extraVars 포함 정상 생성 → prisma.document.create.data.extraVars 가 저장됨', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeBoard = makeBoard({ id: 10, moduleInstanceId: 3, permissions: {} });
     const fakeKeys = [
-      { id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
-      { id: 2, boardId: 10, varIdx: 1, varName: 'eventDate', varType: 'date', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+      makeDocumentExtraKey({ id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' }),
+      makeDocumentExtraKey({ id: 2, boardId: 10, varIdx: 1, varName: 'eventDate', varType: 'date', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' }),
     ];
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
-    mockPrisma.document.create.mockResolvedValue({ id: 1, boardId: 10, extraVars: { price: 100, eventDate: '2026-06-01' } });
+    mockPrisma.document.create.mockResolvedValue(
+      makeDocument({ id: 1, boardId: 10, extraVars: { price: 100, eventDate: '2026-06-01' } }),
+    );
     mockPrisma.documentExtraKey.findMany.mockResolvedValue(fakeKeys);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -790,9 +808,9 @@ describe('createDocument + extraVars (Slice F — DD-1 ~ DD-5)', () => {
   it('DD-F2: extraVars 검증 실패 → ZodError throw', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeBoard = makeBoard({ id: 10, moduleInstanceId: 3, permissions: {} });
     const fakeKeys = [
-      { id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: true, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+      makeDocumentExtraKey({ id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: true, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' }),
     ];
 
     const mockPrisma = createMockPrismaClient();
@@ -818,7 +836,7 @@ describe('createDocument + extraVars (Slice F — DD-1 ~ DD-5)', () => {
   it('DD-F3: 키 미정의 게시판 + extraVars 포함 → ExtraVarsNotConfiguredError', async () => {
     const { createDocument, ExtraVarsNotConfiguredError } = await import('./document.js');
 
-    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeBoard = makeBoard({ id: 10, moduleInstanceId: 3, permissions: {} });
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
@@ -843,9 +861,9 @@ describe('createDocument + extraVars (Slice F — DD-1 ~ DD-5)', () => {
   it('DD-F4: required 키 있는 게시판 + extraVars 미전달 → ExtraVarsRequiredError', async () => {
     const { createDocument, ExtraVarsRequiredError } = await import('./document.js');
 
-    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeBoard = makeBoard({ id: 10, moduleInstanceId: 3, permissions: {} });
     const fakeKeys = [
-      { id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: true, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+      makeDocumentExtraKey({ id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: true, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' }),
     ];
 
     const mockPrisma = createMockPrismaClient();
@@ -871,14 +889,14 @@ describe('createDocument + extraVars (Slice F — DD-1 ~ DD-5)', () => {
   it('DD-F5: required 키 없는 게시판 + extraVars 미전달 → 기존 동작 통과', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = { id: 10, moduleInstanceId: 3, permissions: {} };
+    const fakeBoard = makeBoard({ id: 10, moduleInstanceId: 3, permissions: {} });
     const fakeKeys = [
-      { id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+      makeDocumentExtraKey({ id: 1, boardId: 10, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' }),
     ];
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
-    mockPrisma.document.create.mockResolvedValue({ id: 1, boardId: 10 });
+    mockPrisma.document.create.mockResolvedValue(makeDocument({ id: 1, boardId: 10 }));
     mockPrisma.documentExtraKey.findMany.mockResolvedValue(fakeKeys);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -902,7 +920,7 @@ describe('updateDocument + extraVars (Slice F — DD-F6)', () => {
   it('DD-F6: updateDocument extraVars → PUT semantics (전체 교체)', async () => {
     const { updateDocument } = await import('./document.js');
 
-    const fakeDoc = {
+    const fakeDoc = makeDocument({
       id: 10,
       boardId: 7,
       authorId: 5,
@@ -912,10 +930,10 @@ describe('updateDocument + extraVars (Slice F — DD-F6)', () => {
       status: 'PUBLIC',
       extraVars: { price: 100, eventDate: '2026-01-01' }, // 기존 값
       board: { id: 7, permissions: {}, updateLog: false },
-    };
+    });
     const fakeKeys = [
-      { id: 1, boardId: 7, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
-      { id: 2, boardId: 7, varIdx: 1, varName: 'eventDate', varType: 'date', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' },
+      makeDocumentExtraKey({ id: 1, boardId: 7, varIdx: 0, varName: 'price', varType: 'number', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' }),
+      makeDocumentExtraKey({ id: 2, boardId: 7, varIdx: 1, varName: 'eventDate', varType: 'date', varIsRequired: false, varSearch: false, varSort: false, varOptions: null, langCode: 'ko' }),
     ];
 
     const mockPrisma = createMockPrismaClient();
@@ -969,8 +987,11 @@ describe('createDocument — AC-DOC-B1 (Board.documentCount atomicity)', () => {
   it('AC-DOC-B1: GIVEN board with documentCount=5, WHEN createDocument called, THEN Board.documentCount=6', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {}, documentCount: 5 };
-    const fakeDocument = {
+    // documentCount 는 Board 가 아니라 DocumentCategory 의 컬럼이다.
+    // 증가는 incrementDocumentCount 가 document_categories 에 실행하는 SQL 로 일어나므로
+    // 여기서는 게시판 픽스처에 없는 필드를 얹지 않는다.
+    const fakeBoard = makeBoard({ id: 7, moduleInstanceId: 3, permissions: {} });
+    const fakeDocument = makeDocument({
       id: 1,
       boardId: 7,
       status: 'TEMP',
@@ -978,9 +999,12 @@ describe('createDocument — AC-DOC-B1 (Board.documentCount atomicity)', () => {
       content: '<p>Content</p>',
       contentText: 'Content',
       categoryId: 10, // Category ID present - should trigger increment
-    };
+    });
 
     const transactionCalls: unknown[] = [];
+    // incrementDocumentCount 는 tx.$executeRaw 로 카운트를 올린다.
+    // 그래서 이 spy 호출 여부가 곧 "증가가 실제로 일어났는가"의 증거다.
+    const mockExecuteRaw = vi.fn();
 
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
@@ -994,17 +1018,13 @@ describe('createDocument — AC-DOC-B1 (Board.documentCount atomicity)', () => {
           document: {
             create: mockPrisma.document.create,
           },
-          $executeRaw: vi.fn(), // Mock $executeRaw for incrementDocumentCount
+          $executeRaw: mockExecuteRaw,
         };
-        return callback(mockTx);
+        // 트랜잭션 콜백은 전체 TransactionClient 를 요구하지만 이 경로가 실제로 쓰는 건 위 둘뿐이다
+        return callback(mockTx as unknown as Parameters<typeof callback>[0]);
       }
       throw new Error('Invalid transaction callback');
     });
-
-    // Mock incrementDocumentCount to verify it's called in transaction
-    vi.doMock('./category', () => ({
-      incrementDocumentCount: mockIncrementCount,
-    }));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await createDocument(
@@ -1025,20 +1045,26 @@ describe('createDocument — AC-DOC-B1 (Board.documentCount atomicity)', () => {
 
     // Verify create was called
     expect(mockPrisma.document.create).toHaveBeenCalledOnce();
+
+    // categoryId 가 있으므로 documentCount 증가가 트랜잭션 안에서 실행돼야 한다
+    expect(mockExecuteRaw).toHaveBeenCalledOnce();
   });
 
   it('AC-DOC-B1: should NOT increment documentCount when categoryId is null', async () => {
     const { createDocument } = await import('./document.js');
 
-    const fakeBoard = { id: 7, moduleInstanceId: 3, permissions: {}, documentCount: 5 };
-    const fakeDocument = {
+    // documentCount 는 Board 가 아니라 DocumentCategory 의 컬럼이다.
+    // 증가는 incrementDocumentCount 가 document_categories 에 실행하는 SQL 로 일어나므로
+    // 여기서는 게시판 픽스처에 없는 필드를 얹지 않는다.
+    const fakeBoard = makeBoard({ id: 7, moduleInstanceId: 3, permissions: {} });
+    const fakeDocument = makeDocument({
       id: 1,
       boardId: 7,
       status: 'TEMP',
       title: 'Test Doc',
       content: '<p>Content</p>',
       contentText: 'Content',
-    };
+    });
 
     const transactionCalls: unknown[] = [];
 
@@ -1054,7 +1080,8 @@ describe('createDocument — AC-DOC-B1 (Board.documentCount atomicity)', () => {
             create: mockPrisma.document.create,
           },
         };
-        return callback(mockTx);
+        // 트랜잭션 콜백은 전체 TransactionClient 를 요구하지만 이 경로가 실제로 쓰는 건 위 하나뿐이다
+        return callback(mockTx as unknown as Parameters<typeof callback>[0]);
       }
       throw new Error('Invalid transaction callback');
     });
@@ -1090,15 +1117,17 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-001: page=1, pageSize=20 → totalCount, totalPages, currentPage 반환', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
-      const items = Array.from({ length: 20 }, (_, i) => ({
-        id: i + 1,
-        boardId: 5,
-        isNotice: false,
-        listOrder: BigInt(100 - i),
-        status: 'PUBLIC',
-        deletedAt: null,
-      }));
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
+      const items = Array.from({ length: 20 }, (_, i) =>
+        makeDocument({
+          id: i + 1,
+          boardId: 5,
+          isNotice: false,
+          listOrder: BigInt(100 - i),
+          status: 'PUBLIC',
+          deletedAt: null,
+        }),
+      );
 
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
@@ -1127,15 +1156,17 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-002: page=2, pageSize=20 → skip=20 적용', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
-      const items = Array.from({ length: 20 }, (_, i) => ({
-        id: i + 21,
-        boardId: 5,
-        isNotice: false,
-        listOrder: BigInt(100 - i),
-        status: 'PUBLIC',
-        deletedAt: null,
-      }));
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
+      const items = Array.from({ length: 20 }, (_, i) =>
+        makeDocument({
+          id: i + 21,
+          boardId: 5,
+          isNotice: false,
+          listOrder: BigInt(100 - i),
+          status: 'PUBLIC',
+          deletedAt: null,
+        }),
+      );
 
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
@@ -1160,18 +1191,27 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-003: notices는 totalCount에 포함되지 않음', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const notices = [
-        { id: 1, boardId: 5, isNotice: true, listOrder: BigInt(9999), status: 'PUBLIC', deletedAt: null },
+        makeDocument({
+          id: 1,
+          boardId: 5,
+          isNotice: true,
+          listOrder: BigInt(9999),
+          status: 'PUBLIC',
+          deletedAt: null,
+        }),
       ];
-      const items = Array.from({ length: 20 }, (_, i) => ({
-        id: i + 2,
-        boardId: 5,
-        isNotice: false,
-        listOrder: BigInt(100 - i),
-        status: 'PUBLIC',
-        deletedAt: null,
-      }));
+      const items = Array.from({ length: 20 }, (_, i) =>
+        makeDocument({
+          id: i + 2,
+          boardId: 5,
+          isNotice: false,
+          listOrder: BigInt(100 - i),
+          status: 'PUBLIC',
+          deletedAt: null,
+        }),
+      );
 
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
@@ -1193,20 +1233,34 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-004: page 없으면 기존 cursor 모드 동작 (nextCursor만 반환)', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
-      const items = Array.from({ length: 20 }, (_, i) => ({
-        id: i + 1,
-        boardId: 5,
-        isNotice: false,
-        listOrder: BigInt(100 - i),
-        status: 'PUBLIC',
-        deletedAt: null,
-      }));
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
+      const items = Array.from({ length: 20 }, (_, i) =>
+        makeDocument({
+          id: i + 1,
+          boardId: 5,
+          isNotice: false,
+          listOrder: BigInt(100 - i),
+          status: 'PUBLIC',
+          deletedAt: null,
+        }),
+      );
 
       const mockPrisma = createMockPrismaClient();
-      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
+      mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
       mockPrisma.document.findMany.mockResolvedValueOnce([]); // notices
-      mockPrisma.document.findMany.mockResolvedValueOnce([...items, { id: 21, boardId: 5, isNotice: false, listOrder: BigInt(0), status: 'PUBLIC', deletedAt: null, title: '', content: '' }]); // 21 items (hasMore)
+      mockPrisma.document.findMany.mockResolvedValueOnce([
+        ...items,
+        makeDocument({
+          id: 21,
+          boardId: 5,
+          isNotice: false,
+          listOrder: BigInt(0),
+          status: 'PUBLIC',
+          deletedAt: null,
+          title: '',
+          content: '',
+        }),
+      ]); // 21 items (hasMore)
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await listDocuments(
@@ -1226,7 +1280,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-005: pageSize=10 → validate 10 is in allowed values', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1245,7 +1299,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-006: page만 있고 pageSize 없으면 기본값 20 사용', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1264,7 +1318,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-007: sort=recommend → votedCount desc, id desc', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1284,7 +1338,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-008: sort=views → readedCount desc, id desc', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1304,7 +1358,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-009: sort=latest → listOrder desc, id desc (same as list_order)', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1326,7 +1380,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-010: searchField=title → title contains insensitive', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1345,7 +1399,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-011: searchField=author → nickName OR userIdSnapshot contains', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1367,7 +1421,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-012: searchField=content → FTS search_vector @@ plainto_tsquery', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       // $queryRaw is called twice: once for data, once for count
@@ -1388,7 +1442,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-013: searchField 없이 search만 있으면 기본값 title', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1409,7 +1463,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-014: search + page → search 결과도 offset pagination 적용', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       mockPrisma.document.findMany.mockResolvedValueOnce([]);
@@ -1433,7 +1487,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
     it('BUIT-015: FTS search + page → $queryRaw called with LIMIT/OFFSET params', async () => {
       const { listDocuments } = await import('./document.js');
 
-      const fakeBoard = { id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false };
+      const fakeBoard = makeBoard({ id: 5, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
       const mockPrisma = createMockPrismaClient();
       mockPrisma.board.findUnique.mockResolvedValue(fakeBoard as any);
       // $queryRaw is called twice: once for data, once for count
