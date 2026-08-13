@@ -29,7 +29,10 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    testTimeout: 15000,
+    // 15초로는 WSL2 병렬 실행에서 jsdom / isomorphic-dompurify 첫 로드를 넘기지 못해
+    // 매 실행마다 임의의 파일 4~6개가 타임아웃으로 실패했다(실패 대상이 실행마다 바뀌는
+    // 비결정적 증상). 개별 패키지 설정은 이미 60초를 쓰고 있어 루트만 뒤처져 있었다.
+    testTimeout: 60000,
     setupFiles: ['./apps/web/vitest.setup.ts'],
     environmentOptions: {
       jsdom: {
