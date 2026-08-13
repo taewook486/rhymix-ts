@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-07-18 (Phase 10 SPEC-MENU-001 완료 — Slice A~E 전 AC 실 재현 검증 완료, Slice F 제외/백로그. status: completed)
+> 마지막 갱신: 2026-08-13 (Phase 15 관리자 레거시 parity 시리즈 착수 — SPEC-LEGACY-PARITY-000 규약 작성. 등록 누락돼 있던 Phase 11~14 SPEC 4개 함께 반영)
 
 ## 기술 스택 (확정)
 
@@ -35,6 +35,11 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 8. ADMIN SECURITY HARDENING | 보안 리뷰에서 파생된 후속 구현 (2FA TOTP 백엔드 등) | 2 | 2/2 | 🟢 구현 완료 (ADMIN-2FA-OTP-001 + TEST-PRISMA-MOCK-001 전체 완료) |
 | 9. GAP ANALYSIS REMEDIATION | 레거시 실측 비교 기반 신규 기능 11건 | 11 | 11/11 | 🟢 구현 완료 (EDITOR~SPAM 전체, PR #26/#27 머지) |
 | 10. ADMIN "사이트 제작/편집" 완성 | 레거시 최상위 메뉴 parity (메뉴 편집/디자인 시드) | 1 | 0/1 | 🟡 구현 진행 중 (Slice A/B/C/E 완료+검증, Slice D 부분 검증, Slice F 백로그) |
+| 11. 관리자 회원 메뉴 parity | 레거시 회원 메뉴 대조 | 1 | 1/1 | 🟢 구현 완료 (SPEC-MEMBER-PARITY-001, completed) |
+| 12. 관리자 콘텐츠 메뉴 parity | 휴지통/파일/스팸필터 노출 + 문서·댓글 배선 | 1 | 0/1 | 🟡 구현 진행 중 (SPEC-CONTENT-PARITY-001, in-progress) |
+| 13. 관리자 메뉴 구조 parity | 사이드바 6그룹 재배치 + 즐겨찾기 시딩 | 1 | 1/1 | 🟢 구현 완료 (SPEC-ADMIN-MENU-PARITY-001, completed) |
+| 14. 방문자 화면 parity | 인덱스 모듈 정책 + 중복 마크업 해소 | 1 | 1/1 | 🟢 구현 완료 (SPEC-FRONT-PARITY-001, completed) |
+| 15. 관리자 레거시 parity 시리즈 | 6개 영역을 순서대로 parity (공통 규약 + 영역 6) | 7 | 0/7 | ⬜ 착수 (SPEC-LEGACY-PARITY-000 draft, 001~006 미작성) |
 
 ---
 
@@ -188,6 +193,38 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 |---|---|---|
 | [MASTER-PLAN-002/](./MASTER-PLAN-002/) | 전체 청사진, Phase 매트릭스, 의존성 그래프, 흡수 매트릭스 | 📚 참조용 (분할 완료) |
 | [REMEDIATION-PLAN-001.md](./REMEDIATION-PLAN-001.md) | 1차 리뷰 후속 조치 (THEME Slice E/F, ADMIN Slice H/I, MAIL) | 📚 참조용 (각 SPEC으로 흡수됨) |
+
+---
+
+### Phase 11~14: 개별 레거시 parity (2026-07~08)
+
+> 이 4개 SPEC은 작성·구현이 끝났으나 INDEX 등록이 누락돼 있었다(2026-08-13 확인 후 추가).
+> 각 SPEC이 독립적으로 레거시를 관찰해 근거를 만들었고, 그 방법이 SPEC마다 달랐다 —
+> Phase 15가 공통 규약을 세우는 배경이다(SPEC-LEGACY-PARITY-000 §1).
+
+| ID | 제목 | 상태 |
+|---|---|---|
+| [SPEC-MEMBER-PARITY-001](./SPEC-MEMBER-PARITY-001/spec.md) | 관리자 회원 메뉴 레거시 parity | ✅ completed |
+| [SPEC-CONTENT-PARITY-001](./SPEC-CONTENT-PARITY-001/spec.md) | 관리자 콘텐츠 메뉴 레거시 parity (휴지통/파일/스팸필터 + 문서·댓글 배선) | 🟡 in-progress |
+| [SPEC-ADMIN-MENU-PARITY-001](./SPEC-ADMIN-MENU-PARITY-001/spec.md) | 사이드바 6그룹 재배치 + 즐겨찾기 기본 시딩 | ✅ completed |
+| [SPEC-FRONT-PARITY-001](./SPEC-FRONT-PARITY-001/spec.md) | 방문자 화면 parity 1단계 (인덱스 모듈 정책 + 중복 마크업) | ✅ completed |
+
+### Phase 15: 관리자 레거시 parity 시리즈 (2026-08-13)
+
+> 레거시 관리자 화면을 6개 영역으로 나눠 **지정된 순서**(사이트 제작/편집 → 회원 → 콘텐츠 →
+> 즐겨찾기 → 설정 → 고급)로 parity를 맞춘다. 근거는 재설치 직후의 레거시를 Playwright로
+> 읽기 전용 수집한 `.moai/reports/legacy-admin-map/`(화면 164개, 이벤트 2,386건, 핸들러
+> 대응표)이며, 시리즈 전체가 이 한 자료를 공유한다.
+
+| ID | 제목 | 흡수/재검증 대상 | 상태 |
+|---|---|---|---|
+| [SPEC-LEGACY-PARITY-000](./SPEC-LEGACY-PARITY-000/spec.md) | 시리즈 공통 규약 (기준선·근거·불변식·승계) | — | 📝 draft |
+| SPEC-LEGACY-PARITY-001 | 사이트 제작/편집 | SPEC-MENU-001 Slice D 잔여 흡수 | ⬜ 미작성 |
+| SPEC-LEGACY-PARITY-002 | 회원 | SPEC-MEMBER-PARITY-001 재검증 | ⬜ 미작성 |
+| SPEC-LEGACY-PARITY-003 | 콘텐츠 | SPEC-CONTENT-PARITY-001 흡수 | ⬜ 미작성 |
+| SPEC-LEGACY-PARITY-004 | 즐겨찾기 | SPEC-ADMIN-MENU-PARITY-001 재검증 | ⬜ 미작성 |
+| SPEC-LEGACY-PARITY-005 | 설정 | — (신규) | ⬜ 미작성 |
+| SPEC-LEGACY-PARITY-006 | 고급 | — (신규) | ⬜ 미작성 |
 
 ---
 
