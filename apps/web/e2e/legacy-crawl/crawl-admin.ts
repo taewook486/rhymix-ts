@@ -65,6 +65,7 @@ interface LinkRecord {
     | 'skipped-external'
     | 'skipped-cap'
     | 'skipped-act-cap'
+    | 'skipped-chrome'
     | 'skipped-other-group';
 }
 
@@ -205,6 +206,34 @@ async function collectGnb(page: Page): Promise<GnbGroup[]> {
       const links = g.links.map((h) => h.split('#')[0]!).filter((h) => isAdminUrl(h));
       return { group: g.label, landing: links[0] ?? null, links };
     });
+}
+
+/**
+ * 헤더·푸터처럼 모든 화면에 공통으로 붙는 "껍데기" 링크를 찾는다.
+ *
+ * 이 링크들은 GNB 하위 메뉴에 없기 때문에 그룹 소속이 확정되지 않는다. 그대로 두면
+ * 가장 먼저 순회한 그룹이 자기 것으로 채가서(예: 헤더의 "내 계정" → 사이트 제작/편집)
+ * 영역 SPEC 이 틀린 근거를 갖게 된다. 모든 그룹 랜딩에 공통으로 등장하는 링크를
+ * 껍데기로 판정해 그룹 귀속에서 제외한다.
+ */
+async function detectChrome(page: Page, gnb: GnbGroup[]): Promise<Set<string>> {
+  const landings = gnb.map((g) => g.landing).filter((u): u is string => u !== null);
+  if (landings.length < 2) return new Set();
+
+  let common: Set<string> | null = null;
+  for (const url of landings) {
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    const hrefs = await page
+      .locator('a[href]')
+      .evaluateAll((nodes) => nodes.map((n) => (n as HTMLAnchorElement).href));
+    const set = new Set(hrefs.map((h) => h.split('#')[0]!).filter((h) => isAdminUrl(h)));
+    if (common === null) {
+      common = set;
+    } else {
+      for (const u of [...common]) if (!set.has(u)) common.delete(u);
+    }
+  }
+  return common ?? new Set();
 }
 
 /** GNB 구조에서 곧바로 URL → 그룹 매핑을 만든다 (먼저 등장한 그룹이 소유). */
@@ -376,6 +405,9 @@ async function main(): Promise<void> {
     const groupMap = buildGroupMapFromGnb(gnb);
     console.log(`[크롤] 그룹 소속이 마크업으로 확정된 URL: ${groupMap.size}개`);
 
+    const chrome = await detectChrome(page, gnb);
+    console.log(`[크롤] 공통 껍데기(헤더·푸터) 링크: ${chrome.size}개 — 그룹 귀속에서 제외`);
+
     // 훑는 순서: 지정된 작업 순서를 먼저 따르고, GNB 에 있으나 목록에 없는 그룹
     // (대시보드 등)은 뒤에 붙인다. 대시보드는 관리자 링크를 전부 품고 있어 먼저 돌면
     // 다른 그룹 화면을 가로챈다.
@@ -428,6 +460,11 @@ async function main(): Promise<void> {
             link.disposition = 'skipped-other-group';
             continue;
           }
+          // 헤더·푸터 공통 링크는 어느 그룹의 것도 아니다. 마지막 공통 패스에서 따로 방문한다.
+          if (!owner && chrome.has(bare)) {
+            link.disposition = 'skipped-chrome';
+            continue;
+          }
           if (pages.length + queue.length >= MAX_PAGES) {
             link.disposition = 'skipped-cap';
             continue;
@@ -450,6 +487,21 @@ async function main(): Promise<void> {
           'utf-8',
         );
       }
+    }
+
+    // 마지막으로 공통 껍데기 화면을 별도 그룹으로 수집한다 — 어느 영역 SPEC 의 범위도 아니지만
+    // 화면 자체는 존재하므로 지도에는 남긴다.
+    for (const url of chrome) {
+      if (visited.has(url) || pages.length >= MAX_PAGES) continue;
+      visited.add(url);
+      const record = await inspect(page, url, groupMap.get(url) ?? '공통(헤더/푸터)');
+      pages.push(record);
+      console.log(`[${pages.length}/${MAX_PAGES}] ${record.group} · ${record.act ?? '(act 없음)'}`);
+      writeFileSync(
+        path.join(OUT_DIR, 'pages', `${slugify(url)}.json`),
+        JSON.stringify(record, null, 2),
+        'utf-8',
+      );
     }
   } finally {
     await browser.close();

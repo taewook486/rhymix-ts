@@ -1,151 +1,130 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-13 (모노레포 전체 typecheck 0건 달성) / source_session_id: 66162e5b-24ee-4070-be75-d505dcc10501
+> 갱신: 2026-08-13 밤 (관리자 레거시 parity 시리즈 착수 — 기준선 재구축 + 크롤 + 우산 SPEC)
+> source_session_id: 5313b428-0cd6-496f-88a7-b3528c5435a7
 
 ## 붙여넣을 메시지
 
 ```text
-ultrathink. rhymix-ts 후속 작업 진입.
-applied lessons: feedback-agent-test-claims-verify-by-rerun,
-feedback-cg-mode-path-corruption, feedback-stale-git-index-lock, project-setup
+ultrathink. SPEC-LEGACY-PARITY 시리즈 이어서 진행.
+applied lessons: feedback-verify-typecheck-claims-broadly,
+feedback-stale-git-index-lock, feedback-mocks-and-casts-hide-real-shape
 
 전제 검증:
-1) docker.exe ps → rhymix-app/rhymix-db/rhymix-ts-db 3개 Up (Exited면 docker.exe start <name>)
-2) git log --oneline -1 → d291891 이거나 그 이후 SHA, main == origin/main
-3) git status --porcelain → 비어있어야 함
-4) pnpm --filter web dev 기동 후 curl localhost:3000 → 200 (첫 컴파일 ~2분)
+1) docker.exe ps → rhymix-app(8080)/rhymix-db(3307)/rhymix-ts-db(5444) 3개 Up
+2) git log --oneline -1 → b9fe856 이후 SHA, main == origin/main, 작업트리 clean
+3) curl -s -o /dev/null -w "%{http_code}" localhost:8080/ → 200 (레거시 재설치 완료 상태)
+4) .moai/reports/legacy-admin-map/index.json 존재 → 크롤 결과 있음
 
-실행: 아래 "다음 작업 후보"에서 하나 선택 후 /moai plan
+실행: 아래 "다음 작업" 1번(재크롤)부터. 그 다음 SPEC-LEGACY-PARITY-001 작성.
 
-후속: plan → run → sync
+후속: 001 → 002 → 003 → 004 → 005 → 006 순서로 영역별 SPEC + 구현
 ```
 
-## 현재 상태 (2026-08-13 밤)
+## 오늘 한 일 (2026-08-13)
 
-- **main == origin/main, 작업 트리 clean.** 이번 세션 커밋: `e641e8a`, `537b876`, `d291891`
-- 완료된 SPEC: `SPEC-FRONT-PARITY-001` **completed**
-- 진행 중인 SPEC: `SPEC-CONTENT-PARITY-001` (in-progress)
-- **`pnpm typecheck` 전체 통과 (17/17, exit 0)** — 모노레포 전체 게이트화 달성.
-  이번 세션에서 남아 있던 72건을 해소했다:
-  - `@rhymix-ts/page` 1건 — `react-dom`/`@types/react-dom` 미선언 (`537b876`)
-  - `@rhymix-ts/notification` 2건 — `noUncheckedIndexedAccess` 옵셔널 체이닝 (`e641e8a`)
-  - `@rhymix-ts/document` 69건 — 부분 픽스처가 Prisma 모델 타입과 불일치 (`e641e8a`)
-- **`packages/document/src/__fixtures__.ts` 신설** — 5개 모델의 완전한 기본값 + 빌더.
-  override 가 `Partial<Model>` 로 검사되므로 **스키마가 바뀌면 테스트가 먼저 깨진다.**
-  기존처럼 `as any` 로 덮는 방식이 아니다.
-- **vitest 이중 설치 해소** (`537b876`) — 루트 `^2.1.9` / 패키지 `^3.0.0` 혼재로
-  `@vitest/expect` 2.1.9 와 3.2.4 가 동시 설치돼 `rejects.toThrow(문자열)` 만
-  오작동하고 있었다. 루트/admin/test-utils 를 `^3.0.0` 으로 통일.
-- **`packages/page` 테스트 최초 배선** (`537b876`) — `vitest.config.ts` 도 `test` 스크립트도
-  없어 테스트 2파일이 한 번도 실행된 적이 없었다. 배선하니 24건 통과.
-  `environment: 'node'` 에서는 `isomorphic-dompurify` 로드가 끝나지 않아 jsdom 필요.
-- **루트 `testTimeout` 15초 → 60초** (`537b876`) — 개별 패키지는 이미 60초였고 루트만
-  뒤처져, WSL2 병렬 실행에서 매번 임의의 파일 4~6개가 타임아웃으로 실패하고 있었다.
-- **`.gitignore` 결함 수리** (`d291891`) — `*-key.*` 가
-  `apps/web/server/api/routers/admin/content-extra-key.ts` 와 그 테스트를 삼켜
-  **한 번도 커밋되지 못하고 있었다.** 다른 PC 에서는 이 파일들이 없었다는 뜻이다.
+커밋 4건, main == origin/main, 작업트리 clean.
 
-### ⚠️ 다음 세션에서 먼저 할 일: 전체 스위트 완주 확인
-
-루트 `testTimeout` 상향 후 전체 스위트를 돌렸으나 **255/290 파일 시점에서 중단**했다
-(사용자 PC 종료). **중단 시점까지 실패 0건**이었고, 그 전 실행에서 실패했던 6건
-(`document A-9`, `page SVC-8`, `comment` 2건, `board VP-1`, `AdminSidebar M1-1`)이
-모두 통과로 바뀐 것은 확인했다. 남은 35개 파일은 미검증이다.
-
-```bash
-pnpm test    # 약 1시간. 0 실패면 타임아웃 원인이 최종 확정된다
+```
+(이번 커밋) fix(e2e): 크롤러 공통 껍데기 링크 그룹 오귀속 수정 — 미실행
+b9fe856 docs(spec): SPEC-LEGACY-PARITY-000 시리즈 공통 규약 + INDEX 등록
+8476774 docs(report): 레거시 관리자 화면 지도 164개 + 이벤트 대응표
+3a9411c feat(e2e): 레거시 관리자 화면 분석 도구 + 양 버전 재설치 스크립트
 ```
 
-개별 검증은 모두 통과한 상태다 — `pnpm typecheck` 17/17, document 237건,
-admin 179건, page 24건, notification 48건, test-utils 5건.
+### 1. 양쪽 DB 초기화 + 첫 setup 재실행 (완료)
 
-## SPEC-FRONT-PARITY-001 결과 요약
+백업 → 초기화 → 재설치를 양쪽에 수행했다. **두 사이트의 관리자 계정·사이트명이 동일**하므로
+이제 화면 차이는 설정 차이가 아니라 구현 차이다.
 
-| 마일스톤 | 내용 | 커밋 |
+| | 레거시 | 뉴버전 |
 |---|---|---|
-| M1 | 중복 마크업 해소 (footer 3→1, main 3→1) | `64136f5` → `3b003d5`(결함 복구) |
-| — | 실제 렌더 검증 e2e 신설 | `6f69b12` |
-| M2 | 인덱스 모듈 board → page 전환 + 환영 콘텐츠 | `068eefb` |
-| sync | 3-phase close | `578625d`, `fa86b52` |
+| 백업 | `/mnt/d/project/_db-backups/20260813-2004/legacy-rhymix.sql` (145KB/94표) | 같은 폴더 `rhymix_ts.sql` (175KB/68표) |
+| 초기화 | DROP/CREATE + `config.php`·`db.config.php`·`ftp.config.php` 를 `.reset-20260813` 로 이동 | `prisma migrate reset --force` |
+| 재설치 | `install-legacy.ts` | `install-new.ts` |
+| 관리자 | `admin` / `admin@example.com` / `Rhymix!2026` | 동일 |
 
-핵심 설계: `GlobalFooter`는 **동기·무의존** 컴포넌트로 유지하고, DB/auth 접근이 필요한
-FOOTER 슬롯은 `FooterMenuSlot.tsx`(async)로 분리해 루트 레이아웃에서 children으로 합성한다.
-`GlobalFooter`에 prisma/next-auth를 직접 import하면 jsdom 테스트에서 모듈 해석이 깨진다.
+**막혔던 것 2가지 (다음에도 똑같이 막힌다)**
+- `.claude/settings.json:429-438` deny 목록이 `DROP DATABASE` 를 차단한다. 우회하지 말고
+  사용자에게 `!` 접두 실행을 요청할 것. `rm -rf /경로` 도 같은 목록에 걸린다.
+- Prisma 는 Claude Code 실행을 감지하면 `migrate reset` 을 거부한다. 사용자 동의 문구를
+  `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION` 환경변수에 그대로 넣어야 통과한다.
 
-## 다음 작업 후보
+**레거시 재설치의 함정**: `config.php` 만 치우면 `ConfigParser::convert()` 가 XE 호환 경로로
+들어가 `db.config.php`(주석만 든 껍데기)를 읽다 죽는다(`ConfigParser.php:22-31`).
+`db.config.php` 도 같이 치워야 설치 마법사가 뜬다.
 
-### 1. 전체 스위트 완주 확인 (권장 — 위 ⚠️ 항목)
+### 2. 레거시 관리자 화면 크롤 (완료, 단 결함 있음 — 아래 3번)
 
-`pnpm test` 를 끝까지 돌려 0 실패를 확인한다. 실패가 남으면 타임아웃 외의 원인이
-있다는 뜻이므로 개별 조사가 필요하다.
+`.moai/reports/legacy-admin-map/` — 화면 164개, 이벤트 2,386건, 커밋됨.
 
-### 2. `extraVars.footerText` 루트 배선 (SPEC-FRONT-PARITY-001 잔여 부채)
+- GNB 가 그룹별 `<li>` + 중첩 `<ul>` 구조(`modules/admin/tpl/_header.html:53-69`)라
+  화면의 그룹 귀속을 추론 없이 확정할 수 있었다. 즐겨찾기도 GNB 안의 `<li>` 다.
+- 이벤트 2,386건 = 폼 제출 버튼 1,585(대상은 폼의 `module`/`act`, 수집됨) + onclick 801.
+  onclick 은 21종 함수를 부르며 그중 10종의 서버 호출을 `events.md` 에 확정했다.
+  나머지 10종은 DOM 만 조작하는 UI 전용임을 소스로 확인(`deleteImage`, `doDeleteAdmin` 등).
+- 호출 헬퍼는 레거시 실측 기준 4종: `exec_json`(103) / `exec_xml`(67) / `Rhymix.ajax`(10) /
+  `doCallModuleAction`(2). 처음에 `Rhymix.ajax` 를 빠뜨려 `doCancelDeclare` 를 놓쳤었다.
+- 레거시 DB 무손상 확인: 크롤러 클릭 호출 0건, 변경성 act 방문 0건, 크롤 후 테이블 94개 유지.
 
-`GlobalFooter({ footerText })` prop 구조는 갖췄으나, 도메인 레이아웃 레코드의
-`extraVars.footerText`를 루트 레이아웃까지 전달하는 배선이 없어 현재는 항상 기본
-attribution이 렌더된다. 루트 레이아웃에는 module-instance 컨텍스트가 없어 별도 조회가 필요.
+### 3. ⚠️ 발견한 결함 — 크롤 결과의 그룹 귀속이 틀렸다 (수정했으나 **미실행**)
 
-### 3. 방문자 화면 parity 2단계 (SPEC-FRONT-PARITY-001 Out of Scope 분리분)
+`사이트 제작/편집` 6개 화면 중 실제로 그 그룹인 것은 2개뿐이었다.
 
-디자인 자산 제작 영역: 히어로 캐러셀(레거시 슬라이드 6개, swiper), 메인 섹션(intro/가이드
-6카드/커뮤니티 4카드), 웹폰트(`webfont.css`), 모듈별 스킨 CSS 계층.
-그리고 `/admin`·`/install`·`(member)` 라우트의 `<main>` 중첩 전역 정리(22개 파일) —
-`/install/**`는 Playwright 스냅샷에서 `main > main` 중첩이 실측 확인됨.
+| 화면 | 정체 |
+|---|---|
+| `dispMenuAdminSiteMap`, `dispMenuAdminSiteDesign` | ✅ 이 그룹 맞음 |
+| `(act 없음)` Dashboard | ❌ 대시보드 |
+| `dispMemberAdminInfo` | ❌ 헤더의 "내 계정" 링크 |
+| `dispAdminCleanupList`, `dispAdminViewServerEnv` | ❌ 푸터의 "시스템 설정" 링크 |
 
-## 환경 재현
+헤더·푸터 공통 링크가 GNB 하위 메뉴에 없어서 **가장 먼저 순회한 그룹이 채간다.**
+`crawl-admin.ts` 에 `detectChrome()`(모든 그룹 랜딩에 공통으로 등장하는 링크를 껍데기로
+판정 → 그룹 귀속 제외 → 마지막에 `공통(헤더/푸터)` 그룹으로 따로 수집)을 추가했다.
 
-- Node: `export NVM_DIR="$HOME/.nvm" && source "$NVM_DIR/nvm.sh"`
-- 컨테이너: `rhymix-app`(레거시 PHP :8080), `rhymix-db`(MariaDB :3307),
-  `rhymix-ts-db`(Postgres :5444)
-- 관리자 계정(설치 위저드 기본): `admin` / `Admin1234!` / comfit99@gmail.com
-  (e2e 스펙은 `admin` / `e2e-password-1234` / admin@e2e.local 사용)
-- DB 접속: `docker.exe exec rhymix-ts-db psql -U rhymix -d rhymix_ts -c "<SQL>"`
-  (WSL2에 psql 클라이언트가 없으므로 컨테이너 경유)
-- DB 재설치:
-  ```bash
-  PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION="<동의 문구>" \
-    pnpm --filter @rhymix-ts/db exec prisma migrate reset --force --skip-generate
-  ```
-  **재설치 후 dev 서버 재시작 필수** — enum 타입 OID가 재생성되어 기존 커넥션 풀이
-  `cache lookup failed for type NNNNN`로 실패한다.
-- e2e 실행: `cd apps/web && npx playwright test --workers=1` (전체)
-  일부 spec은 `CI_E2E=1` 게이트가 걸려 있어 기본 실행에서 skip된다 —
-  `CI_E2E=1 npx playwright test board-ui layout-default page-module widget-login-info feed`
-  `resetDb()`는 이제 public 스키마 전체를 TRUNCATE 하므로 연속 재설치가 정상 동작한다
-  (설치 위저드 마지막 버튼은 Playwright click이 안 먹으므로 `form.requestSubmit()` 사용)
-- 레거시 재설치: 컨테이너 안에서 `files/config/{config,db.config,ftp.config}.php` 비활성화
-  (config.php만 지우면 구버전 마이그레이션 경로를 잘못 타서 Fatal error) + DB drop/create
-- `.git/index.lock`이 살아있는 프로세스 없이 자주 남음 → `lsof .git/index.lock` 확인 후
-  `rm -f`. 상태줄 훅이 `git status --porcelain`을 자주 폴링해 재발하므로, 커밋은
-  `rm -f .git/index.lock && git commit` 을 짧은 루프로 재시도하는 편이 안정적이다.
+**타입 검사만 통과했고 아직 실행하지 않았다.** 다음 세션 첫 작업이 재크롤이다.
 
-## 이번 세션의 교훈
+### 4. SPEC-LEGACY-PARITY-000 (우산 SPEC, draft)
 
-**비결정적 실패는 단일 대조로 판정할 수 없다.** 전체 스위트에서 6건이 실패해
-"내 변경 탓인가"를 가리려고 baseline worktree 에 변경 전 커밋을 체크아웃해 같은
-스위트를 돌렸다. 변경 전은 4건 실패였는데 **겹치는 것은 1건뿐**이었다. 두 실행의
-실패 집합이 거의 겹치지 않아 대조 자체가 성립하지 않았다. 원인은 전부
-`Test timed out in 15000ms` 하나였고, 어느 파일이 걸리느냐만 실행마다 달랐던 것이다.
+6개 영역 SPEC 이 공유할 규약. 제품 코드 변경 없음. REQ 8개 / AC 8개.
+검증 가능한 AC 4건(004, 008a/b/c)은 실행해 통과 확인함.
 
-교훈: 실패 목록을 비교하기 전에 **실패 원인부터 분류**할 것. 전부 타임아웃이면 그
-자체가 비결정성 신호다. 그리고 대조를 반복하지 말고 **원인 가설을 직접 제거해서
-검증**할 것 — 이번엔 `testTimeout` 을 올려 재실행하는 게 답이었다.
+**핵심 발견**: "메뉴 순서를 레거시와 동일하게" 는 **이미 충족돼 있다.**
+`AdminSidebar.tsx:88-142` 가 이미 `사이트 제작/편집 → 회원 → 콘텐츠 → (즐겨찾기 조건부) →
+설정 → 고급` 순서다(`SPEC-ADMIN-MENU-PARITY-001` 결과, completed). 그래서 새로 만들 일감이
+아니라 **깨뜨리면 안 되는 불변식**으로 규정했다(REQ-LGP-004).
 
-**넓은 gitignore 패턴은 소스를 조용히 삼킨다.** `*-key.*` 가 `content-extra-key.ts` 와
-그 테스트를 한 번도 커밋되지 못하게 막고 있었다. `git status` 에는 무시된 파일이
-안 나오므로 아무 신호가 없었고, baseline worktree 의 테스트 파일 수가 1개 적은 것
-(290 vs 289)에서 우연히 드러났다. `.gitignore` 에 이미 "overly broad 패턴을 좁혔다"는
-주석이 있었는데도 여전히 넓었다.
+`INDEX.md` 가 2026-07-18 이후 갱신이 멈춰 Phase 11~14 SPEC 4개가 미등록 상태였다 — 함께 반영.
 
-점검: `git status --porcelain --ignored=matching | grep '^!!'`,
-개별 확인은 `git check-ignore -v <path>`.
+## 다음 작업
 
----
+1. **재크롤** (첫 작업, 필수)
+   ```bash
+   cd /mnt/d/project/rhymix-ts/apps/web
+   rm -rf ../../.moai/reports/legacy-admin-map
+   LEGACY_ADMIN_ID=admin LEGACY_ADMIN_PW='Rhymix!2026' LEGACY_CRAWL_MAX_PAGES=400 \
+     pnpm dlx tsx e2e/legacy-crawl/crawl-admin.ts
+   pnpm dlx tsx /mnt/d/project/rhymix-ts/apps/web/e2e/legacy-crawl/resolve-events.ts
+   ```
+   확인 기준: `사이트 제작/편집` 그룹에서 `dispMemberAdminInfo`·`dispAdminCleanupList`·
+   `dispAdminViewServerEnv`·Dashboard 가 빠지고 `공통(헤더/푸터)` 그룹이 새로 생겨야 한다.
+   약 20분 소요. (`tsx` 는 설치돼 있지 않아 `pnpm dlx` 로 받아 쓴다 — 루트 `seed:default-theme`
+   스크립트가 `tsx` 를 참조하지만 실제로는 미설치인 별개 결함이 있다.)
 
-## 이전 세션의 교훈 (유지)
+2. **SPEC-LEGACY-PARITY-001 (사이트 제작/편집) 작성**
+   - 규약 REQ-LGP-003 대로 그룹 화면 전건을 대응있음/격차/의도적제외로 판정한 표를
+     `research.md` 에 먼저 만들 것.
+   - 뉴버전 대응 라우트: `/admin/menu`(메뉴 편집), `/admin/site/design`(디자인).
+   - 흡수 대상: `SPEC-MENU-001` Slice D 잔여분 — Footer/Utility 슬롯 배정, groupIds ACL 렌더,
+     중첩 트리(관리자 로그인이 필요해 미검증으로 남아 있음).
 
-컴파일/테스트 통과는 "실제로 렌더된다"의 증거가 아니다. 화면이 있는 변경은
-브라우저로 열어 콘솔까지 확인할 것. 그리고 정적 검사나 mock 이 실제 형태를 가리는
-결함이 반복해서 나왔다 — 캐스트(`as unknown as`)와 손수 채운 픽스처가 대표적이다.
-이번 세션의 `__fixtures__.ts` 는 그 대응으로, 픽스처가 실제 모델 타입 검사를 받게 했다.
+3. 이후 002 회원 → 003 콘텐츠(CONTENT-PARITY-001 흡수, Tier L 최대) → 004 즐겨찾기 →
+   005 설정 → 006 고급.
+
+## 환경 메모
+
+- 레거시 DB 접속(컨테이너 내부 기준): host `db`, port 3306, `rhymix`/`rhymixpass`, prefix `rx_`
+- 뉴버전 DB: `127.0.0.1:5444`, `rhymix`/`rhymix`, DB `rhymix_ts`
+- 뉴버전 `users` 테이블 컬럼은 camelCase 인용 필요: `SELECT "userId", "emailAddress" FROM users;`
+- dev 서버 첫 컴파일 약 204초
