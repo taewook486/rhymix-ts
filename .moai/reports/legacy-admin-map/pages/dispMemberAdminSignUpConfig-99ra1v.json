@@ -1,0 +1,1791 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig",
+  "act": "dispMemberAdminSignUpConfig",
+  "group": "회원",
+  "title": "회원 설정",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#content",
+      "text": "메뉴 건너뛰기",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin",
+      "text": "",
+      "module": "admin",
+      "act": null,
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#gnbNav",
+      "text": "",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "localhost",
+      "module": null,
+      "act": null,
+      "disposition": "skipped-external"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5",
+      "text": "admin",
+      "module": "admin",
+      "act": "dispMemberAdminInfo",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=procAdminLogout",
+      "text": "로그아웃",
+      "module": "admin",
+      "act": "procAdminLogout",
+      "disposition": "skipped-mutating"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#lang",
+      "text": "한국어",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#lang",
+      "text": "한국어",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#gnbNav",
+      "text": "Menu Open/Close",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin",
+      "text": "대시보드",
+      "module": "admin",
+      "act": null,
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
+      "text": "사이트 제작/편집",
+      "module": "admin",
+      "act": "dispMenuAdminSiteMap",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
+      "text": "사이트 메뉴 편집",
+      "module": "admin",
+      "act": "dispMenuAdminSiteMap",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteDesign",
+      "text": "사이트 디자인 설정",
+      "module": "admin",
+      "act": "dispMenuAdminSiteDesign",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminList",
+      "text": "회원",
+      "module": "admin",
+      "act": "dispMemberAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminList",
+      "text": "회원 목록",
+      "module": "admin",
+      "act": "dispMemberAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminConfig",
+      "text": "회원 설정",
+      "module": "admin",
+      "act": "dispMemberAdminConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminGroupList",
+      "text": "회원 그룹",
+      "module": "admin",
+      "act": "dispMemberAdminGroupList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPointAdminConfig",
+      "text": "포인트",
+      "module": "admin",
+      "act": "dispPointAdminConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispBoardAdminContent",
+      "text": "콘텐츠",
+      "module": "admin",
+      "act": "dispBoardAdminContent",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispBoardAdminContent",
+      "text": "게시판",
+      "module": "admin",
+      "act": "dispBoardAdminContent",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContent",
+      "text": "페이지",
+      "module": "admin",
+      "act": "dispPageAdminContent",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispDocumentAdminList",
+      "text": "문서",
+      "module": "admin",
+      "act": "dispDocumentAdminList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispCommentAdminList",
+      "text": "댓글",
+      "module": "admin",
+      "act": "dispCommentAdminList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispFileAdminList",
+      "text": "파일",
+      "module": "admin",
+      "act": "dispFileAdminList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPollAdminList",
+      "text": "설문",
+      "module": "admin",
+      "act": "dispPollAdminList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispEditorAdminIndex",
+      "text": "에디터",
+      "module": "admin",
+      "act": "dispEditorAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispSpamfilterAdminDeniedIPList",
+      "text": "스팸필터",
+      "module": "admin",
+      "act": "dispSpamfilterAdminDeniedIPList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispTrashAdminList",
+      "text": "휴지통",
+      "module": "admin",
+      "act": "dispTrashAdminList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#favorite",
+      "text": "즐겨찾기",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdvanced_mailerAdminConfig",
+      "text": "메일, SMS 및 푸시 알림 관리",
+      "module": "admin",
+      "act": "dispAdvanced_mailerAdminConfig",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispNcenterliteAdminConfig",
+      "text": "알림 센터",
+      "module": "admin",
+      "act": "dispNcenterliteAdminConfig",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
+      "text": "설정",
+      "module": "admin",
+      "act": "dispAdminConfigGeneral",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
+      "text": "시스템 설정",
+      "module": "admin",
+      "act": "dispAdminConfigGeneral",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminSetup",
+      "text": "관리자 화면 설정",
+      "module": "admin",
+      "act": "dispAdminSetup",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminFileBox",
+      "text": "파일박스",
+      "module": "admin",
+      "act": "dispModuleAdminFileBox",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
+      "text": "고급",
+      "module": "admin",
+      "act": "dispAutoinstallAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
+      "text": "쉬운 설치",
+      "module": "admin",
+      "act": "dispAutoinstallAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispLayoutAdminInstalledList",
+      "text": "설치된 레이아웃",
+      "module": "admin",
+      "act": "dispLayoutAdminInstalledList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminContent",
+      "text": "설치된 모듈",
+      "module": "admin",
+      "act": "dispModuleAdminContent",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAddonAdminIndex",
+      "text": "설치된 애드온",
+      "module": "admin",
+      "act": "dispAddonAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispWidgetAdminDownloadedList",
+      "text": "설치된 위젯",
+      "module": "admin",
+      "act": "dispWidgetAdminDownloadedList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminLangcode",
+      "text": "다국어",
+      "module": "admin",
+      "act": "dispModuleAdminLangcode",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispImporterAdminImportForm",
+      "text": "데이터 들여오기",
+      "module": "admin",
+      "act": "dispImporterAdminImportForm",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispRssAdminIndex",
+      "text": "RSS",
+      "module": "admin",
+      "act": "dispRssAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminConfig",
+      "text": "기본 설정",
+      "module": "admin",
+      "act": "dispMemberAdminConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminFeaturesConfig",
+      "text": "기능 설정",
+      "module": "admin",
+      "act": "dispMemberAdminFeaturesConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminAgreementsConfig",
+      "text": "약관 설정",
+      "module": "admin",
+      "act": "dispMemberAdminAgreementsConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig",
+      "text": "회원가입",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminLoginConfig",
+      "text": "로그인",
+      "module": "admin",
+      "act": "dispMemberAdminLoginConfig",
+      "disposition": "skipped-act-cap"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminDesignConfig",
+      "text": "디자인",
+      "module": "admin",
+      "act": "dispMemberAdminDesignConfig",
+      "disposition": "skipped-act-cap"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminNickNameLog",
+      "text": "닉네임 변경 기록",
+      "module": "admin",
+      "act": "dispMemberAdminNickNameLog",
+      "disposition": "skipped-act-cap"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#g11n",
+      "text": "다국어 텍스트 설정",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#helpPublic",
+      "text": "?",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#g11n",
+      "text": "다국어 텍스트 설정",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#g11n",
+      "text": "다국어 텍스트 설정",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#g11n",
+      "text": "다국어 텍스트 설정",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#g11n",
+      "text": "다국어 텍스트 설정",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#g11n",
+      "text": "다국어 텍스트 설정",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#userDefine",
+      "text": "항목 추가",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#lang_create",
+      "text": "추가",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminSignUpConfig#lang_search",
+      "text": "검색",
+      "module": "admin",
+      "act": "dispMemberAdminSignUpConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
+      "text": "설정>일반",
+      "module": "admin",
+      "act": "dispAdminConfigGeneral",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminCleanupList",
+      "text": "코어 파일 정리",
+      "module": "admin",
+      "act": "dispAdminCleanupList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminViewServerEnv",
+      "text": "서버 환경 표시",
+      "module": "admin",
+      "act": "dispAdminViewServerEnv",
+      "disposition": "visited"
+    },
+    {
+      "href": "https://github.com/rhymix/rhymix/issues",
+      "text": "버그 리포트",
+      "module": null,
+      "act": null,
+      "disposition": "skipped-external"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "한국어",
+      "kind": "onclick",
+      "handler": "doChangeLangType('ko'); return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "다국어 텍스트 해제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "추가",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "추가",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('addon','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('admin','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('administrator','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('adminlogging','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('advanced_mailer','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('autoinstall','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('board','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('comment','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('communication','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('counter','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('document','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('editor','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('extravar','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('file','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('ftp','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('http','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('importer','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('install','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('integration_search','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('krzip','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('layout','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('member','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('menu','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('message','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('module','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('ncenterlite','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('page','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('point','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('poll','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('root','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('rss','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('session','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('spamfilter','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('tag','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('telnet','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('trash','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('widget','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "onclick",
+      "handler": "doUpdateDeniedID('www','delete','삭제하시겠습니까?');return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "추가",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "다국어 텍스트 해제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "다국어 텍스트 해제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "다국어 텍스트 해제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "다국어 텍스트 해제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "Move to",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "다국어 텍스트 해제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "취소",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "저장 후 사용",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "닫기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "관리자 메뉴 초기화",
+      "kind": "onclick",
+      "handler": "doResetAdminMenu();",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "캐시파일 재생성",
+      "kind": "onclick",
+      "handler": "doRecompileCacheFile();",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "세션 정리",
+      "kind": "onclick",
+      "handler": "doClearSession();",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "취소",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "확인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "admin",
+      "actField": "procAdminToggleFavorite",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module_name",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "admin",
+      "actField": "procAdminToggleFavorite",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module_name",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "member",
+      "actField": "procMemberAdminInsertSignupConfig",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "agreement",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "limit_day",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "limit_day_description",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "emailhost_check",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "emailhost_check",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "name": "special_phone_number",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "special_phone_code",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "max_auth_sms_count",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "max_auth_sms_count_time",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "redirect_url",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_user_id_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "email_address",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "email_address",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "phone_number",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "phone_number",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "phone_number_default_country",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "phone_number_hide_country",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "phone_number_hide_country",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "phone_number_allow_duplicate",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "phone_number_allow_duplicate",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "phone_number_verify_by_sms",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "phone_number_verify_by_sms",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "password",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "password",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_user_name_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "user_name",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "user_name",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "nick_name",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_nick_name_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "nick_name",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_homepage_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "homepage",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "homepage",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_blog_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "blog",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "blog",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "birthday_title_edit",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_birthday_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "birthday",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "birthday",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "signature_title_edit",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_signature_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "signature",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "signature",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "signature_editor_skin",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "sel_editor_colorset",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "signature_max_height",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "signature_html",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "signature_html",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "signature_html_retroact",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "member_allow_fileupload",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "member_allow_fileupload",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "member_max_filesize",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "profile_image_title_edit",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_profile_image_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "profile_image",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "profile_image",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "profile_image_max_width",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "profile_image_max_height",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "profile_image_max_filesize",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "profile_image_force_ratio",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "profile_image_force_ratio",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "image_name_title_edit",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_image_name_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "image_name",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "image_name",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "image_name_max_width",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "image_name_max_height",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "image_name_max_filesize",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "list_order[]",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "image_mark_title_edit",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "usable_list[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "is_image_mark_public",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "image_mark",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "image_mark",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "image_mark_max_width",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "image_mark_max_height",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "image_mark_max_filesize",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "submit",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "member",
+      "actField": "procMemberAdminInsertJoinForm",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "ruleset",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "",
+      "method": "get",
+      "moduleField": null,
+      "actField": "getModuleAdminMultilingualHtml",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "textarea",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8080/"
+    }
+  ]
+}

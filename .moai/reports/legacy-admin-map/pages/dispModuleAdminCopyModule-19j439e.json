@@ -1,0 +1,225 @@
+{
+  "url": "http://localhost:8080/index.php?module=module&act=dispModuleAdminCopyModule&module_srl=55",
+  "act": "dispModuleAdminCopyModule",
+  "group": "콘텐츠",
+  "title": "",
+  "links": [],
+  "events": [
+    {
+      "tag": "button",
+      "text": "저장",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "module",
+      "actField": "procModuleAdminCopyModule",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module_srl",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid_1",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_1",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_2",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_2",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_3",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_3",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_4",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_4",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_5",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_5",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_6",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_6",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_7",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_7",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_8",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_8",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_9",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_9",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "mid_10",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "browser_title_10",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": []
+}

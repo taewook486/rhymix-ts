@@ -1,0 +1,32 @@
+{
+  "baseUrl": "http://localhost:8080",
+  "crawledAt": "2026-08-13T13:12:07.258Z",
+  "pageCount": 164,
+  "skippedMutatingCount": 187,
+  "groups": [
+    {
+      "group": "사이트 제작/편집",
+      "pageCount": 6
+    },
+    {
+      "group": "회원",
+      "pageCount": 17
+    },
+    {
+      "group": "콘텐츠",
+      "pageCount": 67
+    },
+    {
+      "group": "즐겨찾기",
+      "pageCount": 24
+    },
+    {
+      "group": "설정",
+      "pageCount": 6
+    },
+    {
+      "group": "고급",
+      "pageCount": 44
+    }
+  ]
+}

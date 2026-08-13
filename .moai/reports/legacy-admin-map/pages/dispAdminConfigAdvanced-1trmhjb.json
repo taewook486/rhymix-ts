@@ -1,0 +1,911 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigAdvanced",
+  "act": "dispAdminConfigAdvanced",
+  "group": "즐겨찾기",
+  "title": "시스템 설정",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigAdvanced#content",
+      "text": "메뉴 건너뛰기",
+      "module": "admin",
+      "act": "dispAdminConfigAdvanced",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin",
+      "text": "",
+      "module": "admin",
+      "act": null,
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigAdvanced#gnbNav",
+      "text": "",
+      "module": "admin",
+      "act": "dispAdminConfigAdvanced",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "localhost",
+      "module": null,
+      "act": null,
+      "disposition": "skipped-external"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5",
+      "text": "admin",
+      "module": "admin",
+      "act": "dispMemberAdminInfo",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=procAdminLogout",
+      "text": "로그아웃",
+      "module": "admin",
+      "act": "procAdminLogout",
+      "disposition": "skipped-mutating"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigAdvanced#lang",
+      "text": "한국어",
+      "module": "admin",
+      "act": "dispAdminConfigAdvanced",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigAdvanced#lang",
+      "text": "한국어",
+      "module": "admin",
+      "act": "dispAdminConfigAdvanced",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigAdvanced#gnbNav",
+      "text": "Menu Open/Close",
+      "module": "admin",
+      "act": "dispAdminConfigAdvanced",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin",
+      "text": "대시보드",
+      "module": "admin",
+      "act": null,
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
+      "text": "사이트 제작/편집",
+      "module": "admin",
+      "act": "dispMenuAdminSiteMap",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
+      "text": "사이트 메뉴 편집",
+      "module": "admin",
+      "act": "dispMenuAdminSiteMap",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteDesign",
+      "text": "사이트 디자인 설정",
+      "module": "admin",
+      "act": "dispMenuAdminSiteDesign",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminList",
+      "text": "회원",
+      "module": "admin",
+      "act": "dispMemberAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminList",
+      "text": "회원 목록",
+      "module": "admin",
+      "act": "dispMemberAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminConfig",
+      "text": "회원 설정",
+      "module": "admin",
+      "act": "dispMemberAdminConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminGroupList",
+      "text": "회원 그룹",
+      "module": "admin",
+      "act": "dispMemberAdminGroupList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPointAdminConfig",
+      "text": "포인트",
+      "module": "admin",
+      "act": "dispPointAdminConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispBoardAdminContent",
+      "text": "콘텐츠",
+      "module": "admin",
+      "act": "dispBoardAdminContent",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispBoardAdminContent",
+      "text": "게시판",
+      "module": "admin",
+      "act": "dispBoardAdminContent",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContent",
+      "text": "페이지",
+      "module": "admin",
+      "act": "dispPageAdminContent",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispDocumentAdminList",
+      "text": "문서",
+      "module": "admin",
+      "act": "dispDocumentAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispCommentAdminList",
+      "text": "댓글",
+      "module": "admin",
+      "act": "dispCommentAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispFileAdminList",
+      "text": "파일",
+      "module": "admin",
+      "act": "dispFileAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPollAdminList",
+      "text": "설문",
+      "module": "admin",
+      "act": "dispPollAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispEditorAdminIndex",
+      "text": "에디터",
+      "module": "admin",
+      "act": "dispEditorAdminIndex",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispSpamfilterAdminDeniedIPList",
+      "text": "스팸필터",
+      "module": "admin",
+      "act": "dispSpamfilterAdminDeniedIPList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispTrashAdminList",
+      "text": "휴지통",
+      "module": "admin",
+      "act": "dispTrashAdminList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigAdvanced#favorite",
+      "text": "즐겨찾기",
+      "module": "admin",
+      "act": "dispAdminConfigAdvanced",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdvanced_mailerAdminConfig",
+      "text": "메일, SMS 및 푸시 알림 관리",
+      "module": "admin",
+      "act": "dispAdvanced_mailerAdminConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispNcenterliteAdminConfig",
+      "text": "알림 센터",
+      "module": "admin",
+      "act": "dispNcenterliteAdminConfig",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
+      "text": "설정",
+      "module": "admin",
+      "act": "dispAdminConfigGeneral",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
+      "text": "시스템 설정",
+      "module": "admin",
+      "act": "dispAdminConfigGeneral",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminSetup",
+      "text": "관리자 화면 설정",
+      "module": "admin",
+      "act": "dispAdminSetup",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminFileBox",
+      "text": "파일박스",
+      "module": "admin",
+      "act": "dispModuleAdminFileBox",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
+      "text": "고급",
+      "module": "admin",
+      "act": "dispAutoinstallAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
+      "text": "쉬운 설치",
+      "module": "admin",
+      "act": "dispAutoinstallAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispLayoutAdminInstalledList",
+      "text": "설치된 레이아웃",
+      "module": "admin",
+      "act": "dispLayoutAdminInstalledList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminContent",
+      "text": "설치된 모듈",
+      "module": "admin",
+      "act": "dispModuleAdminContent",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAddonAdminIndex",
+      "text": "설치된 애드온",
+      "module": "admin",
+      "act": "dispAddonAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispWidgetAdminDownloadedList",
+      "text": "설치된 위젯",
+      "module": "admin",
+      "act": "dispWidgetAdminDownloadedList",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminLangcode",
+      "text": "다국어",
+      "module": "admin",
+      "act": "dispModuleAdminLangcode",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispImporterAdminImportForm",
+      "text": "데이터 들여오기",
+      "module": "admin",
+      "act": "dispImporterAdminImportForm",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispRssAdminIndex",
+      "text": "RSS",
+      "module": "admin",
+      "act": "dispRssAdminIndex",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
+      "text": "사이트 설정",
+      "module": "admin",
+      "act": "dispAdminConfigGeneral",
+      "disposition": "skipped-other-group"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigNotification",
+      "text": "알림 설정",
+      "module": "admin",
+      "act": "dispAdminConfigNotification",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigSecurity",
+      "text": "보안 설정",
+      "module": "admin",
+      "act": "dispAdminConfigSecurity",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigAdvanced",
+      "text": "고급 설정",
+      "module": "admin",
+      "act": "dispAdminConfigAdvanced",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigDebug",
+      "text": "디버그 설정",
+      "module": "admin",
+      "act": "dispAdminConfigDebug",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigSEO",
+      "text": "SEO 설정",
+      "module": "admin",
+      "act": "dispAdminConfigSEO",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigQueue",
+      "text": "비동기 작업",
+      "module": "admin",
+      "act": "dispAdminConfigQueue",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigSitelock",
+      "text": "사이트 잠금",
+      "module": "admin",
+      "act": "dispAdminConfigSitelock",
+      "disposition": "queued"
+    },
+    {
+      "href": "https://github.com/rhymix/rhymix-docs/blob/master/ko/introduction/nginx.md",
+      "text": "매뉴얼",
+      "module": null,
+      "act": null,
+      "disposition": "skipped-external"
+    },
+    {
+      "href": "javascript:restoreDefaultViewport()",
+      "text": "기본값 복원",
+      "module": null,
+      "act": null,
+      "disposition": "skipped-external"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminCleanupList",
+      "text": "코어 파일 정리",
+      "module": "admin",
+      "act": "dispAdminCleanupList",
+      "disposition": "visited"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminViewServerEnv",
+      "text": "서버 환경 표시",
+      "module": "admin",
+      "act": "dispAdminViewServerEnv",
+      "disposition": "visited"
+    },
+    {
+      "href": "https://github.com/rhymix/rhymix/issues",
+      "text": "버그 리포트",
+      "module": null,
+      "act": null,
+      "disposition": "skipped-external"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "한국어",
+      "kind": "onclick",
+      "handler": "doChangeLangType('ko'); return false;",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "저장",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "관리자 메뉴 초기화",
+      "kind": "onclick",
+      "handler": "doResetAdminMenu();",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "캐시파일 재생성",
+      "kind": "onclick",
+      "handler": "doRecompileCacheFile();",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "세션 정리",
+      "kind": "onclick",
+      "handler": "doClearSession();",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "취소",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "확인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "admin",
+      "actField": "procAdminToggleFavorite",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module_name",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "admin",
+      "actField": "procAdminToggleFavorite",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module_name",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "admin",
+      "actField": "procAdminUpdateAdvanced",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "use_rewrite",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "use_rewrite",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "use_rewrite",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "use_mobile_view",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "use_mobile_view",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "tablets_as_mobile",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "tablets_as_mobile",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "auto_select_lang",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "auto_select_lang",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "enabled_lang[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "default_lang",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "default_timezone",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "mobile_viewport",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "use_db_session",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "use_db_session",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "delay_session",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "delay_session",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "delay_template_compile",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "thumbnail_target",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "thumbnail_target",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "thumbnail_target",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "thumbnail_type",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "thumbnail_quality",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "object_cache_type",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "object_cache_host",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "object_cache_port",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "object_cache_user",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "object_cache_pass",
+          "type": "password",
+          "required": false
+        },
+        {
+          "name": "object_cache_dbnum",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "cache_default_ttl",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "cache_truncate_method",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "cache_truncate_method",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "cache_control_header[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "cache_control_header[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "cache_control_header[]",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "outgoing_proxy",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "partial_page_rendering",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "manager_layout",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "manager_layout",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "minify_scripts",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "minify_scripts",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "minify_scripts",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "concat_scripts",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "concat_scripts",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "concat_scripts",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "concat_scripts",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "jquery_version",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "jquery_version",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [
+    {
+      "method": "GET",
+      "url": "http://localhost:8080/common/rewrite/test/8461"
+    }
+  ]
+}
