@@ -1,7 +1,7 @@
 # Rhymix-TS SPEC Index
 
 > Rhymix CMS의 TypeScript + Next.js 16 풀스택 재설계 SPEC 모음
-> 마지막 갱신: 2026-08-13 (Phase 15 관리자 레거시 parity 시리즈 착수 — SPEC-LEGACY-PARITY-000 규약 작성. 등록 누락돼 있던 Phase 11~14 SPEC 4개 함께 반영)
+> 마지막 갱신: 2026-08-15 (재크롤로 그룹 귀속 정정 후 SPEC-LEGACY-PARITY-001 작성 — 사이트 제작/편집 영역이 6개 화면이 아니라 2개임을 확정)
 
 ## 기술 스택 (확정)
 
@@ -39,7 +39,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | 12. 관리자 콘텐츠 메뉴 parity | 휴지통/파일/스팸필터 노출 + 문서·댓글 배선 | 1 | 0/1 | 🟡 구현 진행 중 (SPEC-CONTENT-PARITY-001, in-progress) |
 | 13. 관리자 메뉴 구조 parity | 사이드바 6그룹 재배치 + 즐겨찾기 시딩 | 1 | 1/1 | 🟢 구현 완료 (SPEC-ADMIN-MENU-PARITY-001, completed) |
 | 14. 방문자 화면 parity | 인덱스 모듈 정책 + 중복 마크업 해소 | 1 | 1/1 | 🟢 구현 완료 (SPEC-FRONT-PARITY-001, completed) |
-| 15. 관리자 레거시 parity 시리즈 | 6개 영역을 순서대로 parity (공통 규약 + 영역 6) | 7 | 0/7 | ⬜ 착수 (SPEC-LEGACY-PARITY-000 draft, 001~006 미작성) |
+| 15. 관리자 레거시 parity 시리즈 | 6개 영역을 순서대로 parity (공통 규약 + 영역 6) | 7 | 0/7 | ⬜ 착수 (000 규약 + 001 사이트 제작/편집 draft, 002~006 미작성) |
 
 ---
 
@@ -219,7 +219,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 | ID | 제목 | 흡수/재검증 대상 | 상태 |
 |---|---|---|---|
 | [SPEC-LEGACY-PARITY-000](./SPEC-LEGACY-PARITY-000/spec.md) | 시리즈 공통 규약 (기준선·근거·불변식·승계) | — | 📝 draft |
-| SPEC-LEGACY-PARITY-001 | 사이트 제작/편집 | SPEC-MENU-001 Slice D 잔여 흡수 | ⬜ 미작성 |
+| [SPEC-LEGACY-PARITY-001](./SPEC-LEGACY-PARITY-001/spec.md) | 사이트 제작/편집 | SPEC-MENU-001 Slice D 잔여 흡수 | 📝 draft |
 | SPEC-LEGACY-PARITY-002 | 회원 | SPEC-MEMBER-PARITY-001 재검증 | ⬜ 미작성 |
 | SPEC-LEGACY-PARITY-003 | 콘텐츠 | SPEC-CONTENT-PARITY-001 흡수 | ⬜ 미작성 |
 | SPEC-LEGACY-PARITY-004 | 즐겨찾기 | SPEC-ADMIN-MENU-PARITY-001 재검증 | ⬜ 미작성 |
