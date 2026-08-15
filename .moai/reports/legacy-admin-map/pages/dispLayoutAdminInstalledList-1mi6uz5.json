@@ -16,7 +16,7 @@
       "text": "",
       "module": "admin",
       "act": null,
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispLayoutAdminInstalledList&type=M#gnbNav",
@@ -37,7 +37,7 @@
       "text": "admin",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=procAdminLogout",
@@ -72,7 +72,7 @@
       "text": "대시보드",
       "module": "admin",
       "act": null,
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
@@ -383,20 +383,6 @@
       "disposition": "skipped-external"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispLayoutAdminModify&layout_srl=106",
-      "text": "기본 레이아웃",
-      "module": "admin",
-      "act": "dispLayoutAdminModify",
-      "disposition": "skipped-act-cap"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=layout&act=dispLayoutAdminCopyLayout&layout_srl=106",
-      "text": "복사",
-      "module": "layout",
-      "act": "dispLayoutAdminCopyLayout",
-      "disposition": "skipped-act-cap"
-    },
-    {
       "href": "http://localhost:8080/index.php?module=admin&act=dispLayoutAdminModify&layout_srl=66",
       "text": "welcome_mobile_layout",
       "module": "admin",
@@ -443,14 +429,14 @@
       "text": "코어 파일 정리",
       "module": "admin",
       "act": "dispAdminCleanupList",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdminViewServerEnv",
       "text": "서버 환경 표시",
       "module": "admin",
       "act": "dispAdminViewServerEnv",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "https://github.com/rhymix/rhymix/issues",
@@ -494,13 +480,6 @@
       "text": "상세보기",
       "kind": "submit-button",
       "handler": "",
-      "targets": []
-    },
-    {
-      "tag": "a",
-      "text": "복사",
-      "kind": "onclick",
-      "handler": "popopen(this.href);return false;",
       "targets": []
     },
     {

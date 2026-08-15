@@ -3,10 +3,10 @@
     "handler": "doClearSession",
     "uses": 159,
     "screens": [
-      "사이트 제작/편집/-",
+      "공통(헤더/푸터)/-",
       "고급/dispAddonAdminIndex",
       "고급/dispAddonAdminSetup",
-      "사이트 제작/편집/dispAdminCleanupList",
+      "공통(헤더/푸터)/dispAdminCleanupList",
       "즐겨찾기/dispAdminConfigAdvanced",
       "즐겨찾기/dispAdminConfigDebug",
       "설정/dispAdminConfigGeneral",
@@ -17,7 +17,7 @@
       "즐겨찾기/dispAdminConfigSitelock",
       "설정/dispAdminCopyDomain",
       "설정/dispAdminSetup",
-      "사이트 제작/편집/dispAdminViewServerEnv",
+      "공통(헤더/푸터)/dispAdminViewServerEnv",
       "즐겨찾기/dispAdvanced_mailerAdminConfig",
       "즐겨찾기/dispAdvanced_mailerAdminExceptions",
       "즐겨찾기/dispAdvanced_mailerAdminMailLog",
@@ -65,7 +65,7 @@
       "회원/dispMemberAdminDesignConfig",
       "회원/dispMemberAdminFeaturesConfig",
       "회원/dispMemberAdminGroupList",
-      "사이트 제작/편집/dispMemberAdminInfo",
+      "공통(헤더/푸터)/dispMemberAdminInfo",
       "회원/dispMemberAdminList",
       "회원/dispMemberAdminLoginConfig",
       "회원/dispMemberAdminNickNameLog",
@@ -121,10 +121,10 @@
     "handler": "doChangeLangType",
     "uses": 158,
     "screens": [
-      "사이트 제작/편집/-",
+      "공통(헤더/푸터)/-",
       "고급/dispAddonAdminIndex",
       "고급/dispAddonAdminSetup",
-      "사이트 제작/편집/dispAdminCleanupList",
+      "공통(헤더/푸터)/dispAdminCleanupList",
       "즐겨찾기/dispAdminConfigAdvanced",
       "즐겨찾기/dispAdminConfigDebug",
       "설정/dispAdminConfigGeneral",
@@ -135,7 +135,7 @@
       "즐겨찾기/dispAdminConfigSitelock",
       "설정/dispAdminCopyDomain",
       "설정/dispAdminSetup",
-      "사이트 제작/편집/dispAdminViewServerEnv",
+      "공통(헤더/푸터)/dispAdminViewServerEnv",
       "즐겨찾기/dispAdvanced_mailerAdminConfig",
       "즐겨찾기/dispAdvanced_mailerAdminExceptions",
       "즐겨찾기/dispAdvanced_mailerAdminMailLog",
@@ -183,7 +183,7 @@
       "회원/dispMemberAdminDesignConfig",
       "회원/dispMemberAdminFeaturesConfig",
       "회원/dispMemberAdminGroupList",
-      "사이트 제작/편집/dispMemberAdminInfo",
+      "공통(헤더/푸터)/dispMemberAdminInfo",
       "회원/dispMemberAdminList",
       "회원/dispMemberAdminLoginConfig",
       "회원/dispMemberAdminNickNameLog",
@@ -237,10 +237,10 @@
     "handler": "doResetAdminMenu",
     "uses": 158,
     "screens": [
-      "사이트 제작/편집/-",
+      "공통(헤더/푸터)/-",
       "고급/dispAddonAdminIndex",
       "고급/dispAddonAdminSetup",
-      "사이트 제작/편집/dispAdminCleanupList",
+      "공통(헤더/푸터)/dispAdminCleanupList",
       "즐겨찾기/dispAdminConfigAdvanced",
       "즐겨찾기/dispAdminConfigDebug",
       "설정/dispAdminConfigGeneral",
@@ -251,7 +251,7 @@
       "즐겨찾기/dispAdminConfigSitelock",
       "설정/dispAdminCopyDomain",
       "설정/dispAdminSetup",
-      "사이트 제작/편집/dispAdminViewServerEnv",
+      "공통(헤더/푸터)/dispAdminViewServerEnv",
       "즐겨찾기/dispAdvanced_mailerAdminConfig",
       "즐겨찾기/dispAdvanced_mailerAdminExceptions",
       "즐겨찾기/dispAdvanced_mailerAdminMailLog",
@@ -299,7 +299,7 @@
       "회원/dispMemberAdminDesignConfig",
       "회원/dispMemberAdminFeaturesConfig",
       "회원/dispMemberAdminGroupList",
-      "사이트 제작/편집/dispMemberAdminInfo",
+      "공통(헤더/푸터)/dispMemberAdminInfo",
       "회원/dispMemberAdminList",
       "회원/dispMemberAdminLoginConfig",
       "회원/dispMemberAdminNickNameLog",
@@ -355,10 +355,10 @@
     "handler": "doRecompileCacheFile",
     "uses": 158,
     "screens": [
-      "사이트 제작/편집/-",
+      "공통(헤더/푸터)/-",
       "고급/dispAddonAdminIndex",
       "고급/dispAddonAdminSetup",
-      "사이트 제작/편집/dispAdminCleanupList",
+      "공통(헤더/푸터)/dispAdminCleanupList",
       "즐겨찾기/dispAdminConfigAdvanced",
       "즐겨찾기/dispAdminConfigDebug",
       "설정/dispAdminConfigGeneral",
@@ -369,7 +369,7 @@
       "즐겨찾기/dispAdminConfigSitelock",
       "설정/dispAdminCopyDomain",
       "설정/dispAdminSetup",
-      "사이트 제작/편집/dispAdminViewServerEnv",
+      "공통(헤더/푸터)/dispAdminViewServerEnv",
       "즐겨찾기/dispAdvanced_mailerAdminConfig",
       "즐겨찾기/dispAdvanced_mailerAdminExceptions",
       "즐겨찾기/dispAdvanced_mailerAdminMailLog",
@@ -417,7 +417,7 @@
       "회원/dispMemberAdminDesignConfig",
       "회원/dispMemberAdminFeaturesConfig",
       "회원/dispMemberAdminGroupList",
-      "사이트 제작/편집/dispMemberAdminInfo",
+      "공통(헤더/푸터)/dispMemberAdminInfo",
       "회원/dispMemberAdminList",
       "회원/dispMemberAdminLoginConfig",
       "회원/dispMemberAdminNickNameLog",
@@ -487,7 +487,7 @@
   },
   {
     "handler": "popopen",
-    "uses": 34,
+    "uses": 33,
     "screens": [
       "콘텐츠/dispBoardAdminContent",
       "고급/dispLayoutAdminAllInstanceList",
@@ -517,6 +517,24 @@
       "admin.procAdminToggleFavorite"
     ],
     "definedIn": "modules/module/tpl/js/module_admin.js",
+    "submitsForm": false,
+    "resolvedVia": []
+  },
+  {
+    "handler": "doUpdateModule",
+    "uses": 28,
+    "screens": [
+      "공통(헤더/푸터)/-",
+      "고급/dispModuleAdminContent"
+    ],
+    "labels": [
+      "설정 완료하기",
+      "업데이트하시겠습니까?"
+    ],
+    "targets": [
+      "install.procInstallAdminUpdate"
+    ],
+    "definedIn": "modules/admin/tpl/js/admin.js",
     "submitsForm": false,
     "resolvedVia": []
   },
@@ -696,7 +714,7 @@
     "handler": "go",
     "uses": 1,
     "screens": [
-      "사이트 제작/편집/dispMemberAdminInfo"
+      "공통(헤더/푸터)/dispMemberAdminInfo"
     ],
     "labels": [
       "돌아가기"

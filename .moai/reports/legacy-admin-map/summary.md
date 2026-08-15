@@ -1,20 +1,16 @@
 # 레거시 관리자 화면 지도
 
 - 대상: http://localhost:8080
-- 수집 시각: 2026-08-13T13:12:07.261Z
+- 수집 시각: 2026-08-15T07:31:08.683Z
 - 방문 페이지: 164
-- 변경 위험으로 방문하지 않은 링크: 187
+- 변경 위험으로 방문하지 않은 링크: 181
 
-## 사이트 제작/편집 (6개 화면)
+## 사이트 제작/편집 (2개 화면)
 
 | act | 제목 | 링크 | 이벤트 | 폼 | XHR |
 |---|---|---:|---:|---:|---:|
 | `dispMenuAdminSiteMap` | 사이트 메뉴 편집 | 95 | 85 | 10 | 5 |
-| `-` | Dashboard | 56 | 13 | 4 | 1 |
-| `dispMemberAdminInfo` | 회원 목록 | 48 | 10 | 2 | 0 |
 | `dispMenuAdminSiteDesign` | 사이트 디자인 설정 | 53 | 29 | 5 | 4 |
-| `dispAdminCleanupList` | 시스템 설정 | 47 | 11 | 3 | 0 |
-| `dispAdminViewServerEnv` | 시스템 설정 | 49 | 10 | 2 | 0 |
 
 ## 회원 (17개 화면)
 
@@ -42,7 +38,7 @@
 
 | act | 제목 | 링크 | 이벤트 | 폼 | XHR |
 |---|---|---:|---:|---:|---:|
-| `dispBoardAdminContent` | 게시판 | 73 | 31 | 11 | 1 |
+| `dispBoardAdminContent` | 게시판 | 73 | 22 | 7 | 1 |
 | `dispPageAdminContent` | 페이지 | 72 | 22 | 8 | 1 |
 | `dispDocumentAdminList` | 문서 | 67 | 13 | 6 | 0 |
 | `dispCommentAdminList` | 댓글 | 58 | 13 | 6 | 0 |
@@ -57,7 +53,7 @@
 | `dispModuleAdminCopyModule` | - | 0 | 10 | 1 | 0 |
 | `dispBoardAdminBoardInfo` | 게시판 | 71 | 29 | 4 | 1 |
 | `dispModuleAdminCopyModule` | - | 0 | 10 | 1 | 0 |
-| `dispBoardAdminContent` | 게시판 | 73 | 31 | 11 | 1 |
+| `dispBoardAdminContent` | 게시판 | 73 | 22 | 7 | 1 |
 | `dispModuleAdminCategory` | 설치된 모듈 | 49 | 10 | 4 | 0 |
 | `dispPageAdminInfo` | 페이지 | 61 | 16 | 4 | 1 |
 | `dispPageAdminInfo` | 페이지 | 61 | 16 | 4 | 1 |
@@ -80,19 +76,19 @@
 | `dispBoardAdminCategoryInfo` | 게시판 | 64 | 21 | 5 | 2 |
 | `dispBoardAdminExtraVars` | 게시판 | 59 | 10 | 3 | 0 |
 | `dispBoardAdminGrantInfo` | 게시판 | 57 | 15 | 3 | 0 |
-| `dispBoardAdminBoardAdditionSetup` | 게시판 | 59 | 22 | 8 | 0 |
+| `dispBoardAdminBoardAdditionSetup` | 게시판 | 57 | 11 | 3 | 0 |
 | `dispBoardAdminSkinInfo` | 게시판 | 59 | 11 | 3 | 0 |
 | `dispBoardAdminMobileSkinInfo` | 게시판 | 59 | 11 | 3 | 0 |
 | `dispBoardAdminCategoryInfo` | 게시판 | 64 | 21 | 5 | 2 |
 | `dispBoardAdminExtraVars` | 게시판 | 59 | 10 | 3 | 0 |
 | `dispBoardAdminGrantInfo` | 게시판 | 57 | 15 | 3 | 0 |
-| `dispBoardAdminBoardAdditionSetup` | 게시판 | 59 | 22 | 8 | 0 |
+| `dispBoardAdminBoardAdditionSetup` | 게시판 | 57 | 11 | 3 | 0 |
 | `dispBoardAdminSkinInfo` | 게시판 | 59 | 11 | 3 | 0 |
 | `dispBoardAdminMobileSkinInfo` | 게시판 | 59 | 11 | 3 | 0 |
 | `dispBoardAdminCategoryInfo` | 게시판 | 64 | 21 | 5 | 2 |
 | `dispBoardAdminExtraVars` | 게시판 | 59 | 10 | 3 | 0 |
 | `dispBoardAdminGrantInfo` | 게시판 | 57 | 15 | 3 | 0 |
-| `dispBoardAdminBoardAdditionSetup` | 게시판 | 59 | 22 | 8 | 0 |
+| `dispBoardAdminBoardAdditionSetup` | 게시판 | 57 | 11 | 3 | 0 |
 | `dispBoardAdminSkinInfo` | 게시판 | 59 | 11 | 3 | 0 |
 | `dispBoardAdminMobileSkinInfo` | 게시판 | 59 | 11 | 3 | 0 |
 | `dispPageAdminPageAdditionSetup` | 페이지 | 54 | 10 | 3 | 0 |
@@ -156,7 +152,7 @@
 |---|---|---:|---:|---:|---:|
 | `dispAutoinstallAdminIndex` | 쉬운 설치 | 67 | 14 | 3 | 0 |
 | `dispLayoutAdminInstalledList` | 설치된 레이아웃 | 63 | 14 | 2 | 0 |
-| `dispModuleAdminContent` | 설치된 모듈 | 110 | 43 | 2 | 0 |
+| `dispModuleAdminContent` | 설치된 모듈 | 110 | 71 | 2 | 0 |
 | `dispAddonAdminIndex` | 설치된 애드온 | 66 | 12 | 3 | 0 |
 | `dispWidgetAdminDownloadedList` | 설치된 위젯 | 59 | 11 | 2 | 0 |
 | `dispModuleAdminLangcode` | 다국어 | 52 | 12 | 5 | 1 |
@@ -168,7 +164,7 @@
 | `dispAutoinstallAdminIndex` | 쉬운 설치 | 67 | 14 | 3 | 0 |
 | `dispAutoinstallAdminIndex` | 쉬운 설치 | 67 | 14 | 3 | 0 |
 | `dispLayoutAdminInstalledList` | 설치된 레이아웃 | 63 | 14 | 2 | 0 |
-| `dispLayoutAdminInstalledList` | 설치된 레이아웃 | 65 | 15 | 2 | 0 |
+| `dispLayoutAdminInstalledList` | 설치된 레이아웃 | 63 | 14 | 2 | 0 |
 | `dispLayoutAdminAllInstanceList` | 설치된 레이아웃 | 57 | 14 | 2 | 0 |
 | `dispLayoutAdminInstanceList` | 설치된 레이아웃 | 52 | 12 | 3 | 0 |
 | `dispLayoutAdminModify` | 설치된 레이아웃 | 65 | 44 | 13 | 1 |
@@ -199,14 +195,17 @@
 | `dispCounterAdminIndex` | 접속통계 | 51 | 10 | 4 | 0 |
 | `dispIntegration_searchAdminSkinInfo` | 통합검색 | 49 | 10 | 3 | 0 |
 
+## 공통(헤더/푸터) (4개 화면)
+
+| act | 제목 | 링크 | 이벤트 | 폼 | XHR |
+|---|---|---:|---:|---:|---:|
+| `-` | Dashboard | 56 | 27 | 4 | 1 |
+| `dispMemberAdminInfo` | 회원 목록 | 48 | 10 | 2 | 0 |
+| `dispAdminCleanupList` | 시스템 설정 | 47 | 11 | 3 | 0 |
+| `dispAdminViewServerEnv` | 시스템 설정 | 49 | 10 | 2 | 0 |
+
 ## 방문하지 않은 변경성 링크 (기록만)
 
-- `procAdminLogout` — 로그아웃
-- `procAdminLogout` — 로그아웃
-- `dispMemberAdminInsert` — admin
-- `procAdminLogout` — 로그아웃
-- `dispMemberAdminInsert` — 수정
-- `procAdminLogout` — 로그아웃
 - `procAdminLogout` — 로그아웃
 - `procAdminLogout` — 로그아웃
 - `procAdminLogout` — 로그아웃

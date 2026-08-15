@@ -16,7 +16,7 @@
       "text": "",
       "module": "admin",
       "act": null,
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispFileAdminOtherConfig#gnbNav",
@@ -37,7 +37,7 @@
       "text": "admin",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=procAdminLogout",
@@ -72,7 +72,7 @@
       "text": "대시보드",
       "module": "admin",
       "act": null,
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
@@ -345,14 +345,14 @@
       "text": "코어 파일 정리",
       "module": "admin",
       "act": "dispAdminCleanupList",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdminViewServerEnv",
       "text": "서버 환경 표시",
       "module": "admin",
       "act": "dispAdminViewServerEnv",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "https://github.com/rhymix/rhymix/issues",

@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5",
   "act": "dispMemberAdminInfo",
-  "group": "사이트 제작/편집",
+  "group": "공통(헤더/푸터)",
   "title": "회원 목록",
   "links": [
     {
@@ -9,84 +9,84 @@
       "text": "메뉴 건너뛰기",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin",
       "text": "",
       "module": "admin",
       "act": null,
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5#gnbNav",
       "text": "",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/",
       "text": "localhost",
       "module": null,
       "act": null,
-      "disposition": "skipped-external"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5",
       "text": "admin",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=procAdminLogout",
       "text": "로그아웃",
       "module": "admin",
       "act": "procAdminLogout",
-      "disposition": "skipped-mutating"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5#lang",
       "text": "한국어",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5#lang",
       "text": "한국어",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5#gnbNav",
       "text": "Menu Open/Close",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin",
       "text": "대시보드",
       "module": "admin",
       "act": null,
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
       "text": "사이트 제작/편집",
       "module": "admin",
       "act": "dispMenuAdminSiteMap",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
       "text": "사이트 메뉴 편집",
       "module": "admin",
       "act": "dispMenuAdminSiteMap",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteDesign",
@@ -100,224 +100,224 @@
       "text": "회원",
       "module": "admin",
       "act": "dispMemberAdminList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminList",
       "text": "회원 목록",
       "module": "admin",
       "act": "dispMemberAdminList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminConfig",
       "text": "회원 설정",
       "module": "admin",
       "act": "dispMemberAdminConfig",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminGroupList",
       "text": "회원 그룹",
       "module": "admin",
       "act": "dispMemberAdminGroupList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispPointAdminConfig",
       "text": "포인트",
       "module": "admin",
       "act": "dispPointAdminConfig",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispBoardAdminContent",
       "text": "콘텐츠",
       "module": "admin",
       "act": "dispBoardAdminContent",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispBoardAdminContent",
       "text": "게시판",
       "module": "admin",
       "act": "dispBoardAdminContent",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContent",
       "text": "페이지",
       "module": "admin",
       "act": "dispPageAdminContent",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispDocumentAdminList",
       "text": "문서",
       "module": "admin",
       "act": "dispDocumentAdminList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispCommentAdminList",
       "text": "댓글",
       "module": "admin",
       "act": "dispCommentAdminList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispFileAdminList",
       "text": "파일",
       "module": "admin",
       "act": "dispFileAdminList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispPollAdminList",
       "text": "설문",
       "module": "admin",
       "act": "dispPollAdminList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispEditorAdminIndex",
       "text": "에디터",
       "module": "admin",
       "act": "dispEditorAdminIndex",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispSpamfilterAdminDeniedIPList",
       "text": "스팸필터",
       "module": "admin",
       "act": "dispSpamfilterAdminDeniedIPList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispTrashAdminList",
       "text": "휴지통",
       "module": "admin",
       "act": "dispTrashAdminList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInfo&member_srl=5#favorite",
       "text": "즐겨찾기",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdvanced_mailerAdminConfig",
       "text": "메일, SMS 및 푸시 알림 관리",
       "module": "admin",
       "act": "dispAdvanced_mailerAdminConfig",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispNcenterliteAdminConfig",
       "text": "알림 센터",
       "module": "admin",
       "act": "dispNcenterliteAdminConfig",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
       "text": "설정",
       "module": "admin",
       "act": "dispAdminConfigGeneral",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
       "text": "시스템 설정",
       "module": "admin",
       "act": "dispAdminConfigGeneral",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdminSetup",
       "text": "관리자 화면 설정",
       "module": "admin",
       "act": "dispAdminSetup",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminFileBox",
       "text": "파일박스",
       "module": "admin",
       "act": "dispModuleAdminFileBox",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
       "text": "고급",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
       "text": "쉬운 설치",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispLayoutAdminInstalledList",
       "text": "설치된 레이아웃",
       "module": "admin",
       "act": "dispLayoutAdminInstalledList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminContent",
       "text": "설치된 모듈",
       "module": "admin",
       "act": "dispModuleAdminContent",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAddonAdminIndex",
       "text": "설치된 애드온",
       "module": "admin",
       "act": "dispAddonAdminIndex",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispWidgetAdminDownloadedList",
       "text": "설치된 위젯",
       "module": "admin",
       "act": "dispWidgetAdminDownloadedList",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminLangcode",
       "text": "다국어",
       "module": "admin",
       "act": "dispModuleAdminLangcode",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispImporterAdminImportForm",
       "text": "데이터 들여오기",
       "module": "admin",
       "act": "dispImporterAdminImportForm",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispRssAdminIndex",
       "text": "RSS",
       "module": "admin",
       "act": "dispRssAdminIndex",
-      "disposition": "skipped-other-group"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminInsert&member_srl=5",
       "text": "수정",
       "module": "admin",
       "act": "dispMemberAdminInsert",
-      "disposition": "skipped-mutating"
+      "disposition": "queued"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdminCleanupList",
@@ -338,7 +338,7 @@
       "text": "버그 리포트",
       "module": null,
       "act": null,
-      "disposition": "skipped-external"
+      "disposition": "queued"
     }
   ],
   "events": [

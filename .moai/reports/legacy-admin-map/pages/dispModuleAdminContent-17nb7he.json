@@ -16,7 +16,7 @@
       "text": "",
       "module": "admin",
       "act": null,
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminContent#gnbNav",
@@ -37,7 +37,7 @@
       "text": "admin",
       "module": "admin",
       "act": "dispMemberAdminInfo",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=procAdminLogout",
@@ -72,7 +72,7 @@
       "text": "대시보드",
       "module": "admin",
       "act": null,
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
@@ -758,14 +758,14 @@
       "text": "코어 파일 정리",
       "module": "admin",
       "act": "dispAdminCleanupList",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdminViewServerEnv",
       "text": "서버 환경 표시",
       "module": "admin",
       "act": "dispAdminViewServerEnv",
-      "disposition": "visited"
+      "disposition": "skipped-chrome"
     },
     {
       "href": "https://github.com/rhymix/rhymix/issues",
@@ -841,6 +841,20 @@
     },
     {
       "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('advanced_mailer')",
+      "targets": []
+    },
+    {
+      "tag": "button",
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'autoinstall')",
@@ -855,6 +869,20 @@
     },
     {
       "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('board')",
+      "targets": []
+    },
+    {
+      "tag": "button",
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'comment')",
@@ -862,9 +890,37 @@
     },
     {
       "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('comment')",
+      "targets": []
+    },
+    {
+      "tag": "button",
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'communication')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('communication')",
       "targets": []
     },
     {
@@ -883,9 +939,37 @@
     },
     {
       "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('document')",
+      "targets": []
+    },
+    {
+      "tag": "button",
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'editor')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('editor')",
       "targets": []
     },
     {
@@ -900,6 +984,20 @@
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'file')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('file')",
       "targets": []
     },
     {
@@ -946,6 +1044,20 @@
     },
     {
       "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('member')",
+      "targets": []
+    },
+    {
+      "tag": "button",
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'menu')",
@@ -974,6 +1086,20 @@
     },
     {
       "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('ncenterlite')",
+      "targets": []
+    },
+    {
+      "tag": "button",
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'page')",
@@ -995,9 +1121,37 @@
     },
     {
       "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('poll')",
+      "targets": []
+    },
+    {
+      "tag": "button",
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'rss')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('rss')",
       "targets": []
     },
     {
@@ -1016,9 +1170,37 @@
     },
     {
       "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('spamfilter')",
+      "targets": []
+    },
+    {
+      "tag": "button",
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'tag')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('tag')",
       "targets": []
     },
     {
@@ -1033,6 +1215,20 @@
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'widget')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('widget')",
       "targets": []
     },
     {
