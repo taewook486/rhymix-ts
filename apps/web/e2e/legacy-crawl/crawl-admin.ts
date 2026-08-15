@@ -493,6 +493,11 @@ async function main(): Promise<void> {
     // 화면 자체는 존재하므로 지도에는 남긴다.
     for (const url of chrome) {
       if (visited.has(url) || pages.length >= MAX_PAGES) continue;
+      // 껍데기 링크에도 변경성 act 가 섞여 있다(푸터의 procAdminLogout). 그룹 순회 루프와 달리
+      // 이 패스는 링크 disposition 을 거치지 않으므로 여기서 다시 걸러야 한다. 로그아웃을 방문하면
+      // 세션이 끊겨 이후 순서의 화면이 로그인 페이지로 기록된다.
+      const { act } = parseQuery(url);
+      if (act && MUTATING_ACT.test(act)) continue;
       visited.add(url);
       const record = await inspect(page, url, groupMap.get(url) ?? '공통(헤더/푸터)');
       pages.push(record);
