@@ -1,7 +1,7 @@
 ---
 id: SPEC-LEGACY-PARITY-001
 title: "사이트 제작/편집 영역 레거시 parity — 메뉴 편집 격차 해소 + Slice D 승계 검증"
-version: "0.3.0"
+version: "0.4.0"
 status: draft
 created: 2026-08-15
 updated: 2026-08-16
@@ -12,7 +12,6 @@ module: "apps/web/app/admin/menu, apps/web/app/admin/site/design, apps/web/compo
 lifecycle: spec-anchored
 tier: L
 tags: "legacy-parity, admin, menu, site-design, slice-d-succession"
-depends_on: [SPEC-LEGACY-PARITY-000]
 ---
 
 # SPEC-LEGACY-PARITY-001 — 사이트 제작/편집
@@ -22,6 +21,20 @@ depends_on: [SPEC-LEGACY-PARITY-000]
 
 ## HISTORY
 
+- 2026-08-16 (v0.4.0): 세 번째 교정 — plan-audit 2차 **PASS(0.94 ≥ 0.85)** 이후 수술적 수정
+  4건(감사 선택 결함 3건 + 감사가 놓친 의존성 순환 1건). (1) **`depends_on`에서 부모
+  `SPEC-LEGACY-PARITY-000` 제거 — 순환 교착 판명.** depends_on 사전 점검은 `completed`만
+  충족으로 보는데, 부모를 이 시리즈(REQ-LGP-001: 6개 영역 SPEC 001~006 — 현재 000·001만
+  존재)가 끝나기 전에 completed로 표시할 수 없으므로, 001은 000이 끝나야 시작 가능하고 000은
+  001~006이 끝나야 완료 가능한 대기 사이클이 된다. 부모는 완료 게이트 의존성의 형태가 아니라
+  시리즈 전체에 시효 없이 시행되는 **통치 문서**다 — 관계는 규약 준수로 §7에 보존하고, 분석과
+  경위(감사 D8 서술의 정정 포함)는 plan.md §A.2에 기록한다. (2) 감사 D1: HISTORY 항목 순서를
+  최신순으로 정렬(v0.4.0 → v0.3.0 → v0.2.0 → v0.1.0). (3) 감사 D2: AC-SITE-009 기계적 검증이
+  스키마 SSOT에 없는 프론트매터 필드 `^superseded_by:`를 그리던 것을 문서화된 메커니즘(정식
+  전환 커밋 서식의 `git log` 검증 + 아카이브 문서 HISTORY 행 보조)으로 교체. (4) 감사 D3: Q4
+  서술 정렬 — 저장 형태는 계획 시점에 `design.md` D1이 결정(이미지 참조형)했고 M3까지 유보되는
+  것은 필드 수준 스키마뿐임을 명시하며, 경성 제약(참조의 공개 URL 해석 가능 — REQ-SITE-010/
+  AC-SITE-010)을 핀한다.
 - 2026-08-16 (v0.3.0): 두 번째 교정 — **M1 실측 실행 결과 + 사용자 M2 범위 결정 반영.**
   (1) M1이 오케스트레이터에 의해 실행 관측됨(시드 포함): G1 복제 경로 부재 **실재 확인**,
   G2 **재정의된 대로 확인**(이미지 파일 입력·상태별 제거 컨트롤 없음; 텍스트영역은
@@ -42,9 +55,6 @@ depends_on: [SPEC-LEGACY-PARITY-000]
   정정 — M1 관찰은 텍스트영역의 존재와 내용 성격을 확인했고, 운명 결정은 Q4 저장 형태
   정착(M3)과 함께 이루어진다.
 
-- 2026-08-15 (v0.1.0): 최초 작성. 재크롤(`49e0794`)로 이 영역이 6개 화면이 아니라 **2개**임을
-  확정한 뒤 작성했다. 화면 2건은 모두 뉴버전에 대응 화면이 있고, 격차는 화면 부재가 아니라
-  `/admin/menu` 안의 기능 4건에서 발생한다. 여기에 `SPEC-MENU-001` Slice D의 미검증 3건을 승계한다.
 - 2026-08-16 (v0.2.0): plan-audit 1차 감사 FAIL(0.69 < 0.80,
   `.moai/reports/plan-audit/SPEC-LEGACY-PARITY-001-review-1.md`)에 따른 교정. **D1**: G2 전제 정정 —
   뉴버전에 버튼 상태 JSON 텍스트영역(`MenuItemEditor.tsx:260-295`, `d03caf0`)이 이미 존재함이
@@ -56,6 +66,9 @@ depends_on: [SPEC-LEGACY-PARITY-000]
   작업 추가. 선택 반영: D6(crawledAt `index.json` 값으로 정정), D7(`SPEC-LEGACY-PARITY-004` 계획
   표기), D9(`related_specs` 프론트매터 필드 본문 이동 — §7), D10(Q3 유예 기록 절차). D8(부모
   draft 의존)는 plan.md §A.2에 기록.
+- 2026-08-15 (v0.1.0): 최초 작성. 재크롤(`49e0794`)로 이 영역이 6개 화면이 아니라 **2개**임을
+  확정한 뒤 작성했다. 화면 2건은 모두 뉴버전에 대응 화면이 있고, 격차는 화면 부재가 아니라
+  `/admin/menu` 안의 기능 4건에서 발생한다. 여기에 `SPEC-MENU-001` Slice D의 미검증 3건을 승계한다.
 
 ## 1. Why
 
@@ -127,7 +140,7 @@ G4(메뉴 검색)는 `SPEC-MENU-001` REQ-MENU-051로 이미 사용자 결정에 
 | # | 질문 | 결정 | 사유 |
 |---|---|---|---|
 | Q3 (SPEC-MENU-001) | ACL 서버 컴포넌트 캐싱 경계 | **관찰로 확정** — 현재 렌더 경로는 요청마다 ACL을 계산한다 | 2026-08-16 M1 관찰: 비로그인/로그인 양쪽에서 groupIds 필터 결과가 정확히 갈렸다(캐싱이 가리지 않음). M2 특성화 테스트가 이 경계를 회귀로 지킨다. 다른 캐싱 구성으로 바뀌면 테스트가 실패한다 |
-| Q4 (SPEC-MENU-001) | 버튼 필드 저장 형태 | **M3에서 정착** — "스키마가 미정"이 아니라 **3개의 상호 모순 형태가 동시에 출하돼 있는 상태**다: 편집기 placeholder 스타일 JSON / `bundle-schema` `{label,href,icon,target}` / 레거시 `varchar(255)` 파일명. export/import 왕복 불능은 현재 결함이다 | 사용자 결정(전체 범위)에 따라 M3가 형태를 정하고 3귀속 호출처를 정합화한다(REQ-SITE-011). 방향성과 후보는 `design.md` D1 — 렌더링(REQ-SITE-010)에 이미지 참조가 필요하고 레거시가 파일명을 저장했으므로 이미지 참조형이 기본 방향이다 |
+| Q4 (SPEC-MENU-001) | 버튼 필드 저장 형태 | **계획 시점에 결정, M3에서 구현** — 저장 형태 자체는 `design.md` D1이 결정했다(선택: A 이미지 참조형). "스키마가 미정"이 아니라 **3개의 상호 모순 형태가 동시에 출하돼 있는 상태**가 문제였다: 편집기 placeholder 스타일 JSON / `bundle-schema` `{label,href,icon,target}` / 레거시 `varchar(255)` 파일명. export/import 왕복 불능은 현재 결함이다 | 사용자 결정(전체 범위)에 따라 3귀속 호출처를 정합화한다(REQ-SITE-011). M3까지 유보되는 것은 **필드 수준 스키마뿐**이다 — 정확한 필드명과 `<file-storage 참조>`가 담을 값(attachment id / 저장 키 / URL 중 무엇), 결정 틀은 `design.md` D1. 경성 제약(유보 대상 아님): 저장된 참조는 `MenuRenderer`가 공개 URL로 해석할 수 있어야 한다(REQ-SITE-010 / AC-SITE-010) |
 
 ## 3. 요구사항 (GEARS)
 
@@ -272,8 +285,13 @@ value written through the editor survives an export/import round-trip. 근거: *
 
 ## 7. 관련 SPEC
 
-- `SPEC-LEGACY-PARITY-000` — 부모(공통 규약). `depends_on` 대상. **status: draft** — run 킥오프
-  의존성 영향과 해결 경로는 plan.md §A.2에 기록(감사 D8).
+- `SPEC-LEGACY-PARITY-000` — 부모(공통 규약). 이 SPEC이 **준수**하는 시리즈 규약
+  (REQ-LGP-001~008)의 소유 문서다. v0.3.0까지 `depends_on`에 실려 있었으나 v0.4.0에서 제거했다 —
+  부모의 완료 조건이 이 SPEC과 형제 002~006의 완료에 달려 있어, `completed`-게이트 의존성으로
+  모델링하면 어느 쪽도 시작할 수 없는 순환이 되기 때문이다(HISTORY v0.4.0, 분석은 plan.md
+  §A.2). 관계는 **규약 준수(conformance)이지 완료 의존(dependency)이 아니며**, 이 SPEC이 소비하는
+  산물 — 크롤 기준선 `.moai/reports/legacy-admin-map/` — 은 부모의 frontmatter status와 무관하게
+  이미 디스크에 존재하는 파일 산출물이다.
 - `SPEC-MENU-001` — 승계 원천. `.moai/specs/_archive/` 소재, `status: completed`. REQ-SITE-009의
   supersede 전환 대상.
 - `SPEC-ADMIN-MENU-PARITY-001` — 6그룹 사이드바 불변식(REQ-SITE-008)의 원천. `completed`.

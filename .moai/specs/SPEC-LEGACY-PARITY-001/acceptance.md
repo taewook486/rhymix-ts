@@ -102,12 +102,20 @@ git diff <base>..HEAD --stat -- apps/web/components/admin/AdminSidebar.tsx
 
 **Given** 이 SPEC의 구현이 완료되고
 **When** `.moai/specs/_archive/SPEC-MENU-001/spec.md`의 frontmatter를 읽으면
-**Then** `status: superseded`이고 이 SPEC ID를 가리키는 전환 표시가 있다.
+**Then** `status: superseded`이고 이 SPEC ID를 가리키는 포인터가 **문서화된 메커니즘**에
+남는다 — 정식 전환 커밋 서식(Status Transition Ownership Matrix `* → superseded` 행)과,
+보조로 아카이브 문서의 HISTORY 전환 행.
 
 검증(기계적):
 ```bash
-grep -n "^status:\|^superseded_by:" .moai/specs/_archive/SPEC-MENU-001/spec.md
-# 기대: status: superseded + 이 SPEC ID 포인터 (아카이브 경로 — 원본 디렉터리가 아님, 감사 D3)
+grep -n "^status:" .moai/specs/_archive/SPEC-MENU-001/spec.md
+# 기대: status: superseded (아카이브 경로 — 원본 디렉터리가 아님, 감사 D3)
+git log --oneline --grep="supersedes SPEC-MENU-001"
+# 기대: feat(SPEC-LEGACY-PARITY-001): supersedes SPEC-MENU-001
+# — `* → superseded` 행의 정식 커밋 서식이 이 SPEC ID 포인터다.
+# 보조 포인터: 아카이브 문서의 HISTORY에 전환을 기록한 행(본문 가지 — frontmatter 아님).
+# 주의: 프론트매터 필드 `^superseded_by:`는 스키마 SSOT에 없는 비문서화 필드이므로 쓰지도
+# 검증하지도 않는다(감사 D2 — 1차 D9 `related_specs:`와 같은 결함 부류의 재발 차단).
 ```
 전환 소유: manager-spec(오케스트레이터 중재 — Status Transition Ownership Matrix의
 `completed → superseded`). 실행 시점: sync phase. 아카이브 문서의 본문(stale §8.3·§8.5·Status
