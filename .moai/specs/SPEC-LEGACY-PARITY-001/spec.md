@@ -1,16 +1,16 @@
 ---
 id: SPEC-LEGACY-PARITY-001
 title: "사이트 제작/편집 영역 레거시 parity — 메뉴 편집 격차 해소 + Slice D 승계 검증"
-version: "0.2.0"
+version: "0.3.0"
 status: draft
 created: 2026-08-15
 updated: 2026-08-16
 author: MoAI
 priority: P1
 phase: "Phase 15 — 관리자 레거시 parity 시리즈"
-module: "apps/web/app/admin/menu, apps/web/app/admin/site/design, apps/web/components/admin, packages/db/prisma"
+module: "apps/web/app/admin/menu, apps/web/app/admin/site/design, apps/web/components/admin, packages/admin, packages/file, packages/db/prisma"
 lifecycle: spec-anchored
-tier: M
+tier: L
 tags: "legacy-parity, admin, menu, site-design, slice-d-succession"
 depends_on: [SPEC-LEGACY-PARITY-000]
 ---
@@ -21,6 +21,26 @@ depends_on: [SPEC-LEGACY-PARITY-000]
 > 전건 판정표(REQ-LGP-003)는 `research.md`에 있다.
 
 ## HISTORY
+
+- 2026-08-16 (v0.3.0): 두 번째 교정 — **M1 실측 실행 결과 + 사용자 M2 범위 결정 반영.**
+  (1) M1이 오케스트레이터에 의해 실행 관측됨(시드 포함): G1 복제 경로 부재 **실재 확인**,
+  G2 **재정의된 대로 확인**(이미지 파일 입력·상태별 제거 컨트롤 없음; 텍스트영역은
+  `/admin/menu/[id]` 편집 라우트에만 렌더), 승계 3건(REQ-SITE-004~006)은 **전부 정상
+  동작 관찰** — 서버 컴포넌트 캐싱이 ACL 결과를 가리지 않았다(Q3 관찰 근거). 모순 기록
+  논쟁은 1차 관찰로 해소되었고, 이후 어느 문서 가지에도 의존하지 않는다(§1).
+  (2) 사용자가 M2(현 M3)를 **전체 범위**로 결정: 이미지 업로드 3종 + 상태별 제거 +
+  **공개 렌더링** + 저장 형태 3귀속 정합화(REQ-SITE-010·011 신설). 근거 발견: 버튼 필드는
+  현재 **쓰기 전용**(공개 렌더러가 읽지 않음), 저장 형태가 3곳에서 상호 모순(편집기
+  placeholder JSON / `bundle-schema.ts:29-34` `{label,href,icon,target}` / 레거시
+  `varchar(255)` 파일명) — export/import 왕복이 **현재 결함**. 레거시 실사용은 0(참조
+  설치 전 행 NULL). 업로드 인프라는 `packages/file/src/` 재사용(신규 금지).
+  (3) 마일스톤 재배열: 특성화 테스트(M2)가 렌더러 변경(M3)보다 **먼저** 적립되어야
+  한다(plan.md §A.2 근거 서술). (4) **티어 M→L 재판정** — LOC·파일 수·3패키지 정합화
+  범위로 L 기준 충족. design.md 추가, plan-audit 통과 기준 0.85, 커밋 전략 PR 흐름으로
+  변경(plan.md §A.6). (5) PRESERVE에서 `MenuRenderer.tsx` 제외 — 동작 보존은 특성화
+  스위트로 강제한다(§2.2, plan.md §A.4). (6) 기존 "텍스트영역 운명은 M1이 정한다" 서술
+  정정 — M1 관찰은 텍스트영역의 존재와 내용 성격을 확인했고, 운명 결정은 Q4 저장 형태
+  정착(M3)과 함께 이루어진다.
 
 - 2026-08-15 (v0.1.0): 최초 작성. 재크롤(`49e0794`)로 이 영역이 6개 화면이 아니라 **2개**임을
   확정한 뒤 작성했다. 화면 2건은 모두 뉴버전에 대응 화면이 있고, 격차는 화면 부재가 아니라
@@ -44,14 +64,25 @@ depends_on: [SPEC-LEGACY-PARITY-000]
 parity가 맞은 것처럼 보이는 것이 이 영역의 위험이다.
 
 나머지 반쪽은 `SPEC-MENU-001`에서 승계하는 3건(슬롯 3종 배정, 중첩 트리 렌더, `groupIds` ACL)이다.
-전임 문서의 기록은 **내부 모순** 상태다 — 본문 §8.3·§8.5·Status 블록·Next Action은 3건을
+전임 문서의 기록은 **내부 모순** 상태였다 — 본문 §8.3·§8.5·Status 블록·Next Action은 3건을
 "admin 로그인 필요로 미검증"이라 적지만, 같은 문서의 HISTORY v0.2.1(2026-07-18)은 정확히 그
-3건을 "admin 로그인 후 실 DB/실 렌더링으로 재현 확인"이라 기록하고, 실측 세션의 산물인 커밋
-`107c0d4`가 실재하며, v0.3.0은 status를 `completed`로 전환했다(양쪽 가지 전문 인용 —
-`research.md` §3.0). 어느 가지가 참인지 문서 읽기로 판정하지 않는다: 2026-07-18 이후 코드도
-변했으므로, 이 SPEC은 3건을 **모순 기록에 대한 회귀 확인**으로 승계하고 M1의 새 실측으로
-확정한다. 아카이브된 전임 문서의 stale 서술(§8.3 등) 본문 수리는 후속 작업이지 이 SPEC의
-범위가 아니다(§4.6).
+3건을 "admin 로그인 후 실 DB/실 렌더링으로 재현 확인"이라 기록한다(양쪽 가지 전문 인용 —
+`research.md` §3.0). v0.2.0까지 이 SPEC은 어느 가지도 채택하지 않고 3건을 "모순 기록 회귀
+확인"로 두고 M1 실측으로 확정하기로 했는데, **M1이 2026-08-16 실행돼 확정됐다**: 시드
+픽스처로 3건 모두 정상 동작을 관찰했다(비로그인 시 `groupIds` 미소속 아이템 숨김·소속 시
+표시 — 캐싱이 결과를 가리지 않음, 3단계 트리 전 단계 렌더, 3슬롯 동시 배정·동시 렌더 —
+`research.md` §3.0 관찰 기록). 이 판정은 **1차 관찰에 근거하며 어느 쪽 문서 가지에도
+의존하지 않는다**. 전임 문서의 실측 서술 가지(HISTORY v0.2.1)와 결과가 일치했음은 기록으로
+남기되, 아카이브 문서 자체는 여전히 자기모순 상태다 — 후속 독자가 stale 가지(§8.3)를 다시
+물려받지 않도록 이 대조는 보존한다. 아카이브 본문 수리는 후속 작업이지 이 SPEC의 범위가
+아니다(§4.6).
+
+이 SPEC은 여기에 **쓰기 전용 버튼 필드** 문제를 더해 다룬다: `normalBtn`/`hoverBtn`/`activeBtn`의
+현재 소비자는 관리자 폼·쓰기 경로·export/import뿐이며 공개 렌더러(`MenuRenderer.tsx`)는 이
+필드를 읽지 않는다(`research.md` §1.4). 저장 형태도 3곳에서 상호 모순이라 편집기로 입력한 값이
+export/import 왕복을 살리지 못한다(**현재 결함** — `research.md` §1.4, REQ-SITE-011). 이것이
+버튼 이미지 격차를 "업로드+제거"에 머물지 않고 **공개 렌더링과 형태 정합화까지** 포함하게 된
+사용자 결정(2026-08-16, 전체 범위)의 근거다.
 
 ## 2. What
 
@@ -61,8 +92,8 @@ parity가 맞은 것처럼 보이는 것이 이 영역의 위험이다.
 |---|---|
 | 레거시 화면 | `dispMenuAdminSiteMap`, `dispMenuAdminSiteDesign` (2건, 전건) |
 | 뉴버전 대응 | `/admin/menu`, `/admin/site/design` |
-| 격차 해소 | G1 메뉴 아이템 복제, G2 버튼 이미지 파일 업로드·상태별 제거 컨트롤 (기존 JSON 텍스트영역과 구별 — REQ-SITE-002) |
-| 승계 — 회귀 확인 | 슬롯 3종 동시 배정, 중첩 트리 렌더, `groupIds` ACL 렌더 제한 (모순 기록 — §1, `research.md` §3.0) |
+| 격차 해소 | G1 메뉴 아이템 복제(관찰로 실재 확인 — `research.md` §1.2), G2 버튼 이미지 파일 업로드·상태별 제거 컨트롤 + **공개 렌더링** + 저장 형태 3귀속 정합화 (사용자 전체 범위 결정 — REQ-SITE-002·010·011) |
+| 승계 — 관찰 확인·회귀 고정 | 슬롯 3종 동시 배정, 중첩 트리 렌더, `groupIds` ACL 렌더 제한 — 2026-08-16 M1 관찰로 **3건 모두 정상 동작 확인**. 재구현 대상이 아니라 특성화 테스트로 고정하는 대상 (§1, `research.md` §3.0) |
 | 백로그 기록 | G3 다국어 텍스트, G4 메뉴 검색 (§2.3 결정 참조) |
 
 ### 2.2 이미 충족된 것 — 재구현 대상 아님
@@ -73,6 +104,9 @@ parity가 맞은 것처럼 보이는 것이 이 영역의 위험이다.
   `app/layout.tsx:10-11, 69, 73`에서 `Utility`·`FooterMenuSlot`이 import되고 렌더된다.
   승계 대상에서 뺀다.
 - 메뉴 순서 DnD, 테마·토큰은 레거시에 없는 뉴버전 고유 기능이다. 유지한다(`REQ-LGP-005`).
+- 승계 3건(슬롯 3종·중첩 트리·groupIds ACL)은 **2026-08-16 관찰로 동작이 확인됐다**(§1) —
+  재구현 대상이 아니다. M3가 `MenuRenderer.tsx`를 변경하므로, 이 3동작의 보존은 "파일을
+  안 건드린다"가 아니라 **M2 특성화 테스트가 먼저 적립되는 순서**로 강제한다(plan.md §A.2).
 
 ### 2.3 Open Question 결정 (기본값 채택 — 이견 있으면 되돌릴 수 있음)
 
@@ -88,6 +122,13 @@ parity가 맞은 것처럼 보이는 것이 이 영역의 위험이다.
 G4(메뉴 검색)는 `SPEC-MENU-001` REQ-MENU-051로 이미 사용자 결정에 의해 백로그 유예된 항목이다.
 새 격차가 아니므로 이 SPEC에서도 유예를 유지한다.
 
+시리즈에서 물려받은 Open Question 2건은 다음과 같이 갱신한다(`research.md` §6 갱신 참조):
+
+| # | 질문 | 결정 | 사유 |
+|---|---|---|---|
+| Q3 (SPEC-MENU-001) | ACL 서버 컴포넌트 캐싱 경계 | **관찰로 확정** — 현재 렌더 경로는 요청마다 ACL을 계산한다 | 2026-08-16 M1 관찰: 비로그인/로그인 양쪽에서 groupIds 필터 결과가 정확히 갈렸다(캐싱이 가리지 않음). M2 특성화 테스트가 이 경계를 회귀로 지킨다. 다른 캐싱 구성으로 바뀌면 테스트가 실패한다 |
+| Q4 (SPEC-MENU-001) | 버튼 필드 저장 형태 | **M3에서 정착** — "스키마가 미정"이 아니라 **3개의 상호 모순 형태가 동시에 출하돼 있는 상태**다: 편집기 placeholder 스타일 JSON / `bundle-schema` `{label,href,icon,target}` / 레거시 `varchar(255)` 파일명. export/import 왕복 불능은 현재 결함이다 | 사용자 결정(전체 범위)에 따라 M3가 형태를 정하고 3귀속 호출처를 정합화한다(REQ-SITE-011). 방향성과 후보는 `design.md` D1 — 렌더링(REQ-SITE-010)에 이미지 참조가 필요하고 레거시가 파일명을 저장했으므로 이미지 참조형이 기본 방향이다 |
+
 ## 3. 요구사항 (GEARS)
 
 **REQ-SITE-001 (Ubiquitous)**: The `/admin/menu` screen SHALL provide a menu-item duplication
@@ -99,11 +140,15 @@ capability equivalent to the legacy clipboard copy+paste flow. 근거: 레거시
 explicit per-state removal controls for the three button-image states (normal / hover / active).
 근거: 레거시 폼 `menu.procMenuAdminButtonUpload` ×3 — `type: file` 입력(`menu_normal_btn`/
 `menu_hover_btn`/`menu_active_btn`) + 상태별 제거 플래그(`isNormalDelete`/`isHoverDelete`/
-`isActiveDelete`). 뉴버전의 현재 상태: `MenuItemEditor.tsx:260-295`에 "버튼 상태" JSON
-**텍스트영역** 3종이 이미 존재한다(`d03caf0`, 2026-07-10) — 이미지 파일 업로드와 상태별 제거
-컨트롤은 없다. 기존 텍스트영역의 운명(교체 또는 공존)은 M1의 판별 관찰로 정하고 그 결정을 이
-SPEC의 HISTORY에 기록한다. 데이터 모델(`MenuItem.normalBtn`/`hoverBtn`/`activeBtn`)과 서버
-액션(`actions.ts:89-91, 148-150`)은 이미 존재하므로 요구 범위는 UI와 그 배선이다.
+`isActiveDelete`). 뉴버전 관찰(2026-08-16, M1): `/admin/menu/[id]` 편집 라우트에
+"버튼 상태" JSON **텍스트영역** 3종(`MenuItemEditor.tsx:260-295`, `d03caf0`)이 렌더되나 —
+placeholder `{"color": "..."}` — 메뉴 관리 화면 전체에 `type="file"` 입력이 없고(렌더 DOM·
+소스 grep 양쪽 확인) 상태별 제거 컨트롤도 없다. 텍스트영역은 목록 `/admin/menu`가 아니라
+편집 라우트에만 나타난다. 기존 텍스트영역의 운명(교체 또는 공존)은 Q4 저장 형태 정착(M3)과
+함께 결정된다 — v0.2.0의 "M1이 정한다" 서술에서 정정(HISTORY v0.3.0 (6)). 업로드 구현은
+**기존 `packages/file/src/` 인프라를 재사용한다**(신규 업로드 엔드포인트·저장 추상 금지 —
+§4.7). 데이터 모델(`MenuItem.normalBtn`/`hoverBtn`/`activeBtn`)과 서버
+액션(`actions.ts:89-91, 148-150`)은 이미 존재한다.
 
 **REQ-SITE-003 (Event-Driven)**: WHEN a menu item's button image is removed, the system SHALL clear
 the corresponding JSON field rather than leaving a dangling asset reference. 근거: 레거시가
@@ -111,19 +156,20 @@ the corresponding JSON field rather than leaving a dangling asset reference. 근
 
 **REQ-SITE-004 (State-Driven)**: WHILE a menu item declares a non-empty `groupIds` list, the public
 menu renderer SHALL render that item only for members belonging to at least one listed group.
-`SPEC-MENU-001` AC-D3 승계(모순 기록 회귀 확인 — §1) — 전임 기록이 미검증/실측완료 두 주장으로
-어긋나므로 M1 실측으로 정한다. 렌더 필터는 현재 코드에 존재한다(`MenuRenderer.tsx:47-48`) —
-코드 존재는 확인을 대신하지 않는다.
+`SPEC-MENU-001` AC-D3 승계 — **2026-08-16 M1 관찰로 정상 동작 확인**(비로그인 시 미소속
+아이템 숨김, 관리자(그룹 1) 로그인 시 표시, 캐싱이 결과를 가리지 않음 — Q3 관찰 근거).
+요구의 성격은 검증이 아니라 **보존**: M2 특성화 테스트로 고정해 이후 변경(특히 M3의 렌더러
+변경)이 조용히 깨뜨리지 못하게 한다.
 
 **REQ-SITE-005 (Ubiquitous)**: The public menu renderer SHALL render nested parent-child menu trees
-to their full depth. `SPEC-MENU-001` AC-D2 승계(모순 기록 회귀 확인 — §1) — `MenuItem.parentId`
-자기참조와 재귀 렌더 경로(`MenuRenderer.tsx:52`)는 존재하나, 다단계 렌더의 런타임 확인 여부는
-전임 기록이 모순 상태다(§1).
+to their full depth. `SPEC-MENU-001` AC-D2 승계 — **2026-08-16 M1 관찰로 정상 동작 확인**(시드
+3단계 트리의 전 단계 렌더, 로그인·비로그인 양쪽). REQ-SITE-004와 같은 이유로 보존 대상이며
+M2 특성화 테스트로 고정한다.
 
 **REQ-SITE-006 (Ubiquitous)**: The `/admin/menu` screen SHALL support assigning menus to all three
-slots (`HEADER_PRIMARY`, `FOOTER`, `UTILITY`) concurrently. `SPEC-MENU-001` AC-C1 승계(모순 기록
-회귀 확인 — §1) — `listSlotAssignments`(`page.tsx:25`)는 존재하나, 3종 동시 배정의 런타임 확인
-여부는 전임 기록이 모순 상태다(§1).
+slots (`HEADER_PRIMARY`, `FOOTER`, `UTILITY`) concurrently. `SPEC-MENU-001` AC-C1 승계 —
+**2026-08-16 M1 관찰로 정상 동작 확인**(3슬롯 배정이 모두 저장되고 공개 페이지에서 동시
+렌더). REQ-SITE-004와 같은 이유로 보존 대상이며 M2 특성화 테스트로 고정한다.
 
 **REQ-SITE-007 (Unwanted)**: This SPEC SHALL NOT remove or narrow the rhymix-ts-only capabilities of
 `/admin/site/design` (theme assignment, design-token editing) or `/admin/menu` (drag-and-drop
@@ -140,6 +186,26 @@ membership defined in `AdminSidebar.tsx`. `REQ-LGP-004` 적용 — 이 영역 �
 **manager-spec**이고 실행 시점은 sync phase다(AC-SITE-009, plan.md M4). frontmatter `status` 축의
 불일치(`research.md` §3.1)는 이 전환으로 해소된다. 본문 §8.3·Status 블록의 stale 서술 정리는
 별도 후속이다(§4.6).
+
+**REQ-SITE-010 (Ubiquitous)**: The public menu renderer SHALL render a menu item's uploaded button
+image for the corresponding state (normal as the default presentation, hover / active on their
+respective interaction states). 근거: 버튼 필드는 현재 **쓰기 전용**이다 — 공개 렌더러
+`MenuRenderer.tsx`는 `normalBtn`/`hoverBtn`/`activeBtn`을 읽지 않는다(소비자 전수 목록 —
+`research.md` §1.4). 업로드만 구현하면 "어디에도 표시되지 않는 데이터를 저장하는" 반쪽
+기능이 되므로, 사용자 결정(2026-08-16)으로 렌더링을 범위에 포함했다. 사용자 결정이 이
+REQ의 1차 근거다.
+
+**REQ-SITE-011 (Ubiquitous)**: The stored representation of the button-image fields SHALL be
+consistent across all write and serialization paths — the admin form, the server action
+(`apps/web/app/admin/menu/actions.ts`), the tRPC write router
+(`apps/web/server/api/routers/admin/menu-item.ts`), and the export/import round-trip
+(`packages/admin/src/export/serializer.ts`, `bundle-schema.ts`, `import/apply.ts`) — such that a
+value written through the editor survives an export/import round-trip. 근거: **현재 결함** — 저장
+형태가 3곳에서 상호 모순이다(편집기 placeholder는 스타일 JSON `{"color": ...}` /
+`bundle-schema.ts:29-34`는 `menuItemButtonSchema` `{label, href, icon, target}` / 레거시
+`rx_menu_item.normal_btn` 등은 `varchar(255)` 업로드 **파일명**). export/import가
+`bundle-schema`로 검증하므로 편집기로 입력한 값은 왕복을 살리지 못한다. Q4 재서술(§2.3)의
+요구사항화.
 
 ## 4. Out of Scope
 
@@ -177,21 +243,32 @@ membership defined in `AdminSidebar.tsx`. `REQ-LGP-004` 적용 — 이 영역 �
   가지를 남겨 후속 독자가 stale 가지만 물려받지 않게 하는 것까지다. 본문 수리는 M4/sync 시점의
   별도 후속으로 기록한다.
 
+### 4.7 Out of Scope — 신규 업로드 인프라
+
+- 새 업로드 엔드포인트, 새 저장소 추상화, 새 이미지 처리 파이프라인. `packages/file/src/`가
+  이미 `image-pipeline.ts`·`storage/factory.ts`·`server/actions.ts`·`attachment.ts`를
+  제공한다 — M3는 이를 **재사용**한다. 계획이 새 인프라를 요구한다면 그 자체가 범위 이탈
+  신호다. (스키마 마이그레이션 금지와 구별: 버튼 필드의 저장 **형태** 정합화는 범위 **안**에
+  있으나 컬럼 추가·타입 변경은 여전히 §A.3의 이탈 신호다 — 값 해석의 정합화가 본 요구다.)
+
 ## 5. Acceptance Criteria
 
-`acceptance.md` 참조. 요약: AC 9건 — 격차 해소 3건(REQ-SITE-001~003), 승계 회귀 확인 3건
-(REQ-SITE-004~006), 불변식 보존 2건(REQ-SITE-007~008), 수명주기 마감 1건(REQ-SITE-009 —
-AC-SITE-009 신설, 감사 D3).
+`acceptance.md` 참조. 요약: AC 11건 — 격차 해소 3건(REQ-SITE-001~003), 공개 렌더링 1건
+(REQ-SITE-010 — AC-SITE-010 신설), 저장 형태 정합화 1건(REQ-SITE-011 — AC-SITE-011 신설),
+관찰 동작 고정 3건(REQ-SITE-004~006 — 2026-08-16 관찰 완료, 특성화 테스트로 고정), 불변식
+보존 2건(REQ-SITE-007~008), 수명주기 마감 1건(REQ-SITE-009 — AC-SITE-009, 감사 D3).
 
 ## 6. 근거 강도 (정직 고지)
 
-`research.md` §5를 그대로 승계한다. 레거시 쪽 기능 목록은 1차 근거 직접 인용이라 강하지만,
-**뉴버전에 "없다"는 판정은 정적 코드 확인까지가 근거**다. G2의 뉴버전 쪽 근거는 v0.2.0부터 파일
-직접 열람이며, 판정 내용도 "부재"가 아니라 "종류 불일치"(텍스트 JSON 편집 ↔ 이미지 파일 업로드·
-제거)다 — 그래서 M1의 관찰은 둘을 구별하는 판별 관찰이어야 한다. 승계 3건은 전임 기록이 모순
-상태라 애초에 문서 근거로 확정 불가능하며, M1 실측이 유일한 확정 수단이다. 따라서 G1·G2를
-격차로, 승계 3건을 회귀 확인 대상으로 확정하는 것은 M1의 실측 재확인을 통과한 뒤다. 그 전까지
-격차 주장은 가설이다(`verification-claim-integrity.md` §1.1 surface 3).
+`research.md` §5를 승계하되 v0.3.0 관측으로 갱신한다. **M1이 2026-08-16 실행됐다**: G1(복제
+경로 부재)과 G2(이미지 파일 입력·상태별 제거 부재, 텍스트영역은 편집 라우트 한정)는 이제
+관찰 근거 격차로 확정됐고, 승계 3건은 관찰 근거 동작 확인으로 확정됐다 — v0.2.0의 "가설"
+한정은 해제된다(관찰 기록 — `research.md` §3.0). 남는 미검증 축: (a) §1.1 "대응 있음"
+항목들의 런타임 동작(코드 존재 ≠ 동작 — M2 특성화가 일부를, run-phase가 나머지를 점진적으로
+고정), (b) `research.md` §1.4의 쓰기 전용·형태 모순 발견 — 소비자 목록은 코드 전수 확인이나
+왕복 불능은 아직 재현 테스트로 기록돼 있지 않다(AC-SITE-011이 run-phase에 요구한다),
+(c) 편집기 텍스트영역의 현재 **저장값** 사용 여부(레거시 실사용 0은 확인됐으나 뉴버전 DB의
+현재값 점검은 M3 착수 확인 사항 — `design.md` D1).
 
 ## 7. 관련 SPEC
 
@@ -208,9 +285,12 @@ AC-SITE-009 신설, 감사 D3).
 
 ## §F Phase 4 Mode Selection
 
-- 입력: tier M, 도메인 2개(admin UI, public renderer), 예상 파일 5-10개, 제품 코드 변경 있음
+- 입력: tier L(v0.3.0 재판정), 도메인 3개(admin UI, public renderer, packages/admin·file),
+  예상 파일 12-17개, 제품 코드 변경 있음
 - 모드 평가: trivial(아님), background(아님 — 쓰기 작업), agent-team(RETIRED),
-  parallel(아님 — 코딩 중심, Anthropic coding-task 병렬성 유보), workflow(아님 — 기계적 대량 변환 아님)
+  parallel(아님 — 마일스톤 간 순서 제약이 강력하다: M2→M3 특성화 선행, 같은 파일군 순차 편집),
+  workflow(아님 — 기계적 대량 변환 아님)
 - Decision: sub-agent (Mode 5)
-- Justification: 코딩 중심 작업이므로 순차 sub-agent가 기본값이다. M1(실측 재확인)만 읽기 전용이라
-  병렬 여지가 있으나, 화면 2개 비교라 위임 비용이 작업 비용을 넘는다.
+- Justification: 코딩 중심 작업이므로 순차 sub-agent가 기본값이다. M1(실측 재확인)은 이미
+  실행 완료됐다. M2~M4는 `MenuRenderer.tsx`·`actions.ts` 등 같은 파일군을 공유하므로 병렬
+  편집은 파일 쓰기 경합을 만든다 — 순차 실행이 구조적 요구다.
