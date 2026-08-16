@@ -14,8 +14,21 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type { AdminExportBundle, ExportRequest } from './bundle-schema';
+import type {
+  AdminExportBundle,
+  ExportRequest,
+  MenuButtonImageRef,
+} from './bundle-schema';
 import { exportFormatVersion } from './bundle-schema';
+
+/**
+ * Prisma JSON 버튼 값 → 이미지 참조형 정규화 (AC-SITE-011, design.md D1).
+ * 레거시 파일명 문자열은 {"image": <문자열>}로, null/undefined는 undefined로.
+ */
+function toButtonImageRef(value: unknown): MenuButtonImageRef | undefined {
+  if (typeof value === 'string') return { image: value };
+  return (value as MenuButtonImageRef | null) ?? undefined;
+}
 
 /**
  * serializeBundle — export bundle 생성
@@ -103,10 +116,12 @@ export async function serializeBundle(
             title: item.title,
             listOrder: item.listOrder,
             url: item.url,
-            // JSON 필드 보존 (verbatim) - cast to expected type
-            normalBtn: item.normalBtn as Record<string, unknown> | undefined,
-            hoverBtn: item.hoverBtn as Record<string, unknown> | undefined,
-            activeBtn: item.activeBtn as Record<string, unknown> | undefined,
+            // 버튼 이미지 참조형 보존 (SPEC-LEGACY-PARITY-001 M3 — AC-SITE-011).
+            // DB에 레거시 파일명 문자열이 남아 있으면 export 시점에 참조형으로
+            // 정규화한다 (bundle 출력 타입은 정규화된 형태만 허용).
+            normalBtn: toButtonImageRef(item.normalBtn),
+            hoverBtn: toButtonImageRef(item.hoverBtn),
+            activeBtn: toButtonImageRef(item.activeBtn),
             expand: item.expand ?? undefined,
             exportKey,
             parentExportKey,

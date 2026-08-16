@@ -7,7 +7,7 @@
  */
 
 // Export
-export { exportFormatVersion, SUPPORTED_VERSIONS, adminExportBundleSchema, exportRequestSchema, type AdminExportBundle, type ExportRequest, type ImportDecisions } from './export/bundle-schema';
+export { exportFormatVersion, SUPPORTED_VERSIONS, adminExportBundleSchema, exportRequestSchema, menuButtonImageSchema, type AdminExportBundle, type ExportRequest, type ImportDecisions, type MenuButtonImageRef } from './export/bundle-schema';
 export { serializeBundle } from './export/serializer';
 
 // Import

@@ -76,6 +76,67 @@ port 3000 + `.next/dev/lock`을 붙잡은 적이 있음 — 트리 킬·잠금 �
 **typecheck:** `pnpm --filter @rhymix-ts/web typecheck` — 착수 전·후 모두 exit 0,
 신규 오류 0건 (e2e 파일 전부 `**/*.ts` include 범위 안).
 
+### M3 — 버튼 이미지 전체 범위 (완료 — 2026-08-16)
+
+실행 환경: HEAD `c3037dd`(M2 커밋), Docker 3컨테이너, dev 서버 재기동 후 실측.
+산출물: 편집기 파일 업로드 UI + 액션 업로드/제거 해석 + `MenuRenderer` 상태별 렌더 +
+`packages/admin` 번들 스키마 정합화. 신규 `apps/web/lib/menu/button-image.ts`.
+
+**RED→GREEN 전이:** 구현 착수 전 t1~t5 + e2e에서 21건 이상 실패 기록
+(`.moai/state/verify/m3/`). 구현 후 단위 29건·e2e 2건 전건 GREEN.
+
+**AC 행렬:**
+
+| AC | 상태 | 검증 | 결과 |
+|----|------|------|------|
+| AC-SITE-002 (3종 업로드 저장·재진입) | **PASS** | e2e `menu-button-image.spec.ts:136` — 3종 업로드→DB가 `{"image":...}` 참조형 보유→재진입 시 미리보기 3종 + `src`가 `/api/files/by-key/` | ✓ 1.6m |
+| AC-SITE-003 (상태별 제거 격리) | **PASS** | 동 테스트 — `removeNormalBtn`만 체크 시 `normalBtn IS NULL` ∧ hover/active 참조 유지 | ✓ (동 실행) |
+| AC-SITE-010 (normal 기본 + hover/active 전환) | **PASS** | e2e `menu-button-image.spec.ts:212` — `naturalWidth>0`, 라벨 텍스트 대체, hover/active opacity 실측 | ✓ 4.2s |
+| AC-SITE-011 (형태 닫힌 집합) | **PASS** | 단위 `menu-item.test.ts` M3-1~3 + `packages/admin` `menu-button-image.test.ts` 5건 | ✓ |
+| M2 특성화 (AC-SITE-004/005/006) 무회귀 | **PASS** | `menu-parity.spec.ts` 3건 재실행 — 렌더러 변경 후에도 전건 통과 | ✓ 1.0m |
+
+**증적:** `.moai/state/verify/m3-fix/{d1-m3-e2e,d2-m2-regression,d3-web-units,d5-typecheck-web,d5-typecheck-admin}.txt`
+— e2e `2 passed (2.2m)` exit 0, M2 `3 passed (1.0m)` exit 0, 단위 `29 passed` exit 0.
+
+**인수 검증에서 드러난 결함 2건 (단위 테스트가 못 잡은 것):**
+
+| # | 결함 | 근본 원인 | 수정 |
+|---|------|-----------|------|
+| 1 | hover 시 normal 레이어가 안 꺼져 두 이미지가 겹침 | 상태 레이어에 `group-hover:opacity-100`만 주고 normal 을 끄는 짝을 안 걸었다 | `MenuRenderer.tsx` — 대체 레이어가 있을 때만 normal 에 `group-hover:opacity-0`/`group-active:opacity-0` (없는 상태에서 걸면 호버 시 빈 링크가 된다) |
+| 2 | 상태별 제거가 DB에 반영되지 않음 | `Json?` 컬럼에 평범한 `null` 을 넘기면 Prisma 가 SQL NULL 이 아니라 **JSON null**(`'null'::jsonb`)을 기록 — `IS NULL` 이 false 로 남는다 | `menu-item.ts` — 버튼 3종의 `null` 을 `Prisma.DbNull` 로 변환 (`undefined`=변경 없음은 보존) |
+
+결함 2는 Prisma mock 기반 단위 테스트가 "전달된 값"만 보기 때문에 구조적으로 볼 수 없었다.
+실측(`prisma.$queryRaw`)으로 `plain null → is_sql_null=false`, `Prisma.DbNull → is_sql_null=true`
+를 확인한 뒤 수정했고, 단위 테스트 M3-2 도 저장 계층 도달값(`Prisma.DbNull`)을 단언하도록
+고쳤다 — mock 이 실제 형태를 가리던 구멍을 함께 막았다.
+
+**환경 등급 이슈 2건 (제품 결함 아님):**
+
+- WSL2 `/mnt/d`(drvfs)에서 inotify 가 안 떠 Turbopack 이 소스 변경을 감지하지 못했다.
+  Tailwind(PostCSS 별도 프로세스)는 디스크를 다시 읽어 CSS 만 갱신돼, "클래스는 CSS 에
+  있는데 DOM 에는 안 붙는" 상태로 오진하기 쉬웠다 — 수정 검증마다 dev 서버 재기동 필요.
+- `input[name="normalBtnFile"]`이 항목 수만큼 존재(항목마다 독립 `<form>` — 정상 마크업)해
+  strict mode 위반. 테스트에서 폼을 `input[name="id"][value=...]`로 이 항목에 고정해 해결.
+  초기 진단은 "콜드 컴파일 타임아웃"이었으나 실제 원인은 로케이터 모호성이었다.
+
+**typecheck:** `pnpm --filter @rhymix-ts/web typecheck` exit 0 / **오류 0건**.
+M3 구현이 남긴 20건(액션 `unknown` 타입 ↔ tRPC 입력 불일치 1건 + 테스트 파일 strict 위반
+19건)을 이번에 전부 해소했다 — HEAD 는 0건이었으므로 그대로 커밋하면 게이트 회귀였다.
+`pnpm --filter @rhymix-ts/admin typecheck` exit 0 / 0건.
+
+**PRESERVE 확인:** `AdminSidebar.tsx` · `/admin/site/design/` · `Utility.tsx` ·
+`FooterMenuSlot.tsx` · `GlobalFooter.tsx` — base SHA 대비 diff 0, 작업 트리 변경 0.
+`apps/web/e2e/menu-parity.spec.ts`(M2 특성화) 미수정 확인.
+
+**D2/packages/file 재사용:** 신규 업로드 엔드포인트·저장 추상 0건 —
+`apps/web/app/api/` 변경 없음, `packages/file/` 작업 트리 clean. 액션과
+`lib/menu/button-image.ts` 가 기존 `@rhymix-ts/file`(`getStorage`/`getScanner`/
+`assertMimeAllowed`/`assertSizeAllowed`/`isImageMimeType`)만 사용한다.
+
+**DB 종료 상태:** sites 1 / domains 1 / users 1(`admin`, isAdmin) / menus 0 /
+menu_items 0 — M3 픽스처 전량 철거, `uploads/e2e/` 제거됨. 설치 완료 상태 유지
+(admin@example.com / Rhymix!2026), 레거시 `localhost:8080` 대조 가능.
+
 ## §F Phase 4 Mode Selection
 
 입력 파라미터:

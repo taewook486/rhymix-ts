@@ -4,9 +4,10 @@
  *
  * 모든 persisted 필드 노출: title, url, icon, cssClass, description, openInNewWindow, expand, listOrder.
  * groupIds ACL (multi-select against MemberGroup).
- * 버튼 상태 JSON (normalBtn, hoverBtn, activeBtn).
+ * 버튼 이미지 3종 파일 업로드 + 상태별 제어 — SPEC-LEGACY-PARITY-001 M3
+ * (AC-SITE-002/003, C-1 교체 결정: 기존 JSON 텍스트영역 폐지).
  *
- * @MX:SPEC: SPEC-MENU-001 REQ-MENU-001~006
+ * @MX:SPEC: SPEC-MENU-001 REQ-MENU-001~006, SPEC-LEGACY-PARITY-001 REQ-SITE-002/003
  */
 import { useActionState, useTransition } from 'react'
 import { Button, Input, Label, Textarea } from '@rhymix-ts/ui/components'
@@ -34,6 +35,13 @@ interface MenuItemRow {
   normalBtn: unknown
   hoverBtn: unknown
   activeBtn: unknown
+  /**
+   * 서버가 해석해 전달하는 버튼 이미지 미리보기 URL (M3 — AC-SITE-002
+   * "재진입 시 그대로"). 값이 없는 상태는 null.
+   */
+  normalBtnUrl?: string | null
+  hoverBtnUrl?: string | null
+  activeBtnUrl?: string | null
 }
 
 interface MenuItemEditorProps {
@@ -257,39 +265,28 @@ function MenuItemRow({ item, menuId }: { item: MenuItemRow; menuId: number }) {
           </label>
         </div>
 
-        {/* Button State JSONs */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1">
-            <Label htmlFor={`normalBtn-${item.id}`}>버튼 상태 (일반)</Label>
-            <Textarea
-              id={`normalBtn-${item.id}`}
-              name="normalBtn"
-              defaultValue={typeof item.normalBtn === 'string' ? item.normalBtn : JSON.stringify(item.normalBtn ?? {}, null, 2)}
-              placeholder='{"color": "..."}'
-              rows={3}
-              className="font-mono text-xs"
+        {/* 버튼 이미지 업로드·제어 — SPEC-LEGACY-PARITY-001 M3 (AC-SITE-002/003) */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold">버튼 이미지 (일반 / 호버 / 활성)</h4>
+          <p className="text-xs text-zinc-500">
+            각 상태별 이미지 파일을 업로드합니다. 이미지가 있는 상태만 공개
+            렌더에 반영되며, 제거 체크 후 저장하면 해당 상태만 비워집니다.
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <ButtonImageField
+              item={item}
+              state="normal"
+              label="일반"
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`hoverBtn-${item.id}`}>버튼 상태 (호버)</Label>
-            <Textarea
-              id={`hoverBtn-${item.id}`}
-              name="hoverBtn"
-              defaultValue={typeof item.hoverBtn === 'string' ? item.hoverBtn : JSON.stringify(item.hoverBtn ?? {}, null, 2)}
-              placeholder='{"color": "..."}'
-              rows={3}
-              className="font-mono text-xs"
+            <ButtonImageField
+              item={item}
+              state="hover"
+              label="호버"
             />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor={`activeBtn-${item.id}`}>버튼 상태 (활성)</Label>
-            <Textarea
-              id={`activeBtn-${item.id}`}
-              name="activeBtn"
-              defaultValue={typeof item.activeBtn === 'string' ? item.activeBtn : JSON.stringify(item.activeBtn ?? {}, null, 2)}
-              placeholder='{"color": "..."}'
-              rows={3}
-              className="font-mono text-xs"
+            <ButtonImageField
+              item={item}
+              state="active"
+              label="활성"
             />
           </div>
         </div>
@@ -302,6 +299,61 @@ function MenuItemRow({ item, menuId }: { item: MenuItemRow; menuId: number }) {
           <DeleteMenuItemButton id={item.id} menuId={menuId} />
         </div>
       </form>
+    </div>
+  )
+}
+
+/**
+ * 버튼 이미지 상태별 입력 필드 (M3 — AC-SITE-002/003).
+ * 파일 입력 + 기존 이미지 미리보기(data-menu-btn-preview) + 제거 체크박스.
+ */
+function ButtonImageField({
+  item,
+  state,
+  label,
+}: {
+  item: MenuItemRow
+  state: 'normal' | 'hover' | 'active'
+  label: string
+}) {
+  const fileFieldName = `${state}BtnFile` as const
+  const removeFieldName = `remove${state.charAt(0).toUpperCase()}${state.slice(1)}Btn` as const
+  const previewUrl =
+    state === 'normal'
+      ? item.normalBtnUrl
+      : state === 'hover'
+        ? item.hoverBtnUrl
+        : item.activeBtnUrl
+
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={`${fileFieldName}-${item.id}`}>{label}</Label>
+      <input
+        id={`${fileFieldName}-${item.id}`}
+        name={fileFieldName}
+        type="file"
+        accept="image/*"
+        className="block w-full text-xs text-zinc-600 file:mr-2 file:rounded file:border-0 file:bg-zinc-100 file:px-2 file:py-1 file:text-xs"
+      />
+      {previewUrl ? (
+        <img
+          data-menu-btn-preview={state}
+          src={previewUrl}
+          alt={`${label} 버튼 이미지`}
+          className="h-8 w-auto rounded border border-zinc-200"
+        />
+      ) : (
+        <p className="text-xs text-zinc-400">이미지 없음</p>
+      )}
+      <label className="flex items-center gap-1.5 text-xs text-zinc-600">
+        <input
+          type="checkbox"
+          name={removeFieldName}
+          disabled={!previewUrl}
+          className="h-3.5 w-3.5"
+        />
+        {label} 이미지 제거
+      </label>
     </div>
   )
 }

@@ -14,11 +14,19 @@
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@rhymix-ts/db';
+import { menuButtonImageSchema } from '@rhymix-ts/admin';
 import { router, protectedAdminProcedure } from '../../trpc';
 
 /**
  * MenuItem 공통 입력 스키마 (REQ-ADMIN-032, REQ-ADMIN-033).
+ *
+ * 버튼 이미지 3종은 이미지 참조형 {"image", "alt"?} | null(제거) | undefined(변경
+ * 없음)의 닫힌 집합으로 검증한다 — SPEC-LEGACY-PARITY-001 M3 (AC-SITE-011,
+ * design.md D1). 스키마는 @rhymix-ts/admin 과 동일 소스를 재사용한다.
  */
+const buttonImageInput = menuButtonImageSchema.nullable().optional();
+
 const MenuItemInput = z.object({
   title: z.string().min(1).max(200),
   url: z.string().optional(),
@@ -29,10 +37,31 @@ const MenuItemInput = z.object({
   openInNewWindow: z.boolean().default(false),
   expand: z.boolean().default(false),
   listOrder: z.number().int().default(0),
-  normalBtn: z.unknown().optional(),    // raw JSON (REQ-ADMIN-033)
-  hoverBtn: z.unknown().optional(),
-  activeBtn: z.unknown().optional(),
+  normalBtn: buttonImageInput,   // REQ-ADMIN-033 + AC-SITE-011 정합화
+  hoverBtn: buttonImageInput,
+  activeBtn: buttonImageInput,
 });
+
+/**
+ * 버튼 이미지 3종의 `null`(상태별 제거)을 Prisma.DbNull 로 바꾼다 (AC-SITE-003).
+ *
+ * `Json?` 컬럼에 평범한 `null` 을 넘기면 Prisma 는 SQL NULL 이 아니라 **JSON null**
+ * (`'null'::jsonb`)을 기록한다 — 실측: `"normalBtn" IS NULL` 이 false 로 남는다.
+ * 그러면 "해당 상태만 비운다"는 요건이 저장 계층에서 깨지고, 값이 사라진 것처럼
+ * 보이지만 컬럼은 비어 있지 않은 어정쩡한 상태가 된다. Prisma mock 을 쓰는 단위
+ * 테스트는 전달 값만 확인하므로 이 차이를 볼 수 없어 e2e 로만 드러났다.
+ *
+ * `undefined`(변경 없음)는 그대로 두어 patch 의미론을 유지한다.
+ */
+function toButtonPatch<T extends Record<string, unknown>>(patch: T): T {
+  const out: Record<string, unknown> = { ...patch };
+  for (const field of ['normalBtn', 'hoverBtn', 'activeBtn'] as const) {
+    if (field in out && out[field] === null) {
+      out[field] = Prisma.DbNull;
+    }
+  }
+  return out as T;
+}
 
 export const adminMenuItemRouter = router({
   /**
@@ -80,7 +109,7 @@ export const adminMenuItemRouter = router({
       const { id, ...patch } = input;
       return ctx.prisma.$transaction(async (tx) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return tx.menuItem.update({ where: { id }, data: patch as any });
+        return tx.menuItem.update({ where: { id }, data: toButtonPatch(patch) as any });
       });
     }),
 

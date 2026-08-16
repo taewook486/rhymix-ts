@@ -3,12 +3,21 @@
  * Admin 메뉴 + MenuItem Server Actions — SPEC-ADMIN-001 Slice D.
  *
  * Slice C 의 actions.ts 패턴 (getServerCaller + zod safeParse) 동일.
+ * 버튼 이미지 업로드/제거 — SPEC-LEGACY-PARITY-001 M3 (AC-SITE-002/003).
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-030, REQ-ADMIN-031, REQ-ADMIN-032
  */
+import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
+import {
+  getStorage,
+  getScanner,
+  assertMimeAllowed,
+  assertSizeAllowed,
+  isImageMimeType,
+} from '@rhymix-ts/file'
 import { getServerCaller } from '@/lib/trpc/server'
 import { getCurrentSiteId } from '@/lib/admin/site-context'
 
@@ -74,6 +83,119 @@ export async function deleteMenuAction(
 }
 
 // ---------------------------------------------------------------------------
+// 버튼 이미지 업로드 — SPEC-LEGACY-PARITY-001 M3 (AC-SITE-002, design.md D2)
+// ---------------------------------------------------------------------------
+
+/**
+ * 버튼 이미지 파일 1개를 검증·저장하고 이미지 참조형 값을 반환한다.
+ * /api/files/upload 라우트와 동일한 packages/file 파이프라인을 액션 안에서
+ * 재사용한다 (신규 엔드포인트 금지 — design.md D2).
+ * 반환: 성공 시 {"image": <storageKey>}, 실패 시 {error}.
+ */
+async function uploadButtonImage(
+  file: File,
+): Promise<{ image: string } | { error: string }> {
+  const mimeType = file.type || 'application/octet-stream'
+
+  try {
+    assertMimeAllowed(mimeType)
+    assertSizeAllowed(mimeType, file.size)
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : '허용되지 않는 파일입니다.',
+    }
+  }
+
+  // 버튼 이미지는 이미지 파일만 허용 (HTML·스크립트 등 거부)
+  if (!isImageMimeType(mimeType)) {
+    return { error: '버튼 이미지는 이미지 파일만 업로드할 수 있습니다.' }
+  }
+
+  const storage = getStorage()
+  if (!storage.write) {
+    return { error: '현재 스토리지 백엔드에서는 업로드할 수 없습니다.' }
+  }
+
+  // 저장 키 규약은 업로드 라우트와 동일: YYYY/MM/<uuid>
+  const date = new Date()
+  const dateStr = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`
+  const storageKey = `${dateStr}/${randomUUID()}`
+
+  const buffer = Buffer.from(await file.arrayBuffer())
+  await storage.write({ key: storageKey, body: buffer, contentType: mimeType })
+
+  // 악성코드 검사 — 판정 시 저장소에서 제거하고 실패 처리
+  const scanResult = await getScanner().scan({
+    storageKey,
+    storage,
+    knownContentType: mimeType,
+    knownSize: file.size,
+  })
+  if (!scanResult.clean) {
+    await storage.delete(storageKey).catch(() => {})
+    return { error: '악성코드로 판단된 파일은 업로드할 수 없습니다.' }
+  }
+
+  return { image: storageKey }
+}
+
+/**
+ * 버튼 이미지 필드 3종의 patch 값 (design.md D1 닫힌 집합).
+ * `unknown` 으로 두면 tRPC 입력 스키마와의 형태 불일치를 컴파일러가 못 잡는다.
+ */
+type ButtonImageValue = { image: string; alt?: string } | null
+
+interface ButtonImageFields {
+  normalBtn?: ButtonImageValue
+  hoverBtn?: ButtonImageValue
+  activeBtn?: ButtonImageValue
+}
+
+/**
+ * FormData의 버튼 이미지 3종(normal/hover/active)을 해석한다 (AC-SITE-002/003).
+ *  - 파일 업로드 → 이미지 참조형 {"image": <storageKey>}
+ *  - 제거 체크박스 → null (해당 상태만 제거)
+ *  - 둘 다 없음   → undefined (변경 없음)
+ */
+async function parseButtonImageFields(formData: FormData): Promise<
+  | {
+      error: string
+      fields?: undefined
+    }
+  | {
+      error?: undefined
+      fields: ButtonImageFields
+    }
+> {
+  const states = [
+    { field: 'normalBtn', file: 'normalBtnFile', remove: 'removeNormalBtn', label: '일반' },
+    { field: 'hoverBtn', file: 'hoverBtnFile', remove: 'removeHoverBtn', label: '호버' },
+    { field: 'activeBtn', file: 'activeBtnFile', remove: 'removeActiveBtn', label: '활성' },
+  ] as const
+
+  const fields: ButtonImageFields = {}
+
+  for (const state of states) {
+    const file = formData.get(state.file)
+    if (file instanceof File && file.size > 0) {
+      const result = await uploadButtonImage(file)
+      if ('error' in result) {
+        return { error: `버튼 이미지(${state.label}): ${result.error}` }
+      }
+      fields[state.field] = result
+      continue
+    }
+    // 브라우저 체크박스 기본값 'on' + 명시적 '1' 모두 수용
+    const remove = formData.get(state.remove)
+    if (remove === 'on' || remove === '1') {
+      fields[state.field] = null
+    }
+  }
+
+  return { fields }
+}
+
+// ---------------------------------------------------------------------------
 // MenuItem Actions
 // ---------------------------------------------------------------------------
 
@@ -86,9 +208,6 @@ const CreateMenuItemSchema = z.object({
   listOrder: z.coerce.number().int().default(0),
   openInNewWindow: z.boolean().default(false),
   expand: z.boolean().default(false),
-  normalBtn: z.string().optional(),
-  hoverBtn: z.string().optional(),
-  activeBtn: z.string().optional(),
 })
 
 export async function createMenuItemAction(
@@ -104,9 +223,6 @@ export async function createMenuItemAction(
     listOrder: formData.get('listOrder') || 0,
     openInNewWindow: formData.get('openInNewWindow') === 'on',
     expand: formData.get('expand') === 'on',
-    normalBtn: formData.get('normalBtn') || undefined,
-    hoverBtn: formData.get('hoverBtn') || undefined,
-    activeBtn: formData.get('activeBtn') || undefined,
   })
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors }
@@ -145,9 +261,6 @@ const UpdateMenuItemSchema = z.object({
   openInNewWindow: z.boolean().optional(),
   expand: z.boolean().optional(),
   listOrder: z.coerce.number().int().optional(),
-  normalBtn: z.string().optional(), // JSON string
-  hoverBtn: z.string().optional(),
-  activeBtn: z.string().optional(),
 })
 
 export async function updateMenuItemAction(
@@ -184,21 +297,10 @@ export async function updateMenuItemAction(
     }
   }
 
-  // Parse JSON fields for button states
-  const normalBtnStr = formData.get('normalBtn') as string | null
-  const hoverBtnStr = formData.get('hoverBtn') as string | null
-  const activeBtnStr = formData.get('activeBtn') as string | null
-
-  let normalBtn: unknown = undefined
-  let hoverBtn: unknown = undefined
-  let activeBtn: unknown = undefined
-
-  try {
-    if (normalBtnStr?.trim()) normalBtn = JSON.parse(normalBtnStr)
-    if (hoverBtnStr?.trim()) hoverBtn = JSON.parse(hoverBtnStr)
-    if (activeBtnStr?.trim()) activeBtn = JSON.parse(activeBtnStr)
-  } catch (err) {
-    return { error: '버튼 상태 JSON 형식이 올바르지 않습니다.' }
+  // 버튼 이미지 3종 해석 (AC-SITE-002/003): 파일 업로드 → 참조형, 제거 플래그 → null
+  const buttons = await parseButtonImageFields(formData)
+  if (buttons.error) {
+    return { error: buttons.error }
   }
 
   const parsed = UpdateMenuItemSchema.safeParse({
@@ -210,9 +312,6 @@ export async function updateMenuItemAction(
     listOrder: formData.get('listOrder') || undefined,
     openInNewWindow: formData.get('openInNewWindow') === 'on',
     expand: formData.get('expand') === 'on',
-    normalBtn: normalBtnStr ? JSON.stringify(normalBtn) : undefined,
-    hoverBtn: hoverBtnStr ? JSON.stringify(hoverBtn) : undefined,
-    activeBtn: activeBtnStr ? JSON.stringify(activeBtn) : undefined,
   })
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors }
@@ -223,6 +322,7 @@ export async function updateMenuItemAction(
     await caller.admin.menuItem.update({
       id,
       ...parsed.data,
+      ...buttons.fields,
       groupIds,
     })
   } catch (err) {

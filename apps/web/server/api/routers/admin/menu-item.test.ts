@@ -10,6 +10,7 @@
  * E-2-4: menuItem.reorder → $transaction 호출 증거.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Prisma } from '@rhymix-ts/db';
 
 // NextAuth + authConfig mock
 vi.mock('next-auth', () => ({
@@ -334,5 +335,79 @@ describe('admin.menuItem.reorder cross-level DnD (Slice I-2 — REQ-ADMIN-031)',
         data: expect.objectContaining({ parentId: 10, listOrder: 1 }),
       }),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 M3 — 버튼 필드 입력 형태 정합화 (AC-SITE-011 tRPC 경계)
+//
+// MenuItemInput 의 버튼 3종 필드는 현재 z.unknown().optional() 이라 무엇이든
+// 통과한다. design.md D1 정합화(이미지 참조형 {"image", "alt"?} | null | undefined
+// 의 닫힌 집합)를 이 경계에서 강제한다 — actions.ts 는 이 스키마를 통과한 값만
+// prisma 에 전달하므로, tRPC 입력이 마지막 방어선이다.
+// ---------------------------------------------------------------------------
+
+describe('admin.menuItem.update 버튼 필드 형태 (SPEC-LEGACY-PARITY-001 M3, AC-SITE-011)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null);
+  });
+
+  async function makeCaller() {
+    const { adminMenuItemRouter } = await import('./menu-item');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminMenuItemRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return createCaller(adminCtx as any);
+  }
+
+  it('M3-1: 이미지 참조형 {"image", "alt"?}는 그대로 prisma update에 전달된다', async () => {
+    mockMenuItemUpdate.mockResolvedValueOnce({ id: 7 });
+    const caller = await makeCaller();
+
+    await caller.update({
+      id: 7,
+      normalBtn: { image: '2026/08/uuid-a', alt: '소개' },
+    } as never);
+
+    expect(mockMenuItemUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 7 },
+        data: expect.objectContaining({
+          normalBtn: { image: '2026/08/uuid-a', alt: '소개' },
+        }),
+      }),
+    );
+  });
+
+  it('M3-2: null(상태별 제거)은 Prisma.DbNull 로 전달된다 — undefined(변경 없음)와 구분', async () => {
+    mockMenuItemUpdate.mockResolvedValueOnce({ id: 7 });
+    const caller = await makeCaller();
+
+    await caller.update({ id: 7, normalBtn: null, hoverBtn: undefined } as never);
+
+    const data = mockMenuItemUpdate.mock.calls[0]![0].data as Record<string, unknown>;
+    // 평범한 null 을 그대로 넘기면 Prisma 가 Json? 컬럼에 SQL NULL 이 아니라
+    // JSON null('null'::jsonb)을 기록해 "IS NULL" 이 false 로 남는다(실측).
+    // 저장 계층에 도달하는 값이 DbNull 인지까지 봐야 AC-SITE-003 이 성립한다.
+    expect(data.normalBtn).toBe(Prisma.DbNull);
+    expect(data.normalBtn).not.toBeNull();
+    // undefined(변경 없음)는 DbNull 로 바뀌지 않는다 — Prisma 는 undefined 를
+    // "이 필드는 건드리지 않음"으로 읽는다
+    expect(data.hoverBtn).toBeUndefined();
+  });
+
+  it('M3-3: 정합화 외 값(구 {label, href} 스타일)은 입력 검증에서 거부된다 (닫힌 집합)', async () => {
+    const caller = await makeCaller();
+
+    // 현재 z.unknown() 은 무엇이든 통과시켜 prisma 까지 도달한다 — RED 재현.
+    await expect(
+      caller.update({
+        id: 7,
+        normalBtn: { label: '구형', href: '/old', icon: 'x', target: '_blank' },
+      } as never),
+    ).rejects.toThrow();
+    expect(mockMenuItemUpdate).not.toHaveBeenCalled();
   });
 });

@@ -26,6 +26,23 @@ class ImportError extends Error {
 }
 
 /**
+ * 버튼 이미지 값의 정규화 — SPEC-LEGACY-PARITY-001 M3 (AC-SITE-011, design.md D1).
+ *
+ * bundle 스키마는 레거시 파일명 문자열('btn_normal.gif')도 수용하지만, DB에는
+ * 정합화된 이미지 참조형 `{"image": <문자열>}`로만 적재한다. 참조형은 그대로,
+ * null/undefined는 undefined(미지정)로 통일한다.
+ */
+function normalizeButtonImage(
+  value: unknown,
+): { image: string; alt?: string } | undefined {
+  if (typeof value === 'string') return { image: value };
+  if (value && typeof value === 'object' && 'image' in value) {
+    return value as { image: string; alt?: string };
+  }
+  return undefined;
+}
+
+/**
  * ApplyResult — apply 실행 결과
  */
 export interface ApplyResult {
@@ -123,15 +140,9 @@ export async function applyImport(
                       title: menuItem.title as string,
                       listOrder: menuItem.listOrder as number,
                       url: menuItem.url as string | null,
-                      normalBtn: menuItem.normalBtn
-                        ? (menuItem.normalBtn as object)
-                        : undefined,
-                      hoverBtn: menuItem.hoverBtn
-                        ? (menuItem.hoverBtn as object)
-                        : undefined,
-                      activeBtn: menuItem.activeBtn
-                        ? (menuItem.activeBtn as object)
-                        : undefined,
+                      normalBtn: normalizeButtonImage(menuItem.normalBtn),
+                      hoverBtn: normalizeButtonImage(menuItem.hoverBtn),
+                      activeBtn: normalizeButtonImage(menuItem.activeBtn),
                       expand: menuItem.expandable
                         ? (menuItem.expandable as boolean)
                         : undefined,

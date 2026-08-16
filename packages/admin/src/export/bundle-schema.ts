@@ -23,15 +23,31 @@ export const exportFormatVersion = '1.0.0';
 export const SUPPORTED_VERSIONS = ['1.0.0'] as const;
 
 /**
- * MenuItem JSON 필드 스키마
- * normalBtn, hoverBtn, activeBtn는 JSON 형태로 저장됨
+ * MenuItem 버튼 이미지 참조형 스키마 — SPEC-LEGACY-PARITY-001 M3 (AC-SITE-011).
+ *
+ * 정합화된 저장 형태(design.md D1): `{"image": <file-storage 참조 키>, "alt"?}`.
+ * strict 로 닫힌 집합을 만든다 — 구 {label, href, icon, target} 스타일 등
+ * 정합화 외 형태는 parse 단계에서 거부된다 (strip 손실이 아닌 명시적 실패).
  */
-const menuItemButtonSchema = z.object({
-  label: z.string().optional(),
-  href: z.string().optional(),
-  icon: z.string().optional(),
-  target: z.string().optional(),
-});
+export const menuButtonImageSchema = z
+  .object({
+    image: z.string().min(1),
+    alt: z.string().optional(),
+  })
+  .strict();
+
+/**
+ * 이미지 참조형 (M3~) 또는 레거시 파일명 문자열 (D1 하위호환).
+ * 레거시 문자열은 parse 시점에 `{"image": <문자열>}`로 정규화된다 — bundle을
+ * 소비하는 쪽(apply 등)은 정규화된 형태만 다룬다 (정규화 지점의 단일화).
+ */
+const menuItemButtonSchema = z.union([
+  menuButtonImageSchema,
+  z.string().transform((s) => ({ image: s })),
+]);
+
+/** import 시 레거시 문자열을 포함해 참조형으로 정규화한 값 */
+export type MenuButtonImageRef = z.infer<typeof menuButtonImageSchema>;
 
 /**
  * MenuItem 스키마 (내부용)
@@ -43,9 +59,9 @@ const menuItemSchema = z.object({
   title: z.string().min(1),
   listOrder: z.number().int().min(0),
   url: z.string().nullable(),
-  normalBtn: menuItemButtonSchema.partial().optional(),
-  hoverBtn: menuItemButtonSchema.partial().optional(),
-  activeBtn: menuItemButtonSchema.partial().optional(),
+  normalBtn: menuItemButtonSchema.nullable().optional(),
+  hoverBtn: menuItemButtonSchema.nullable().optional(),
+  activeBtn: menuItemButtonSchema.nullable().optional(),
   expandable: z.boolean().optional(),
   exportKey: z.string(), // "menu:{title}" 형식
   parentExportKey: z.string().nullable(),

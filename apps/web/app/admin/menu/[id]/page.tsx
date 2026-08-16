@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Button } from '@rhymix-ts/ui/components'
 import { getServerCaller } from '@/lib/trpc/server'
+import { resolveButtonImageUrl } from '@/lib/menu/button-image'
 import { MenuItemEditor } from '@/components/admin/MenuItemEditor'
 import { MenuItemDnDTree } from '@/components/admin/MenuItemDnDTree'
 
@@ -18,6 +19,26 @@ export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: Promise<{ id: string }>
+}
+
+/**
+ * MenuItem 목록에 버튼 이미지 미리보기 URL을 부여한다 (M3 — AC-SITE-002
+ * "재진입 시 그대로"). 스토리지 참조의 URL 해석은 서버 컴포넌트에서 수행해
+ * 클라이언트 편집기에 스토리지 의존을 들이지 않는다.
+ */
+async function withButtonImageUrls(
+  items: readonly Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  return Promise.all(
+    items.map(async (item) => {
+      const [normalBtnUrl, hoverBtnUrl, activeBtnUrl] = await Promise.all([
+        resolveButtonImageUrl(item.normalBtn),
+        resolveButtonImageUrl(item.hoverBtn),
+        resolveButtonImageUrl(item.activeBtn),
+      ])
+      return { ...item, normalBtnUrl, hoverBtnUrl, activeBtnUrl }
+    }),
+  )
 }
 
 export default async function AdminMenuDetailPage({ params }: PageProps) {
@@ -36,6 +57,11 @@ export default async function AdminMenuDetailPage({ params }: PageProps) {
   } catch {
     notFound()
   }
+
+  // 버튼 이미지 미리보기 URL 부여 (M3 — 서버에서 1회 해석해 전달)
+  const itemsWithBtnUrls = await withButtonImageUrls(
+    menu.items as unknown as readonly Record<string, unknown>[],
+  )
 
   return (
     <div>
@@ -58,7 +84,10 @@ export default async function AdminMenuDetailPage({ params }: PageProps) {
       </div>
 
       {/* 텍스트 기반 상세 편집 */}
-      <MenuItemEditor menuId={menu.id} items={menu.items} />
+      <MenuItemEditor
+        menuId={menu.id}
+        items={itemsWithBtnUrls as never}
+      />
     </div>
   )
 }
