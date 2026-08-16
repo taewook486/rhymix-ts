@@ -398,6 +398,29 @@ describe('admin.menuItem.update 버튼 필드 형태 (SPEC-LEGACY-PARITY-001 M3,
     expect(data.hoverBtn).toBeUndefined();
   });
 
+  // e2e 는 normal 제거만 실행한다 — hover/active 도 같은 변환을 받는지, 그리고
+  // 한 상태를 지울 때 나머지 두 상태가 건드려지지 않는지를 여기서 고정한다.
+  it.each([
+    ['normalBtn', ['hoverBtn', 'activeBtn']],
+    ['hoverBtn', ['normalBtn', 'activeBtn']],
+    ['activeBtn', ['normalBtn', 'hoverBtn']],
+  ] as const)(
+    'M3-4: %s 만 제거하면 DbNull 로 변환되고 나머지 2종은 patch 에 실리지 않는다',
+    async (removed, untouched) => {
+      mockMenuItemUpdate.mockResolvedValueOnce({ id: 7 });
+      const caller = await makeCaller();
+
+      await caller.update({ id: 7, [removed]: null } as never);
+
+      const data = mockMenuItemUpdate.mock.calls[0]![0].data as Record<string, unknown>;
+      expect(data[removed]).toBe(Prisma.DbNull);
+      for (const field of untouched) {
+        // undefined = Prisma 가 "이 컬럼은 건드리지 않음"으로 읽는 값
+        expect(data[field]).toBeUndefined();
+      }
+    },
+  );
+
   it('M3-3: 정합화 외 값(구 {label, href} 스타일)은 입력 검증에서 거부된다 (닫힌 집합)', async () => {
     const caller = await makeCaller();
 
