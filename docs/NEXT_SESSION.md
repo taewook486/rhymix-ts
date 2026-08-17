@@ -15,7 +15,9 @@ feedback-flaky-failures-need-repeated-runs, feedback-no-parallel-git-commits
 source_session_id: 7b1c29bc-46f2-469d-b463-9f6bbcd4f727
 
 전제 검증:
-1) git log --oneline -1 → 3d3aeb6, main == origin/main (0 0)
+1) main == origin/main (0 0) + 작업 트리 clean (미커밋은 .claude/ 하네스 배치뿐)
+   — 이 문서 갱신 시점 HEAD 는 683b7d7, SPEC 산출물 최종은 3d3aeb6.
+     그 위 docs 커밋은 sync 진입에 무관하므로 HEAD 가 더 앞서 있어도 정상이다.
 2) docker.exe ps → rhymix-app(8080)/rhymix-db(3307)/rhymix-ts-db(5444) 3개 Up
    — 죽어 있으면 Docker Desktop 먼저 기동, rhymix-ts-db는 별도 start 필요
 3) DB 설치 기준선: menus 0 / menu_items 0 / sites 1
