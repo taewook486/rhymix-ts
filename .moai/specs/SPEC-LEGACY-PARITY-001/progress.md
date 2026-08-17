@@ -137,6 +137,43 @@ M3 구현이 남긴 20건(액션 `unknown` 타입 ↔ tRPC 입력 불일치 1건
 menu_items 0 — M3 픽스처 전량 철거, `uploads/e2e/` 제거됨. 설치 완료 상태 유지
 (admin@example.com / Rhymix!2026), 레거시 `localhost:8080` 대조 가능.
 
+#### M3 마감 — 인계 기록 모순 해소 (2026-08-17)
+
+인계 노트(`docs/NEXT_SESSION.md`, 커밋 09e22c9)는 AC-SITE-002/003 e2e 를 "실패 — 미해결"
+로 남겼는데, 같은 세션의 증적 `.moai/state/verify/m3-fix/d1-m3-e2e.txt` 는 동일 2건 전부
+통과를 담고 있었다. 증적 기록(23:56)이 인계 노트 작성(01:07)보다 1시간 앞서므로 두 기록이
+정면 충돌한다 — 재실행으로 판정했다.
+
+| 실행 | 대상 | 결과 |
+|------|------|------|
+| 1 | AC-SITE-002/003 단독 | 1 passed (3.4m) |
+| 2 | M3 2건 (002/003 + 010) | 2 passed (1.3m) |
+| 3 | M2 회귀 가드 3건 | 3 passed (1.7m) |
+| 4 | **고의 결함 주입** 상태 002/003 | **1 failed** — 보고된 실패 재현 |
+| 5 | 원복 후 M3 2건 | 2 passed (3.7m), exit 0 |
+| 6 | 단위 5스위트 | 37 passed (web 32 + admin 5) |
+
+**주입 결함**: `menu-item.ts` `toButtonPatch()` 의 `null → Prisma.DbNull` 변환 무력화.
+결과가 인계 노트의 증상과 **동일 라인·동일 형태**로 재현됐다 — `menu-button-image.spec.ts:192`
+poll `Expected true / Received false`, 30초 초과. 두 가지가 동시에 확정된다:
+
+1. AC-SITE-003 e2e 단언은 **살아 있다** — DbNull 회귀를 실제로 잡는다. 공허 통과 아님.
+2. 인계 노트가 기록한 실패는 **dev 서버가 DbNull 수정 이전 번들을 들고 있던 상태**에서만
+   재현된다. HEAD 소스에는 변환이 들어 있으므로 미해결 제품 결함은 없다. 같은 세션이
+   이미 기록해 둔 "WSL2 inotify 미작동 → 재기동 필수" 함정에 그 세션 자신이 걸린 것이다.
+
+**증적:** `.moai/state/verify/m3-close/{e0-injection-liveness.md,e1-m3-e2e-after-revert.txt,e2-units.txt}`
+
+**절차 함정 2건 (이번 세션 실측, 재발 방지):**
+
+- `pkill -f 'next dev'` 는 Bash 도구 자신의 커맨드라인에 그 문자열이 들어가 **자기 자신을
+  죽인다**(exit 144). 브래킷 회피(`'next[ ]dev'`)가 필요하다.
+- 기존 서버가 안 죽은 채로 새 `next dev` 를 띄우면 3000 을 못 잡고 3001 로 밀린 뒤
+  `.next/dev/lock` 획득 실패로 종료된다. 이때 테스트는 **낡은 번들 서버를 상대로 측정**되고
+  10분 넘게 헛돌았다. 재기동 후 로그에서 `Local: http://localhost:3000` 을 반드시 확인할 것.
+
+**M3 판정: 전 AC PASS, 미해결 항목 0건.**
+
 ## §F Phase 4 Mode Selection
 
 입력 파라미터:

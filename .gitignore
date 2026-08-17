@@ -209,6 +209,10 @@ secret-*.*
 .moai/memory/
 .moai/worktrees/
 .moai/branches/
+# 로컬 파일 저장소 — M3 버튼 이미지 업로드가 처음 쓰기 시작한 런타임 디렉터리다.
+# 추적 대상 소스가 하나도 없는데 무시 목록에 없어서, 넓은 `git add` 가 업로드 파일과
+# e2e 잔여 PNG 를 삼킬 수 있었다 (실측: 1x1 테스트 PNG 21개 방치).
+apps/web/uploads/
 
 # ===========================================
 # Update Noise-Suppression Ledgers (per-machine, never tracked)
