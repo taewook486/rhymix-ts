@@ -205,13 +205,25 @@ Route A — main 직저 커밋(브리프 지시; plan.md §A.6의 Tier-L PR 플�
 | GREEN | MenuItemDnDTree | `1 passed (1)` / `3 passed (3)` |
 | GREEN(재유도 후) | 상동 2스위트 | `25 passed (25)` 38.95s / `3 passed (3)` 276.16s — 되돌림 사고 후 재검증 |
 
+**e2e 경위(정직 기록 — 커밋 시점 보완):** 보호 커밋 `37b5817` 적립 시점에
+단위는 green 이었으나 **e2e 는 실패 상태였다** — 커밋 메시지는 단위 결과만
+서술하므로 이 기록으로 보완한다. 이력: run1(19:52) 환경 크래시
+`Target page, context or browser has been closed` → run5(20:28) 실측 어설션
+불일치 `Expected 3 / Received 28` — 서로 다른 원인 2건(전자가 후자를 가렸음).
+로케이터 수리(`7450ba3`, 스펙 파일만 변경 — 컴포넌트 무변경) 후 run6 통과
+(`1 passed (1.8m)`). 증적: e2e-run5.txt → e2e-run6.txt.
+
 **사고·절차 함정 3건 (재발 방지 기록):**
 
-1. **공유 체크아웃 되돌림 사고** — GREEN 달성 직후 e2e 준비 중 구현 3파일이
-   작업 트리에서 HEAD 로 되돌려졌다(동시 세션 추정). 살아남은 테스트 3파일을
-   규격으로 삼아 구현을 재유도하고, 재검증(green-*-restore.txt) 후 즉시 보호
-   커밋 `37b5817`을 적립했다. 교훈: GREEN 직후 커밋 — 커밋 전 작업 트리는
-   공유 자원이다.
+1. **작업 트리 되돌림 사고(원인 확정 — 오케스트레이터 공지)** — GREEN 달성
+   직후 구현 파일(`MenuItemDnDTree.tsx`)이 작업 트리에서 HEAD 로 되돌려졌다.
+   최초 기록은 "동시 세션 추정"이었으나 **원인은 팀 리드(오케스트레이터)**로
+   확정됐다: 19:46 KST `git checkout HEAD -- MenuItemDnDTree.tsx` — 자체
+   2줄 결함 주입을 되돌리는 과정에서 본 세션을 종료로 오판하여 실행(오케스트레이터
+   공지로 확정, 추정 아님). 살아남은 테스트 3파일을 규격으로 삼아 구현을
+   재유도하고, 재검증(green-*-restore.txt) 후 즉시 보호 커밋 `37b5817`을
+   적립했다. 교훈: GREEN 직후 커밋 — 커밋 전 작업 트리는 공유 자원이다(이번
+   원인은 리더였지만 임의 병행 세션에도 동일하게 성립).
 2. **next-server 자식 생존 + pkill 자기매치** — `pkill -f 'next[ ]dev'` 후에도
    리네임된 `next-server (v16.0.0)` 자식이 3000 포트를 계속 점유했다. 또한
    `pkill -f 'next-server'`는 패턴 문자열 자체가 Bash 도구의 커맨드라인에
@@ -267,6 +279,73 @@ registry-isolated-rerun.txt, registry-b101-bigbudget.txt, typecheck-web.txt,
 typecheck-admin.txt
 
 **M4 판정: 전 AC PASS(AC-SITE-009 는 전환 준비 완료 — sync 이관), 미해결 제품 결함 0건.**
+
+#### M4 오케스트레이터 독립 재검증 (2026-08-17 23:00~23:20)
+
+manager-develop 의 자체 보고를 근거로 쓰지 않고 전 항목을 재실행했다. 증적:
+`.moai/state/verify/m4-orch/{o1-units-rerun,o2-typecheck,o3-e2e-rerun,o4-psql-verify,
+o5-integrity-fixed,o6-inject-shift,o7-inject-recursion,o8-final-green}.txt`.
+
+| 재검증 | 결과 |
+|--------|------|
+| 단위 3스위트 재실행 | `28 passed (28)` exit 0 — 자체 보고와 일치 |
+| typecheck web / admin | 각 exit 0 / 오류 0건 |
+| e2e 재실행 (시드→dev 재기동→UI 왕복) | `1 passed (3.5m)` exit 0 |
+| 실 DB `verify.sql` 재실행 | 사본 서브트리 4행(17/18/19/20), `parentId\|listOrder` 중복 **0 rows**, 형제 2→3·3→4 시프트, 버튼 없는 행 전부 `btn_is_sql_null=t` |
+| PRESERVE 앵커 diff | 전 경로 `git ls-files` tracked 확인 후 diff 0 (실존 검증 병행 — 없는 경로의 0행은 거짓 PASS) |
+| 커밋 범위 | `37b5817`·`7450ba3` 모두 `apps/web` 한정, `.claude/` 하네스 배치 혼입 0건 |
+| 전체 스위트 유일 실패 분류 | `registry.test.ts` 이력 `90f368b`/`29869a2`/`61e8b1a` 전부 M4 이전 + 최상단 import 는 vitest 뿐 → M4 무관 확인 |
+
+**공허 통과 판별 (핵심):** AC-SITE-001 의 두 절반을 각각 깨뜨려 단위 M4-1 이 실제로
+검출하는지 확인했다.
+
+| 주입 | 검출 결과 |
+|------|-----------|
+| 형제 `listOrder` 시프트(`updateMany`) 제거 | `expected [0,1,1,2] to deeply equal [0,1,2,3]` — 중복 1 검출 |
+| 재귀 자식 복사 루프 차단 | `expected [Array(1)] to have a length of 4 but got 1` — 서브트리 누락 검출 |
+
+원복 후 `17 passed (17)`, `grep -c DIAG-INJECT` 0. 두 계약 모두 단위 테스트에 하중이
+실려 있다 — 공허 통과 아님.
+
+**재검증에서 발견한 증거 결함 1건 — `verify.sql` (5) 쿼리의 `id = 1` 하드코딩:**
+
+```sql
+WITH src AS ( SELECT * FROM menu_items WHERE id = 1 ), ... FROM src s, roots r;
+```
+
+원 실행에서는 원본 루트가 우연히 `id = 1` 이어서 `t t t t t` 1행이 나왔다. 재실행에서는
+시퀀스가 이어져 원본이 `id = 11` 이므로 `src` 가 비고 CROSS JOIN 이 **0행** — 5개 무결성
+검증이 아무것도 평가하지 않았다. 문제는 재사용 불가가 아니라 **복제 무결성이 실제로
+깨져도 동일하게 0행**이라는 점이다: id 불일치로 인한 빈 결과와 진짜 결함이 구별되지
+않고, psql 출력 안에서 "문제 없음"으로 읽힌다(거짓 음성 채널). 원본=최소 id / 사본=차순
+id 로 파라미터화한 판정을 별도 실행해 빠진 증거를 만들었다 —
+`o5-integrity-fixed.txt`: `src_id=11, copy_id=17` 에서 `btn_copied_equal`,
+`openinnew_equal`, `child_openinnew_copied`, `grand_expand_copied_btn_sql_null`,
+`copy_children_btn_all_sql_null` **5종 전부 `t`**. 후속 실행은 이 파라미터화 판정을
+쓸 것 — 원본 `verify.sql` (5) 는 단독으로 신뢰하지 않는다.
+
+**검증 구조 지적 (후속 판단 재료):** e2e 는 `listOrder`·서브트리 행 수·SQL NULL 의미론을
+의도적으로 단언하지 않고 psql(E4)에 ground truth 를 위임한다. 중복 단언 회피로는
+합리적이나, **psql 은 테스트가 아니라 수동 조회**여서 CI 에서 e2e 만 돌면 "충돌 0건" 은
+자동 검증되지 않는다. 실질 자동 방어선은 단위 M4-1 이며, 위 주입 2건이 그것을 확인했다.
+
+**구현 부채 4건 (제품 결함 아님 — 후속 판단용):**
+
+1. 복사 대상을 정하는 읽기(`findMany` → `childrenOf` 맵)가 `$transaction` **밖**이다.
+   주석의 "부분 복사 방지" 는 쓰기 원자성만 덮고, 무엇을 복사할지 정한 읽기는 창 밖에
+   있다 — 그 사이 구조가 바뀌면 자식을 놓친다(TOCTOU).
+2. `$transaction` 타임아웃 미지정 — Prisma 기본 5초. 노드가 많은 서브트리를 순차
+   `create` 로 도는 구조라 초과 가능.
+3. `duplicateMenuItemAction` 이 UI 에 배선되지 않았다 — 복제 버튼은
+   `trpc.admin.menuItem.duplicate.useMutation()` 을 직접 호출하므로 액션의
+   `revalidatePath` 는 실행되지 않는 경로다(plan.md 가 액션·버튼을 각각 요구했으므로
+   결함은 아니나 중복 진입점).
+4. `createdCount` 가 트랜잭션 클로저 밖 변수 — 재시도 시 중복 계수(Prisma 기본
+   무재시도라 위험은 낮음).
+
+**별건 부채(M4 무관):** `apps/web/lib/modules/registry.test.ts` B-101 은 실측 160~182초에
+파일 예산 180초로 경계선에 앉아 있다 — 부하가 튀면 빨개지고, 그때마다 "M4 회귀인가" 의심
+비용을 발생시킨다. 예산 조정 또는 테스트 분할을 별건으로 다룰 것.
 
 ## §F Phase 4 Mode Selection
 
