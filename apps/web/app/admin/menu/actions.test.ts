@@ -14,6 +14,7 @@
  * 액션 내에서 재사용한다 (design.md D2 — 신규 엔드포인트 금지).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TRPCError } from '@trpc/server';
 import { getServerCaller } from '@/lib/trpc/server';
 import { revalidatePath } from 'next/cache';
 import { updateMenuItemAction } from './actions';
@@ -59,9 +60,10 @@ vi.mock('@rhymix-ts/file', () => ({
 // 인자 타입을 명시해야 mock.calls[n][0] 로 페이로드를 꺼낼 수 있다
 // (인자 없는 vi.fn() 은 calls 가 빈 튜플이라 인덱싱이 타입 오류가 된다).
 const updateFn = vi.fn(async (_input: Record<string, unknown>) => ({}));
+const duplicateFn = vi.fn(async (_input: { id: number }) => ({ id: 1001, created: 4 }));
 const callerMock = {
   admin: {
-    menuItem: { update: updateFn },
+    menuItem: { update: updateFn, duplicate: duplicateFn },
     group: { list: vi.fn(async () => ({ items: [] })) },
   },
 };
@@ -190,5 +192,37 @@ describe('AC-SITE-003: 버튼 이미지 상태별 제거', () => {
     expect(payload.normalBtn).toBeUndefined();
     expect(payload.hoverBtn).toBeUndefined();
     expect(payload.activeBtn).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 M4 — duplicateMenuItemAction (AC-SITE-001 액션 위임)
+//
+// 액션은 getServerCaller 로 tRPC duplicate 에 위임만 한다 (Prisma 직접 호출
+// 금지 — 위임 구조 요건). 동적 import 로 가져오므로 export 가 없으면
+// undefined 호출 TypeError 로 RED 가 재현된다.
+// ---------------------------------------------------------------------------
+
+describe('M4: duplicateMenuItemAction — tRPC duplicate 위임', () => {
+  it('duplicate({id}) 위임 + /admin/menu/<menuId> revalidate + {ok:true} 반환', async () => {
+    const actions = await import('./actions');
+
+    const res = await actions.duplicateMenuItemAction(1, 2);
+
+    expect(res).toEqual({ ok: true });
+    expect(duplicateFn).toHaveBeenCalledTimes(1);
+    expect(duplicateFn).toHaveBeenCalledWith({ id: 1 });
+    expect(vi.mocked(revalidatePath)).toHaveBeenCalledWith('/admin/menu/2');
+  });
+
+  it('TRPCError 는 {error: message} 로 변환된다', async () => {
+    duplicateFn.mockRejectedValueOnce(
+      new TRPCError({ code: 'NOT_FOUND', message: 'menu item not found' }),
+    );
+
+    const actions = await import('./actions');
+    const res = await actions.duplicateMenuItemAction(999, 2);
+
+    expect(res).toEqual({ error: 'menu item not found' });
   });
 });

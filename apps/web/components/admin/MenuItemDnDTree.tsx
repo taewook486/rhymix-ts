@@ -17,7 +17,7 @@
  * - Depth check: 최대 깊이 6 제한
  */
 import { useState, useEffect } from 'react'
-import { GripVertical, ChevronRight, ChevronDown } from 'lucide-react'
+import { GripVertical, ChevronRight, ChevronDown, Copy } from 'lucide-react'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
@@ -137,14 +137,18 @@ function SortableMenuItem({
   isDragging,
   isExpanded,
   isExpanding,
+  isDuplicating,
   onToggleExpand,
+  onDuplicate,
 }: {
   item: MenuItemRow & { depth: number }
   isActive: boolean
   isDragging: boolean
   isExpanded: boolean
   isExpanding: boolean
+  isDuplicating: boolean
   onToggleExpand: (item: MenuItemRow & { depth: number }) => void
+  onDuplicate: (item: MenuItemRow & { depth: number }) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: item.id,
@@ -196,6 +200,17 @@ function SortableMenuItem({
 
       <span className="flex-1 text-sm font-medium truncate">{item.title}</span>
 
+      {/* M4 항목 복제 (AC-SITE-001 UI 배선) — 서브트리 복사는 라우터가 담당 */}
+      <button
+        type="button"
+        disabled={isDuplicating}
+        onClick={() => onDuplicate(item)}
+        className="text-zinc-400 hover:text-zinc-600 disabled:opacity-50"
+        aria-label="복제"
+      >
+        <Copy className="h-4 w-4" aria-hidden />
+      </button>
+
       <span className="text-xs text-zinc-400">
         ID: {item.id}
         {item.parentId !== null && ` (부모: ${item.parentId})`}
@@ -213,8 +228,10 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
   const [isReordering, setIsReordering] = useState(false)
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
   const [expandingId, setExpandingId] = useState<number | null>(null)
+  const [duplicatingId, setDuplicatingId] = useState<number | null>(null)
   const router = useRouter()
   const reorderMutation = trpc.admin.menuItem.reorder.useMutation()
+  const duplicateMutation = trpc.admin.menuItem.duplicate.useMutation()
   const utils = trpc.useUtils()
 
   // 자식 펼침/접기 (AC-B2 — admin.menuItem.list 로 lazy load, 트리 계약 문서 § Implementation Notes)
@@ -248,6 +265,54 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
       toast.error('자식 항목을 불러오지 못했습니다')
     } finally {
       setExpandingId(null)
+    }
+  }
+
+  // M4 항목 복제 (AC-SITE-001) — tRPC duplicate 위임 후 낙관적 로컬 삽입.
+  // useState 는 props 변화로 재초기화되지 않으므로 router.refresh() 로 서버
+  // 상태를 확정 반영한다. 서브트리 재귀 복사·listOrder 시프트는 라우터가
+  // $transaction 으로 보장하고, 여기는 원본의 보이는 서브트리 뒤에 새 루트
+  // 행만 끼워 넣는다.
+  const handleDuplicate = async (item: MenuItemRow & { depth: number }) => {
+    if (duplicatingId !== null) return
+
+    setDuplicatingId(item.id)
+    try {
+      const res = await duplicateMutation.mutateAsync({ id: item.id })
+      setItems((prev) => {
+        const rows = prev as (MenuItemRow & { depth: number })[]
+        const idx = rows.findIndex((r) => r.id === item.id)
+        if (idx === -1) return prev
+
+        // 원본의 보이는 서브트리 끝까지 건너뛴 자리가 새 루트의 위치다
+        let end = idx + 1
+        while (end < rows.length && rows[end]!.depth > item.depth) end++
+
+        const newRow: MenuItemRow & { depth: number } = {
+          id: res.id,
+          title: item.title,
+          parentId: item.parentId,
+          listOrder: item.listOrder + 1,
+          depth: item.depth,
+        }
+        const inserted = [...rows.slice(0, end), newRow, ...rows.slice(end)]
+
+        // 삽입 지점 뒤의 형제 listOrder +1 — 화면 순서와 정렬 키 충돌 방지
+        return inserted.map((r) =>
+          r.id !== res.id &&
+          r.parentId === item.parentId &&
+          r.listOrder > item.listOrder
+            ? { ...r, listOrder: r.listOrder + 1 }
+            : r,
+        )
+      })
+      router.refresh()
+      toast.success('항목이 복제되었습니다')
+    } catch (err) {
+      console.error('Duplicate failed:', err)
+      toast.error('복제 실패: 서버 오류')
+    } finally {
+      setDuplicatingId(null)
     }
   }
 
@@ -408,7 +473,9 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
                   isDragging={activeId === item.id}
                   isExpanded={expandedIds.has(item.id)}
                   isExpanding={expandingId === item.id}
+                  isDuplicating={duplicatingId === item.id}
                   onToggleExpand={handleToggleExpand}
+                  onDuplicate={handleDuplicate}
                 />
               </li>
             ))}

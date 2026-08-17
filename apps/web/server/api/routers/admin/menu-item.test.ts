@@ -434,3 +434,246 @@ describe('admin.menuItem.update 버튼 필드 형태 (SPEC-LEGACY-PARITY-001 M3,
     expect(mockMenuItemUpdate).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 M4 — admin.menuItem.duplicate (AC-SITE-001 단위 부분)
+//
+// 단위 검증은 상태 저장 in-memory fake 로 **최종 행 상태**를 관찰한다 — mock
+// 호출 기록이 아니라 남은 rows 자체를 본다 (B1: Prisma mock 은 전달값만 보고
+// 저장 형태를 가린다 — M3 결함 2의 교훈). fake 는 create 에 전달된 값을 그대로
+// 저장하므로, 평범한 null 이 버튼 컬럼에 실리면(real Prisma 는 'null'::jsonb
+// 를 쓴다) rows 에서 그대로 보인다.
+// ---------------------------------------------------------------------------
+
+/** M4 fake 행 — schema.prisma MenuItem 스칼라 전부 */
+interface M4Row {
+  id: number;
+  menuId: number;
+  parentId: number | null;
+  title: string;
+  url: string | null;
+  icon: string | null;
+  cssClass: string | null;
+  description: string | null;
+  groupIds: number[];
+  openInNewWindow: boolean;
+  expand: boolean;
+  listOrder: number;
+  normalBtn: unknown;
+  hoverBtn: unknown;
+  activeBtn: unknown;
+}
+
+function m4Row(partial: Partial<M4Row> & Pick<M4Row, 'id' | 'title'>): M4Row {
+  return {
+    menuId: 1,
+    parentId: null,
+    url: null,
+    icon: null,
+    cssClass: null,
+    description: null,
+    groupIds: [],
+    openInNewWindow: false,
+    expand: false,
+    listOrder: 0,
+    normalBtn: null,
+    hoverBtn: null,
+    activeBtn: null,
+    ...partial,
+  };
+}
+
+/**
+ * 상태 저장 fake — duplicate 호출 뒤 rows 배열이 최종 DB 상태다.
+ * where/data 는 duplicate 가 쓸 수 있는 형태만 지원하고, 계약 밖 형태는
+ * 조용히 통과하지 않고 예외를 낸다.
+ */
+function makeDuplicateFake(seed: M4Row[]) {
+  const rows: M4Row[] = seed.map((r) => ({ ...r, groupIds: [...r.groupIds] }));
+  const createdInTx: boolean[] = [];
+  let nextId = 1000;
+  let inTx = false;
+
+  const menuItem = {
+    findUnique: vi.fn(async ({ where }: { where: { id: number } }) =>
+      rows.find((r) => r.id === where.id) ?? null,
+    ),
+    findMany: vi.fn(async ({ where }: { where: { menuId: number } }) =>
+      rows.filter((r) => r.menuId === where.menuId).map((r) => ({ ...r })),
+    ),
+    create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+      const id = nextId++;
+      const row = {
+        ...m4Row({ id, title: typeof data.title === 'string' ? data.title : '' }),
+        ...data,
+        id,
+      } as unknown as M4Row;
+      rows.push(row);
+      createdInTx.push(inTx);
+      return { ...row };
+    }),
+    update: vi.fn(
+      async ({
+        where,
+        data,
+      }: {
+        where: { id: number };
+        data: { listOrder?: number | { increment: number } };
+      }) => {
+        const row = rows.find((r) => r.id === where.id);
+        if (!row) throw new Error(`fake: update 대상 없음 id=${where.id}`);
+        if (data.listOrder !== undefined) {
+          row.listOrder =
+            typeof data.listOrder === 'number'
+              ? data.listOrder
+              : row.listOrder + data.listOrder.increment;
+        }
+        return { ...row };
+      },
+    ),
+    updateMany: vi.fn(
+      async ({
+        where,
+        data,
+      }: {
+        where: { menuId: number; parentId?: number | null; listOrder?: { gt?: number } };
+        data: { listOrder?: number | { increment: number } };
+      }) => {
+        let count = 0;
+        for (const row of rows) {
+          if (row.menuId !== where.menuId) continue;
+          if ('parentId' in where && (row.parentId ?? null) !== (where.parentId ?? null)) continue;
+          if (where.listOrder?.gt !== undefined && !(row.listOrder > where.listOrder.gt)) continue;
+          if (data.listOrder !== undefined) {
+            row.listOrder =
+              typeof data.listOrder === 'number'
+                ? data.listOrder
+                : row.listOrder + data.listOrder.increment;
+          }
+          count += 1;
+        }
+        return { count };
+      },
+    ),
+    delete: vi.fn(async () => {
+      throw new Error('fake: duplicate 는 delete 를 쓰지 않는다');
+    }),
+  };
+
+  const prisma = {
+    siteSetting: { findFirst: vi.fn(async () => null) },
+    adminLog: { create: vi.fn(async () => ({ id: BigInt(1) })) },
+    menu: {
+      findUnique: vi.fn(async ({ where }: { where: { id: number } }) =>
+        where.id === 1 ? { id: 1, title: '메인메뉴' } : null,
+      ),
+    },
+    menuItem,
+    $transaction: vi.fn(async (arg: unknown) => {
+      if (Array.isArray(arg)) return Promise.all(arg);
+      inTx = true;
+      try {
+        return await (arg as (tx: unknown) => unknown)({ menuItem });
+      } finally {
+        inTx = false;
+      }
+    }),
+  };
+
+  return { prisma, rows, createdInTx };
+}
+
+describe('admin.menuItem.duplicate (SPEC-LEGACY-PARITY-001 M4, AC-SITE-001)', () => {
+  /** AC-SITE-001 픽스처 — 형제 3개(A,B,C) + 복제 대상 A 에 2단계 중첩 자식 */
+  function acFixture(): M4Row[] {
+    return [
+      m4Row({
+        id: 1, title: 'A', listOrder: 0,
+        normalBtn: { image: '2026/08/a-key', alt: 'A' },
+      }),
+      m4Row({ id: 11, title: 'A-1', parentId: 1, listOrder: 0, groupIds: [4, 7], openInNewWindow: true }),
+      m4Row({ id: 111, title: 'A-1-a', parentId: 11, listOrder: 0, expand: true }),
+      m4Row({ id: 12, title: 'A-2', parentId: 1, listOrder: 1 }),
+      m4Row({ id: 2, title: 'B', listOrder: 1 }),
+      m4Row({ id: 3, title: 'C', listOrder: 2 }),
+    ];
+  }
+
+  async function makeDuplicateCaller(seed: M4Row[]) {
+    const fake = makeDuplicateFake(seed);
+    const { adminMenuItemRouter } = await import('./menu-item');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminMenuItemRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller({ ...adminCtx, prisma: fake.prisma } as any);
+    return { caller, fake };
+  }
+
+  it('M4-1: A(형제 3개 + 2단계 중첩) 복제 → 서브트리 전체 복사 + listOrder 충돌 0건', async () => {
+    const seed = acFixture();
+    const { caller, fake } = await makeDuplicateCaller(seed);
+
+    const result = await caller.duplicate({ id: 1 });
+
+    // 신규 행 4개 (A, A-1, A-1-a, A-2 사본) — 전부 새 id, 전부 단일 $transaction 안 (B2)
+    const created = fake.rows.filter((r) => r.id >= 1000);
+    expect(created).toHaveLength(4);
+    expect(fake.createdInTx).toEqual([true, true, true, true]);
+
+    // 루트 사본: 같은 부모(null), 원본 바로 뒤 listOrder 1
+    const rootCopy = created.find((r) => r.parentId === null);
+    expect(rootCopy).toBeDefined();
+    expect(rootCopy!.title).toBe('A');
+    expect(rootCopy!.listOrder).toBe(1);
+    expect(result).toMatchObject({ id: rootCopy!.id, created: 4 });
+
+    // 버튼 참조형 값이 그대로 복사된다 (M3 형태 보존)
+    expect(rootCopy!.normalBtn).toEqual({ image: '2026/08/a-key', alt: 'A' });
+
+    // 자식 사본 체인 — parentId 가 새 id 들을 가리킨다 (재귀 전체 복사)
+    const a1copy = created.find((r) => r.title === 'A-1');
+    expect(a1copy!.parentId).toBe(rootCopy!.id);
+    expect(a1copy!.listOrder).toBe(0);
+    expect(a1copy!.groupIds).toEqual([4, 7]);
+    expect(a1copy!.openInNewWindow).toBe(true);
+
+    const a1acopy = created.find((r) => r.title === 'A-1-a');
+    expect(a1acopy!.parentId).toBe(a1copy!.id);
+    expect(a1acopy!.listOrder).toBe(0);
+    expect(a1acopy!.expand).toBe(true);
+
+    const a2copy = created.find((r) => r.title === 'A-2');
+    expect(a2copy!.parentId).toBe(rootCopy!.id);
+    expect(a2copy!.listOrder).toBe(1);
+
+    // 원본 서브트리 불변
+    const a1 = fake.rows.find((r) => r.id === 11);
+    expect(a1!.parentId).toBe(1);
+    expect(a1!.listOrder).toBe(0);
+    const a = fake.rows.find((r) => r.id === 1);
+    expect(a!.listOrder).toBe(0);
+
+    // 형제 shift — 최상위 listOrder 는 [0,1,2,3] 이고 전 계층에서 충돌 0건
+    const topLevel = fake.rows
+      .filter((r) => r.parentId === null)
+      .map((r) => r.listOrder)
+      .sort();
+    expect(topLevel).toEqual([0, 1, 2, 3]);
+    for (const pid of new Set(fake.rows.map((r) => r.parentId))) {
+      const orders = fake.rows.filter((r) => r.parentId === pid).map((r) => r.listOrder);
+      expect(new Set(orders).size, `parentId=${pid} listOrder 충돌`).toBe(orders.length);
+    }
+
+    // B1: 소스 버튼이 비어 있으면(픽스처 null) 사본 생성 시 평범한 null 이 전달되면
+    // 안 된다 — real Prisma 는 'null'::jsonb 를 쓴다. 필드 생략(undefined) 또는
+    // DbNull 만 SQL NULL 이 된다.
+    expect([undefined, Prisma.DbNull]).toContain(a1copy!.normalBtn);
+    expect(a1copy!.normalBtn).not.toBeNull();
+  });
+
+  it('M4-2: 존재하지 않는 id → NOT_FOUND', async () => {
+    const { caller } = await makeDuplicateCaller(acFixture());
+
+    await expect(caller.duplicate({ id: 999 })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});

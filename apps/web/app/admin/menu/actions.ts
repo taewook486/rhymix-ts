@@ -351,3 +351,29 @@ export async function deleteMenuItemAction(
     return { error: 'MenuItem 삭제 중 오류가 발생했습니다.' }
   }
 }
+
+/**
+ * MenuItem 복제 — admin.menuItem.duplicate tRPC 프로시저에 위임한다
+ * (SPEC-LEGACY-PARITY-001 M4, AC-SITE-001).
+ *
+ * @MX:NOTE: [AUTO] 서브트리 재귀 복사·listOrder 무충돌 계약은 라우터의 단일
+ *           $transaction 이 담당하며, 액션은 위임 + revalidate 만 한다
+ *           (Prisma 직접 호출 금지 — 위임 구조 요건).
+ * @MX:SPEC: SPEC-LEGACY-PARITY-001 AC-SITE-001
+ */
+export async function duplicateMenuItemAction(
+  id: number,
+  menuId: number,
+): Promise<{ ok: true } | { error: string }> {
+  try {
+    const caller = await getServerCaller()
+    await caller.admin.menuItem.duplicate({ id })
+    revalidatePath(`/admin/menu/${menuId}`)
+    return { ok: true }
+  } catch (err) {
+    if (err instanceof TRPCError) {
+      return { error: err.message }
+    }
+    return { error: 'MenuItem 복제 중 오류가 발생했습니다.' }
+  }
+}

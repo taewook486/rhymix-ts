@@ -164,4 +164,99 @@ export const adminMenuItemRouter = router({
 
       return { updated: input.items.length };
     }),
+
+  /**
+   * MenuItem 복제 — 원본과 같은 부모의 바로 뒤에 서브트리 전체를 복사한다
+   * (SPEC-LEGACY-PARITY-001 M4, AC-SITE-001).
+   *
+   * @MX:ANCHOR: [AUTO] admin.menuItem.duplicate — 메뉴 항목 복제 단일 진입점.
+   * @MX:REASON: 서브트리 재귀 복사의 원자성(단일 $transaction)과 listOrder 무충돌
+   *             계약이 이 프로시저에만 있다. fan_in >= 3 (MenuItemDnDTree, menu actions, tests).
+   * @MX:SPEC: SPEC-LEGACY-PARITY-001 AC-SITE-001
+   *
+   * 동작:
+   *   1. 원본 로드 (없으면 NOT_FOUND)
+   *   2. 메뉴 전체를 읽어 원본 id 기준 부모-자식 맵 구성
+   *   3. 단일 $transaction — (a) 삽입 지점 뒤 형제 listOrder +1 밀기,
+   *      (b) 부모부터 깊이 우선 create. 자식의 parentId 는 새 부모 id 를
+   *      가리켜야 FK 가 성립한다 (부모가 먼저 생성돼야 자식 참조 가능).
+   *
+   * 버튼 3종: 원본값이 null 이면 Prisma.DbNull 을 명시해 SQL NULL 로 기록한다.
+   * 평범한 null 을 넘기면 'null'::jsonb 가 되어 IS NULL 이 false 로 남는다
+   * (M3 결함 2 와 동일한 Json? 함정 — toButtonPatch 주석 참조).
+   */
+  duplicate: protectedAdminProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      // 1. 원본 로드
+      const source = await ctx.prisma.menuItem.findUnique({ where: { id: input.id } });
+      if (!source) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'menu item not found' });
+      }
+
+      // 2. 원본 id 기준 부모-자식 맵 — 복사 경로는 원본 id 공간을 따라간다
+      const all = await ctx.prisma.menuItem.findMany({ where: { menuId: source.menuId } });
+      const childrenOf = new Map<number, typeof all>();
+      for (const row of all) {
+        if (row.parentId === null) continue;
+        const list = childrenOf.get(row.parentId);
+        if (list) list.push(row);
+        else childrenOf.set(row.parentId, [row]);
+      }
+
+      // 3. 단일 트랜잭션 — 부분 복사 방지
+      let createdCount = 0;
+      const newRootId = await ctx.prisma.$transaction(async (tx) => {
+        // (a) 루트 사본 자리 확보 — 원본 뒤의 형제들을 1씩 민다 (충돌 0건 보장)
+        await tx.menuItem.updateMany({
+          where: {
+            menuId: source.menuId,
+            parentId: source.parentId,
+            listOrder: { gt: source.listOrder },
+          },
+          data: { listOrder: { increment: 1 } },
+        });
+
+        // (b) 부모-먼저 깊이 우선 복사. 자식 listOrder 는 원본 값을 그대로 쓴다 —
+        //     새 부모 그룹은 비어 있으므로 충돌이 성립하지 않는다.
+        const copySubtree = async (
+          row: (typeof all)[number],
+          parentId: number | null,
+          listOrder: number,
+        ): Promise<number> => {
+          const copy = await tx.menuItem.create({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data: {
+              menuId: row.menuId,
+              parentId,
+              title: row.title,
+              url: row.url,
+              icon: row.icon,
+              cssClass: row.cssClass,
+              description: row.description,
+              groupIds: [...row.groupIds],
+              openInNewWindow: row.openInNewWindow,
+              expand: row.expand,
+              listOrder,
+              normalBtn: row.normalBtn ?? Prisma.DbNull,
+              hoverBtn: row.hoverBtn ?? Prisma.DbNull,
+              activeBtn: row.activeBtn ?? Prisma.DbNull,
+            } as any,
+          });
+          createdCount += 1;
+
+          const children = [...(childrenOf.get(row.id) ?? [])].sort(
+            (a, b) => a.listOrder - b.listOrder,
+          );
+          for (const child of children) {
+            await copySubtree(child, copy.id, child.listOrder);
+          }
+          return copy.id;
+        };
+
+        return copySubtree(source, source.parentId, source.listOrder + 1);
+      });
+
+      return { id: newRootId, created: createdCount };
+    }),
 });
