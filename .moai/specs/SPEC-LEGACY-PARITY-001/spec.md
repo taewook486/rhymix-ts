@@ -2,9 +2,9 @@
 id: SPEC-LEGACY-PARITY-001
 title: "사이트 제작/편집 영역 레거시 parity — 메뉴 편집 격차 해소 + Slice D 승계 검증"
 version: "0.4.0"
-status: draft
+status: in-progress
 created: 2026-08-15
-updated: 2026-08-16
+updated: 2026-08-17
 author: MoAI
 priority: P1
 phase: "Phase 15 — 관리자 레거시 parity 시리즈"

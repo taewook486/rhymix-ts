@@ -174,6 +174,100 @@ poll `Expected true / Received false`, 30초 초과. 두 가지가 동시에 확
 
 **M3 판정: 전 AC PASS, 미해결 항목 0건.**
 
+### M4 — 메뉴 항목 복제 + 수명주기 마감 (2026-08-17, TDD)
+
+**실행 환경:** 구현 커밋 `37b5817`(feat) → e2e 로케이터 수리 `7450ba3`(test).
+Route A — main 직저 커밋(브리프 지시; plan.md §A.6의 Tier-L PR 플로우 주석은
+브리프로 대체됨). PRESERVE 앵커 base `a9e637a`.
+
+**산출물 (base 대비 6파일 +1190/−32):**
+
+- `apps/web/server/api/routers/admin/menu-item.ts`(+132) — `duplicate` 프로시저:
+  단일 `$transaction` 재귀 서브트리 복사 + 삽입점 이후 형제 listOrder 시프트.
+  `@MX:ANCHOR`(REASON+SPEC 포함)로 단일 진입점 계약 표시.
+- `apps/web/app/admin/menu/actions.ts`(+180) — `duplicateMenuItemAction`:
+  tRPC 위임 + `/admin/menu/<menuId>` revalidate + TRPCError 변환(`@MX:NOTE`).
+- `apps/web/components/admin/MenuItemDnDTree.tsx`(+69) — 행별 [복제]
+  버튼(aria-label), 낙관적 로컬 삽입 → `router.refresh()` 서버 확정 + 토스트.
+- 테스트 3파일(+841): `menu-item.test.ts` · `actions.test.ts` ·
+  `MenuItemDnDTree.test.tsx`(착수 전 특성화 2건 — lazy load·reorder payload — 포함).
+- e2e: `apps/web/e2e/menu-duplicate.spec.ts`(신규). 시드는 psql(E4 증거와 동일
+  픽스처)를 스펙 밖에서 주입 — UI 왕복만 단언.
+
+**RED → GREEN (verbatim, `.moai/state/verify/m4/red-units.txt` 116,823B):**
+
+| 실행 | 명령 대상 | 결과 |
+|------|-----------|------|
+| RED-1 | actions + menu-item | `Test Files 2 failed (2)` / `Tests 3 failed \| 22 passed (25)` |
+| RED-2 | MenuItemDnDTree | `Test Files 1 failed (1)` / `Tests 3 failed (3)` |
+| RED-3(정제) | MenuItemDnDTree | `1 failed \| 2 passed (3)` — 특성화 2건 green, M4 버튼 테스트만 RED |
+| GREEN | actions + menu-item | `2 passed (2)` / `25 passed (25)` |
+| GREEN | MenuItemDnDTree | `1 passed (1)` / `3 passed (3)` |
+| GREEN(재유도 후) | 상동 2스위트 | `25 passed (25)` 38.95s / `3 passed (3)` 276.16s — 되돌림 사고 후 재검증 |
+
+**사고·절차 함정 3건 (재발 방지 기록):**
+
+1. **공유 체크아웃 되돌림 사고** — GREEN 달성 직후 e2e 준비 중 구현 3파일이
+   작업 트리에서 HEAD 로 되돌려졌다(동시 세션 추정). 살아남은 테스트 3파일을
+   규격으로 삼아 구현을 재유도하고, 재검증(green-*-restore.txt) 후 즉시 보호
+   커밋 `37b5817`을 적립했다. 교훈: GREEN 직후 커밋 — 커밋 전 작업 트리는
+   공유 자원이다.
+2. **next-server 자식 생존 + pkill 자기매치** — `pkill -f 'next[ ]dev'` 후에도
+   리네임된 `next-server (v16.0.0)` 자식이 3000 포트를 계속 점유했다. 또한
+   `pkill -f 'next-server'`는 패턴 문자열 자체가 Bash 도구의 커맨드라인에
+   들어가 **자기 자신을 죽인다**(exit 1, 후속 명령 미실행). 종료 세트
+   확장 + 검증은 별도 호출·브래킷 회피(`[n]ext-server`)로 수행한다.
+3. **e2e 로케이터 결함(run5→run6)** — `ul > li` 행 카운트가 관리자 사이드바
+   chrome까지 세서 `Expected 3 / Received 28`. [복제] 버튼 role 계약으로 행을
+   세는 방식으로 수리(테스트 결함, 제품 무관). run6 통과.
+
+**AC 행렬 (M4 범위):**
+
+| AC | 판정 | 근거 |
+|----|------|------|
+| AC-SITE-001 | PASS | 단위 28건(25+3) green + e2e run6(`1 passed (1.8m)`) + psql 6검증(서브트리 8행 전체 복사, listOrder 충돌 0건, `btn_is_sql_null=t` 전 사본 행, top 순서 원본(1)/사본(2)/형제1(3)/형제2(4)) |
+| AC-SITE-007 | PASS | M2 특성화 3종 green 유지 + DnD reorder 특성화 green + design/ anchored diff 0(아래) |
+| AC-SITE-008 | PASS | `AdminSidebar.tsx` anchored diff `a9e637a..HEAD` → 출력 0행 |
+| AC-SITE-009 | 준비 완료 | 근거 기록 `ac009-basis.txt`(아카이브 SPEC-MENU-001 `status: completed`, 전환 커밋 0건, `superseded_by:` 스키마 외 필드 — 미작성 확인). `* → superseded` 전환 자체는 manager-spec/sync 단계 소관으로 이관 |
+
+**PRESERVE (E7 — 앵커 diff + 경로 존재 검증 후 판정):** 존재하지 않는 경로의
+`git diff`는 0행을 내는 **거짓 PASS**(감사 D4)다. 1차 패스에서
+`components/{Utility,FooterMenuSlot,GlobalFooter,MenuRenderer}.tsx` 가 존재하지
+않는 경로였음이 발견되어 `git ls-files` 로 실경로(`components/layout/`)를 확정한
+뒤 재판정했다. 최종: design/ 전체·`AdminSidebar.tsx`·`layout/Utility.tsx`·
+`layout/FooterMenuSlot.tsx`·`layout/GlobalFooter.tsx`·`legacy-admin-map/`·
+`.claude/settings.json`·타 SPEC 디렉터리 — 전부 diff 0. `layout/MenuRenderer.tsx`
+217행 = M3 in-SPEC EXTEND(plan.md §A.4 명시 해제), `menu-parity.spec.ts` =
+M2 신규 생성(`c3037dd` 이후 diff 0).
+
+**typecheck (E6):** `pnpm --filter @rhymix-ts/web typecheck` exit 0 / 오류 0건.
+`pnpm --filter @rhymix-ts/admin typecheck` exit 0 / 0건.
+
+**전체 단위 스위트 (E3):** `pnpm vitest run apps/web`(루트 실행, B5) —
+`Test Files 1 failed | 150 passed (151)`, `Tests 1 failed | 1049 passed |
+5 skipped (1055)`, Duration 3437.48s. 유일 실패 `registry.test.ts > B-101`
+(파일 내장 180s 예산 초과)는 3단계로 분류했다: (a) 단독 재실행도 동일
+타임아웃 → 단순 병렬 경합 배제 불가, (b) 파일 변경 이력이 전부 M4 이전
+(90f368b/29869a2)이고 M4 수정 파일이 import 그래프에 부재, (c) 900s 예산
+재실행 → **159.8s 통과**. 6코어 load 12~20·drvfs I/O 포화(동시 ~5세션) 환경
+등급의 느림-완료(slow-but-completes) — 제품 회귀 아님, M4 무관.
+참고: 브리프 pre-flight "41 files/318 tests"는 실측 151/1055와 스코프가 달라
+원 스코프 재구성 불가 — 이번 실행 verbatim 을 E3 증거로 계상한다.
+
+**DB 종료 상태 (E9):** cleanup.sql → `DELETE 10 / DELETE 1 / COMMIT`,
+`menus_left=0, items_left=0` — 설치 기준선 복원. `uploads/` 0파일,
+`/tmp/m4-jar.txt`·`test-results/` 제거, M2 세션 유물 `.reseed-baseline-tmp.mts`
+삭제(외부 `apps/web/.claude/` 는 보존). dev 서버 종료 + 3000/3001 free 확인.
+
+**증적:** `.moai/state/verify/m4/` — red-units.txt, green-units.txt,
+green-units-restore.txt, green-tree.txt, green-tree-restore.txt, seed.sql,
+psql-seed.txt, verify.sql, psql-verify.txt, ac009-basis.txt, e2e-run5.txt,
+e2e-run6.txt, cleanup.sql, psql-cleanup.txt, full-units.txt,
+registry-isolated-rerun.txt, registry-b101-bigbudget.txt, typecheck-web.txt,
+typecheck-admin.txt
+
+**M4 판정: 전 AC PASS(AC-SITE-009 는 전환 준비 완료 — sync 이관), 미해결 제품 결함 0건.**
+
 ## §F Phase 4 Mode Selection
 
 입력 파라미터:
@@ -201,7 +295,27 @@ Decision: sub-agent
 
 ## §E.3 Run-phase Audit-Ready Signal
 
-(run 완료 시 기록 — manager-develop 소관)
+```yaml
+run_status: complete
+run_complete_at: 2026-08-17T22:58:22+09:00
+run_commit_sha: 7450ba3
+ac_pass_count: 10
+ac_fail_count: 0
+preserve_list_post_run_count: 8
+total_run_phase_files: 7
+m1_to_mN_commit_strategy: per-milestone commits on main (Route A, no PR)
+new_warnings_or_lints_introduced: 0
+```
+
+- `ac_pass_count: 10` — AC-SITE-001~008, 010, 011 전건 PASS. AC-SITE-009 는
+  FAIL 아님: 실행 준비 완료 상태로 manager-spec/sync 단계에 인계(전환 소유
+  분리 — plan.md M4 명시). 최종 판정은 sync 마감 시 확정.
+- `preserve_list_post_run_count: 8` — 경로 기반 PRESERVE 8건 전부 앵커 diff
+  `a9e637a..HEAD` 0행(§E.2 M4 PRESERVE 항).
+- `total_run_phase_files: 7` — 구현 3 + 테스트 3 + e2e 1.
+- 프론트메모: `status: draft → in-progress` 전환은 M1 커밋 시점 소관이나
+  M1~M3 세션이 누락했다(run 종료 시점 발견). 본 run 최종 docs 커밋에
+  지연 복원한다(소유 전환 — manager-develop).
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
