@@ -79,24 +79,28 @@ test.describe('SPEC-LEGACY-PARITY-001 M4 — 메뉴 항목 복제', () => {
       await page.goto(menuUrl);
     }
 
-    // 최상위 행 제목 순 — 원본, 형제1, 형제2 (2-level 자식은 lazy load 로 접힘)
-    const topRows = page.locator('ul > li');
-    await expect(topRows).toHaveCount(3);
+    // 행 식별 — 페이지 chrome(관리자 사이드바의 ul/li ~25개)과 충돌하지 않도록
+    // [복제] 버튼 role 로 행을 센다(단위 테스트 getAllByRole('button', { name: '복제' })
+    // 와 동일 계약). 최상위 행 제목 순 — 원본, 형제1, 형제2 (자식은 lazy load 로 접힘)
+    const dupButtons = page.getByRole('button', { name: '복제' });
+    await expect(dupButtons).toHaveCount(3);
 
-    // 원본 행의 복제 버튼 (행을 제목으로 식별해 strict mode 고정)
-    const srcRow = page.locator('li', { hasText: `ID: ${srcId}` }).first();
+    // 원본 행의 복제 버튼 (행을 "ID: N" 텍스트로 식별해 strict mode 고정)
+    const srcRow = page.locator('li').filter({ hasText: `ID: ${srcId}` }).first();
     await srcRow.getByRole('button', { name: '복제' }).click();
 
-    // 복제 후 최상위 4행: 원본, 사본(새 id), 형제1, 형제2 — 사본은 원본 바로 뒤
-    await expect(topRows).toHaveCount(4, { timeout: 30_000 });
-    const copyRow = topRows.nth(1);
+    // 복제 후 행 4개: 원본, 사본(새 id), 형제1, 형제2 — 사본은 원본 바로 뒤
+    // (낙관적 로컬 삽입 → router.refresh() 서버 확정 순서로 4개가 된다)
+    await expect(dupButtons).toHaveCount(4, { timeout: 30_000 });
+    // 사본 행 = 같은 제목의 두 번째 행 — 문서 순서상 원본 바로 뒤에 삽입된다
+    const copyRow = page.locator('li').filter({ hasText: SRC_TITLE }).nth(1);
     await expect(copyRow.locator('span.flex-1')).toHaveText(SRC_TITLE);
     // 사본은 새 서버 행이다 — 원본 id 와 다른 id 를 가진다
     await expect(copyRow).not.toContainText(`ID: ${srcId} `);
 
     // 새로고침 뒤에도 유지 — 로컬 상태가 아니라 DB 확정 상태
     await page.reload();
-    await expect(topRows).toHaveCount(4);
-    await expect(topRows.nth(1).locator('span.flex-1')).toHaveText(SRC_TITLE);
+    await expect(dupButtons).toHaveCount(4);
+    await expect(page.locator('li').filter({ hasText: SRC_TITLE }).nth(1).locator('span.flex-1')).toHaveText(SRC_TITLE);
   });
 });
