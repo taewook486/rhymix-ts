@@ -225,7 +225,6 @@ export const adminMenuItemRouter = router({
           listOrder: number,
         ): Promise<number> => {
           const copy = await tx.menuItem.create({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             data: {
               menuId: row.menuId,
               parentId,
@@ -241,6 +240,7 @@ export const adminMenuItemRouter = router({
               normalBtn: row.normalBtn ?? Prisma.DbNull,
               hoverBtn: row.hoverBtn ?? Prisma.DbNull,
               activeBtn: row.activeBtn ?? Prisma.DbNull,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
           });
           createdCount += 1;
