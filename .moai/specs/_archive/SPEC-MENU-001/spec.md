@@ -1,9 +1,9 @@
 ---
 id: SPEC-MENU-001
-version: 0.3.1
-status: completed
+version: 0.4.0
+status: superseded
 created: 2026-07-09
-updated: 2026-07-18
+updated: 2026-08-18
 author: manager-spec
 priority: P1
 issue_number: null
@@ -78,6 +78,11 @@ issue_number: null
   `handleSlotChange`가 빈 옵션 선택 시 이를 호출하도록 분기. 실 재현: Utility 슬롯 배정 해제 →
   `POST unassignSlot 200` → DB 행 삭제 → 새로고침 후에도 미배정 유지 확인, 이후 원상 복구.
   `pnpm --filter web exec tsc --noEmit` 신규 에러 0건, 백엔드 `menu.test.ts` 4/4 통과.
+- 2026-08-18 (v0.4.0): SPEC-LEGACY-PARITY-001이 이 SPEC의 범위를 흡수해 status를
+  `superseded`로 전환. 사이트 메뉴 편집·다중 메뉴 존 렌더링의 후속 요구사항은
+  이제 SPEC-LEGACY-PARITY-001이 소유한다 — 이 문서는 아카이브 기록으로만 남는다.
+  본문의 stale 서술(§8.3·§8.5·Status 푸터) 수리는 이번 전환의 범위가 아니며
+  SPEC-LEGACY-PARITY-001 spec.md §4.6의 별도 후속으로 남긴다.
 
 ## 1. 배경 (Why)
 
