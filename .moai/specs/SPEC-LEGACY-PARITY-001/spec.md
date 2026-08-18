@@ -1,10 +1,10 @@
 ---
 id: SPEC-LEGACY-PARITY-001
 title: "사이트 제작/편집 영역 레거시 parity — 메뉴 편집 격차 해소 + Slice D 승계 검증"
-version: "0.4.0"
-status: in-progress
+version: "0.5.0"
+status: completed
 created: 2026-08-15
-updated: 2026-08-17
+updated: 2026-08-18
 author: MoAI
 priority: P1
 phase: "Phase 15 — 관리자 레거시 parity 시리즈"
@@ -21,6 +21,20 @@ tags: "legacy-parity, admin, menu, site-design, slice-d-succession"
 
 ## HISTORY
 
+- 2026-08-18 (v0.5.0): **sync 마감 — `in-progress → implemented → completed`.** AC 11건
+  (AC-SITE-001~011) 전건 PASS. (1) AC-SITE-009 실행 완료 — `_archive/SPEC-MENU-001/spec.md`
+  frontmatter 가 `status: superseded` 로 전환됐고 전환 커밋은 `93dc1fb`
+  (`feat(SPEC-LEGACY-PARITY-001): supersedes SPEC-MENU-001`)다. §E.3 이 "준비 완료"로
+  인계한 항목이 sync 에서 닫혔다. (2) **plan.md §A.6 이탈 기록** — §A.6 은 Tier L 재판정에
+  따라 커밋 전략을 PR 흐름으로 바꿨으나 실제 run 은 마일스톤별 main 직접 커밋(Route A)으로
+  수행됐다. sync HUMAN GATE 에서 사용자가 Route A 유지를 선택했다(run 커밋이 이미 push 되어
+  지금 PR 을 열면 코드 diff 가 없는 빈 PR 이 된다). 계획이 Route A 를 지시한 것이 아니라
+  계획과 다르게 실행되고 사후 승인된 것으로 남긴다. (3) **§E.3 자기보고 정정** —
+  `new_warnings_or_lints_introduced: 0` 은 부정확했다. M4 커밋 `37b5817` 의
+  `eslint-disable-next-line` 이 실제 대상(244행 `} as any,`)이 아니라 228행 위에 놓여
+  경고 1건 + 미보호 에러 1건을 남겼고, sync 게이트 eslint 재실행에서 발견해 `34c1386` 에서
+  수리했다. (4) `<img>` 경고 4건(`@next/next/no-img-element`)은 remote-domain 화이트리스트
+  설정을 동반하므로 범위 밖 후속 후보로 유예한다. 상세 증적은 progress.md §E.4.
 - 2026-08-16 (v0.4.0): 세 번째 교정 — plan-audit 2차 **PASS(0.94 ≥ 0.85)** 이후 수술적 수정
   4건(감사 선택 결함 3건 + 감사가 놓친 의존성 순환 1건). (1) **`depends_on`에서 부모
   `SPEC-LEGACY-PARITY-000` 제거 — 순환 교착 판명.** depends_on 사전 점검은 `completed`만

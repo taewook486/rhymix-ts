@@ -398,4 +398,60 @@ new_warnings_or_lints_introduced: 0
 
 ## §E.4 Sync-phase Audit-Ready Signal
 
-(sync 커밋 시 기록 — manager-docs 소관)
+```yaml
+sync_status: complete
+sync_complete_at: 2026-08-18T22:04:36+09:00
+pre_sync_head: 93dc1fb
+sync_commit_sha: pending-backfill-sync
+ac_pass_count: 11
+ac_fail_count: 0
+sync_phase_commit_count: 3
+sync_commit_strategy: direct commits on main (Route A, no PR — plan.md §A.6 이탈)
+frontmatter_status_transitions: in-progress → implemented → completed (spec.md 단독 — plan/acceptance 는 프론트매터 없음)
+new_warnings_or_lints_introduced: 0 errors / 4 warnings (deferred `<img>` 4건)
+eslint_errors_remaining: 0
+eslint_warnings_remaining: 4
+```
+
+- `ac_pass_count: 11` — AC-SITE-001~011 전건 PASS. §E.3 시점의 10건에서 AC-SITE-009
+  (SPEC-MENU-001 supersede 전환)가 sync 에서 실행되어 11건이 됐다. 근거:
+  `grep -n "^status:" .moai/specs/_archive/SPEC-MENU-001/spec.md` → `status: superseded`,
+  전환 커밋 `93dc1fb`(`git log --grep="supersedes SPEC-MENU-001"`).
+- `pre_sync_head: 93dc1fb` — sync 문서 작업 착수 시점 HEAD. AC-SITE-007/008 의 PRESERVE
+  앵커 diff(`git diff a9e637a..HEAD --stat`)를 이 HEAD 에서 재실행해 각각 0행 확인:
+  `apps/web/app/admin/site/design/`(AC-SITE-007), `AdminSidebar.tsx`(AC-SITE-008).
+- `sync_phase_commit_count: 3` — `34c1386`(lint 수리) · `93dc1fb`(supersede) + 본 문서
+  커밋. `sync_commit_sha` 는 자기참조 불가이므로 플레이스홀더로 두고 후속 커밋에서 backfill 한다.
+- 재검증 결과(이번 세션 실측): `apps/web` typecheck exit 0 / 0건, `packages/admin`
+  typecheck exit 0 / 0건, 단위 web 4스위트 `31 passed (31)` 230.97s, admin
+  `menu-button-image.test.ts` `5 passed (5)`. 증적: `.moai/state/verify/372f1946/`.
+
+**이탈·정정 기록 3건 (완화하지 않고 그대로 남긴다):**
+
+1. **plan.md §A.6 이탈 — Tier L PR 플로우 미이행.** plan.md §A.6 은 Tier L 재판정에 따라
+   커밋 전략을 "직접 main push → PR 흐름"으로 바꿨으나, 실제 run 은 마일스톤별 main
+   직접 커밋(Route A)으로 수행됐고 §E.3 도 `Route A, no PR` 로 기록했다. sync HUMAN GATE
+   에서 사용자가 Route A 유지를 선택했다 — run 커밋이 이미 push 되어 `origin/main...HEAD`
+   가 `0 0` 이므로 지금 PR 을 열어도 코드 diff 가 없는 빈 PR 이 된다. **계획이 Route A 를
+   지시한 것이 아니라, 계획과 다르게 실행됐고 sync 에서 사후 승인된 것**이다.
+2. **§E.3 자기보고 반증 — `new_warnings_or_lints_introduced: 0` 은 부정확했다.**
+   M4 커밋 `37b5817` 이 `eslint-disable-next-line @typescript-eslint/no-explicit-any` 를
+   실제 대상인 244행 `} as any,` 가 아니라 228행 `data: {` 위에 배치했다. 결과는 2건 —
+   228행 "unused directive" 경고 + 244행 `Unexpected any` **에러**(미보호). sync 게이트의
+   eslint 재실행에서 발견해 `34c1386` 에서 지시문을 실제 대상 위로 이동해 수리했다.
+   자기보고가 재실행으로 반증된 사례로 기록한다 — 요약 문구는 증거가 아니다.
+3. **`<img>` 경고 4건 유예(후속 후보).** `MenuItemEditor.tsx:339`,
+   `MenuRenderer.tsx:177/184/192` 가 `next/image` 대신 `<img>` 를 쓴다
+   (`@next/next/no-img-element`, warning). 버튼 이미지는 임의의 외부 URL 을 허용하므로
+   `next/image` 전환은 remote-domain 화이트리스트 설정을 함께 요구한다 — 본 SPEC 범위 밖.
+   후속 SPEC 후보로 남긴다.
+
+**§E.2 에서 이월하는 후속 항목 (마감 시 유실 방지):**
+
+- `.moai/state/verify/m4/verify.sql` (5) 무결성 쿼리가 원본 루트를 `id = 1` 로 하드코딩한다.
+  원본 id 가 달라지면 `src` 가 비어 CROSS JOIN 이 0행이 되고, **복제 무결성이 실제로 깨진
+  경우와 구별되지 않는 거짓 음성 채널**이 된다. 후속 실행은 파라미터화한
+  `.moai/state/verify/m4-orch/o5-integrity-fixed.txt` 판정(원본=최소 id / 사본=차순 id)을
+  쓸 것 — 원본 `verify.sql` (5) 는 단독으로 신뢰하지 않는다.
+- 별건 부채: `apps/web/lib/modules/registry.test.ts` B-101 이 파일 예산 180초 경계선에 앉아
+  있다(실측 160~182초). 예산 조정 또는 테스트 분할을 별건으로 다룰 것.

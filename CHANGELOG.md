@@ -8,6 +8,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+#### SPEC-LEGACY-PARITY-001 — 사이트 제작/편집 영역 레거시 parity (완료)
+
+> status: completed — 레거시 Rhymix(PHP) `사이트 메뉴 편집` 대비 기능 격차 2건(메뉴 항목
+> 복제, 버튼 이미지 업로드·상태별 제거·공개 렌더)을 해소하고, `SPEC-MENU-001` Slice D에서
+> 승계한 3동작(슬롯 3종 동시 배정, 중첩 트리 전 깊이 렌더, `groupIds` ACL)을 특성화
+> 테스트로 고정. 11개 AC(AC-SITE-001~011) 전부 PASS. 3개 마일스톤(M2~M4, M1은 계획 중
+> 사전 실측), 21개 파일 변경, 전부 main에 직접 커밋(Route A — plan.md §A.6의 Tier L PR
+> 흐름 지시에서 이탈했고 sync 시점에 사용자가 Route A 유지를 선택). PRESERVE 앵커
+> `a9e637a` 대비 `/admin/site/design/`·`AdminSidebar.tsx` diff 0행.
+
+- **M2 — 승계 3동작 특성화 적립** (`c3037dd`) — `apps/web/e2e/menu-parity.spec.ts` +
+  시더 `seed-menu-parity-fixtures.ts` 신설. M3의 `MenuRenderer` 변경보다 **먼저** 적립해
+  승계 동작(AC-SITE-004~006)이 조용히 깨지지 않도록 순서로 강제했다. 제품 코드 무변경
+  (test-only), 첫 실행부터 전건 GREEN. 고의 결함 주입 3건(ACL 누출·트리 단절·슬롯 누락)이
+  각 AC의 핵심 단언에서 정확히 실패해 공허 통과가 아님을 확인.
+- **M3 — 버튼 이미지 전체 범위** (`f9f9c3e`, `b39e949`) — 편집기 파일 업로드 UI 3종 +
+  상태별 제거 컨트롤(AC-SITE-002/003), `MenuRenderer`의 normal 기본 + hover/active 전환
+  렌더(AC-SITE-010), `packages/admin` 번들 스키마 정합화로 export/import 왕복 복구
+  (AC-SITE-011). 신규 `apps/web/lib/menu/button-image.ts`. 업로드는 기존
+  `@rhymix-ts/file` 인프라만 재사용(신규 엔드포인트 0건). 인수 검증에서 단위 테스트가 못
+  잡은 결함 2건 발견·수정: hover 시 normal 레이어 미소등으로 이미지 겹침, 그리고 `Json?`
+  컬럼에 평범한 `null`을 넘기면 Prisma가 SQL NULL이 아닌 JSON null을 기록해 상태별 제거가
+  DB에 반영되지 않던 문제(`Prisma.DbNull` 변환으로 해결).
+- **M4 — 메뉴 항목 복제** (`37b5817`, `7450ba3`) — tRPC `admin.menuItem.duplicate`
+  프로시저(단일 `$transaction` 재귀 서브트리 복사 + 삽입점 이후 형제 `listOrder` 시프트),
+  서버 액션 `duplicateMenuItemAction`, `MenuItemDnDTree`의 행별 [복제] 버튼(AC-SITE-001).
+  실 DB 조회로 서브트리 전체 복사·`(parentId, listOrder)` 충돌 0건 확인. e2e 로케이터가
+  관리자 사이드바까지 세던 결함은 `7450ba3`에서 role 계약 기반으로 수리(테스트 결함,
+  제품 무관).
+- **sync — lint 수리 + 수명주기 마감** (`34c1386`, `93dc1fb`) — M4가 남긴
+  `eslint-disable-next-line @typescript-eslint/no-explicit-any` 가 실제 대상(244행
+  `} as any,`)이 아니라 228행 위에 놓여 있어 경고 1건 + 미보호 `Unexpected any` 에러 1건이
+  남아 있었다(§E.3의 `new_warnings_or_lints_introduced: 0` 자기보고를 재실행이 반증).
+  지시문을 실제 대상 위로 이동해 수리. `93dc1fb`은 `_archive/SPEC-MENU-001`을
+  `status: superseded`로 전환해 AC-SITE-009를 닫는다.
+- **알려진 부채** — (1) `<img>` 경고 4건(`MenuItemEditor.tsx:339`,
+  `MenuRenderer.tsx:177/184/192`): 버튼 이미지가 임의 외부 URL을 허용하므로 `next/image`
+  전환은 remote-domain 화이트리스트 설정을 동반한다 — 범위 밖 후속 후보. (2) 복제 대상을
+  정하는 읽기가 `$transaction` 밖이라 그 사이 구조가 바뀌면 자식을 놓친다(TOCTOU).
+  (3) `$transaction` 타임아웃 미지정(Prisma 기본 5초) — 큰 서브트리에서 초과 가능.
+  (4) `duplicateMenuItemAction`이 UI에 배선되지 않아(버튼이 tRPC를 직접 호출) 중복 진입점.
+
 #### SPEC-FRONT-PARITY-001 — 방문자 화면 레거시 parity 1단계 (완료)
 
 > status: completed — 레거시 Rhymix(PHP) 방문자 화면 대비 (a) 인덱스 모듈 정책을 게시판
@@ -127,11 +169,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   거부 시 부분생성 방지)
 - 총 11개 테스트 파일, 104개 테스트 전부 PASS (Slice A~E 전체)
 
-#### SPEC-MENU-001 — 사이트 메뉴 편집 완성 + 다중 메뉴 존 렌더링 (진행 중)
+#### SPEC-MENU-001 — 사이트 메뉴 편집 완성 + 다중 메뉴 존 렌더링 (승계됨)
 
-> status: in-progress — Slice A/B/C/E는 구현+검증 완료, Slice D는 헤더 슬롯 렌더만 실측 확인
-> (Footer/Utility 슬롯 배정, groupIds ACL, 중첩 트리 렌더는 admin 로그인 세션이 필요해 미검증). Slice F는
-> 사용자 결정으로 백로그 유예.
+> status: superseded by SPEC-LEGACY-PARITY-001 (`93dc1fb`) — Slice A/B/C/E는 구현+검증
+> 완료. Slice D의 미검증 3건(Footer/Utility 슬롯 배정, groupIds ACL, 중첩 트리 렌더)은
+> SPEC-LEGACY-PARITY-001이 승계해 2026-08-16 실측으로 정상 동작을 확인하고 특성화
+> 테스트(AC-SITE-004~006)로 고정했다. Slice F는 사용자 결정으로 백로그 유예.
+> 이 항목의 이전 `status: in-progress` 표기는 아카이브 문서(`status: completed`)와
+> 어긋나 있었고, supersede 전환으로 양쪽이 정리됐다. 아래 본문은 이 SPEC이 실제로
+> 출하한 내용의 기록이므로 그대로 보존한다.
 
 - **MenuItem 편집기 필드 완성** (`d03caf0`) — icon/cssClass/description/openInNewWindow/expand/listOrder
   전체 노출, groupIds ACL 편집, 버튼 상태(normalBtn/hoverBtn/activeBtn) JSON 편집, stale 안내 문구 제거
