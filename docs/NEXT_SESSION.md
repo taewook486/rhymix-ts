@@ -1,7 +1,7 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-18 (SPEC-LEGACY-PARITY-001 sync 마감 — status: completed)
+> 갱신: 2026-08-18 (SPEC-LEGACY-PARITY-001 sync 마감 후 감사 FAIL — 후속 수리 대기)
 > source_session_id: 372f1946-fbb9-4e02-a9cb-dcdc2e9ba6cf
 
 ## 붙여넣을 메시지
@@ -9,7 +9,7 @@
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. SPEC-LEGACY-PARITY-002 plan-phase 진입.
+ultrathink. SPEC-LEGACY-PARITY-001 감사 FAIL 후속 수리 진입.
 applied lessons: feedback-agent-test-claims-verify-by-rerun,
 feedback-stale-triage-doc-reverify, feedback-dont-trust-completion-marking
 source_session_id: 372f1946-fbb9-4e02-a9cb-dcdc2e9ba6cf
@@ -21,25 +21,29 @@ source_session_id: 372f1946-fbb9-4e02-a9cb-dcdc2e9ba6cf
      배포분(.claude/·.moai/config/·.github/·CLAUDE.md)뿐이며 소스는 clean.
 2) grep "^status:" .moai/specs/SPEC-LEGACY-PARITY-001/spec.md → completed
    grep "^status:" .moai/specs/_archive/SPEC-MENU-001/spec.md → superseded
-3) grep "^status:" .moai/specs/SPEC-MEMBER-PARITY-001/spec.md → completed
-   — SPEC-LEGACY-PARITY-000 §2.3 이 002 의 범위를 "재검증만" 으로 못박았다.
-     신규 구현부터 계획하지 말 것
+3) cat .moai/plans/ancient-imagining-riddle.md → 감사 FAIL 후속 계획 (승인 완료)
+   — sync-auditor 판정 FAIL(61.2/100). Security must-pass 미달.
+     002 는 이 수리 뒤로 밀렸다
 4) docker.exe ps → rhymix-app(8080)/rhymix-db(3307)/rhymix-ts-db(5444) 3개 Up
    — 죽어 있으면 Docker Desktop 먼저 기동, rhymix-ts-db 는 별도 start 필요
      (admin@example.com / Rhymix!2026 — 레거시 localhost:8080 대조 가능)
 
-실행: /moai plan "SPEC-LEGACY-PARITY-002 회원 영역 — SPEC-MEMBER-PARITY-001 재검증"
+실행: /moai plan "SPEC-LEGACY-PARITY-001-FIX 감사 지적 보안 결함 수리" (계획서 기반)
 
-후속: 003 콘텐츠(SPEC-CONTENT-PARITY-001 in-progress 흡수) → 004 즐겨찾기
-      (SPEC-ADMIN-MENU-PARITY-001 재검증) → 005 설정 → 006 고급
+후속: 수리 후 sync-auditor 재판정(이번엔 기다릴 것) → SPEC-LEGACY-PARITY-002 회원
+      (SPEC-MEMBER-PARITY-001 재검증만이 범위) → 003 콘텐츠 → 004~006
 
 ✂──── 여기까지 복사 ────✂
 ```
 
 ## 이번 세션 결과 (2026-08-18)
 
-SPEC-LEGACY-PARITY-001 sync phase 완주. **AC 11건(AC-SITE-001~011) 전건 PASS**,
-`status: completed`. 커밋 4건 전부 push(`2e2da78..56822fc`, divergence `0 0`).
+SPEC-LEGACY-PARITY-001 sync phase 완주. AC 11건(AC-SITE-001~011)을 전건 PASS 로 판정하고
+`status: completed` 로 마감했다. 커밋 4건 전부 push(`2e2da78..56822fc`, divergence `0 0`).
+
+> **단, 이 판정은 이후 감사에서 뒤집혔다.** 아래 "sync-auditor 독립 판정" 절을 먼저 읽을 것 —
+> 감사는 AC 3건(004/005/006)을 `unverified-here` 로 재분류했고 Security must-pass 미달로
+> 전체 FAIL 을 냈다. 위 표는 마감 시점의 기록이지 최종 상태가 아니다.
 
 | 커밋 | 내용 |
 |---|---|
@@ -61,24 +65,30 @@ SPEC-LEGACY-PARITY-001 sync phase 완주. **AC 11건(AC-SITE-001~011) 전건 PAS
 | AC-SITE-009 기계 검증 | `status: superseded` + 커밋 `93dc1fb` |
 | eslint SPEC 범위 5파일 | 에러 1건 발견·수리 → 0, 경고 4건 유예 |
 
-### sync-auditor 독립 판정 — **미수령**
+### sync-auditor 독립 판정 — **FAIL (61.2 / 100)**
 
-`sync-auditor` 를 띄웠으나 세션을 마감하는 시점까지 판정이 돌아오지 않았고, 기다리지 않고
-종료했다. **따라서 이 SPEC 의 sync 게이트는 독립 감사를 거치지 않은 상태다** —
-`status: completed` 는 오케스트레이터 자체 재검증(위 표)만을 근거로 한다.
+세션 마감 직후에 판정이 도착했다. **must-pass 차원인 Security 가 High 1건으로 임계를
+넘지 못해 전체 FAIL.** 즉 `status: completed` 로 push 된 이 SPEC 은 **감사에 실패한
+상태**다. 후속 계획은 `.moai/plans/ancient-imagining-riddle.md` (승인 완료).
 
-판정이 필요하면 다음 세션에서 다시 돌릴 것:
+차원별: Functionality 75 / Security 50(FAIL) / Craft 50 / Consistency 75 → 조화평균 61.2.
 
-```
-/moai review SPEC-LEGACY-PARITY-001 --deep
-```
+오케스트레이터가 소스로 직접 재확인한 2건:
 
-감사에 넘길 때 재실행 대상으로 지목했던 두 지점을 그대로 유지할 것 —
-(1) AC-SITE-007/008 의 앵커 diff 가 실제로 하중을 받는지(경로가 바뀌었다면 비어 있지
-않은지 대조 실행으로 증명), (2) 업로드 입력 검증·`duplicate` 프로시저 인가·재귀 깊이
-상한 등 이번 run 이 새로 연 표면의 보안 렌즈.
+- **D1 (High)** — `updateMenuItemAction`(`apps/web/app/admin/menu/actions.ts:266`)에
+  진입부 권한 검사가 없고 `apps/web` 에 `middleware.ts` 도 없다. 파일 쓰기(`:301` →
+  `:125`)가 유일한 게이트인 tRPC 호출(`:321`)보다 **먼저** 실행된다. `groupIds` 를 뺀
+  요청은 무인증으로 디스크 쓰기에 도달한다. **런타임 재현은 미실시 — 수리 전 첫 단계다.**
+- **D4 (major)** — `reorder`(`menu-item.ts:130`)가 `parentId` 를 조상 검증 없이 받고
+  파일 전체에 순환·깊이 가드가 0건. 사이클이 생기면 `duplicate` 재귀뿐 아니라 **공개
+  페이지의 `buildMenuTree`(`MenuRenderer.tsx:88`)도 무한 재귀**해 사이트가 렌더 불가가 된다.
 
-미수령을 "이상 없음" 으로 읽지 말 것 — 증거 부재는 통과의 증거가 아니다.
+나머지: D2 실패 시 고아 파일 잔류 / D3 구 텍스트영역 JSON 값이 1건이라도 있으면 import
+전량 실패 / D5 MIME 매직바이트 미검사 / D6 nosniff 헤더 부재.
+
+**§E.4 자체의 오류도 지적됐다** — 인용한 lint 로그가 수리 **이전** 것(`1 error` 포함),
+`sync_phase_commit_count: 3` 이 실제 4, 경고 수 과소집계, 커버리지가 SPEC 전 기간
+한 번도 측정되지 않음(프로파일 임계 85% 대비 UNVERIFIED). 정정은 계획 5단계.
 
 ## 이번 세션이 잡아낸 것
 
