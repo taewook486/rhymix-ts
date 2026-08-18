@@ -402,7 +402,7 @@ new_warnings_or_lints_introduced: 0
 sync_status: complete
 sync_complete_at: 2026-08-18T22:04:36+09:00
 pre_sync_head: 93dc1fb
-sync_commit_sha: pending-backfill-sync
+sync_commit_sha: 53cd137
 ac_pass_count: 11
 ac_fail_count: 0
 sync_phase_commit_count: 3
@@ -421,7 +421,8 @@ eslint_warnings_remaining: 4
   앵커 diff(`git diff a9e637a..HEAD --stat`)를 이 HEAD 에서 재실행해 각각 0행 확인:
   `apps/web/app/admin/site/design/`(AC-SITE-007), `AdminSidebar.tsx`(AC-SITE-008).
 - `sync_phase_commit_count: 3` — `34c1386`(lint 수리) · `93dc1fb`(supersede) + 본 문서
-  커밋. `sync_commit_sha` 는 자기참조 불가이므로 플레이스홀더로 두고 후속 커밋에서 backfill 한다.
+  커밋(`53cd137`). `sync_commit_sha` 는 자기참조가 불가능하므로 문서 커밋 직후 이 후속
+  커밋에서 backfill 했다 — §E.3 의 `run_commit_sha` 도 같은 절차를 따랐다(742b7c6).
 - 재검증 결과(이번 세션 실측): `apps/web` typecheck exit 0 / 0건, `packages/admin`
   typecheck exit 0 / 0건, 단위 web 4스위트 `31 passed (31)` 230.97s, admin
   `menu-button-image.test.ts` `5 passed (5)`. 증적: `.moai/state/verify/372f1946/`.
