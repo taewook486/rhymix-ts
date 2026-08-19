@@ -20,6 +20,8 @@ import {
 } from '@rhymix-ts/file'
 import { getServerCaller } from '@/lib/trpc/server'
 import { getCurrentSiteId } from '@/lib/admin/site-context'
+import { auth } from '@/lib/auth/config'
+import { isAdminSession } from '@/lib/auth/admin-middleware'
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -28,6 +30,34 @@ import { getCurrentSiteId } from '@/lib/admin/site-context'
 export interface ActionState {
   error?: string
   fieldErrors?: Record<string, string[]>
+}
+
+// ---------------------------------------------------------------------------
+// 인가 게이트 — SPEC-LEGACY-PARITY-001 감사 결함 D1 (다층 방어)
+// ---------------------------------------------------------------------------
+
+/**
+ * 액션 진입 시점의 관리자 인가 검사. 거부 시 각 액션의 오류 형태와 호환되는
+ * `{ error }` 를, 통과 시 null 을 반환한다.
+ *
+ * proxy.ts 의 `/admin/*` 경로 게이트와 말단 tRPC `protectedAdminProcedure` 만으로는
+ * 부족하다 — Server Action 은 전역 주소 지정이 가능해 비보호 경로로 POST 하면
+ * proxy 를 통과한 채 액션 본문이 비인증 상태로 진입한다. 특히
+ * `updateMenuItemAction` 은 말단 게이트 이전에 storage.write(디스크 쓰기)를 수행하므로
+ * 진입 시점 차단이 없으면 비인증 쓰기가 성립한다.
+ *
+ * @MX:ANCHOR: [AUTO] 메뉴 Server Action 6종의 공통 인가 진입점.
+ * @MX:REASON: 6개 액션이 모두 호출하며(fan_in=6), 이 검사가 빠지면 부작용(디스크
+ *             쓰기·DB 변경)이 인가 이전에 실행된다. layout/proxy + 액션 + tRPC 의
+ *             3중 게이트 중 액션 계층을 담당한다.
+ * @MX:SPEC: SPEC-LEGACY-PARITY-001 감사 결함 D1
+ */
+async function denyIfNotAdmin(): Promise<{ error: string } | null> {
+  const session = await auth()
+  if (!isAdminSession(session)) {
+    return { error: '관리자 권한이 필요합니다.' }
+  }
+  return null
 }
 
 // ---------------------------------------------------------------------------
@@ -43,6 +73,9 @@ export async function createMenuAction(
   _prev: ActionState | null,
   formData: FormData,
 ): Promise<ActionState> {
+  const denied = await denyIfNotAdmin()
+  if (denied) return denied
+
   const parsed = CreateMenuSchema.safeParse({
     title: formData.get('title'),
     isAdminMenu: formData.get('isAdminMenu') === 'on',
@@ -69,6 +102,9 @@ export async function createMenuAction(
 export async function deleteMenuAction(
   id: number,
 ): Promise<{ ok: true } | { error: string }> {
+  const denied = await denyIfNotAdmin()
+  if (denied) return denied
+
   try {
     const caller = await getServerCaller()
     await caller.admin.menu.delete({ id })
@@ -214,6 +250,9 @@ export async function createMenuItemAction(
   _prev: ActionState | null,
   formData: FormData,
 ): Promise<ActionState> {
+  const denied = await denyIfNotAdmin()
+  if (denied) return denied
+
   const parsed = CreateMenuItemSchema.safeParse({
     title: formData.get('title'),
     url: formData.get('url') || undefined,
@@ -267,6 +306,9 @@ export async function updateMenuItemAction(
   _prev: ActionState | null,
   formData: FormData,
 ): Promise<ActionState> {
+  const denied = await denyIfNotAdmin()
+  if (denied) return denied
+
   const id = Number(formData.get('id'))
   const menuId = Number(formData.get('menuId'))
   if (!id) return { error: 'id 가 필요합니다.' }
@@ -339,6 +381,9 @@ export async function deleteMenuItemAction(
   id: number,
   menuId: number,
 ): Promise<{ ok: true } | { error: string }> {
+  const denied = await denyIfNotAdmin()
+  if (denied) return denied
+
   try {
     const caller = await getServerCaller()
     await caller.admin.menuItem.delete({ id })
@@ -365,6 +410,9 @@ export async function duplicateMenuItemAction(
   id: number,
   menuId: number,
 ): Promise<{ ok: true } | { error: string }> {
+  const denied = await denyIfNotAdmin()
+  if (denied) return denied
+
   try {
     const caller = await getServerCaller()
     await caller.admin.menuItem.duplicate({ id })

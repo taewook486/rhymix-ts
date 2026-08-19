@@ -17,7 +17,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import { getServerCaller } from '@/lib/trpc/server';
 import { revalidatePath } from 'next/cache';
-import { updateMenuItemAction } from './actions';
+import { auth } from '@/lib/auth/config';
+import {
+  createMenuAction,
+  createMenuItemAction,
+  deleteMenuAction,
+  deleteMenuItemAction,
+  duplicateMenuItemAction,
+  updateMenuItemAction,
+} from './actions';
 
 // ---------------------------------------------------------------------------
 // 모듈 모킹 — 액션이 의존하는 서버 인프라 전부 (인증·캐시·tRPC·파일 파이프라인)
@@ -26,6 +34,7 @@ import { updateMenuItemAction } from './actions';
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
 vi.mock('@/lib/trpc/server', () => ({ getServerCaller: vi.fn() }));
+vi.mock('@/lib/auth/config', () => ({ auth: vi.fn() }));
 vi.mock('@/lib/admin/site-context', () => ({ getCurrentSiteId: vi.fn(async () => 1) }));
 
 // packages/file 모킹 — vi.hoisted로 팩토리보다 먼저 초기화되는 참조를 만든다.
@@ -61,9 +70,10 @@ vi.mock('@rhymix-ts/file', () => ({
 // (인자 없는 vi.fn() 은 calls 가 빈 튜플이라 인덱싱이 타입 오류가 된다).
 const updateFn = vi.fn(async (_input: Record<string, unknown>) => ({}));
 const duplicateFn = vi.fn(async (_input: { id: number }) => ({ id: 1001, created: 4 }));
+const deleteItemFn = vi.fn(async () => ({}));
 const callerMock = {
   admin: {
-    menuItem: { update: updateFn, duplicate: duplicateFn },
+    menuItem: { update: updateFn, duplicate: duplicateFn, delete: deleteItemFn },
     group: { list: vi.fn(async () => ({ items: [] })) },
   },
 };
@@ -82,6 +92,8 @@ function baseEntries(): Record<string, string> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // 기본값: 인가된 관리자 세션 (기존 케이스는 모두 권한 있는 호출자를 전제한다)
+  vi.mocked(auth).mockResolvedValue({ user: { id: 1, isAdmin: true } });
   vi.mocked(getServerCaller).mockResolvedValue(
     callerMock as unknown as Awaited<ReturnType<typeof getServerCaller>>,
   );
@@ -224,5 +236,88 @@ describe('M4: duplicateMenuItemAction — tRPC duplicate 위임', () => {
     const res = await actions.duplicateMenuItemAction(999, 2);
 
     expect(res).toEqual({ error: 'menu item not found' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 감사 결함 D1 — 액션 진입점 관리자 인가 게이트
+//
+// proxy.ts 의 경로 allowlist + 말단 tRPC protectedAdminProcedure 만으로는
+// 부족하다: Server Action 은 전역 주소 지정이 가능해 비보호 경로(`/`)로 POST 하면
+// proxy 를 통과하고 액션 본문이 비인증 상태로 진입한다. 특히
+// updateMenuItemAction 은 말단 게이트 이전에 storage.write(디스크 쓰기)를 수행한다.
+// 따라서 6개 액션 모두 진입 시점에 스스로 인가를 강제해야 한다 (다층 방어).
+// ---------------------------------------------------------------------------
+
+describe('D1: Server Action 진입점 관리자 인가 게이트', () => {
+  const DENIED = '관리자 권한이 필요합니다.';
+
+  beforeEach(() => {
+    // 비인증 — auth() 가 세션을 반환하지 않는다
+    vi.mocked(auth).mockResolvedValue(null);
+  });
+
+  it('updateMenuItemAction — 업로드 부작용(storage.write) 이전에 차단된다', async () => {
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([pngBytes], 'normal.png', { type: 'image/png' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown>).error).toBe(DENIED);
+    expect(fileMocks.storage.write).not.toHaveBeenCalled();
+    expect(fileMocks.scan).not.toHaveBeenCalled();
+    expect(vi.mocked(getServerCaller)).not.toHaveBeenCalled();
+    expect(updateFn).not.toHaveBeenCalled();
+  });
+
+  it('deleteMenuItemAction — tRPC 위임 없이 차단된다', async () => {
+    const res = await deleteMenuItemAction(7, 2);
+
+    expect(res).toEqual({ error: DENIED });
+    expect(vi.mocked(getServerCaller)).not.toHaveBeenCalled();
+    expect(vi.mocked(revalidatePath)).not.toHaveBeenCalled();
+  });
+
+  it('duplicateMenuItemAction — tRPC 위임 없이 차단된다', async () => {
+    const res = await duplicateMenuItemAction(1, 2);
+
+    expect(res).toEqual({ error: DENIED });
+    expect(duplicateFn).not.toHaveBeenCalled();
+    expect(vi.mocked(getServerCaller)).not.toHaveBeenCalled();
+  });
+
+  it('createMenuAction — tRPC 위임 없이 차단된다', async () => {
+    const res = await createMenuAction(null, makeForm({ title: '새 메뉴' }));
+
+    expect((res as Record<string, unknown>).error).toBe(DENIED);
+    expect(vi.mocked(getServerCaller)).not.toHaveBeenCalled();
+  });
+
+  it('deleteMenuAction — tRPC 위임 없이 차단된다', async () => {
+    const res = await deleteMenuAction(3);
+
+    expect(res).toEqual({ error: DENIED });
+    expect(vi.mocked(getServerCaller)).not.toHaveBeenCalled();
+  });
+
+  it('createMenuItemAction — tRPC 위임 없이 차단된다', async () => {
+    const res = await createMenuItemAction(
+      null,
+      makeForm({ menuId: '2', title: '새 항목' }),
+    );
+
+    expect((res as Record<string, unknown>).error).toBe(DENIED);
+    expect(vi.mocked(getServerCaller)).not.toHaveBeenCalled();
+  });
+
+  it('인가된 관리자 세션에서는 기존 경로가 그대로 동작한다', async () => {
+    vi.mocked(auth).mockResolvedValue({ user: { id: 1, isAdmin: true } });
+
+    const res = await deleteMenuItemAction(7, 2);
+
+    expect(res).toEqual({ ok: true });
+    expect(vi.mocked(getServerCaller)).toHaveBeenCalledTimes(1);
   });
 });
