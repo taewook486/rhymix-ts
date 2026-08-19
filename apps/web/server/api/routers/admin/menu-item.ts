@@ -19,6 +19,13 @@ import { menuButtonImageSchema } from '@rhymix-ts/admin';
 import { router, protectedAdminProcedure } from '../../trpc';
 
 /**
+ * 메뉴 트리 최대 허용 깊이 (SPEC-LEGACY-PARITY-001 D4).
+ * 실제 메뉴는 한 자릿수 깊이라 이 상한은 오직 순환/병적 트리 방어용이다 —
+ * 정상 운영에서는 절대 도달하지 않는다.
+ */
+const MAX_MENU_DEPTH = 100;
+
+/**
  * MenuItem 공통 입력 스키마 (REQ-ADMIN-032, REQ-ADMIN-033).
  *
  * 버튼 이미지 3종은 이미지 참조형 {"image", "alt"?} | null(제거) | undefined(변경
@@ -152,7 +159,41 @@ export const adminMenuItemRouter = router({
         return { updated: 0 };
       }
 
-      // 3. 단일 트랜잭션으로 일괄 갱신
+      // 3. 순환 가드 (SPEC-LEGACY-PARITY-001 D4, 루트 원인) — 항목이 자기 자신이나
+      //    자신의 하위 항목을 부모로 지정하면 부모 그래프에 순환이 생긴다. 검증 없이
+      //    기록하면 duplicate.copySubtree / buildMenuTree 의 무한 재귀 벡터가 되므로
+      //    이 경계에서 거부한다. 배치 밖 항목의 부모는 기존 rows 로 보완해 완전한
+      //    부모 그래프를 만든 뒤, 각 배치 항목에서 부모 사슬을 거슬러 올라가며
+      //    같은 노드를 다시 만나면 순환으로 판정한다. 쓰기 전에 던지므로 DB 는
+      //    변경되지 않는다(트랜잭션 롤백 동치).
+      const existing = await ctx.prisma.menuItem.findMany({
+        where: { menuId: input.menuId },
+        select: { id: true, parentId: true },
+      });
+      const proposedParent = new Map<number, number | null>();
+      for (const row of existing) {
+        proposedParent.set(row.id, row.parentId);
+      }
+      for (const item of input.items) {
+        proposedParent.set(item.id, item.parentId);
+      }
+      for (const item of input.items) {
+        const seen = new Set<number>();
+        let cur: number | null = item.id;
+        while (cur !== null) {
+          if (seen.has(cur)) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message:
+                '메뉴 항목이 자기 자신 또는 하위 항목을 부모로 가질 수 없습니다 (순환 감지)',
+            });
+          }
+          seen.add(cur);
+          cur = proposedParent.get(cur) ?? null;
+        }
+      }
+
+      // 4. 단일 트랜잭션으로 일괄 갱신
       await ctx.prisma.$transaction(
         input.items.map((item) =>
           ctx.prisma.menuItem.update({
@@ -223,7 +264,21 @@ export const adminMenuItemRouter = router({
           row: (typeof all)[number],
           parentId: number | null,
           listOrder: number,
+          visited: Set<number>,
+          depth: number,
         ): Promise<number> => {
+          // 순환/병적 깊이 방어 (SPEC-LEGACY-PARITY-001 D4) — 같은 원본 id 가 현재
+          // 재귀 경로에 다시 나타나거나(순환) 깊이 상한을 넘으면 무한 재귀 대신
+          // 거부한다. 순환은 reorder 경계에서 우선 차단하지만, 이미 오염된 데이터를
+          // 복제할 때를 대비한 2차 방어선이다.
+          if (visited.has(row.id) || depth > MAX_MENU_DEPTH) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: '메뉴 트리에 순환 또는 과도한 깊이가 있어 복제할 수 없습니다 (순환 감지)',
+            });
+          }
+          visited.add(row.id);
+
           const copy = await tx.menuItem.create({
             data: {
               menuId: row.menuId,
@@ -249,12 +304,14 @@ export const adminMenuItemRouter = router({
             (a, b) => a.listOrder - b.listOrder,
           );
           for (const child of children) {
-            await copySubtree(child, copy.id, child.listOrder);
+            await copySubtree(child, copy.id, child.listOrder, visited, depth + 1);
           }
+          // 경로 기반 visited — 형제 서브트리는 서로의 방문 기록에 간섭하지 않는다.
+          visited.delete(row.id);
           return copy.id;
         };
 
-        return copySubtree(source, source.parentId, source.listOrder + 1);
+        return copySubtree(source, source.parentId, source.listOrder + 1, new Set<number>(), 0);
       });
 
       return { id: newRootId, created: createdCount };

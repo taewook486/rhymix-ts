@@ -33,6 +33,7 @@ vi.mock('@/lib/db/prisma', () => ({
 const mockMenuItemCreate = vi.fn();
 const mockMenuItemUpdate = vi.fn();
 const mockMenuItemDelete = vi.fn();
+const mockMenuItemFindMany = vi.fn();
 const mockAdminLogCreate = vi.fn();
 const mockMenuFindUnique = vi.fn();
 
@@ -64,6 +65,7 @@ const mockPrisma = {
     create: (...args: unknown[]) => mockMenuItemCreate(...args),
     update: (...args: unknown[]) => mockMenuItemUpdate(...args),
     delete: (...args: unknown[]) => mockMenuItemDelete(...args),
+    findMany: (...args: unknown[]) => mockMenuItemFindMany(...args),
   },
   adminLog: {
     create: (...args: unknown[]) => mockAdminLogCreate(...args),
@@ -184,6 +186,8 @@ describe('admin.menuItem.reorder (Slice E-2)', () => {
     mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
     // 기본적으로 menu 존재하는 상황
     mockMenuFindUnique.mockResolvedValue({ id: 1, title: '메인메뉴' });
+    // reorder 순환검사가 읽는 기존 rows — 기본값 없음
+    mockMenuItemFindMany.mockResolvedValue([]);
     // menuItem.update 기본 반환값
     mockMenuItemUpdate.mockResolvedValue({ id: 1, listOrder: 0 });
   });
@@ -268,6 +272,7 @@ describe('admin.menuItem.reorder cross-level DnD (Slice I-2 — REQ-ADMIN-031)',
     mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
     mockSiteSettingFindFirst.mockResolvedValue(null); // 2FA 비활성화 기본값
     mockMenuFindUnique.mockResolvedValue({ id: 1, title: '메인메뉴' });
+    mockMenuItemFindMany.mockResolvedValue([]);
     mockMenuItemUpdate.mockResolvedValue({ id: 1, listOrder: 0, parentId: null });
   });
 
@@ -488,11 +493,14 @@ function m4Row(partial: Partial<M4Row> & Pick<M4Row, 'id' | 'title'>): M4Row {
  * where/data 는 duplicate 가 쓸 수 있는 형태만 지원하고, 계약 밖 형태는
  * 조용히 통과하지 않고 예외를 낸다.
  */
-function makeDuplicateFake(seed: M4Row[]) {
+function makeDuplicateFake(seed: M4Row[], createCap = Infinity) {
   const rows: M4Row[] = seed.map((r) => ({ ...r, groupIds: [...r.groupIds] }));
   const createdInTx: boolean[] = [];
   let nextId = 1000;
   let inTx = false;
+  // 가드가 없으면 순환/병적 깊이에서 create 가 무한 호출된다. 상한을 두어
+  // 테스트가 무한 루프에 빠지지 않고 "가드 부재" 를 관측할 수 있게 한다.
+  let createCount = 0;
 
   const menuItem = {
     findUnique: vi.fn(async ({ where }: { where: { id: number } }) =>
@@ -502,6 +510,10 @@ function makeDuplicateFake(seed: M4Row[]) {
       rows.filter((r) => r.menuId === where.menuId).map((r) => ({ ...r })),
     ),
     create: vi.fn(async ({ data }: { data: Record<string, unknown> }) => {
+      createCount += 1;
+      if (createCount > createCap) {
+        throw new Error(`fake: create 호출이 상한(${createCap})을 초과 — 무한 재귀 의심`);
+      }
       const id = nextId++;
       const row = {
         ...m4Row({ id, title: typeof data.title === 'string' ? data.title : '' }),
@@ -675,5 +687,142 @@ describe('admin.menuItem.duplicate (SPEC-LEGACY-PARITY-001 M4, AC-SITE-001)', ()
     const { caller } = await makeDuplicateCaller(acFixture());
 
     await expect(caller.duplicate({ id: 999 })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 감사 결함 D4 (major) — 메뉴 트리 순환 가드
+//
+// reorder 는 각 item 의 새 parentId 를 검증 없이 기록한다. 항목이 자기 자신이나
+// 자신의 하위 항목을 부모로 지정하면 부모 그래프에 순환이 생긴다(DnD 페이로드 또는
+// 악의적 클라이언트). 순환은 duplicate.copySubtree / buildMenuTree 의 무한 재귀
+// 벡터이므로 루트 원인인 reorder 경계에서 거부해야 한다.
+// ---------------------------------------------------------------------------
+
+describe('admin.menuItem.reorder 순환 가드 (SPEC-LEGACY-PARITY-001 D4)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAdminLogCreate.mockResolvedValue({ id: BigInt(1) });
+    mockSiteSettingFindFirst.mockResolvedValue(null);
+    mockMenuFindUnique.mockResolvedValue({ id: 1, title: '메인메뉴' });
+    mockMenuItemUpdate.mockResolvedValue({ id: 1, listOrder: 0 });
+    mockMenuItemFindMany.mockResolvedValue([]);
+  });
+
+  async function makeCaller() {
+    const { adminMenuItemRouter } = await import('./menu-item');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminMenuItemRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return createCaller(adminCtx as any);
+  }
+
+  it('D4-1: 항목이 자기 자신을 부모로 지정하면 BAD_REQUEST — DB 미변경(롤백 동치)', async () => {
+    const caller = await makeCaller();
+
+    await expect(
+      caller.reorder({ menuId: 1, items: [{ id: 5, parentId: 5, listOrder: 0 }] }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+
+    // 순환은 쓰기 전에 거부된다 — update/$transaction 모두 미호출
+    expect(mockMenuItemUpdate).not.toHaveBeenCalled();
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it('D4-2: 배치 내부 2노드 순환(A↔B)이면 BAD_REQUEST', async () => {
+    const caller = await makeCaller();
+
+    await expect(
+      caller.reorder({
+        menuId: 1,
+        items: [
+          { id: 1, parentId: 2, listOrder: 0 },
+          { id: 2, parentId: 1, listOrder: 0 },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+
+    expect(mockMenuItemUpdate).not.toHaveBeenCalled();
+  });
+
+  it('D4-3: 항목을 자신의 하위(기존 rows 기준)로 이동하면 BAD_REQUEST', async () => {
+    // 기존 트리: 1(root) → 2 → 3 (3 은 1 의 손자)
+    mockMenuItemFindMany.mockResolvedValue([
+      { id: 1, parentId: null },
+      { id: 2, parentId: 1 },
+      { id: 3, parentId: 2 },
+    ]);
+    const caller = await makeCaller();
+
+    // 1 을 자신의 손자 3 아래로 → 1→3→2→1 순환
+    await expect(
+      caller.reorder({ menuId: 1, items: [{ id: 1, parentId: 3, listOrder: 0 }] }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+
+    expect(mockMenuItemUpdate).not.toHaveBeenCalled();
+  });
+
+  it('D4-4: 순환 없는 정상 배치는 통과한다 (거짓 양성 방지)', async () => {
+    // 기존 트리: 1(root) → {2, 3}
+    mockMenuItemFindMany.mockResolvedValue([
+      { id: 1, parentId: null },
+      { id: 2, parentId: 1 },
+      { id: 3, parentId: 1 },
+    ]);
+    const caller = await makeCaller();
+
+    // 3 을 2 아래로 (정상 — 순환 아님)
+    const result = await caller.reorder({
+      menuId: 1,
+      items: [{ id: 3, parentId: 2, listOrder: 0 }],
+    });
+
+    expect(result).toMatchObject({ updated: 1 });
+    expect(mockMenuItemUpdate).toHaveBeenCalledOnce();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 D4 — duplicate.copySubtree 무한 재귀 방어
+//
+// reorder 가 순환을 만들어 두면(또는 병적으로 깊은 트리) copySubtree 는 visited/
+// depth 가드 없이 childrenOf 를 따라 무한히 create 를 호출한다. fake 의 create
+// 상한(runaway cap)은 가드 부재 시 일반 Error 를 던지므로 BAD_REQUEST 단언이
+// 실패(RED)하고, 가드가 있으면 상한 도달 전에 BAD_REQUEST 로 끊긴다.
+// ---------------------------------------------------------------------------
+
+describe('admin.menuItem.duplicate 순환/깊이 가드 (SPEC-LEGACY-PARITY-001 D4)', () => {
+  async function makeCappedCaller(seed: M4Row[], createCap: number) {
+    const fake = makeDuplicateFake(seed, createCap);
+    const { adminMenuItemRouter } = await import('./menu-item');
+    const { createCallerFactory } = await import('../../trpc');
+    const createCaller = createCallerFactory(adminMenuItemRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller({ ...adminCtx, prisma: fake.prisma } as any);
+    return { caller, fake };
+  }
+
+  it('D4-5: 도달 가능한 서브트리 순환(A→B→A)이면 무한 재귀 대신 BAD_REQUEST', async () => {
+    // 두 행이 서로를 부모로 가리킨다 → source(10) 에서 childrenOf 를 따라가면 순환.
+    const seed: M4Row[] = [
+      m4Row({ id: 10, title: 'X', parentId: 20, listOrder: 0 }),
+      m4Row({ id: 20, title: 'Y', parentId: 10, listOrder: 0 }),
+    ];
+    const { caller } = await makeCappedCaller(seed, 500);
+
+    await expect(caller.duplicate({ id: 10 })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('D4-6: 깊이 상한(100) 초과 서브트리는 BAD_REQUEST (병적 트리 방어)', async () => {
+    // 상한보다 깊은 정상 선형 체인 — 가드가 없으면 전부 복사되어 resolve(RED),
+    // 가드가 있으면 깊이 상한에서 BAD_REQUEST.
+    const seed: M4Row[] = [];
+    for (let i = 1; i <= 110; i += 1) {
+      seed.push(m4Row({ id: i, title: `n${i}`, parentId: i === 1 ? null : i - 1, listOrder: 0 }));
+    }
+    const { caller } = await makeCappedCaller(seed, 500);
+
+    await expect(caller.duplicate({ id: 1 })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 });

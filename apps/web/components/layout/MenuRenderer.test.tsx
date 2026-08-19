@@ -268,3 +268,27 @@ describe('AC-SITE-010: MenuTree 상태별 렌더', () => {
     expect(labelLink.textContent).toContain('라벨항목');
   });
 });
+
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 감사 결함 D4 — buildMenuTree 깊이 가드 (defense-in-depth)
+//
+// 주의(실측 검증): MenuItem 은 parentId 가 하나뿐이고 buildMenuTree 는 null-root
+// 에서 시작하므로, 순수 순환(A→B→A)이나 자기부모(A→A) 노드는 어떤 null-root 에서도
+// 도달 불가능(고아)해 무한 재귀를 트리거하지 못한다 — reorder/copySubtree 와 달리
+// 도달 가능한 순환을 구성할 수 없다. 따라서 이 테스트는 무한 재귀를 재현한다고
+// 주장하지 않고, 병적으로 깊은 정상 체인으로 깊이 상한만 방어적으로 고정한다.
+// ---------------------------------------------------------------------------
+
+describe('SPEC-LEGACY-PARITY-001 D4: buildMenuTree 깊이 가드', () => {
+  it('D4-7: 깊이 상한(100)보다 깊은 트리는 무한 재귀 대신 예외로 중단된다', async () => {
+    const deep: ReturnType<typeof menuRow>[] = [];
+    for (let i = 1; i <= 110; i += 1) {
+      deep.push(menuRow({ id: i, title: `n${i}`, parentId: i === 1 ? null : i - 1 }));
+    }
+    mockMenuRows(...deep);
+
+    const MR = await import('./MenuRenderer');
+    await expect(MR.buildMenuTree(1, null, [])).rejects.toThrow();
+  });
+});

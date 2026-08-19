@@ -16,6 +16,14 @@ import {
   resolveButtonImageUrl,
 } from '@/lib/menu/button-image';
 
+/**
+ * 메뉴 트리 최대 허용 깊이 (SPEC-LEGACY-PARITY-001 D4, defense-in-depth).
+ * 단일 parentId 불변식상 null-root 에서 도달 가능한 순수 순환은 만들 수 없으나,
+ * 오염된 데이터(자기부모 등)나 병적으로 깊은 트리에서 무한 재귀를 막는다.
+ * 실제 메뉴는 한 자릿수 깊이라 정상 운영에서는 도달하지 않는다.
+ */
+const MAX_MENU_DEPTH = 100;
+
 /** 상태별 버튼 이미지 1종 (URL 해석 완료 + alt 폴백 적용) */
 export interface MenuButtonImage {
   url: string;
@@ -84,7 +92,17 @@ export async function buildMenuTree(
   menuId: number,
   parentId: number | null = null,
   userGroupIds: number[] = [],
+  depth: number = 0,
 ): Promise<MenuItemTreeNode[]> {
+  // 깊이 가드 (SPEC-LEGACY-PARITY-001 D4) — 병적으로 깊거나 오염된 트리에서
+  // 무한 재귀 대신 예외로 중단한다. 공개 렌더 경로이므로 서버 무한 루프를 막는 것이
+  // 우선이다.
+  if (depth > MAX_MENU_DEPTH) {
+    throw new Error(
+      `메뉴 트리 깊이 상한(${MAX_MENU_DEPTH})을 초과했습니다 — 순환 또는 병적 트리 의심`,
+    );
+  }
+
   const items = await prisma.menuItem.findMany({
     where: {
       menuId,
@@ -101,7 +119,7 @@ export async function buildMenuTree(
       continue;
     }
 
-    const children = await buildMenuTree(menuId, item.id, userGroupIds);
+    const children = await buildMenuTree(menuId, item.id, userGroupIds, depth + 1);
     const buttonImages = await resolveButtonImages(item);
 
     result.push({
