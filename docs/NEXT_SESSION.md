@@ -1,7 +1,8 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-20 (SPEC-LEGACY-PARITY-001-FIX D2·D5·D6·D3 완료·푸시, 다음은 §E.4 정정)
+> 갱신: 2026-08-20 (결함 6건 + §E.4 정정 완료·푸시. 남은 것은 sync-auditor 재판정 하나 —
+>       실행 중 PC 종료로 판정 유실, 다음 세션이 재실행할 것)
 > source_session_id: 93d02bc1-4dd9-41bc-8aa4-499a9444b72b
 
 ## 붙여넣을 메시지
@@ -9,26 +10,29 @@
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. SPEC-LEGACY-PARITY-001 감사 FAIL 후속 수리 — 5단계 §E.4 정정 진입.
+ultrathink. SPEC-LEGACY-PARITY-001 감사 FAIL 후속 — sync-auditor 재판정 재실행 진입.
 applied lessons: feedback-agent-test-claims-verify-by-rerun,
 feedback-verify-teammate-security-code, feedback-stale-git-index-lock
 source_session_id: 93d02bc1-4dd9-41bc-8aa4-499a9444b72b
 
 전제 검증:
 1) git rev-list --count --left-right origin/main...HEAD → 0 0
-   — HEAD 는 a5c79b3. D1/D4/D2/D5/D6/D3 + 훅 수리까지 전부 커밋·푸시 완료.
+   — HEAD 는 d170bf3. 결함 6건 + 훅 수리 + §E.4 정정까지 전부 커밋·푸시 완료.
      미커밋은 MoAI 하네스 템플릿 배포분뿐, 소스 clean.
 2) grep "^status:" .moai/specs/SPEC-LEGACY-PARITY-001/spec.md → completed
    — 감사 FAIL(61.2) 상태 유지. 수리는 재오픈 없이 계획서 기반으로 진행 중.
 3) cat .moai/plans/ancient-imagining-riddle.md → 6단계 계획 (승인 완료)
-   — 1~4단계 완료(D1/D4/D2/D5/D6/D3 + 회귀). 남은 것: 5단계 §E.4 정정.
+   — 1~5단계 완료(결함 6건 + 회귀 + §E.4 정정). 남은 것: sync-auditor 재판정뿐.
 4) docker: rhymix-app(8080)/rhymix-db(3307)/rhymix-ts-db(5444).
    WSL 에서 docker 명령이 안 잡히면 Docker Desktop 의 WSL2 통합을 켤 것.
    admin@example.com / id=1 (2FA 없음).
 
-실행: /moai sync SPEC-LEGACY-PARITY-001 (계획서 5단계 — §E.4 마감 기록 정정, manager-docs)
+실행: sync-auditor 재판정 재실행 — 아래 "재판정 재실행 입력" 절의 지시를 그대로 실을 것.
+      직전 실행은 약 25분 진행 후 PC 종료로 중단됐고 판정을 받지 못했다(유실).
 
-후속: §E.4 정정 뒤 → sync-auditor 재판정 (이번엔 판정을 기다린 뒤 닫는다)
+후속: 판정 수령 후 마감. PASS 면 Gap 3건을 Gap 으로 남긴 채 닫고,
+      FAIL 이면 사유를 완화 없이 기록한 뒤 후속 수리로 넘긴다.
+      **이번에도 판정을 기다린 뒤 닫는다 — 닫고 나서 판정이 오는 순서를 반복하지 말 것.**
 
 ✂──── 여기까지 복사 ────✂
 ```
@@ -45,8 +49,9 @@ source_session_id: 93d02bc1-4dd9-41bc-8aa4-499a9444b72b
 | `f07b8ac` | D6 | 다운로드 라우트 2곳에 `X-Content-Type-Options: nosniff` |
 | `7476235` | — | sync-phase 훅: R 파일명 명령 주입 + cpp find 우선순위 |
 | `a5c79b3` | D3 | export 시점 버튼 값 union 검증·낙하 + metadata 보고 (방어 절반) |
+| `d170bf3` | — | §E.4 마감 기록 정정 (감사 FAIL·후속 수리·lint 실측·Gaps 3건) |
 
-divergence `0 0` (origin/main == HEAD `a5c79b3`).
+divergence `0 0` (origin/main == HEAD `d170bf3`).
 
 ### 검증 (오케스트레이터가 직접 재실행)
 
@@ -125,6 +130,41 @@ Docker 기동 후 계획서의 질의와, **3개 컬럼 전체로 확장한 질�
 > 초기화+재설치로 비교 기준선 확보"와 달리 TS 쪽만 비어 있다(레거시는 41행 유지). 언젠가
 > 재시드가 필요할 수 있다.
 
+## 재판정 재실행 입력 (이번 세션에서 중단된 것)
+
+`sync-auditor` 를 띄웠으나 약 25분 진행 중 PC 종료로 **판정을 받지 못했다**. 트리는
+읽기 전용으로 유지됐고(감사 범위 파일 무변경) 유실된 것은 판정뿐이다. 아래를 그대로
+실어 재실행할 것 — 단순 "다시 봐달라"가 아니라, 감사의 전제를 반박하는 2건을 명시적으로
+판단하게 하는 것이 핵심이다.
+
+**대상**: SPEC-LEGACY-PARITY-001, HEAD `d170bf3`.
+**직전 판정**: FAIL 61.2/100, Security must-pass 미달(High 1 + Medium 3), AC 3건 unverified-here.
+
+**수리된 6건** — 각 주장을 감사가 독립 검증하게 할 것:
+`baa571d`(D1 인가 게이트) / `308c986`(D4 순환 가드) / `79e3797`(D2 키 회수) /
+`e5179e7`(D5 매직바이트) / `f07b8ac`(D6 nosniff) / `a5c79b3`(D3 export 검증·낙하).
+`7476235`(하네스 훅 수리)는 이 SPEC 소관이 아니므로 감사 범위 밖.
+
+**명시적으로 판단시킬 쟁점 2건**:
+
+1. **D1 심각도 High→Medium 재분류.** 감사의 전제 "`middleware.ts` 없음 → 무인증 디스크
+   쓰기"는 실측으로 반증됐다 — Next 16 은 middleware 를 `proxy.ts` 로 개명했고
+   `apps/web/proxy.ts` 가 `/admin` 을 요청 단계에서 차단한다(무인증 POST → **307 /login,
+   파일 0건**, 액션 미실행). 잔존 결함은 방어심층 — 전역 주소지정 서버액션을 비보호
+   경로로 POST 하면 proxy 통과 후 액션 본문에 무인증 진입. Medium 이 맞는지 근거를 대게 할 것.
+2. **D3 마이그레이션 불요 판정.** 근거는 "0건 나옴"이 **아니다** — 주 DB `rhymix_ts` 는
+   68개 테이블 전부 0행이라 그 0은 근거가 못 된다. 실질 근거는 (a) `rhymix_ts_verify` 의
+   실재 3행 중 버튼값 설정 0건, (b) 레거시 `rx_menu_item` 버튼 컬럼이 `varchar(255)`
+   평문이라 import union 이 정합 정규화하고 41행 중 설정 0건. 충분한지 판단시킬 것.
+
+**미리 차단할 것** (새 발견으로 보고하지 말라고 명시):
+AC-SITE-004/005/006 재현 불가(증적이 gitignore 경로 의존) / 커버리지 미측정 /
+`packages/admin` 린트 미구성(`"lint": "echo 'no lint'"`). 대신 **AC 3건이 여전히 PASS 를
+막아야 하는지**를 판단 대상으로 넘길 것.
+
+**태도 지시**: 맞춰주려 PASS 를 합리화하지도, 관성으로 이전 FAIL 을 되풀이하지도 말고
+현재 트리를 볼 것. 모든 주장에 실행한 명령과 관측 출력을 붙일 것.
+
 ## 남은 작업 (계획서 기준)
 
 - ~~**D3**~~ **완료** (`a5c79b3`). `toButtonImageRef` 의 무검사 캐스트를 import 와 동일한
@@ -132,10 +172,8 @@ Docker 기동 후 계획서의 질의와, **3개 컬럼 전체로 확장한 질�
   `metadata.droppedButtonImages`(선택 필드, 0건 생략)로 보고. `exportFormatVersion` 1.0.0 유지.
   **마이그레이션은 불요로 판정**했다(아래 근거).
 
-- **5단계 §E.4 정정** (manager-docs): 감사 판정(FAIL 61.2)·후속 SPEC 추가,
-  `sync_phase_commit_count` 3→4, lint 인용을 수리 후 로그로 교체, Gaps 3건 추가
-  (커버리지 미측정 / AC-SITE-004~006 재현 불가 / sync 재검증이 actions.test.ts 누락),
-  이탈 3 근거 문장 정정(`resolveButtonImageUrl` 은 항상 자기 오리진).
+- ~~**5단계 §E.4 정정**~~ **완료** (`d170bf3`). 감사 판정 기록, `sync_phase_commit_count` 4,
+  lint 재실측(0 error / 11 warning), Gaps 3건 신설, 이탈3 근거 정정.
 - 마지막: `sync-auditor` 재판정 (이번엔 판정을 기다린 뒤 닫는다).
 
 ## 환경 함정 (재발 방지 — 계속 유효)
