@@ -40,7 +40,11 @@ vi.mock('@/lib/admin/site-context', () => ({ getCurrentSiteId: vi.fn(async () =>
 // packages/file 모킹 — vi.hoisted로 팩토리보다 먼저 초기화되는 참조를 만든다.
 const fileMocks = vi.hoisted(() => ({
   storage: {
-    write: vi.fn(async () => {}),
+    // 업로드 라우트/스토리지와 동일한 입력 형태로 타입을 명시한다 —
+    // mock.calls[n][0].key 로 쓴 키를 꺼내는 D2 검증에 필요하다
+    write: vi.fn(
+      async (_input: { key: string; body: Buffer | Uint8Array; contentType: string }) => {},
+    ),
     delete: vi.fn(async () => {}),
     getDownloadUrl: vi.fn(),
   },
@@ -319,5 +323,104 @@ describe('D1: Server Action 진입점 관리자 인가 게이트', () => {
 
     expect(res).toEqual({ ok: true });
     expect(vi.mocked(getServerCaller)).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 감사 결함 D2 — 업로드 후 실패 경로의 storageKey 회수
+//
+// updateMenuItemAction 은 zod 검증·tRPC 호출보다 먼저 storage.write 를
+// 수행한다. 업로드 이후 실패(뒤 필드 거부·zod 실패·tRPC 예외)에서 이미 쓴
+// 키를 회수하지 않으면 고아 파일이 저장소에 영구 남는다. 성공 경로와
+// 업로드 이전 실패 경로는 아무것도 삭제하지 않아야 한다.
+// ---------------------------------------------------------------------------
+
+describe('D2: 업로드 후 실패 경로의 storageKey 회수', () => {
+  function writtenKeyOf(call: number): string {
+    return fileMocks.storage.write.mock.calls[call]![0].key;
+  }
+
+  it('뒤 필드 거부 — 앞 필드가 쓴 키는 회수된다', async () => {
+    // normalBtnFile 은 통과(키 1개 기록), hoverBtnFile 을 이미지 MIME 게이트에서 거부
+    fileMocks.isImageMimeType.mockImplementation((m: string) => m !== 'image/gif');
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([pngBytes], 'normal.png', { type: 'image/png' }),
+      hoverBtnFile: new File([pngBytes], 'hover.gif', { type: 'image/gif' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown>).error).toBeTruthy();
+    // normalBtn 1개만 저장소에 기록되었다
+    expect(fileMocks.storage.write).toHaveBeenCalledTimes(1);
+    // 실패 반환 직전에 그 키가 회수되어야 한다 (고아 파일 방지)
+    expect(fileMocks.storage.delete).toHaveBeenCalledTimes(1);
+    expect(fileMocks.storage.delete).toHaveBeenCalledWith(writtenKeyOf(0));
+    expect(updateFn).not.toHaveBeenCalled();
+  });
+
+  it('zod 검증 실패 — 업로드된 키는 회수된다', async () => {
+    const fd = makeForm({
+      ...baseEntries(),
+      listOrder: 'abc', // z.coerce.number().int() 실패
+      normalBtnFile: new File([pngBytes], 'normal.png', { type: 'image/png' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown>).fieldErrors).toBeTruthy();
+    expect(fileMocks.storage.write).toHaveBeenCalledTimes(1);
+    expect(fileMocks.storage.delete).toHaveBeenCalledTimes(1);
+    expect(fileMocks.storage.delete).toHaveBeenCalledWith(writtenKeyOf(0));
+    expect(updateFn).not.toHaveBeenCalled();
+  });
+
+  it('tRPC 예외 — 업로드된 키는 회수된다', async () => {
+    updateFn.mockRejectedValueOnce(
+      new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'db down' }),
+    );
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([pngBytes], 'normal.png', { type: 'image/png' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown>).error).toBe('db down');
+    expect(fileMocks.storage.write).toHaveBeenCalledTimes(1);
+    expect(fileMocks.storage.delete).toHaveBeenCalledTimes(1);
+    expect(fileMocks.storage.delete).toHaveBeenCalledWith(writtenKeyOf(0));
+  });
+
+  it('성공 경로 — 업로드된 키는 회수되지 않는다', async () => {
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([pngBytes], 'normal.png', { type: 'image/png' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown> | null)?.error).toBeUndefined();
+    expect(fileMocks.storage.write).toHaveBeenCalledTimes(1);
+    expect(fileMocks.storage.delete).not.toHaveBeenCalled();
+    expect(updateFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('업로드 이전 실패(그룹 목록 조회 오류) — 쓰지도 삭제하지도 않는다', async () => {
+    callerMock.admin.group.list.mockRejectedValueOnce(new Error('boom'));
+    const fd = makeForm({
+      ...baseEntries(),
+      groupIds: '5',
+      normalBtnFile: new File([pngBytes], 'normal.png', { type: 'image/png' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown>).error).toBe(
+      '그룹 목록 조회 중 오류가 발생했습니다.',
+    );
+    expect(fileMocks.storage.write).not.toHaveBeenCalled();
+    expect(fileMocks.storage.delete).not.toHaveBeenCalled();
   });
 });

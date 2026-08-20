@@ -188,19 +188,38 @@ interface ButtonImageFields {
 }
 
 /**
+ * 이번 요청이 업로드한 저장 키를 실패 경로에서 회수한다 — 감사 결함 D2.
+ * 업로드 이후 실패(뒤 필드 거부·zod·tRPC 예외)가 키를 방치하면 고아 파일이
+ * 저장소에 영구 남는다. scanner 판정 경로(uploadButtonImage)와 동일한
+ * fire-and-forget 삭제 관용구를 따른다.
+ * @MX:SPEC: SPEC-LEGACY-PARITY-001 감사 결함 D2
+ */
+async function reclaimUploadedKeys(keys: readonly string[]): Promise<void> {
+  const storage = getStorage()
+  for (const key of keys) {
+    await storage.delete(key).catch(() => {})
+  }
+}
+
+/**
  * FormData의 버튼 이미지 3종(normal/hover/active)을 해석한다 (AC-SITE-002/003).
  *  - 파일 업로드 → 이미지 참조형 {"image": <storageKey>}
  *  - 제거 체크박스 → null (해당 상태만 제거)
  *  - 둘 다 없음   → undefined (변경 없음)
+ *
+ * writtenKeys 는 이번 요청에서 실제로 저장소에 기록한 키 전체다. 실패
+ * 반환 시에도 실패 직전까지 기록한 키를 담아 호출자(D2 회수)에 넘긴다.
  */
 async function parseButtonImageFields(formData: FormData): Promise<
   | {
       error: string
       fields?: undefined
+      writtenKeys: string[]
     }
   | {
       error?: undefined
       fields: ButtonImageFields
+      writtenKeys: string[]
     }
 > {
   const states = [
@@ -210,15 +229,17 @@ async function parseButtonImageFields(formData: FormData): Promise<
   ] as const
 
   const fields: ButtonImageFields = {}
+  const writtenKeys: string[] = []
 
   for (const state of states) {
     const file = formData.get(state.file)
     if (file instanceof File && file.size > 0) {
       const result = await uploadButtonImage(file)
       if ('error' in result) {
-        return { error: `버튼 이미지(${state.label}): ${result.error}` }
+        return { error: `버튼 이미지(${state.label}): ${result.error}`, writtenKeys }
       }
       fields[state.field] = result
+      writtenKeys.push(result.image)
       continue
     }
     // 브라우저 체크박스 기본값 'on' + 명시적 '1' 모두 수용
@@ -228,7 +249,7 @@ async function parseButtonImageFields(formData: FormData): Promise<
     }
   }
 
-  return { fields }
+  return { fields, writtenKeys }
 }
 
 // ---------------------------------------------------------------------------
@@ -342,6 +363,8 @@ export async function updateMenuItemAction(
   // 버튼 이미지 3종 해석 (AC-SITE-002/003): 파일 업로드 → 참조형, 제거 플래그 → null
   const buttons = await parseButtonImageFields(formData)
   if (buttons.error) {
+    // 업로드 이후 실패 — 이번 요청이 기록한 키를 회수한다 (감사 결함 D2)
+    await reclaimUploadedKeys(buttons.writtenKeys)
     return { error: buttons.error }
   }
 
@@ -356,6 +379,8 @@ export async function updateMenuItemAction(
     expand: formData.get('expand') === 'on',
   })
   if (!parsed.success) {
+    // 업로드 이후 실패 — 이번 요청이 기록한 키를 회수한다 (감사 결함 D2)
+    await reclaimUploadedKeys(buttons.writtenKeys)
     return { fieldErrors: parsed.error.flatten().fieldErrors }
   }
 
@@ -368,6 +393,8 @@ export async function updateMenuItemAction(
       groupIds,
     })
   } catch (err) {
+    // 업로드 이후 실패 — 이번 요청이 기록한 키를 회수한다 (감사 결함 D2)
+    await reclaimUploadedKeys(buttons.writtenKeys)
     if (err instanceof TRPCError) {
       return { error: err.message }
     }
