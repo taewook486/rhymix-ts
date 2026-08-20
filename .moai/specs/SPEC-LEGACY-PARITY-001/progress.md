@@ -403,29 +403,94 @@ sync_status: complete
 sync_complete_at: 2026-08-18T22:04:36+09:00
 pre_sync_head: 93dc1fb
 sync_commit_sha: 53cd137
-ac_pass_count: 11
+ac_pass_count: 11   # sync 자체검증 기준 — 마감 후 독립 감사는 3건 unverified-here (아래 "마감 후 감사 판정")
 ac_fail_count: 0
-sync_phase_commit_count: 3
+sync_phase_commit_count: 4
 sync_commit_strategy: direct commits on main (Route A, no PR — plan.md §A.6 이탈)
 frontmatter_status_transitions: in-progress → implemented → completed (spec.md 단독 — plan/acceptance 는 프론트매터 없음)
-new_warnings_or_lints_introduced: 0 errors / 4 warnings (deferred `<img>` 4건)
-eslint_errors_remaining: 0
-eslint_warnings_remaining: 4
+new_warnings_or_lints_introduced: 0 errors / 4 warnings (deferred `<img>` 4건 — sync 시점 기준)
+eslint_errors_remaining: 0   # 감사 결함 6건 수리 후 재실측(SPEC 범위 9파일) 기준 — 아래 증적 인용 철회 항
+eslint_warnings_remaining: 11   # 수리 후 재실측(SPEC 범위 9파일) — 내역은 아래 재실측 항
+post_close_sync_audit_verdict: FAIL 61.2/100 (마감·push 후 도착 — Security must-pass 미달)
+post_close_followup: SPEC-LEGACY-PARITY-001-FIX 후속 스트림 (001 미재개방 — 결함 6건 수리·검증·push 완료)
 ```
 
 - `ac_pass_count: 11` — AC-SITE-001~011 전건 PASS. §E.3 시점의 10건에서 AC-SITE-009
   (SPEC-MENU-001 supersede 전환)가 sync 에서 실행되어 11건이 됐다. 근거:
   `grep -n "^status:" .moai/specs/_archive/SPEC-MENU-001/spec.md` → `status: superseded`,
   전환 커밋 `93dc1fb`(`git log --grep="supersedes SPEC-MENU-001"`).
+  **정정(2026-08-20): 이 11/11 은 sync 자체검증 기준이다** — 마감 후 독립 감사는
+  AC-SITE-004/005/006 을 `unverified-here` 로 처리했다(아래 "마감 후 감사 판정").
 - `pre_sync_head: 93dc1fb` — sync 문서 작업 착수 시점 HEAD. AC-SITE-007/008 의 PRESERVE
   앵커 diff(`git diff a9e637a..HEAD --stat`)를 이 HEAD 에서 재실행해 각각 0행 확인:
   `apps/web/app/admin/site/design/`(AC-SITE-007), `AdminSidebar.tsx`(AC-SITE-008).
-- `sync_phase_commit_count: 3` — `34c1386`(lint 수리) · `93dc1fb`(supersede) + 본 문서
-  커밋(`53cd137`). `sync_commit_sha` 는 자기참조가 불가능하므로 문서 커밋 직후 이 후속
-  커밋에서 backfill 했다 — §E.3 의 `run_commit_sha` 도 같은 절차를 따랐다(742b7c6).
+- `sync_phase_commit_count: 4` (정정 — 종전 3 은 backfill 커밋을 세지 않았다) —
+  `34c1386`(lint 수리) · `93dc1fb`(supersede) · 본 문서 커밋(`53cd137`) ·
+  `56822fc`(`sync_commit_sha` backfill). `sync_commit_sha` 는 자기참조가 불가능하므로
+  문서 커밋 직후 후속 커밋에서 backfill 했다 — §E.3 의 `run_commit_sha` 도 같은 절차를
+  따랐다(742b7c6).
 - 재검증 결과(이번 세션 실측): `apps/web` typecheck exit 0 / 0건, `packages/admin`
   typecheck exit 0 / 0건, 단위 web 4스위트 `31 passed (31)` 230.97s, admin
   `menu-button-image.test.ts` `5 passed (5)`. 증적: `.moai/state/verify/372f1946/`.
+  **정정 — eslint 두 필드는 이 증적 디렉터리의 로그으로 뒷받침되지 않는다** (아래 인용
+  철회 항).
+- **eslint 재실측(2026-08-20 정정 — 감사 결함 6건 수리 후).** SPEC 범위 9파일 기준:
+  `app/admin/menu/actions.ts` · `actions.test.ts` ·
+  `server/api/routers/admin/menu-item.ts` · `menu-item.test.ts` ·
+  `lib/menu/button-image.ts` · `components/layout/MenuRenderer.tsx` ·
+  `components/admin/MenuItemEditor.tsx` · 다운로드 라우트 2건
+  (`app/api/files/[id]/download/route.ts`, `app/api/files/by-key/[key]/download/route.ts`).
+  결과 `✖ 11 problems (0 errors, 11 warnings)` — 내역 `@next/next/no-img-element` 4건
+  (`MenuItemEditor.tsx:339`, `MenuRenderer.tsx:195/202/210`) +
+  `@typescript-eslint/no-unused-vars` 7건 (`actions.test.ts:46/57/75/76`,
+  `actions.ts:402`, 다운로드 라우트 각 `:40`/`:28`). 위 `eslint_errors_remaining: 0`·
+  `eslint_warnings_remaining: 11` 은 이 재실측 값이다(종전 기록의 4 는 수리 전 수치였다).
+- **증적 인용 철회.** 종전 기록은 `eslint_errors_remaining: 0` 의 증적으로
+  `.moai/state/verify/372f1946/lint-spec-scope.log` 을 묶었으나 이 로그는 수리 **이전**
+  실행으로 `✖ 7 problems (1 error, 6 warnings)` — `menu-item.ts:244` `Unexpected any`
+  에러 1건을 포함한다. 0 에러 주장의 증적으로는 성립하지 않았다. 수리 후 로그
+  `.moai/state/verify/93d02bc1/lint-spec-scope-postfix.log` 이 존재하나 해당 경로 전반이
+  `.gitignore:261`(`**/.moai/state/`)로 버전관리에서 제외돼 저장소만으로는 재현 불가다.
+  그래서 수치와 내역을 위처럼 본문에 인라인으로 기록하고, 로그 경로는 부차 증적(로컬
+  한정)으로만 인용한다 — 이 한계는 아래 Gaps 2번과 같은 구조다.
+
+**마감 후 감사 판정과 후속 처리 (2026-08-20 정정 추가 — 완화하지 않고 기록한다):**
+
+- `sync-auditor` 판정 **FAIL — 61.2/100**. 판정은 본 SPEC 이 `status: completed` 로
+  마감·push(마감 계열 최종 `551d8a1`)된 **뒤**에 도착했다 — 사용자가 감사 확정을
+  기다리지 말고 닫으라고 지시했고, 마감이 먼저, 판정이 나중이었다.
+- FAIL 사유: must-pass 차원인 **Security 미달 — High 1건 + Medium 3건**. 프로파일의
+  `Security FAIL = Overall FAIL` 경성 임계가 다른 차원 점수와 무관하게 발동했다.
+- AC 11건 중 **AC-SITE-004/005/006 은 `unverified-here`** — 감사 환경에서 재실행
+  불가(근거는 아래 Gaps 2번). 따라서 위 `ac_pass_count: 11` 은 독립 감사가 전건을
+  확인한 수치가 아니다.
+- 후속 처리: **001 을 재개방하지 않고** 별도 후속 스트림 `SPEC-LEGACY-PARITY-001-FIX`
+  (계획 `.moai/plans/ancient-imagining-riddle.md`)으로 수행했다. 정식 SPEC 디렉터리는
+  생성되지 않았고 수리는 아래 커밋 6건으로 적립됐다 — 전량 수리·검증·push 완료:
+
+  | 결함 | 커밋 | 내용 |
+  |---|---|---|
+  | D1 | `baa571d` | Menu Server Action 진입부 인가 게이트 |
+  | D4 | `308c986` | 메뉴 트리 순환 가드 |
+  | D2 | `79e3797` | 업로드 실패 경로 storageKey 회수 |
+  | D5 | `e5179e7` | 업로드 매직바이트 포맷 검증 |
+  | D6 | `f07b8ac` | 다운로드 응답 nosniff |
+  | D3 | `a5c79b3` | export 시점 버튼 값 검증·낙하 (방어 절반) |
+
+- **D1 심각도 재산정 High → Medium(런타임 재현).** 감사의 전제("`middleware.ts` 없음 →
+  무인증 디스크 쓰기")는 반증됐다 — Next 16 이 middleware 를 `proxy.ts` 로 개명했고
+  `apps/web/proxy.ts`(`:53`, `:201`)가 요청 단계에서 `protectedRoutes`(`/admin` 등)를
+  차단한다. 비로그인 POST `/admin/menu/1` 실측: **307 → `/login`, 기록 파일 0건**.
+  잔여(실재하는) 결함은 다층 방어 문제다 — 전역 주소 지정이 가능한 Server Action 을
+  보호 대상이 아닌 경로로 POST 하면 proxy 를 통과해 무인증으로 액션 본문에 진입한다.
+  수리는 재산정과 무관하게 진행했다.
+- **D3 마이그레이션 판정: 불요.** 근거는 "조회 결과 0건"이 **아니다** — 메인 `rhymix_ts`
+  DB 는 68개 테이블 전부 0행이라 그 0은 데이터 부재의 표시이지 증거가 아니다. 실제
+  근거: (a) `rhymix_ts_verify` 에 실제 `menu_items` 3행이 있고 버튼 값이 설정된 행은
+  0건, (b) 레거시 Rhymix `rx_menu_item` 의 버튼 칼럼은 `varchar(255)` 평문 파일명이라
+  import union 이 정합적으로 정규화하며 41행 중 버튼 값 보유 행은 0건. 잔여 위험:
+  이 판정은 로컬 3개 DB 로 한정된다 — 데이터가 채워진 다른 rhymix-ts 인스턴스에는 같은
+  조회가 필요하다.
 
 **이탈·정정 기록 3건 (완화하지 않고 그대로 남긴다):**
 
@@ -442,10 +507,27 @@ eslint_warnings_remaining: 4
    eslint 재실행에서 발견해 `34c1386` 에서 지시문을 실제 대상 위로 이동해 수리했다.
    자기보고가 재실행으로 반증된 사례로 기록한다 — 요약 문구는 증거가 아니다.
 3. **`<img>` 경고 4건 유예(후속 후보).** `MenuItemEditor.tsx:339`,
-   `MenuRenderer.tsx:177/184/192` 가 `next/image` 대신 `<img>` 를 쓴다
-   (`@next/next/no-img-element`, warning). 버튼 이미지는 임의의 외부 URL 을 허용하므로
-   `next/image` 전환은 remote-domain 화이트리스트 설정을 함께 요구한다 — 본 SPEC 범위 밖.
-   후속 SPEC 후보로 남긴다.
+   `MenuRenderer.tsx:195/202/210` 이 `next/image` 대신 `<img>` 를 쓴다
+   (`@next/next/no-img-element`, warning). **근거 정정(2026-08-20):** 종전 기록은
+   "버튼 이미지가 임의의 외부 URL 을 허용하므로 `next/image` 전환에 remote-domain
+   화이트리스트 설정이 필요하다"고 했으나 사실이 아니다 —
+   `resolveButtonImageUrl`(`apps/web/lib/menu/button-image.ts:37`)은
+   `return getStorage().getDownloadUrl({ key: ref.image })` 한 줄이 전부라 http/URL
+   통과가 없고 버튼 이미지 URL 은 항상 자기 오리진이다. `remotePatterns` 설정 없이도
+   전환이 가능하므로 마이그레이션은 종전 기록보다 오히려 단순하다. 유예 사유는 단순히
+   본 SPEC 범위 밖이기 때문이다. 후속 SPEC 후보로 남긴다. (인용 행번호 갱신 —
+   MenuRenderer 의 `<img>` 가 177/184/192 → 195/202/210 으로 이동했다.)
+
+**Gaps — 마감 시점 미검증 3건 (독립 감사·사후 확인으로 드러난 것):**
+
+1. **커버리지 미측정.** 프로파일 임계는 85% 인데 이 SPEC 의 전 과정에서 커버리지 측정이
+   한 번도 실행되지 않았다. 상태는 "충족"이 아니라 **UNVERIFIED** 다.
+2. **AC-SITE-004/005/006 증적의 저장소 재현 불가.** 해당 증적이 gitignore 된
+   `.moai/state/verify/` 아래에만 존재해 저장소만으로는 재현할 수 없다 — 독립 감사가
+   이 3건을 `unverified-here` 로 처리한 직접적인 이유다.
+3. **sync 재검증의 스위트 누락.** 마감 시점 재검증이
+   `apps/web/app/admin/menu/actions.test.ts` 스위트를 포함하지 않았다 — 독립 감사가
+   이 누락을 적발했다.
 
 **§E.2 에서 이월하는 후속 항목 (마감 시 유실 방지):**
 
