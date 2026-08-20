@@ -123,6 +123,44 @@ export async function deleteMenuAction(
 // ---------------------------------------------------------------------------
 
 /**
+ * 래스터 이미지 매직바이트 시그니처 표 — 감사 결함 D5.
+ * 선언 MIME 이 이 표의 4종 중 하나이면서 버퍼 선두 바이트가 그 형식의
+ * 시그니처와 일치해야 업로드가 통과한다. SVG 등 스크립트 삽입이 가능한
+ * 형식은 시그니처가 없어 표에 등재되지 않으므로 자동 거부된다.
+ * @MX:SPEC: SPEC-LEGACY-PARITY-001 감사 결함 D5
+ */
+const RASTER_IMAGE_SIGNATURES: Readonly<
+  Record<string, { prefix: readonly number[]; extra?: { offset: number; bytes: readonly number[] } }>
+> = {
+  'image/png': { prefix: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
+  'image/jpeg': { prefix: [0xff, 0xd8, 0xff] },
+  'image/gif': { prefix: [0x47, 0x49, 0x46, 0x38] }, // "GIF8"
+  'image/webp': {
+    prefix: [0x52, 0x49, 0x46, 0x46], // "RIFF"
+    extra: { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] }, // "WEBP"
+  },
+}
+
+function bufferHasBytes(buffer: Buffer, offset: number, bytes: readonly number[]): boolean {
+  if (buffer.length < offset + bytes.length) return false
+  return bytes.every((byte, i) => buffer[offset + i] === byte)
+}
+
+/**
+ * 버퍼가 선언 MIME 의 래스터 시그니처와 정확히 일치하는지 판정한다.
+ * 표에 없는 MIME(SVG 등)은 false — 알 수 없는 형식을 통과시키지 않는다.
+ */
+function matchesRasterSignature(buffer: Buffer, mimeType: string): boolean {
+  const signature = RASTER_IMAGE_SIGNATURES[mimeType]
+  if (!signature) return false
+  if (!bufferHasBytes(buffer, 0, signature.prefix)) return false
+  if (signature.extra) {
+    return bufferHasBytes(buffer, signature.extra.offset, signature.extra.bytes)
+  }
+  return true
+}
+
+/**
  * 버튼 이미지 파일 1개를 검증·저장하고 이미지 참조형 값을 반환한다.
  * /api/files/upload 라우트와 동일한 packages/file 파이프라인을 액션 안에서
  * 재사용한다 (신규 엔드포인트 금지 — design.md D2).
@@ -158,6 +196,13 @@ async function uploadButtonImage(
   const storageKey = `${dateStr}/${randomUUID()}`
 
   const buffer = Buffer.from(await file.arrayBuffer())
+
+  // 감사 결함 D5 — 선언된 MIME 이 아니라 실제 바이트 시그니처를 저장소
+  // 쓰기 이전에 검증한다. 불일치(위장 확장자)와 비래스터 형식(SVG 등) 거부.
+  if (!matchesRasterSignature(buffer, mimeType)) {
+    return { error: '파일 내용이 선언된 이미지 형식(PNG/JPEG/GIF/WebP)과 일치하지 않습니다.' }
+  }
+
   await storage.write({ key: storageKey, body: buffer, contentType: mimeType })
 
   // 악성코드 검사 — 판정 시 저장소에서 제거하고 실패 처리

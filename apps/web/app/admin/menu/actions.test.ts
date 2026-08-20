@@ -84,6 +84,17 @@ const callerMock = {
 
 const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+// D5 — 실제 포맷 매직바이트 픽스처 (선언 MIME ↔ 바이트 일치 검증 회귀)
+const jpegBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
+const gifBytes = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x00, 0x01]); // "GIF89a"
+const webpBytes = new Uint8Array([
+  0x52, 0x49, 0x46, 0x46, 0x24, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, // "RIFF"……"WEBP"
+]);
+// RIFF 헤더는 맞지만 WEBP 가 아님(WAVE) — WebP 추가 시그니처 검증용
+const riffWavBytes = new Uint8Array([
+  0x52, 0x49, 0x46, 0x46, 0x24, 0x00, 0x00, 0x00, 0x57, 0x41, 0x56, 0x45, // "RIFF"……"WAVE"
+]);
+
 function makeForm(entries: Record<string, string | File>): FormData {
   const fd = new FormData();
   for (const [name, value] of Object.entries(entries)) fd.append(name, value);
@@ -422,5 +433,100 @@ describe('D2: 업로드 후 실패 경로의 storageKey 회수', () => {
     );
     expect(fileMocks.storage.write).not.toHaveBeenCalled();
     expect(fileMocks.storage.delete).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-LEGACY-PARITY-001 감사 결함 D5 — 선언 MIME 신뢰 결함 (매직바이트 검증)
+//
+// 업로드 파이프라인이 선언된 Content-Type 만 검사하고 실제 바이트를
+// 확인하지 않았다. storage.write 이전에 버퍼 선두 바이트의 시그니처
+// (PNG/JPEG/GIF/WebP)와 선언 MIME 의 일치를 강제한다. SVG 등 스크립트
+// 삽입이 가능한 형식은 시그니처 표에 없는 MIME 이라 자동 거부된다.
+// ---------------------------------------------------------------------------
+
+describe('D5: 선언 MIME ↔ 실제 바이트 시그니처 일치 검증', () => {
+  it('일치하는 시그니처는 통과한다 (PNG)', async () => {
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([pngBytes], 'normal.png', { type: 'image/png' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown> | null)?.error).toBeUndefined();
+    expect(fileMocks.storage.write).toHaveBeenCalledTimes(1);
+    expect(updateFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('일치하는 시그니처는 통과한다 (GIF8)', async () => {
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([gifBytes], 'normal.gif', { type: 'image/gif' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown> | null)?.error).toBeUndefined();
+    expect(fileMocks.storage.write).toHaveBeenCalledTimes(1);
+    expect(updateFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('일치하는 시그니처는 통과한다 (RIFF+WEBP)', async () => {
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([webpBytes], 'normal.webp', { type: 'image/webp' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown> | null)?.error).toBeUndefined();
+    expect(fileMocks.storage.write).toHaveBeenCalledTimes(1);
+    expect(updateFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('선언 PNG + JPEG 바이트 — storage.write 이전에 거부된다', async () => {
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([jpegBytes], 'fake.png', { type: 'image/png' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown>).error).toBeTruthy();
+    expect(fileMocks.storage.write).not.toHaveBeenCalled();
+    expect(updateFn).not.toHaveBeenCalled();
+  });
+
+  it('선언 WebP + RIFF/WAVE 바이트 — 추가 시그니처(WEBP) 불일치로 거부된다', async () => {
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([riffWavBytes], 'fake.webp', { type: 'image/webp' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown>).error).toBeTruthy();
+    expect(fileMocks.storage.write).not.toHaveBeenCalled();
+    expect(updateFn).not.toHaveBeenCalled();
+  });
+
+  it('SVG(image/svg+xml) 선언 — 래스터 시그니처 표에 없는 MIME 은 거부된다', async () => {
+    // isImageMimeType mock 은 기본적으로 항상 true 를 반환하므로(위
+    // beforeEach), SVG 가 선언 MIME 게이트를 통과해 도달하는 경로를 그대로
+    // 재현한다 — D5 게이트 자체가 SVG 를 거부해야 한다.
+    const svgBytes = new TextEncoder().encode(
+      '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+    );
+    const fd = makeForm({
+      ...baseEntries(),
+      normalBtnFile: new File([svgBytes], 'evil.svg', { type: 'image/svg+xml' }),
+    });
+
+    const res = await updateMenuItemAction(null, fd);
+
+    expect((res as Record<string, unknown>).error).toBeTruthy();
+    expect(fileMocks.storage.write).not.toHaveBeenCalled();
+    expect(updateFn).not.toHaveBeenCalled();
   });
 });
