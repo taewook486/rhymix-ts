@@ -19,15 +19,32 @@ import type {
   ExportRequest,
   MenuButtonImageRef,
 } from './bundle-schema';
-import { exportFormatVersion } from './bundle-schema';
+import { exportFormatVersion, menuItemButtonSchema } from './bundle-schema';
 
 /**
- * Prisma JSON 버튼 값 → 이미지 참조형 정규화 (AC-SITE-011, design.md D1).
- * 레거시 파일명 문자열은 {"image": <문자열>}로, null/undefined는 undefined로.
+ * Prisma JSON 버튼 값 → 이미지 참조형 정규화 + 검증
+ * (AC-SITE-011, design.md D1, SPEC-LEGACY-PARITY-001-FIX D3 방어 수리).
+ *
+ * import 스키마와 같은 menuItemButtonSchema union으로 safeParse 검증한다:
+ * - 정합 {image, alt?} 객체와 레거시 파일명 문자열은 통과 (문자열은 union이
+ *   {"image": <문자열>}로 정규화)
+ * - null/undefined → undefined (낙하 아님)
+ * - 비적합 값(구 편집기 {color,label} 등) → undefined로 낙하하고 건수 가산.
+ *   낙하하지 않으면 값 1건이 번들 전체의 parse를 실패시킨다(D3 본 결함).
+ *
+ * @MX:NOTE: [AUTO] 비적합 버튼 값은 버린다(전체 export 실패 대신) — 낙하 건수는
+ * metadata.droppedButtonImages로 보고하고 DB 원본은 변경하지 않는다. 원본
+ * 정화 여부는 프로덕션 실데이터 조회 후 별도 판단(마이그레이션 대기).
  */
-function toButtonImageRef(value: unknown): MenuButtonImageRef | undefined {
-  if (typeof value === 'string') return { image: value };
-  return (value as MenuButtonImageRef | null) ?? undefined;
+function toButtonImageRef(
+  value: unknown,
+  dropped: { count: number },
+): MenuButtonImageRef | undefined {
+  if (value === null || value === undefined) return undefined;
+  const parsed = menuItemButtonSchema.safeParse(value);
+  if (parsed.success) return parsed.data;
+  dropped.count += 1;
+  return undefined;
 }
 
 /**
@@ -73,6 +90,8 @@ export async function serializeBundle(
   };
 
   // 읽기 전용 트랜잭션
+  // dropped: 비적합 버튼 값 낙하 건수 (D3 방어 수리 — metadata 보고용)
+  const dropped = { count: 0 };
   const result = await prisma.$transaction(async (tx) => {
     const site = await tx.site.findUnique({
       where: { id: siteId },
@@ -119,9 +138,10 @@ export async function serializeBundle(
             // 버튼 이미지 참조형 보존 (SPEC-LEGACY-PARITY-001 M3 — AC-SITE-011).
             // DB에 레거시 파일명 문자열이 남아 있으면 export 시점에 참조형으로
             // 정규화한다 (bundle 출력 타입은 정규화된 형태만 허용).
-            normalBtn: toButtonImageRef(item.normalBtn),
-            hoverBtn: toButtonImageRef(item.hoverBtn),
-            activeBtn: toButtonImageRef(item.activeBtn),
+            // 비적합 값은 낙하하고 건수는 dropped에 가산 (D3 방어 수리).
+            normalBtn: toButtonImageRef(item.normalBtn, dropped),
+            hoverBtn: toButtonImageRef(item.hoverBtn, dropped),
+            activeBtn: toButtonImageRef(item.activeBtn, dropped),
             expand: item.expand ?? undefined,
             exportKey,
             parentExportKey,
@@ -233,6 +253,11 @@ export async function serializeBundle(
           // title, subtitle, description would come from SiteSetting in actual implementation
         };
       }
+    }
+
+    // D3 방어 수리: 비적합 버튼 값 낙하 건수를 metadata에 보고 (0건이면 생략)
+    if (dropped.count > 0) {
+      bundle.metadata.droppedButtonImages = dropped.count;
     }
 
     // bundle size 계산 (minify 여부에 따라)

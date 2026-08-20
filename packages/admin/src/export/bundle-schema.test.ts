@@ -173,5 +173,68 @@ describe('bundle-schema', () => {
       });
       expect(result.success).toBe(false);
     });
+
+    it('should carry optional droppedButtonImages through metadata parse (D3 방어 수리)', () => {
+      // metadataSchema는 비-strict이므로 스키마에 선언되지 않은 키는 parse가
+      // 성공해도 strip된다 — 필드가 실제로 살아남는지(선언되었는지)를 검증한다.
+      const result = adminExportBundleSchema.safeParse({
+        metadata: {
+          version: '1.0.0',
+          exportedAt: new Date(),
+          exportedBy: { actorId: 1, nickname: 'admin' },
+          sourceSiteId: 1,
+          format: 'partial',
+          selection: {
+            menu: true,
+            moduleInstances: false,
+            documents: { include: false },
+            comments: { include: false },
+            siteSettings: false,
+          },
+          entityCounts: {
+            menus: 1,
+            menuItems: 1,
+            moduleInstances: 0,
+            documents: 0,
+            comments: 0,
+          },
+          bundleSizeBytes: 1024,
+          droppedButtonImages: 2,
+        },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.metadata.droppedButtonImages).toBe(2);
+      }
+    });
+
+    it('should reject negative droppedButtonImages', () => {
+      const result = adminExportBundleSchema.safeParse({
+        metadata: {
+          version: '1.0.0',
+          exportedAt: new Date(),
+          exportedBy: { actorId: 1, nickname: 'admin' },
+          sourceSiteId: 1,
+          format: 'partial',
+          selection: {
+            menu: false,
+            moduleInstances: false,
+            documents: { include: false },
+            comments: { include: false },
+            siteSettings: false,
+          },
+          entityCounts: {
+            menus: 0,
+            menuItems: 0,
+            moduleInstances: 0,
+            documents: 0,
+            comments: 0,
+          },
+          bundleSizeBytes: 0,
+          droppedButtonImages: -1,
+        },
+      });
+      expect(result.success).toBe(false);
+    });
   });
 });

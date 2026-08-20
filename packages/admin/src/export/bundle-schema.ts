@@ -40,8 +40,12 @@ export const menuButtonImageSchema = z
  * 이미지 참조형 (M3~) 또는 레거시 파일명 문자열 (D1 하위호환).
  * 레거시 문자열은 parse 시점에 `{"image": <문자열>}`로 정규화된다 — bundle을
  * 소비하는 쪽(apply 등)은 정규화된 형태만 다룬다 (정규화 지점의 단일화).
+ *
+ * serializer(toButtonImageRef)의 export 시점 검증도 이 union을 재사용한다
+ * (SPEC-LEGACY-PARITY-001-FIX D3 방어 수리) — export가 통과시키는 값의
+ * 집합과 import가 수용하는 집합이 같은 스키마로 정의된다.
  */
-const menuItemButtonSchema = z.union([
+export const menuItemButtonSchema = z.union([
   menuButtonImageSchema,
   z.string().transform((s) => ({ image: s })),
 ]);
@@ -191,6 +195,12 @@ const metadataSchema = z.object({
     comments: z.number().int().min(0),
   }),
   bundleSizeBytes: z.number().int().min(0),
+  /**
+   * export 시점에 비적합 버튼 값으로 낙하한 건수 (D3 방어 수리).
+   * 선택 필드 — 0건이면 생략. metadataSchema는 비-strict이라 기존 번들은
+   * 그대로 parse되고 이 필드 없는 번들도 계속 수용된다 (양방향 호환).
+   */
+  droppedButtonImages: z.number().int().min(0).optional(),
 });
 
 /**
