@@ -264,7 +264,7 @@ case "$GATE_LANG" in
         ;;
     cpp)
         C1_LABEL="g++ syntax check"
-        run_step g++ c1 sh -c 'find . -name "*.cpp" -o -name "*.cc" -exec g++ -fsyntax-only -std=c++17 {} \; 2>&1' || true
+        run_step g++ c1 sh -c 'find . \( -name "*.cpp" -o -name "*.cc" \) -exec g++ -fsyntax-only -std=c++17 {} \; 2>&1' || true
         ;;
     scala)
         C1_LABEL="scalac"
@@ -272,7 +272,7 @@ case "$GATE_LANG" in
         ;;
     r)
         C1_LABEL="R syntax"
-        run_step R c1 sh -c 'find . -name "*.R" -o -name "*.r" | head -5 | while read f; do Rscript -e "parse(\"$f\")" 2>&1; done' || true
+        run_step R c1 sh -c 'find . -name "*.R" -o -name "*.r" | head -5 | while IFS= read -r f; do Rscript -e "parse(commandArgs(TRUE)[1])" "$f" 2>&1; done' || true
         ;;
     flutter)
         C1_LABEL="dart analyze"
