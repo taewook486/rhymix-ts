@@ -44,6 +44,8 @@ export async function GET(
       headers: {
         'Content-Type': variant === 'original' ? attachment.mimeType : 'image/webp',
         'Content-Disposition': `inline; filename="${encodeURIComponent(attachment.sourceFilename)}"`,
+        // 감사 결함 D6 — 콘텐츠 스니핑 방지 (저장된 본문의 임의 해석 차단)
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   }
