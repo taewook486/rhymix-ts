@@ -1,7 +1,7 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-20 (SPEC-LEGACY-PARITY-001-FIX D2·D5·D6 수리 완료·푸시, 다음은 D3)
+> 갱신: 2026-08-20 (SPEC-LEGACY-PARITY-001-FIX D2·D5·D6·D3 완료·푸시, 다음은 §E.4 정정)
 > source_session_id: 93d02bc1-4dd9-41bc-8aa4-499a9444b72b
 
 ## 붙여넣을 메시지
@@ -9,30 +9,26 @@
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. SPEC-LEGACY-PARITY-001 감사 FAIL 후속 수리 — D3 진입.
+ultrathink. SPEC-LEGACY-PARITY-001 감사 FAIL 후속 수리 — 5단계 §E.4 정정 진입.
 applied lessons: feedback-agent-test-claims-verify-by-rerun,
 feedback-verify-teammate-security-code, feedback-stale-git-index-lock
 source_session_id: 93d02bc1-4dd9-41bc-8aa4-499a9444b72b
 
 전제 검증:
 1) git rev-list --count --left-right origin/main...HEAD → 0 0
-   — HEAD 는 7476235. D1/D4/D2/D5/D6 + 훅 수리까지 전부 커밋·푸시 완료.
+   — HEAD 는 a5c79b3. D1/D4/D2/D5/D6/D3 + 훅 수리까지 전부 커밋·푸시 완료.
      미커밋은 MoAI 하네스 템플릿 배포분뿐, 소스 clean.
 2) grep "^status:" .moai/specs/SPEC-LEGACY-PARITY-001/spec.md → completed
    — 감사 FAIL(61.2) 상태 유지. 수리는 재오픈 없이 계획서 기반으로 진행 중.
 3) cat .moai/plans/ancient-imagining-riddle.md → 6단계 계획 (승인 완료)
-   — 1~3단계 완료(D1/D4/D2/D5/D6 + 회귀). 남은 것: 4단계 D3, 5단계 §E.4 정정.
+   — 1~4단계 완료(D1/D4/D2/D5/D6/D3 + 회귀). 남은 것: 5단계 §E.4 정정.
 4) docker: rhymix-app(8080)/rhymix-db(3307)/rhymix-ts-db(5444).
    WSL 에서 docker 명령이 안 잡히면 Docker Desktop 의 WSL2 통합을 켤 것.
    admin@example.com / id=1 (2FA 없음).
 
-실행: /moai run "SPEC-LEGACY-PARITY-001-FIX D3" (계획서 4단계 기반)
-      — 반드시 실데이터 조회부터. 0건이면 serializer 방어만, 1건+ 면 마이그레이션 동반:
-        SELECT id,"normalBtn","hoverBtn","activeBtn" FROM menu_items
-        WHERE "normalBtn" IS NOT NULL AND NOT ("normalBtn" ? 'image');
+실행: /moai sync SPEC-LEGACY-PARITY-001 (계획서 5단계 — §E.4 마감 기록 정정, manager-docs)
 
-후속: D3 뒤 → 5단계 §E.4 마감 기록 정정(manager-docs)
-      → sync-auditor 재판정 (이번엔 판정을 기다린 뒤 닫는다)
+후속: §E.4 정정 뒤 → sync-auditor 재판정 (이번엔 판정을 기다린 뒤 닫는다)
 
 ✂──── 여기까지 복사 ────✂
 ```
@@ -48,8 +44,9 @@ source_session_id: 93d02bc1-4dd9-41bc-8aa4-499a9444b72b
 | `e5179e7` | D5 | `storage.write` 이전 매직바이트 포맷 검증(PNG/JPEG/GIF/WebP) |
 | `f07b8ac` | D6 | 다운로드 라우트 2곳에 `X-Content-Type-Options: nosniff` |
 | `7476235` | — | sync-phase 훅: R 파일명 명령 주입 + cpp find 우선순위 |
+| `a5c79b3` | D3 | export 시점 버튼 값 union 검증·낙하 + metadata 보고 (방어 절반) |
 
-divergence `0 0` (origin/main == HEAD `7476235`).
+divergence `0 0` (origin/main == HEAD `a5c79b3`).
 
 ### 검증 (오케스트레이터가 직접 재실행)
 
@@ -93,13 +90,48 @@ scanner 거부 경로는 자기가 이미 삭제하므로 `writtenKeys` 에 들�
 
 `-cp "$(find ...)"` 3곳과 `find -exec` 2곳은 확인 결과 **주입 불가**라 무변경.
 
+### D3 마이그레이션 판정 — 불요 (실데이터 조회 근거)
+
+Docker 기동 후 계획서의 질의와, **3개 컬럼 전체로 확장한 질의**를 함께 돌렸다(원 질의는
+`normalBtn` 만 봐서 `hoverBtn`/`activeBtn` 단독 비정합을 놓친다 — 그 경우도 import 전량
+실패는 동일하다).
+
+| DB | menu_items | 버튼값 설정 행 | 비정합 행 |
+|---|---|---|---|
+| `rhymix_ts` (주) | 0 | 0 | 0 |
+| `rhymix_ts_verify` | 3 | 0 | 0 |
+| 레거시 Rhymix (MariaDB) | 41 | 0 | 해당 없음 |
+
+**주 DB 의 0건은 근거가 아니다** — 68개 테이블 전부 0행이라 "관측할 데이터가 없는" 상태다.
+판정의 실질 근거는 둘이다.
+
+1. `rhymix_ts_verify` 에 menu_items 3행이 실재하나 버튼값이 설정된 행이 0건.
+2. **레거시 원본이 구조적으로 비정합 값을 만들 수 없다** — `rx_menu_item` 의 버튼 컬럼은
+   `varchar(255)` 평문 파일명이고, import union 의 `z.string().transform` 이 이를 정합형으로
+   정규화한다. 게다가 41행 중 버튼값 설정 행이 0건이다.
+
+비정합 형태의 유일한 발생 경로는 rhymix-ts 자신의 구 편집기가 jsonb 에 임의 객체를 쓰는
+것인데, 관측 가능한 인스턴스 어디에도 그런 행이 없다.
+
+> **잔여 위험**: 위는 이 로컬 3개 DB 한정이다. 데이터가 채워진 rhymix-ts 인스턴스가 다른 곳에
+> 있다면 거기서 같은 질의를 다시 돌릴 것. 방어 수리는 그 경우에도 안전하다 — 낙하 건수가
+> `metadata.droppedButtonImages` 로 드러나므로 export 시점에 존재가 보고된다.
+
+> **커밋 본문 주의**: `a5c79b3` 본문은 "Docker daemon 중단으로 현재 조회 불가"라고 적혀 있는데,
+> 이는 에이전트 위임 시점의 사실이다. 조회는 그 직후 수행됐고 판정은 위와 같다 — 커밋 이력을
+> 고쳐 쓰는 대신 이 문서를 정본으로 삼는다.
+
+> **부수 관찰**: 주 DB `rhymix_ts` 가 전 테이블 무데이터다. 2026-08-13 기록의 "양 버전 DB
+> 초기화+재설치로 비교 기준선 확보"와 달리 TS 쪽만 비어 있다(레거시는 41행 유지). 언젠가
+> 재시드가 필요할 수 있다.
+
 ## 남은 작업 (계획서 기준)
 
-- **D3** (`packages/admin/src/export/serializer.ts`): export/import 왕복 파손.
-  `toButtonImageRef` 가 비정합 객체를 검증 없이 통과시키고 import 는 번들 전체를
-  `.strict()` 로 거부 → 구 편집기가 남긴 `{"color": ...}` 한 건이면 import 전량 실패.
-  **실데이터 조회 선행** (위 붙여넣기 블록의 SQL). 0건 → 방어만(비적합 값 낙하+보고),
-  1건+ → 마이그레이션 동반.
+- ~~**D3**~~ **완료** (`a5c79b3`). `toButtonImageRef` 의 무검사 캐스트를 import 와 동일한
+  `menuItemButtonSchema` union safeParse 로 교체 — 비정합 값은 낙하하고 건수를
+  `metadata.droppedButtonImages`(선택 필드, 0건 생략)로 보고. `exportFormatVersion` 1.0.0 유지.
+  **마이그레이션은 불요로 판정**했다(아래 근거).
+
 - **5단계 §E.4 정정** (manager-docs): 감사 판정(FAIL 61.2)·후속 SPEC 추가,
   `sync_phase_commit_count` 3→4, lint 인용을 수리 후 로그로 교체, Gaps 3건 추가
   (커버리지 미측정 / AC-SITE-004~006 재현 불가 / sync 재검증이 actions.test.ts 누락),
