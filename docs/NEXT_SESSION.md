@@ -1,7 +1,8 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-22 (SPEC-LEGACY-PARITY-001 **완전 종료** — 재감사 PASS 84.6 수령·기록·푸시)
+> 갱신: 2026-08-22 밤 (SPEC 종료 후 커버리지 툴체인 조사 — **버전 스큐는 결함 아님으로 반증**,
+>       진짜 결함은 coverage.include. 적용 직전에 세션 종료, 트리 무변경)
 > source_session_id: 51318629-ca68-4817-b32f-ee4dd0db41bb
 
 ## 붙여넣을 메시지
@@ -9,69 +10,96 @@
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. rhymix-ts — SPEC-LEGACY-PARITY-001 종료 후 다음 작업 선정 진입.
-applied lessons: feedback-idle-notification-is-not-termination,
-feedback-agent-test-claims-verify-by-rerun, feedback-verify-commit-message-against-diff
+ultrathink. rhymix-ts — 커버리지 include 재구성 적용 진입.
+applied lessons: feedback-agent-test-claims-verify-by-rerun,
+feedback-idle-notification-is-not-termination, feedback-stale-triage-doc-reverify
 source_session_id: 51318629-ca68-4817-b32f-ee4dd0db41bb
 
 전제 검증:
 1) git rev-list --count --left-right origin/main...HEAD → 0 0
-   — HEAD 는 (아래 "이번 세션 결과"의 최종 SHA). 소스 clean, 미커밋은 하네스 템플릿뿐.
-2) grep "^status:" .moai/specs/SPEC-LEGACY-PARITY-001/spec.md → completed
-   — 재감사 PASS 84.6 수령·기록 완료. **이 SPEC 은 닫혔다. 재개방하지 말 것.**
-3) 진행 중인 SPEC 없음 — 다음 작업은 아래 "후보 작업" 중에서 사용자와 정할 것.
+   — 트리 clean. vitest.config.ts 는 **아직 미수정**(반쯤 적용된 변경 없음).
+2) grep -n "middleware.ts" vitest.config.ts → coverage.include 안에 1행 존재
+   — 이 파일은 Next 16 개명으로 삭제됐다. 제거 대상.
+3) 결정은 이미 끝났다(아래 "확정된 변경"). 다시 묻지 말고 적용할 것.
 
-실행: 사용자에게 다음 작업을 물어 정할 것 (AskUserQuestion). 후보는 아래 절.
-      선정 전에 임의로 착수하지 말 것 — 남은 항목은 전부 선택적 후속이다.
+실행: vitest.config.ts 의 coverage.include 를 "확정된 변경"대로 수정 → 범위 실행으로
+      전/후 커버리지 측정 → 커밋 → push. 임계 85 는 건드리지 않는다.
 
-후속: 선정된 작업의 규모에 따라 /moai plan 또는 직접 수리.
+후속: 수치를 완화 없이 보고. 85 미달이어도 임계를 낮추지 않는다(사용자 지시).
 
 ✂──── 여기까지 복사 ────✂
 ```
 
 ## 이번 세션 결과 (2026-08-22)
 
-**SPEC-LEGACY-PARITY-001 이 완전히 닫혔다.** 감사 FAIL(61.2) → 결함 6건 수리 →
-재감사 **PASS 84.6/100**. 판정을 받은 뒤 닫았다(직전 세션들의 "닫고 나서 판정이 오는"
-순서를 반복하지 않았다).
+### 1부 — SPEC-LEGACY-PARITY-001 완전 종료
 
-| 차원 | 점수 | must-pass |
-|---|---|---|
-| Functionality | 88 | 통과 |
-| Security | 90 | 통과 |
-| Craft | 73 | — (커버리지 미측정이 상한) |
-| Consistency | 90 | — |
+감사 FAIL(61.2) → 결함 6건 수리 → 재감사 **PASS 84.6/100**(Functionality 88 /
+Security 90 must-pass 회복 / Craft 73 / Consistency 90). 판정을 받은 뒤 닫았다.
+전문 보고서는 `.moai/reports/SPEC-LEGACY-PARITY-001-reaudit-20260822-181701.md` 에
+**커밋돼 있다**. 오케스트레이터가 감사 자체보고를 받지 않고 vitest 80/80 재실행 +
+수리 앵커 6건 행번호 대조까지 마쳤다. 상세는 progress.md §E.4.
 
-회복은 재점수가 아니라 수리 실측으로 성립했다. 전문 보고서는
-`.moai/reports/SPEC-LEGACY-PARITY-001-reaudit-20260822-181701.md` 에 **커밋돼 있다**
-(`.moai/state/` 아래 증적이 gitignore 로 재현 불가했던 전례를 피했다).
+### 2부 — 커버리지 툴체인 조사 (적용 직전 중단)
 
-### 재감사가 명시 판정한 다툼 지점 3건
+**감사 F2 의 "버전 스큐" 진단은 도구 실행으로 반증됐다.**
 
-1. **D1 High→Medium 유지.** 감사자가 `apps/web/proxy.ts:53,200-208` 을 직접 읽고 `/admin`
-   요청단계 차단을 확인 — 원 High 의 전제("middleware.ts 없음")는 확정 반증됐다. 잔여는
-   다층 방어(서버액션은 URL 경로가 아니라 action ID 로 주소지정).
-2. **D3 마이그레이션 불요 동의.** 감사자가 **주 DB 의 0건을 근거로 받지 않았다** — 68개
-   테이블 전부 0행이라 아무것도 증명하지 않는다는 점을 명시했다. 채택한 근거는 구조적:
-   `bundle-schema.ts:48-51` union 이 레거시 평문 문자열을 정합형으로 정규화하므로
-   레거시→신규 경로는 구성상 비정합 값을 만들 수 없다.
-3. **AC-SITE-004/005/006 은 PASS 를 막지 않는다.** 감사 환경 미검증 ≠ 실패. 검증 수단은
-   `c3037dd` 로 저장소에 커밋돼 있다. Gap 으로 남긴 채 마감했다.
+- 15개 package.json 전부 `vitest: ^3.0.0` / `@vitest/coverage-v8: ^3.0.0` — **선언 이미 일치**.
+- pnpm-lock 이 `@vitest/coverage-v8@3.2.7(vitest@3.2.4)` 로 **peer 명시 해석** — 정상 쌍.
+- `--coverage` 실행이 리포트를 정상 생성(좁은 범위 probe 에서 표 + 임계 판정 출력).
 
-### 오케스트레이터 독립 재검증 (감사자 자체보고를 근거로 쓰지 않음)
+즉 **맞출 버전이 없다.** 고칠 것은 `coverage.include` 하나다. 현재 목록이 install 시대
+선택에 멈춰 있고, 그 안의 `apps/web/middleware.ts` 는 Next 16 개명으로 **존재하지 않는다**
+(나머지 12개 경로는 실재 확인).
 
-- vitest SPEC 범위 6스위트 재실행 → **80/80 통과** (actions 26 / menu-item 23 /
-  MenuRenderer 8 / by-key 3 / bundle-schema 11 / menu-button-image 9)
-- 수리 앵커 6건 HEAD 재grep → 보고 행번호와 **전건 일치**
-- `git status` → 감사자 소스 무수정(신규는 보고서 1건뿐)
-- 유휴 알림 2회를 **종료 증거로 쓰지 않고** 매번 파일·프로세스를 실측해 확인
+#### 확정된 변경 (사용자 결정 완료 — 다시 묻지 말 것)
 
-### 남은 Gap 3건 (해소하지 않고 남김 — 이게 마감 조건이었다)
+```diff
+  coverage.include: [
+    ... install 시대 항목 전부 유지 ...        # 사용자 지시: 유지
+-   'apps/web/middleware.ts',                  # 죽은 파일 — 제거
+    'apps/web/proxy.ts',
+-   'apps/web/app/api/install/**/*.ts',        # 아래 전체 글롭에 흡수
++   'apps/web/app/api/**/*.ts',                # HTTP 라우트 핸들러 11건 전량
+    'apps/web/server/api/**/*.ts',             # tRPC 라우터 57건 (이미 포함돼 있었음)
++   'packages/document/src/server/**/*.ts',    # tRPC 라우터
++   'packages/file/src/server/**/*.ts',        # tRPC 라우터
+  ]
+```
 
-1. **커버리지 미측정.** 루트 `vitest@3.2.4` vs `@vitest/coverage-v8@3.2.7` 버전 스큐로
-   측정값이 자기무효화된다. 상태는 "충족"이 아니라 UNVERIFIED.
-2. **AC-SITE-004/005/006 증적 저장소 재현 불가** (`.moai/state/` gitignore).
-3. **sync 재검증의 스위트 누락** — 마감 시점 기록. 재감사에서 해당 스위트는 재실행됐다.
+**임계 85 는 무변경**(사용자 지시). 수치가 미달이어도 임계를 낮추지 않고 수치만 보고한다.
+
+#### 측정 경로 — 전체 스위트는 폐기할 것
+
+| 시도 | 결과 |
+|---|---|
+| 전체 스위트 `vitest run --coverage` | **105분 소모, 커버리지 수치 미생성.** 표도 `coverage/` 도 안 나옴. 테스트는 2,626/2,648 통과, 실패 7건은 **전부 타임아웃** |
+| 범위 실행 1차 | **무효** — 아래 함정에 걸려 2파일만 실행 |
+| 범위 실행 2차 | 실행 중 세션 종료. 재실행 필요 |
+
+전체 스위트 경로는 다시 시도하지 말 것 — 105분을 쓰고 숫자를 못 얻는다. 아래 범위 실행
+명령을 쓸 것(전/후 동일 명령으로 돌려야 비교가 성립한다):
+
+```
+node_modules/.bin/vitest run --coverage \
+  apps/web/server/api/ apps/web/app/api/ apps/web/app/install/ \
+  apps/web/lib/install/ apps/web/lib/db/ apps/web/proxy \
+  packages/auth/src/ packages/core/src/install/ packages/core/src/modules/ \
+  packages/db/src/ packages/document/src/server/ packages/file/src/server/
+```
+
+`document`/`file` 의 server 테스트를 **변경 전 실행에도 넣어야 한다** — 안 그러면 테스트
+집합이 달라져 전/후 비교가 성립하지 않는다.
+
+#### 새로 확인된 함정 2건
+
+- **vitest 위치 인자는 글롭이 아니라 경로 정규식 필터다.** `'apps/web/server/api/**/*.test.ts'`
+  를 넘기면 **아무것도 매칭되지 않는다**(와일드카드 없는 리터럴 경로만 걸린다). 이번에 이걸로
+  2파일 39테스트만 돌았는데 5.11% 라는 그럴듯한 숫자가 나왔다 — **실행 파일 수를 대조하지
+  않으면 잘못된 기준선을 그대로 믿게 된다.** 경로 접두사를 넘길 것.
+- **전체 스위트 타임아웃 7건은 WSL2 병렬 경합이지 제품 결함이 아니다.** 테스트 파일들이
+  자기 주석에 "격리 25초 → 전체 스위트 90초 초과"라고 적어두고 있다.
+  `apps/web/lib/modules/registry.test.ts` B-101 은 **180초를 주고도 터졌다**(별건 부채).
 
 ## 후보 작업 (전부 선택적 — 사용자가 고를 것)
 
