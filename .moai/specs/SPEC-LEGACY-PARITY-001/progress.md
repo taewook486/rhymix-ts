@@ -412,7 +412,8 @@ new_warnings_or_lints_introduced: 0 errors / 4 warnings (deferred `<img>` 4건 �
 eslint_errors_remaining: 0   # 감사 결함 6건 수리 후 재실측(SPEC 범위 9파일) 기준 — 아래 증적 인용 철회 항
 eslint_warnings_remaining: 11   # 수리 후 재실측(SPEC 범위 9파일) — 내역은 아래 재실측 항
 post_close_sync_audit_verdict: FAIL 61.2/100 (마감·push 후 도착 — Security must-pass 미달)
-post_close_followup: SPEC-LEGACY-PARITY-001-FIX 후속 스트림 (001 미재개방 — 결함 6건 수리·검증·push 완료)
+post_close_followup: SPEC-LEGACY-PARITY-001-FIX 후속 스트림 종료 (001 미재개방 — 결함 6건 수리·검증·push 완료; 2026-08-22 재감사 PASS 로 폐쇄)
+post_close_reaudit_verdict: PASS 84.6/100 (2026-08-22, HEAD 7988302 — Security must-pass 회복; 위 FAIL 은 실측 역사로 유지)
 ```
 
 - `ac_pass_count: 11` — AC-SITE-001~011 전건 PASS. §E.3 시점의 10건에서 AC-SITE-009
@@ -492,6 +493,52 @@ post_close_followup: SPEC-LEGACY-PARITY-001-FIX 후속 스트림 (001 미재개�
   이 판정은 로컬 3개 DB 로 한정된다 — 데이터가 채워진 다른 rhymix-ts 인스턴스에는 같은
   조회가 필요하다.
 
+**수리 후 재감사 판정 (2026-08-22 추가 — 위 FAIL 을 완화하지 않는다. 회복은 재점수가 아니라 수리 실측으로 성립했다):**
+
+- 재판정 결과 **PASS — 84.6/100**(조화 평균; 단순 가중 평균은 85.8). 감사 HEAD
+  `7988302` — `d170bf3`(감사 대상 코드 상태) 위에 문서 커밋만 얹힌 트리다. 차원별:
+  Functionality 88 (must-pass, PASS) / Security 90 (must-pass, PASS) / Craft 73 /
+  Consistency 90. must-pass 지정 차원인 Functionality·Security 둘 다 임계를 넘었다.
+  종전 FAIL 을 이끈 Security 는 **수리 검증으로 회복된 것**이지 재점수로 넘긴 게 아니다.
+  전문 보고서: `.moai/reports/SPEC-LEGACY-PARITY-001-reaudit-20260822-181701.md`.
+- 재감사가 명시적으로 판정한 다툼 지점 3건:
+  1. **D1 심각도 High → Medium 재산정 유지(UPHELD).** 원 High 의 전제("`middleware.ts`
+     없음 → 무인증 디스크 쓰기") 반증을 확정 — Next 16 이 middleware 를 `proxy.ts` 로
+     개명했고 `apps/web/proxy.ts:53,200-208` 이 요청 단계에서 `/admin` 을 차단한다.
+     잔여 결함은 다층 방어 문제다: 전역 주소 지정이 가능한 Server Action 은 URL 경로가
+     아니라 action ID 로 주소 지정되므로, 보호 대상이 아닌 경로로 조작된 POST 가 proxy
+     를 통과해 무인증으로 액션 본문에 진입한다. `denyIfNotAdmin()` 이 6개 메뉴 액션
+     전부에서 부수 효과 이전에 게이트한다. Medium 이 정확하다는 판정.
+  2. **D3 "마이그레이션 불요" 동의(CONCUR).** 근거는 "조회 결과 0건"이 아니다 — 메인 DB
+     는 68개 테이블 전부 0행이라 그 0 은 아무것도 증명하지 않는다. 실질 근거는 구조적이다:
+     레거시 `rx_menu_item` 의 버튼 칼럼은 평문 `varchar(255)` 이고 import union
+     (`bundle-schema.ts:48-51`, `z.union([menuButtonImageSchema, z.string().transform(...)])`)이
+     임의 문자열을 정합 형태로 정규화하므로, 레거시→신규 경로는 구성상 비정합 값을 만들 수
+     없다. 봉쇄 수단도 확인했다 — 수리된 export 경로는 번들이 실패하는 대신 낙하를
+     보고한다(`droppedButtonImages`).
+  3. **AC-SITE-004/005/006 은 PASS 를 막지 않는다.** 감사 환경에서 미검증 ≠ 실패. 이 3건의
+     검증 수단은 저장소에 커밋돼 있다 — `c3037dd` 의 `apps/web/e2e/menu-parity.spec.ts` +
+     시더(결함 주입으로 GREEN 비공허 검증 완료). 환경 제약으로 판정을 막았다면 관성에 의한
+     종전 판정의 반복이라는 게 재감사의 판단이다. 3건은 해소가 아니라 **Gaps 로 남긴 채
+     마감**한다(아래 Gaps 2번).
+- **오케스트레이터 독립 재검증 (재감사 보고서의 자기보고를 수용하지 않고 재실행한 실측):**
+  - SPEC 범위 vitest 6스위트 재실행 → `Test Files 6 passed` / `Tests 80 passed (80)`
+    (actions 26 + menu-item 23 + MenuRenderer 8 + by-key 라우트 3 + bundle-schema 11 +
+    menu-button-image 9).
+  - 수리 앵커 6건을 HEAD 에서 재 grep 해 보고 행번호와 전건 일치 확인: D1
+    `actions.ts:55` + 호출점 `:76/:105/:319/:375/:456/:485`; D2 `:242` 헬퍼 + storageKey
+    회수 `:412/:428/:442`; D3 `bundle-schema.ts:48/:203` + `serializer.ts:44/:260`; D4
+    `menu-item.ts:188` 순서 가드 + `:267-310` copySubtree visited/depth +
+    `MenuRenderer.tsx:25/:100`; D5 `actions.ts:132/:153/:202`(`storage.write :206` 이전);
+    D6 다운로드 라우트 nosniff `:48`·`:36`.
+  - `git status` 로 감사자가 소스를 수정하지 않았음 확인(신규 파일은 보고서 1건뿐).
+- **재감사 자체의 한계 (숨기지 않고 기록):** 감사 환경에 docker 가 없어(WSL 연동 꺼짐) D1
+  런타임 재현(`307 → /login, 0 files`)과 D3 근거 (a) DB 조회는 재실행되지 않았다 — D1 은
+  코드 수준 검증만으로, D3 은 구조 근거 + 봉쇄만으로 판정했다. 커버리지는 여전히 미측정
+  (루트 `vitest@3.2.4` vs `@vitest/coverage-v8@3.2.7` 버전 불일치 재확인 — Gaps 1번).
+  재감사 실측 범위도 SPEC 범위 6스위트(80테스트)로, 풀 스위트(2,490테스트)는 재실행하지
+  않았다.
+
 **이탈·정정 기록 3건 (완화하지 않고 그대로 남긴다):**
 
 1. **plan.md §A.6 이탈 — Tier L PR 플로우 미이행.** plan.md §A.6 은 Tier L 재판정에 따라
@@ -527,7 +574,9 @@ post_close_followup: SPEC-LEGACY-PARITY-001-FIX 후속 스트림 (001 미재개�
    이 3건을 `unverified-here` 로 처리한 직접적인 이유다.
 3. **sync 재검증의 스위트 누락.** 마감 시점 재검증이
    `apps/web/app/admin/menu/actions.test.ts` 스위트를 포함하지 않았다 — 독립 감사가
-   이 누락을 적발했다.
+   이 누락을 적발했다. (참고: 2026-08-22 재감사·오케스트레이터 재검증에서 이 스위트는
+   재실행돼 26 passed 를 확인했으나, 본 Gap 은 마감 시점 누락의 역사 기록으로 그대로
+   남긴다.)
 
 **§E.2 에서 이월하는 후속 항목 (마감 시 유실 방지):**
 
