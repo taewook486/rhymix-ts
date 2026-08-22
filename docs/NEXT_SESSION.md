@@ -75,7 +75,7 @@ Security 90 must-pass 회복 / Craft 73 / Consistency 90). 판정을 받은 뒤 
 |---|---|
 | 전체 스위트 `vitest run --coverage` | **105분 소모, 커버리지 수치 미생성.** 표도 `coverage/` 도 안 나옴. 테스트는 2,626/2,648 통과, 실패 7건은 **전부 타임아웃** |
 | 범위 실행 1차 | **무효** — 아래 함정에 걸려 2파일만 실행 |
-| 범위 실행 2차 | 실행 중 세션 종료. 재실행 필요 |
+| 범위 실행 2차 | **성공 — 이게 변경 전 기준선이다.** 103파일 / 947테스트 전원 통과 |
 
 전체 스위트 경로는 다시 시도하지 말 것 — 105분을 쓰고 숫자를 못 얻는다. 아래 범위 실행
 명령을 쓸 것(전/후 동일 명령으로 돌려야 비교가 성립한다):
@@ -87,6 +87,26 @@ node_modules/.bin/vitest run --coverage \
   packages/auth/src/ packages/core/src/install/ packages/core/src/modules/ \
   packages/db/src/ packages/document/src/server/ packages/file/src/server/
 ```
+
+#### 변경 전 기준선 (실측 완료 — 다시 재지 말 것)
+
+위 범위 실행 명령으로 측정. 103파일 / 947테스트 통과 / 9 skip, 테스트 실패 0건.
+
+| 지표 | 수치 | 임계 85 |
+|---|---|---|
+| Statements | **75.02%** | 미달 |
+| Lines | **75.02%** | 미달 |
+| Branches | **77.66%** | 미달 |
+| Functions | **88.81%** | **충족** |
+
+즉 **"커버리지 미측정" Gap 은 이제 측정됐다** — 그리고 현재 include 범위조차 85 에
+미달한다(함수만 통과). include 를 넓히기 전부터 미달이었다는 뜻이라, 변경 후 수치가
+더 내려가도 그것이 이번 변경 때문만은 아니다. 전/후 대조 시 이 점을 분리해서 볼 것.
+
+눈에 띄는 구멍: `apps/web/lib/db` 가 **0%** 다. 이 한 영역이 총계를 크게 끌어내리고 있어
+커버리지를 올리려면 여기가 첫 후보다.
+
+증적: `.moai/state/verify/51318629/coverage-before2.log` (gitignore 경로 — 로컬 한정).
 
 `document`/`file` 의 server 테스트를 **변경 전 실행에도 넣어야 한다** — 안 그러면 테스트
 집합이 달라져 전/후 비교가 성립하지 않는다.
