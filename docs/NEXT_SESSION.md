@@ -1,8 +1,8 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-23 (coverage.include 재구성 **적용·측정·푸시 완료** — `cc297db`.
->       4개 지표 전부 임계 85 미달, 임계는 무변경. 다음은 0% 영역 테스트 착수)
+> 갱신: 2026-08-23 (coverage.include 재구성 `cc297db` + **packages/file server 0%→100%**
+>       `6fbf1d2`. 다음은 packages/document 를 같은 방식으로. 트리 clean, `0 0`)
 > source_session_id: 065918eb-e7ff-4d34-8c39-efac42f66bac
 
 ## 붙여넣을 메시지
@@ -10,22 +10,22 @@
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. rhymix-ts — 0% 영역 테스트 착수 진입.
+ultrathink. rhymix-ts — packages/document server 테스트 진입.
 applied lessons: feedback-agent-test-claims-verify-by-rerun,
-feedback-verify-command-matched-what-you-meant, feedback-stale-triage-doc-reverify
+feedback-mocks-and-casts-hide-real-shape, feedback-verify-command-matched-what-you-meant
 source_session_id: 065918eb-e7ff-4d34-8c39-efac42f66bac
 
 전제 검증:
 1) git rev-list --count --left-right origin/main...HEAD → 0 0
-   — coverage.include 재구성은 cc297db 로 이미 반영·푸시됐다. 다시 손대지 말 것.
-2) grep -n "document/src/server" vitest.config.ts → 1행 존재
-   — 이 영역이 0% 다. 측정은 끝났고 남은 것은 테스트를 쓰는 일이다.
+   — packages/file 는 6fbf1d2 로 끝났다(0%→100%). 다시 손대지 말 것.
+2) grep -c "from './actions'" packages/document/src/server/actions.test.ts → 0
+   — 타입 전용 import 뿐이라 236행이 0% 다. 이 파일이 재작성 대상이다.
 3) 임계 85 는 무변경 유지(사용자 지시). 미달을 임계 하향으로 해결하지 않는다.
 
-실행: packages/document/src/server 와 packages/file/src/server 의 tRPC 라우터
-      단위 테스트 작성. apps/web/server/api/routers/ 의 기존 테스트 패턴을 재사용한다.
+실행: packages/file/src/server/{router,actions}.test.ts 를 본으로 삼아
+      packages/document/src/server 의 router.ts(347행)·actions.ts(236행) 테스트 작성.
 
-후속: 같은 범위 실행 명령으로 재측정해 68.64% 대비 증분을 보고.
+후속: 전체 범위 명령으로 재측정해 68.64% 대비 증분 보고 → docs/NEXT_SESSION.md 기록.
 
 ✂──── 여기까지 복사 ────✂
 ```
@@ -129,12 +129,47 @@ node_modules/.bin/vitest run --coverage \
 
 증적: `.moai/state/verify/065918eb/coverage-after.log` (561~564행에 임계 실패 4건).
 
+### 3부 — packages/file server 0% → 100% (`6fbf1d2`, 완료)
+
+**0% 의 원인은 "테스트가 없어서"가 아니었다. 테스트는 있었고 통과했는데, 대상을 한 줄도
+실행하지 않았다.** 이건 커버리지 수치보다 훨씬 중요한 발견이라 그대로 남긴다.
+
+- `packages/file/src/server/router.test.ts` — 10건 통과. 그런데 `./router` 를 **한 번도
+  import 하지 않았다.** `TRPCError` 등 프로덕션 심볼 3개를 손으로 다시 선언해 그 **사본**을
+  검사했다. 근거 주석은 `// Mock tRPC imports since @trpc/server is not available in
+  packages/file`.
+- **그 주석의 전제는 거짓이다.** `packages/file/package.json` 이 `@trpc/server: ^11.0.0` 을
+  정식 `dependencies` 로 선언하고, `packages/file/node_modules/@trpc/server` 가 11.17.0 으로
+  실제 해석된다. 사본을 쓸 이유가 처음부터 없었다.
+- `packages/document/src/server/actions.test.ts` — 11건 통과. import 가 `import type
+  { ActionResult } from './actions'` **타입 전용뿐**이라 런타임에 지워진다. 실행 0행.
+
+즉 통과 표시 21건이 **거짓 안전 신호**로 작동해 왔다. 새 세션에서 "테스트가 있으니
+커버돼 있겠지"라고 읽으면 안 된다 — import 를 직접 봐야 한다.
+
+수리 결과(오케스트레이터가 에이전트 자체보고 없이 직접 재실행해 측정):
+
+| 파일 | 전 | 후 |
+|---|---|---|
+| `packages/file/src/server/router.ts` (466행) | 0% | **100%** |
+| `packages/file/src/server/actions.ts` (320행) | 0% | **100%** |
+| `packages/file/src/server/index.ts` | 0% | **100%** |
+
+`node_modules/.bin/vitest run --coverage packages/file/src/server/` → 2파일 / 48테스트
+전원 통과(74초). 기존 10건 → 28건(router) + 신규 20건(actions).
+프로덕션 소스와 `vitest.config.ts` 는 무변경, 임계 85 유지.
+
+> 이 실행의 총계 `4.08%` 는 **의미 없는 수치다** — 테스트 2개만 돌렸는데 include 는
+> 레포 전체라서 나온 값이다. 전체 범위 재측정은 아직 안 했다(아래 잔여 작업).
+
+증적: `.moai/state/verify/065918eb/file-server-verify.log`
+
 #### 0% 영역 — 다음 작업의 우선순위
 
 | 대상 | 규모 | 비고 |
 |---|---|---|
-| `packages/document/src/server/**` | actions.ts 236행 + router.ts 347행 | **전량 0%** |
-| `packages/file/src/server/**` | actions.ts 320행 + router.ts 466행 | **전량 0%** |
+| `packages/document/src/server/**` | actions.ts 236행 + router.ts 347행 | **전량 0% — 다음 대상** |
+| ~~`packages/file/src/server/**`~~ | ~~786행~~ | ~~0%~~ → **100% 완료 (`6fbf1d2`)** |
 | `apps/web/app/api/files/upload/route.ts` | 143행 | 0% — 보안 감사에서 손댔는데 단위 테스트 없음 |
 | `apps/web/app/api/documents/[id]/download/route.ts` | 56행 | 0% |
 | `apps/web/server/api/context.ts` / `root.ts` | 124 + 13행 | 0% — 배선 파일 |
