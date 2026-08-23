@@ -1,31 +1,31 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-22 밤 (SPEC 종료 후 커버리지 툴체인 조사 — **버전 스큐는 결함 아님으로 반증**,
->       진짜 결함은 coverage.include. 적용 직전에 세션 종료, 트리 무변경)
-> source_session_id: 51318629-ca68-4817-b32f-ee4dd0db41bb
+> 갱신: 2026-08-23 (coverage.include 재구성 **적용·측정·푸시 완료** — `cc297db`.
+>       4개 지표 전부 임계 85 미달, 임계는 무변경. 다음은 0% 영역 테스트 착수)
+> source_session_id: 065918eb-e7ff-4d34-8c39-efac42f66bac
 
 ## 붙여넣을 메시지
 
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. rhymix-ts — 커버리지 include 재구성 적용 진입.
+ultrathink. rhymix-ts — 0% 영역 테스트 착수 진입.
 applied lessons: feedback-agent-test-claims-verify-by-rerun,
-feedback-idle-notification-is-not-termination, feedback-stale-triage-doc-reverify
-source_session_id: 51318629-ca68-4817-b32f-ee4dd0db41bb
+feedback-verify-command-matched-what-you-meant, feedback-stale-triage-doc-reverify
+source_session_id: 065918eb-e7ff-4d34-8c39-efac42f66bac
 
 전제 검증:
 1) git rev-list --count --left-right origin/main...HEAD → 0 0
-   — 트리 clean. vitest.config.ts 는 **아직 미수정**(반쯤 적용된 변경 없음).
-2) grep -n "middleware.ts" vitest.config.ts → coverage.include 안에 1행 존재
-   — 이 파일은 Next 16 개명으로 삭제됐다. 제거 대상.
-3) 결정은 이미 끝났다(아래 "확정된 변경"). 다시 묻지 말고 적용할 것.
+   — coverage.include 재구성은 cc297db 로 이미 반영·푸시됐다. 다시 손대지 말 것.
+2) grep -n "document/src/server" vitest.config.ts → 1행 존재
+   — 이 영역이 0% 다. 측정은 끝났고 남은 것은 테스트를 쓰는 일이다.
+3) 임계 85 는 무변경 유지(사용자 지시). 미달을 임계 하향으로 해결하지 않는다.
 
-실행: vitest.config.ts 의 coverage.include 를 "확정된 변경"대로 수정 → 범위 실행으로
-      전/후 커버리지 측정 → 커밋 → push. 임계 85 는 건드리지 않는다.
+실행: packages/document/src/server 와 packages/file/src/server 의 tRPC 라우터
+      단위 테스트 작성. apps/web/server/api/routers/ 의 기존 테스트 패턴을 재사용한다.
 
-후속: 수치를 완화 없이 보고. 85 미달이어도 임계를 낮추지 않는다(사용자 지시).
+후속: 같은 범위 실행 명령으로 재측정해 68.64% 대비 증분을 보고.
 
 ✂──── 여기까지 복사 ────✂
 ```
@@ -52,7 +52,7 @@ Security 90 must-pass 회복 / Craft 73 / Consistency 90). 판정을 받은 뒤 
 선택에 멈춰 있고, 그 안의 `apps/web/middleware.ts` 는 Next 16 개명으로 **존재하지 않는다**
 (나머지 12개 경로는 실재 확인).
 
-#### 확정된 변경 (사용자 결정 완료 — 다시 묻지 말 것)
+#### 적용된 변경 (2026-08-23 `cc297db` 로 커밋·푸시 완료 — 재적용 금지)
 
 ```diff
   coverage.include: [
@@ -108,8 +108,43 @@ node_modules/.bin/vitest run --coverage \
 
 증적: `.moai/state/verify/51318629/coverage-before2.log` (gitignore 경로 — 로컬 한정).
 
-`document`/`file` 의 server 테스트를 **변경 전 실행에도 넣어야 한다** — 안 그러면 테스트
-집합이 달라져 전/후 비교가 성립하지 않는다.
+#### 변경 후 실측 (2026-08-23, 동일 명령 — 측정 완료)
+
+103파일 / 947통과 + 9 skip, 테스트 실패 0건. 실행 규모가 변경 전과 **동일**하므로 전/후
+비교가 성립한다(테스트 집합은 그대로, 분모만 넓어졌다). 소요 931초.
+
+| 지표 | 변경 전 | 변경 후 | 증감 | 임계 85 |
+|---|---|---|---|---|
+| Statements | 75.02% | **68.64%** | −6.38p | 미달 |
+| Lines | 75.02% | **68.64%** | −6.38p | 미달 |
+| Branches | 77.66% | **76.32%** | −1.34p | 미달 |
+| Functions | 88.81% | **83.62%** | −5.19p | 충족 → **미달로 전환** |
+
+**4개 지표 전부 미달.** 임계는 낮추지 않았다(사용자 지시).
+
+하락분은 전부 **새로 포함된 영역이 통째로 미측정**이라서다 — 기존 영역 수치는 그대로다.
+품질이 나빠진 게 아니라, 커버리지 계산에서 빠져 있던 코드가 분모에 들어왔다. include 를
+넓힌 목적 자체가 이 은폐를 걷어내는 것이었으니 의도한 결과다. 다만 **변경 전 75.02% 도
+이미 미달**이었으므로 −6.38p 를 전부 이번 변경 탓으로 읽으면 안 된다.
+
+증적: `.moai/state/verify/065918eb/coverage-after.log` (561~564행에 임계 실패 4건).
+
+#### 0% 영역 — 다음 작업의 우선순위
+
+| 대상 | 규모 | 비고 |
+|---|---|---|
+| `packages/document/src/server/**` | actions.ts 236행 + router.ts 347행 | **전량 0%** |
+| `packages/file/src/server/**` | actions.ts 320행 + router.ts 466행 | **전량 0%** |
+| `apps/web/app/api/files/upload/route.ts` | 143행 | 0% — 보안 감사에서 손댔는데 단위 테스트 없음 |
+| `apps/web/app/api/documents/[id]/download/route.ts` | 56행 | 0% |
+| `apps/web/server/api/context.ts` / `root.ts` | 124 + 13행 | 0% — 배선 파일 |
+| `apps/web/lib/db/prisma.ts` | 1행 | 0% — 싱글턴, 총계 영향 없음 |
+
+합계 0% 파일 34개. **document/file 의 server 라우터 1,169행이 단일 최대 구멍**이고,
+tRPC 라우터라 `apps/web/server/api/routers/` 의 기존 테스트 패턴을 그대로 재사용할 수 있다.
+
+지표만 통과시키려면 `context.ts`/`root.ts`/`trpc/[trpc]/route.ts` 같은 배선 파일을
+`exclude` 하는 길도 있지만, include 를 넓힌 취지를 되돌리는 것이라 채택하지 않았다.
 
 #### 새로 확인된 함정 2건
 
@@ -123,9 +158,10 @@ node_modules/.bin/vitest run --coverage \
 
 ## 후보 작업 (전부 선택적 — 사용자가 고를 것)
 
-- **커버리지 툴체인 정렬.** `vitest`/`@vitest/coverage-v8` 버전 일치 + `vitest.config.ts`
-  의 stale 한 `coverage.include` 갱신 → 85% 임계 측정. Craft 73 의 상한이 이것뿐이라
-  코드 변경 없이 점수가 오른다.
+- ~~**커버리지 툴체인 정렬.**~~ **완료(2026-08-23, `cc297db`).** 버전 스큐는 오진으로
+  반증됐고, `coverage.include` 재구성 + 전/후 실측까지 끝났다. 남은 것은 아래 항목이다.
+- **0% 영역 테스트 작성 (권장 다음 작업).** `packages/document`·`packages/file` 의 server
+  라우터 1,169행이 전량 미측정이다. 여기가 임계 85 로 가는 가장 짧은 경로다.
 - **`packages/admin` 린트 구성.** 현재 `"lint": "echo 'no lint'"`.
 - **`no-unused-vars` 경고 7건 정리** (`actions.ts:402` `err`, 다운로드 라우트 `ReadableStream`
   ×2, `actions.test.ts:46/57/75/76`). 미용 수준.
