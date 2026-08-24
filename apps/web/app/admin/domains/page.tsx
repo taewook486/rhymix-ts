@@ -6,16 +6,25 @@
  *
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-125
  */
-import Link from 'next/link'
 import { getServerCaller } from '@/lib/trpc/server'
 import { getCurrentSiteId } from '@/lib/admin/site-context'
+import { IndexModuleForm, type ModuleOption } from './IndexModuleForm'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminDomainsPage() {
   const siteId = await getCurrentSiteId()
   const caller = await getServerCaller()
-  const domains = await caller.admin.domain.list({ siteId })
+  const [domains, instances] = await Promise.all([
+    caller.admin.domain.list({ siteId }),
+    caller.admin.module.list({ siteId }),
+  ])
+  const moduleOptions: ModuleOption[] = instances.map((m) => ({
+    id: m.id,
+    mid: m.mid,
+    name: m.name,
+    moduleCode: m.moduleCode,
+  }))
 
   return (
     <section>
@@ -41,7 +50,7 @@ export default async function AdminDomainsPage() {
                   HTTPS 강제
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                  기본 모듈
+                  인덱스(홈) 모듈
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
                   언어/시간대
@@ -78,14 +87,11 @@ export default async function AdminDomainsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500">
-                      {domain.indexModule ? (
-                        <div>
-                          <div className="font-medium text-zinc-900">{domain.indexModule.title}</div>
-                          <div className="text-xs text-zinc-400">{domain.indexModule.moduleCode}</div>
-                        </div>
-                      ) : (
-                        <span className="text-zinc-400">미설정</span>
-                      )}
+                      <IndexModuleForm
+                        domainId={domain.id}
+                        currentModuleInstanceId={domain.indexModuleInstanceId}
+                        options={moduleOptions}
+                      />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500">
                       <div>{domain.defaultLanguage || '미설정'}</div>

@@ -15,6 +15,7 @@
  *             본 createContext 는 항상 hostname 으로 domain 을 재해석하여 이를 방지.
  */
 import { auth } from '@/lib/auth/config';
+import { initModules } from '@/lib/modules/register';
 import { prisma } from '@/lib/db/prisma';
 import type { AdminSession } from '@/lib/auth/admin-middleware';
 import type { FileStorage, VirusScanner } from '@rhymix-ts/file';
@@ -74,6 +75,13 @@ export interface Context {
 
 export async function createContext(opts: { req: Request }): Promise<Context> {
   const { req } = opts;
+
+  // 모듈 레지스트리 초기화 — instrumentation.ts 의 register() 만으로는 부족하다.
+  // Turbopack 은 라우트 핸들러 / Server Action 을 instrumentation 과 다른 모듈
+  // 그래프로 묶어서, core 의 process-scoped REGISTRY 가 빈 인스턴스로 보인다.
+  // 그 상태에서 admin.module.create 가 getModule('board') 를 호출하면
+  // ModuleNotRegisteredError 로 실패한다. initModules 는 멱등이라 매 요청 호출이 안전하다.
+  initModules();
 
   // NextAuth 세션 조회
   // auth() 는 Next.js 의 cookies()/headers() 를 내부에서 사용하는 Server-side 함수

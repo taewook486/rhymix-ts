@@ -38,6 +38,9 @@ function makeCtx() {
           documentPoll: { create: vi.fn().mockResolvedValue({}) },
         })
       ),
+      user: {
+        findUnique: vi.fn().mockResolvedValue({ nickName: '관리자닉' }),
+      },
     } as any,
     authorId: 1,
     actor: { userGroupSrl: 1, isAdmin: false },
@@ -136,5 +139,40 @@ describe('handleCreateDocumentForm — poll section (REQ-POLL-001)', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/10개 이하/);
+  });
+});
+
+describe('handleCreateDocumentForm — 작성자 닉네임 스냅샷', () => {
+  beforeEach(() => {
+    mockCreateDocument.mockReset();
+    mockCreateDocument.mockResolvedValue({ id: 1 });
+  });
+
+  it('로그인 작성자의 nickName 을 스냅샷해 createDocument 로 넘긴다', async () => {
+    // 목록 렌더는 doc.nickName 스냅샷을 읽으므로(index-page.tsx),
+    // 여기서 null 을 넘기면 모든 글의 작성자가 '-' 로 표시된다.
+    const ctx = makeCtx();
+    await handleCreateDocumentForm(
+      makeFormData({ moduleInstanceId: '1', title: '제목', content: '본문' }),
+      ctx
+    );
+
+    expect(mockCreateDocument).toHaveBeenCalledTimes(1);
+    const arg = mockCreateDocument.mock.calls[0]![0];
+    expect(arg.authorId).toBe(1);
+    expect(arg.nickName).toBe('관리자닉');
+  });
+
+  it('비로그인(authorId=null)이면 nickName 을 조회하지 않고 null 로 둔다', async () => {
+    const ctx = makeCtx();
+    ctx.authorId = null as any;
+    await handleCreateDocumentForm(
+      makeFormData({ moduleInstanceId: '1', title: '제목', content: '본문' }),
+      ctx
+    );
+
+    const arg = mockCreateDocument.mock.calls[0]![0];
+    expect(arg.nickName).toBeNull();
+    expect((ctx.prisma as any).user.findUnique).not.toHaveBeenCalled();
   });
 });
