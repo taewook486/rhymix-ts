@@ -9,7 +9,7 @@
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-009, REQ-ADMIN2-141
  */
 
-import type { PrismaClient } from '@prisma/client'
+import type { Prisma, PrismaClient } from '@prisma/client'
 
 export interface VisitCounterInput {
   siteId: number
@@ -244,8 +244,14 @@ export async function getDayOverDay(
   const range = { gte: yesterdayStart, lt: todayStart }
   const todayRange = { gte: todayStart, lt: now }
 
-  const siteFilter = {
+  // Document 는 board 관계를 직접 갖지만 Comment 는 갖지 않는다
+  // (Comment 는 boardId 스칼라와 document 관계만 보유). 두 필터를 분리하고
+  // 명시적 Prisma 타입을 붙여, 잘못된 관계 경로가 타입체크에서 걸리게 한다.
+  const documentSiteFilter: Prisma.DocumentWhereInput = {
     board: { moduleInstance: { siteId } },
+  }
+  const commentSiteFilter: Prisma.CommentWhereInput = {
+    document: { board: { moduleInstance: { siteId } } },
   }
 
   const [
@@ -264,13 +270,15 @@ export async function getDayOverDay(
     prisma.user.count({
       where: { createdAt: todayRange, groups: { some: { group: { siteId } } } },
     }),
-    prisma.document.count({ where: { regdate: range, ...siteFilter } }),
-    prisma.document.count({ where: { regdate: todayRange, ...siteFilter } }),
-    prisma.comment.count({
-      where: { regdate: range, deletedAt: null, ...siteFilter },
+    prisma.document.count({ where: { regdate: range, ...documentSiteFilter } }),
+    prisma.document.count({
+      where: { regdate: todayRange, ...documentSiteFilter },
     }),
     prisma.comment.count({
-      where: { regdate: todayRange, deletedAt: null, ...siteFilter },
+      where: { regdate: range, deletedAt: null, ...commentSiteFilter },
+    }),
+    prisma.comment.count({
+      where: { regdate: todayRange, deletedAt: null, ...commentSiteFilter },
     }),
     prisma.fileAttachment.count(),
     prisma.fileAttachment.count(),

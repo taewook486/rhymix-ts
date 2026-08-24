@@ -9,6 +9,7 @@ import {
   incrementVisitCounters,
   getVisitStats,
   getSummaryCounts,
+  getDayOverDay,
 } from './visit-counter'
 
 describe('incrementVisitCounters', () => {
@@ -193,5 +194,42 @@ describe('getSummaryCounts', () => {
         where: expect.objectContaining({ deletedAt: null }),
       })
     )
+  })
+})
+
+describe('getDayOverDay', () => {
+  let mockPrisma: any
+
+  beforeEach(() => {
+    mockPrisma = {
+      user: { count: vi.fn().mockResolvedValue(0) },
+      document: { count: vi.fn().mockResolvedValue(0) },
+      comment: { count: vi.fn().mockResolvedValue(0) },
+      fileAttachment: { count: vi.fn().mockResolvedValue(0) },
+    }
+  })
+
+  it('should filter documents by site through board.moduleInstance', async () => {
+    await getDayOverDay(1, mockPrisma)
+
+    for (const call of mockPrisma.document.count.mock.calls) {
+      expect(call[0].where.board.moduleInstance.siteId).toBe(1)
+    }
+    expect(mockPrisma.document.count).toHaveBeenCalledTimes(2)
+  })
+
+  it('should filter comments through document.board, not a top-level board relation', async () => {
+    // Comment 모델에는 board 관계가 없다 (boardId 스칼라와 document 관계만 존재).
+    // Document 용 필터를 그대로 펼치면 Prisma 가
+    // "Unknown argument `board`. Did you mean `boardId`?" 로 런타임 거부한다.
+    await getDayOverDay(1, mockPrisma)
+
+    expect(mockPrisma.comment.count).toHaveBeenCalledTimes(2)
+    for (const call of mockPrisma.comment.count.mock.calls) {
+      const where = call[0].where
+      expect(where).not.toHaveProperty('board')
+      expect(where.document.board.moduleInstance.siteId).toBe(1)
+      expect(where.deletedAt).toBeNull()
+    }
   })
 })
