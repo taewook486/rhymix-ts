@@ -232,6 +232,24 @@ export async function createDocument(
   const safeContent = await sanitizeHtml(parsed.content);
   const safeContentText = toPlainText(safeContent);
 
+  // 작성자 스냅샷 — 목록 렌더와 작성자 검색이 Document 의 nickName /
+  // userIdSnapshot 을 직접 읽는다. 호출자마다 채우면 빠뜨리는 경로가 생기므로
+  // (실제로 tRPC 경로 두 곳이 nickName: null 을 그대로 넘겨 작성자가 '-' 로
+  // 보였다) 이 단일 관문에서 채운다. 비회원 글은 authorId 가 없으니 넘어온
+  // nickName 을 그대로 쓰고 userIdSnapshot 은 비운다.
+  let authorNickName = parsed.nickName;
+  let userIdSnapshot: string | null = null;
+  if (parsed.authorId != null) {
+    const author = await ctx.prisma.user.findUnique({
+      where: { id: parsed.authorId },
+      select: { userId: true, nickName: true },
+    });
+    if (author) {
+      authorNickName = authorNickName ?? author.nickName;
+      userIdSnapshot = author.userId;
+    }
+  }
+
   // categoryId 있으면 트랜잭션 내에서 생성 + incrementDocumentCount
   if (parsed.categoryId !== null) {
     return ctx.prisma.$transaction(async (tx) => {
@@ -239,7 +257,8 @@ export async function createDocument(
         data: {
           boardId: board.id,
           authorId: parsed.authorId,
-          nickName: parsed.nickName,
+          nickName: authorNickName,
+          userIdSnapshot,
           title: parsed.title,
           content: safeContent,
           contentText: safeContentText,
@@ -278,7 +297,8 @@ export async function createDocument(
     data: {
       boardId: board.id,
       authorId: parsed.authorId,
-      nickName: parsed.nickName,
+      nickName: authorNickName,
+      userIdSnapshot,
       title: parsed.title,
       content: safeContent,
       contentText: safeContentText,

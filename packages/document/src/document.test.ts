@@ -1516,3 +1516,73 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
 // SPEC-BOARD-UI-001 adjacent lookup (이전글/다음글)
 // ---------------------------------------------------------------------------
 
+
+// ---------------------------------------------------------------------------
+// createDocument — 작성자 스냅샷 (nickName / userIdSnapshot)
+// ---------------------------------------------------------------------------
+
+describe('createDocument — 작성자 스냅샷', () => {
+  async function runCreate(
+    input: { authorId: number | null; nickName: string | null },
+    author?: { userId: string; nickName: string },
+  ) {
+    const { createDocument } = await import('./document.js');
+
+    const mockPrisma = createMockPrismaClient();
+    mockPrisma.board.findUniqueOrThrow.mockResolvedValue(
+      makeBoard({ id: 7, moduleInstanceId: 3, permissions: {} }),
+    );
+    mockPrisma.document.create.mockResolvedValue(makeDocument({ id: 1, boardId: 7 }));
+    mockPrisma.documentExtraKey.findMany.mockResolvedValue([]);
+    mockPrisma.user.findUnique.mockResolvedValue(author ?? null);
+
+    await createDocument(
+      { moduleInstanceId: 3, title: 'hi', content: '<p>x</p>', ...input },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { prisma: mockPrisma as any },
+    );
+
+    const call = mockPrisma.document.create.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+    return { data: call.data, mockPrisma };
+  }
+
+  // 목록 렌더는 doc.nickName 을, 작성자 검색은 nickName OR userIdSnapshot 을
+  // 직접 읽는다. 여기서 비우면 로그인 사용자 글의 작성자가 '-' 로 보이고
+  // 로그인 ID 로는 검색되지 않는다.
+  it('로그인 작성자면 User 를 조회해 nickName 과 userIdSnapshot 을 채운다', async () => {
+    const { data, mockPrisma } = await runCreate(
+      { authorId: 42, nickName: null },
+      { userId: 'admin', nickName: '관리자닉' },
+    );
+
+    expect(mockPrisma.user.findUnique).toHaveBeenCalledOnce();
+    expect(data.nickName).toBe('관리자닉');
+    expect(data.userIdSnapshot).toBe('admin');
+  });
+
+  it('명시된 nickName 은 User 값보다 우선한다', async () => {
+    const { data } = await runCreate(
+      { authorId: 42, nickName: '직접입력' },
+      { userId: 'admin', nickName: '관리자닉' },
+    );
+
+    expect(data.nickName).toBe('직접입력');
+    // 로그인 사용자이므로 userIdSnapshot 은 그대로 채운다.
+    expect(data.userIdSnapshot).toBe('admin');
+  });
+
+  it('비회원(authorId=null)이면 User 를 조회하지 않고 userIdSnapshot 을 비운다', async () => {
+    const { data, mockPrisma } = await runCreate({ authorId: null, nickName: '손님' });
+
+    expect(mockPrisma.user.findUnique).not.toHaveBeenCalled();
+    expect(data.nickName).toBe('손님');
+    expect(data.userIdSnapshot).toBeNull();
+  });
+
+  it('작성자 조회가 비면 nickName 을 넘어온 값 그대로 두고 터지지 않는다', async () => {
+    const { data } = await runCreate({ authorId: 999, nickName: null });
+
+    expect(data.nickName).toBeNull();
+    expect(data.userIdSnapshot).toBeNull();
+  });
+});

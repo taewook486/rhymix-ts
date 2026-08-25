@@ -110,24 +110,15 @@ export async function handleCreateDocumentForm(
     }
   }
 
-  // 작성자 닉네임 스냅샷 — 목록 렌더(index-page.tsx)와 작성자 검색이
-  // Document.nickName 을 직접 읽으므로, 작성 시점에 채우지 않으면
-  // 로그인 사용자가 쓴 글도 목록에서 작성자가 '-' 로 표시된다.
-  let nickName: string | null = null;
-  if (ctx.authorId != null) {
-    const author = await ctx.prisma.user.findUnique({
-      where: { id: ctx.authorId },
-      select: { nickName: true },
-    });
-    nickName = author?.nickName ?? null;
-  }
-
   try {
     const doc = await createDocument(
       {
         moduleInstanceId: parsed.data.moduleInstanceId,
         authorId: ctx.authorId,
-        nickName,
+        // 로그인 사용자의 nickName / userIdSnapshot 스냅샷은 createDocument 가
+        // 채운다 (packages/document/src/document.ts). 여기서는 비회원 닉네임이
+        // 없으므로 null 을 넘긴다.
+        nickName: null,
         title: parsed.data.title,
         content: parsed.data.content,
         status: 'PUBLIC',

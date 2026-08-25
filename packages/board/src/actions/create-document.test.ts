@@ -142,15 +142,16 @@ describe('handleCreateDocumentForm — poll section (REQ-POLL-001)', () => {
   });
 });
 
-describe('handleCreateDocumentForm — 작성자 닉네임 스냅샷', () => {
+describe('handleCreateDocumentForm — 작성자 스냅샷 위임', () => {
   beforeEach(() => {
     mockCreateDocument.mockReset();
     mockCreateDocument.mockResolvedValue({ id: 1 });
   });
 
-  it('로그인 작성자의 nickName 을 스냅샷해 createDocument 로 넘긴다', async () => {
-    // 목록 렌더는 doc.nickName 스냅샷을 읽으므로(index-page.tsx),
-    // 여기서 null 을 넘기면 모든 글의 작성자가 '-' 로 표시된다.
+  // 작성자 nickName / userIdSnapshot 스냅샷은 createDocument 가 채운다.
+  // 호출자마다 채우면 빠뜨리는 경로가 생기기 때문이다(tRPC 경로 두 곳이
+  // 실제로 비어 있었다). 이 액션의 책임은 authorId 를 그대로 넘기는 것뿐이다.
+  it('authorId 를 그대로 넘기고 작성자 조회는 하지 않는다', async () => {
     const ctx = makeCtx();
     await handleCreateDocumentForm(
       makeFormData({ moduleInstanceId: '1', title: '제목', content: '본문' }),
@@ -160,10 +161,11 @@ describe('handleCreateDocumentForm — 작성자 닉네임 스냅샷', () => {
     expect(mockCreateDocument).toHaveBeenCalledTimes(1);
     const arg = mockCreateDocument.mock.calls[0]![0];
     expect(arg.authorId).toBe(1);
-    expect(arg.nickName).toBe('관리자닉');
+    expect(arg.nickName).toBeNull();
+    expect((ctx.prisma as any).user.findUnique).not.toHaveBeenCalled();
   });
 
-  it('비로그인(authorId=null)이면 nickName 을 조회하지 않고 null 로 둔다', async () => {
+  it('비로그인(authorId=null)이면 authorId 와 nickName 모두 null 로 넘긴다', async () => {
     const ctx = makeCtx();
     ctx.authorId = null as any;
     await handleCreateDocumentForm(
@@ -172,6 +174,7 @@ describe('handleCreateDocumentForm — 작성자 닉네임 스냅샷', () => {
     );
 
     const arg = mockCreateDocument.mock.calls[0]![0];
+    expect(arg.authorId).toBeNull();
     expect(arg.nickName).toBeNull();
     expect((ctx.prisma as any).user.findUnique).not.toHaveBeenCalled();
   });
