@@ -4,6 +4,7 @@
  * Server Component for displaying search results grouped by board.
  */
 import type { Metadata } from 'next';
+import type React from 'react';
 import { createCallerFactory } from '@/server/api/trpc';
 import { contentSearchRouter } from '@/server/api/routers/content/search';
 import { auth } from '@/lib/auth/config';
@@ -14,13 +15,14 @@ import Link from 'next/link';
 import type { Context } from '@/server/api/context';
 
 interface SearchPageProps {
-  searchParams: {
+  /** Next 15 부터 searchParams 는 Promise 다 — 반드시 await 해서 읽는다. */
+  searchParams: Promise<{
     q?: string;
     mid?: string;
     field?: 'title' | 'content' | 'author';
     sort?: 'relevance' | 'latest';
     page?: string;
-  };
+  }>;
 }
 
 /**
@@ -28,7 +30,7 @@ interface SearchPageProps {
  * (title.template이 layout.tsx에서 "%s | Rhymix-TS"를 자동으로 붙인다)
  */
 export async function generateMetadata({ searchParams }: SearchPageProps): Promise<Metadata> {
-  const { q = '' } = searchParams;
+  const { q = '' } = await searchParams;
   if (!q) {
     return {};
   }
@@ -38,8 +40,19 @@ export async function generateMetadata({ searchParams }: SearchPageProps): Promi
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { q = '', mid, field, sort = 'relevance', page = '1' } = searchParams;
+  const { q = '', mid, field, sort = 'relevance', page = '1' } = await searchParams;
   const pageNum = parseInt(page, 10) || 1;
+
+  // 검색어가 없으면 라우터를 부르지 않는다. integrated 의 입력 스키마가
+  // q.min(1) 이라 빈 문자열은 ZodError → 500 이 된다.
+  if (q.trim().length === 0) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="text-2xl font-bold">검색</h1>
+        <p className="mt-4 text-gray-600">검색어를 입력하세요.</p>
+      </div>
+    );
+  }
 
   const session = await auth();
 
@@ -165,10 +178,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 }
 
 /**
- * 하이라이팅 유틸 — 검색어를 <mark> 태그로 감쌈
+ * 하이라이팅 유틸 — 검색어에 해당하는 구간만 <mark> 로 감싼 React 노드를 만든다.
+ *
+ * 예전에는 '<mark>...</mark>' 문자열을 반환했는데, React 가 이스케이프하므로
+ * 화면에는 태그가 그대로 보인다. dangerouslySetInnerHTML 로 되돌리는 대신
+ * 노드를 만들어 주입 위험 없이 강조한다.
  */
-function highlightTerm(text: string, term: string): string {
+function highlightTerm(text: string, term: string): React.ReactNode {
   if (!term) return text;
-  const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  return text.replace(regex, '<mark>$1</mark>');
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // 캡처 그룹이 하나뿐이라 split 결과의 홀수 인덱스가 곧 일치 구간이다.
+  // (전역 정규식의 test() 는 lastIndex 상태를 갖고 있어 여기서 쓰면 안 된다.)
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return parts.map((part, i) => (i % 2 === 1 ? <mark key={i}>{part}</mark> : part));
 }

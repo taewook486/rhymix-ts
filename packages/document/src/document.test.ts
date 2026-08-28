@@ -549,7 +549,11 @@ describe('listDocuments search (Slice B)', () => {
     const fakeBoard = makeBoard({ id: 7, moduleInstanceId: 3, listCount: 20, exceptNotice: false });
     const mockPrisma = createMockPrismaClient();
     mockPrisma.board.findUnique.mockResolvedValue(fakeBoard);
-    mockPrisma.$queryRaw.mockResolvedValue([{ id: 1, title: 'hit', listOrder: BigInt(1000) }]);
+    // FTS 원시 SQL 은 id 만 고르고, 본문은 Prisma 로 되읽는다.
+    mockPrisma.$queryRaw.mockResolvedValue([{ id: 1 }]);
+    mockPrisma.document.findMany.mockResolvedValue([
+      makeDocument({ id: 1, boardId: 7, title: 'hit' }),
+    ]);
 
     const result = await listDocuments(
       // SPEC-BOARD-UI-001: search만 주어지면 searchField 기본값이 'title'(단순 contains)로
@@ -560,7 +564,8 @@ describe('listDocuments search (Slice B)', () => {
     );
 
     expect(mockPrisma.$queryRaw).toHaveBeenCalledOnce();
-    expect(mockPrisma.document.findMany).not.toHaveBeenCalled();
+    // 검색 조건 자체는 원시 SQL 이 담당하고, findMany 는 id 로 본문만 되읽는다.
+    expect(mockPrisma.document.findMany).toHaveBeenCalledWith({ where: { id: { in: [1] } } });
     // Slice C: 반환 타입이 { notices, items, nextCursor } 로 변경됨
     expect(result.items).toHaveLength(1);
   });

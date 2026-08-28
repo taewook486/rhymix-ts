@@ -11,6 +11,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // searchDocuments (S-1 ~ S-7, S-10)
+//
+// 컬럼명 단언 주의: 이 테스트들은 예전에 'search_vector' / 'category_id' 같은
+// snake_case 를 요구했다. 그런 컬럼은 존재하지 않는다 — 테이블만 snake_case 이고
+// 컬럼은 camelCase 다. 그래서 실제 DB 에서는 42703 으로 전부 실패하는 SQL 을
+// 테스트가 통과시키고 있었다. 이제 실재하는 이름을 요구하고 옛 표기의 부재도 단언한다.
 // ---------------------------------------------------------------------------
 
 describe('searchDocuments', () => {
@@ -21,22 +26,34 @@ describe('searchDocuments', () => {
   it('S-1: query 없이 boardId 만 → 전체 문서 반환 (삭제된 것 제외)', async () => {
     const { searchDocuments } = await import('./search.js');
 
+    // 원시 SQL 은 id/정렬키/총계만 돌려주고, 본문은 Prisma 로 되읽는다
+    // (SELECT * 는 tsvector 컬럼 때문에 역직렬화가 깨진다).
+    const fakeRows = [
+      { id: 1, listOrder: BigInt(1000), count: BigInt(2) },
+      { id: 2, listOrder: BigInt(999), count: BigInt(2) },
+    ];
     const fakeDocs = [
-      { id: 1, boardId: 5, title: '글1', listOrder: BigInt(1000), count: BigInt(2) },
-      { id: 2, boardId: 5, title: '글2', listOrder: BigInt(999), count: BigInt(2) },
+      { id: 1, boardId: 5, title: '글1', listOrder: BigInt(1000) },
+      { id: 2, boardId: 5, title: '글2', listOrder: BigInt(999) },
     ];
 
-    const mockQueryRawUnsafe = vi.fn().mockResolvedValue(fakeDocs);
-    const mockPrisma = { $queryRawUnsafe: mockQueryRawUnsafe };
+    const mockQueryRawUnsafe = vi.fn().mockResolvedValue(fakeRows);
+    const mockFindMany = vi.fn().mockResolvedValue(fakeDocs);
+    const mockPrisma = {
+      $queryRawUnsafe: mockQueryRawUnsafe,
+      document: { findMany: mockFindMany },
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await searchDocuments({ boardId: 5, limit: 20 }, { prisma: mockPrisma as any });
 
     expect(result.items).toHaveLength(2);
+    expect(result.items.map((d) => d.id)).toEqual([1, 2]);
     expect(mockQueryRawUnsafe).toHaveBeenCalledOnce();
+    expect(mockFindMany).toHaveBeenCalledWith({ where: { id: { in: [1, 2] } } });
   });
 
-  it('S-2: FTS query 검색 — SQL 에 plainto_tsquery 포함', async () => {
+  it('S-2: FTS query 검색 — SQL 에 plainto_tsquery + "searchVector" 포함', async () => {
     const { searchDocuments } = await import('./search.js');
 
     let capturedSql = '';
@@ -50,10 +67,11 @@ describe('searchDocuments', () => {
     await searchDocuments({ boardId: 5, query: 'typescript', limit: 20 }, { prisma: mockPrisma as any });
 
     expect(capturedSql.toLowerCase()).toContain('plainto_tsquery');
-    expect(capturedSql.toLowerCase()).toContain('search_vector');
+    expect(capturedSql).toContain('"searchVector"');
+    expect(capturedSql).not.toContain('search_vector');
   });
 
-  it('S-3: categoryId 필터 — SQL 에 category_id 조건 포함', async () => {
+  it('S-3: categoryId 필터 — SQL 에 "categoryId" 조건 포함', async () => {
     const { searchDocuments } = await import('./search.js');
 
     let capturedSql = '';
@@ -66,7 +84,8 @@ describe('searchDocuments', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await searchDocuments({ boardId: 5, categoryId: 3, limit: 20 }, { prisma: mockPrisma as any });
 
-    expect(capturedSql.toLowerCase()).toContain('category_id');
+    expect(capturedSql).toContain('"categoryId"');
+    expect(capturedSql).not.toContain('category_id');
   });
 
   it('S-4: tags 필터 — SQL 에 tags 조건 포함', async () => {
@@ -104,7 +123,7 @@ describe('searchDocuments', () => {
     expect(capturedSql.toLowerCase()).toContain('regdate');
   });
 
-  it('S-6: minVoted 필터 — SQL 에 voted_count 조건 포함', async () => {
+  it('S-6: minVoted 필터 — SQL 에 "votedCount" 조건 포함', async () => {
     const { searchDocuments } = await import('./search.js');
 
     let capturedSql = '';
@@ -117,7 +136,8 @@ describe('searchDocuments', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await searchDocuments({ boardId: 5, minVoted: 5, limit: 20 }, { prisma: mockPrisma as any });
 
-    expect(capturedSql.toLowerCase()).toContain('voted_count');
+    expect(capturedSql).toContain('"votedCount"');
+    expect(capturedSql).not.toContain('voted_count');
   });
 
   it('S-7: cursor pagination — nextCursor 디코딩 후 다음 페이지 정확히 반환', async () => {
@@ -136,10 +156,11 @@ describe('searchDocuments', () => {
     await searchDocuments({ boardId: 5, cursor, limit: 10 }, { prisma: mockPrisma as any });
 
     // cursor 조건이 SQL 에 들어가야 함
-    expect(capturedSql.toLowerCase()).toContain('list_order');
+    expect(capturedSql).toContain('"listOrder"');
+    expect(capturedSql).not.toContain('list_order');
   });
 
-  it('S-10: sort update_order — SQL 에 update_order 정렬 포함', async () => {
+  it('S-10: sort update_order — SQL 에 "updateOrder" 정렬 포함', async () => {
     const { searchDocuments } = await import('./search.js');
 
     let capturedSql = '';
@@ -155,7 +176,8 @@ describe('searchDocuments', () => {
       { prisma: mockPrisma as any },
     );
 
-    expect(capturedSql.toLowerCase()).toContain('update_order');
+    expect(capturedSql).toContain('"updateOrder"');
+    expect(capturedSql).not.toContain('update_order');
   });
 });
 

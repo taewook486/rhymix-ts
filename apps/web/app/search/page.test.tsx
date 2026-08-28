@@ -69,6 +69,35 @@ describe('/search page', () => {
     integratedMock.mockReset();
   });
 
+  // 이 두 건이 존재하는 이유: /search 가 쿼리 유무와 무관하게 500 이었다.
+  // Next 15 에서 searchParams 는 Promise 인데 페이지가 동기로 구조분해해
+  // q 가 항상 undefined 였고, integrated 의 q.min(1) 을 위반해 ZodError 가 났다.
+  // 기존 테스트가 searchParams 를 평범한 객체로 넘긴 탓에 통과하고 있었다.
+  it('검색어가 없으면 라우터를 부르지 않고 안내를 낸다', async () => {
+    const page = await SearchPage({ searchParams: Promise.resolve({}) });
+
+    const { container } = render(page);
+    expect(integratedMock).not.toHaveBeenCalled();
+    expect(container.textContent).toContain('검색어를 입력하세요');
+  });
+
+  it('공백만 있는 검색어도 라우터를 부르지 않는다', async () => {
+    const page = await SearchPage({ searchParams: Promise.resolve({ q: '   ' }) });
+
+    render(page);
+    expect(integratedMock).not.toHaveBeenCalled();
+  });
+
+  it('검색어가 있으면 await 한 값을 그대로 라우터에 넘긴다', async () => {
+    integratedMock.mockResolvedValue({ results: [], totalCount: 0, page: 1, totalPages: 1 });
+
+    await SearchPage({ searchParams: Promise.resolve({ q: '공지', page: '2' }) });
+
+    expect(integratedMock).toHaveBeenCalledWith(
+      expect.objectContaining({ q: '공지', page: 2 }),
+    );
+  });
+
   it('S-PAGE-1: renders search term from searchParams', async () => {
     const mockResults = [
       {
@@ -90,9 +119,8 @@ describe('/search page', () => {
       totalPages: 1,
     });
 
-    // @ts-ignore - testing async component
     const page = await SearchPage({
-      searchParams: { q: '타입스크립트' },
+      searchParams: Promise.resolve({ q: '타입스크립트' }),
     });
 
     const { container } = render(page);
@@ -132,7 +160,7 @@ describe('/search page', () => {
 
     // @ts-ignore
     const page = await SearchPage({
-      searchParams: { q: 'test' },
+      searchParams: Promise.resolve({ q: 'test' }),
     });
 
     const { container } = render(page);
@@ -150,7 +178,7 @@ describe('/search page', () => {
 
     // @ts-ignore
     const page = await SearchPage({
-      searchParams: { q: 'nonexistent' },
+      searchParams: Promise.resolve({ q: 'nonexistent' }),
     });
 
     const { container } = render(page);
@@ -167,7 +195,7 @@ describe('/search page', () => {
 
     // @ts-ignore
     const page = await SearchPage({
-      searchParams: { q: 'test', page: '1' },
+      searchParams: Promise.resolve({ q: 'test', page: '1' }),
     });
 
     const { container } = render(page);
@@ -182,7 +210,7 @@ describe('/search generateMetadata (SPEC-SEO-001 REQ-SEO-001)', () => {
   it("returns title \"'{검색어}' 검색 결과\" when q is present", async () => {
     const { generateMetadata } = await import('./page');
 
-    const metadata = await generateMetadata({ searchParams: { q: '테스트' } });
+    const metadata = await generateMetadata({ searchParams: Promise.resolve({ q: '테스트' }) });
 
     expect(metadata.title).toBe("'테스트' 검색 결과");
   });
@@ -190,7 +218,7 @@ describe('/search generateMetadata (SPEC-SEO-001 REQ-SEO-001)', () => {
   it('returns empty metadata when q is missing', async () => {
     const { generateMetadata } = await import('./page');
 
-    const metadata = await generateMetadata({ searchParams: {} });
+    const metadata = await generateMetadata({ searchParams: Promise.resolve({}) });
 
     expect(metadata).toEqual({});
   });

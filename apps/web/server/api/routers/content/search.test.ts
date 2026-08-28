@@ -229,7 +229,11 @@ describe('content.search.integrated — SPEC-SEARCH-001', () => {
     expect(result.results).toHaveLength(1);
   });
 
-  it('S-INT-3: field=title searches using search_vector', async () => {
+  // 이 테스트는 예전에 sql 이 'search_vector' 를 담는지 확인했다. 그런 컬럼은
+  // 존재하지 않는다(스키마의 실제 컬럼은 "searchVector" 다) — 즉 테스트가 틀린
+  // 컬럼명을 고정하고 있었고, 실제 /search 는 42703 으로 500 이 났다.
+  // 이제 실재하는 컬럼명을 요구하고, snake_case 표기가 없음을 함께 단언한다.
+  it('S-INT-3: field=title 은 실재하는 "searchVector" 컬럼으로 FTS 한다', async () => {
     mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
     mockPrisma.board.findMany.mockResolvedValueOnce(mockBoards as never);
 
@@ -242,10 +246,34 @@ describe('content.search.integrated — SPEC-SEARCH-001', () => {
 
     await caller.integrated({ q: '타입스크립트', field: 'title', page: 1 });
 
-    const sqlCall = mockPrisma.$queryRawUnsafe.mock.calls[0] as [string];
+    const sqlCall = mockPrisma.$queryRawUnsafe.mock.calls[0] as [string, ...unknown[]];
     const sql = sqlCall[0];
-    // Should use search_vector for FTS
-    expect(sql.toLowerCase()).toContain('search_vector');
+
+    expect(sql).toContain('"searchVector"');
+    expect(sql).toContain('"boardId"');
+    expect(sql).toContain('"deletedAt"');
+    for (const ghost of ['search_vector', 'board_id', 'deleted_at']) {
+      expect(sql).not.toContain(ghost);
+    }
+  });
+
+  it('S-INT-3b: 검색어는 SQL 에 이어붙이지 않고 바인딩 파라미터로 넘긴다', async () => {
+    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([]);
+    mockPrisma.board.findMany.mockResolvedValueOnce(mockBoards as never);
+
+    const { contentSearchRouter } = await import('./search');
+    const { createCallerFactory } = await import('../../trpc');
+
+    const createCaller = createCallerFactory(contentSearchRouter);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const caller = createCaller(publicCtx as any);
+
+    await caller.integrated({ q: "o'brien", page: 1 });
+
+    const [sql, ...params] = mockPrisma.$queryRawUnsafe.mock.calls[0] as [string, ...unknown[]];
+    expect(sql).toContain('$1');
+    expect(sql).not.toContain("o'brien");
+    expect(params).toEqual(["o'brien"]);
   });
 
   it('S-INT-4: field=author searches by nickname', async () => {

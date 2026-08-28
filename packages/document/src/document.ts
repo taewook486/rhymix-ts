@@ -461,6 +461,23 @@ const DeleteDocumentSchema = z.object({
 export type DeleteDocumentInput = z.input<typeof DeleteDocumentSchema>;
 
 /**
+ * FTS 로 고른 id 목록을 Prisma 타입 API 로 되읽어 원래 순서대로 돌려준다.
+ *
+ * 원시 SQL 의 SELECT * 는 tsvector 컬럼까지 반환해 Prisma 가 역직렬화하지 못한다.
+ * id 만 원시로 고르고 본문은 타입 있는 경로로 가져오면 그 문제가 사라지고
+ * 컬럼 목록을 손으로 나열할 필요도 없다.
+ */
+async function fetchDocumentsInOrder(
+  ids: number[],
+  ctx: { prisma: PrismaClient },
+): Promise<Document[]> {
+  if (ids.length === 0) return [];
+  const rows = await ctx.prisma.document.findMany({ where: { id: { in: ids } } });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ids.map((id) => byId.get(id)).filter((d): d is Document => d !== undefined);
+}
+
+/**
  * deleteDocument — softDeleteDocument 의 thin wrapper.
  * Slice B/C 의 외부 호출 시그니처/반환 타입을 유지하면서
  * Trash 생성 로직을 trash.ts 로 위임한다 (DD-1~DD-3 회귀 보호).
@@ -591,26 +608,30 @@ export async function listDocuments(
       if (isOffsetMode) {
         // offset pagination with FTS
         const offset = (parsed.page! - 1) * pageSize;
-        const docs = await ctx.prisma.$queryRaw<Document[]>`
-          SELECT * FROM "documents"
-          WHERE "board_id" = ${board.id}
-            AND "deleted_at" IS NULL
+        // 원시 SQL 은 FTS 조건으로 id 만 고른다. SELECT * 로 행을 통째로 가져오면
+        // tsvector 컬럼(searchVector)까지 딸려와 Prisma 가 역직렬화에 실패한다
+        // ("Failed to deserialize column of type 'tsvector'").
+        const matched = await ctx.prisma.$queryRaw<Array<{ id: number }>>`
+          SELECT "id" FROM "documents"
+          WHERE "boardId" = ${board.id}
+            AND "deletedAt" IS NULL
             AND "status" = ${parsed.status}::text::"DocumentStatus"
-            AND "is_notice" = false
-            AND "search_vector" @@ plainto_tsquery('simple', ${parsed.search})
+            AND "isNotice" = false
+            AND "searchVector" @@ plainto_tsquery('simple', ${parsed.search})
           ORDER BY "regdate" DESC
           LIMIT ${pageSize}
           OFFSET ${offset}
         `;
+        const docs = await fetchDocumentsInOrder(matched.map((r) => r.id), ctx);
 
         // totalCount 조회 (FTS)
         const countResult = await ctx.prisma.$queryRaw<Array<{ count: bigint }>>`
           SELECT COUNT(*) as count FROM "documents"
-          WHERE "board_id" = ${board.id}
-            AND "deleted_at" IS NULL
+          WHERE "boardId" = ${board.id}
+            AND "deletedAt" IS NULL
             AND "status" = ${parsed.status}::text::"DocumentStatus"
-            AND "is_notice" = false
-            AND "search_vector" @@ plainto_tsquery('simple', ${parsed.search})
+            AND "isNotice" = false
+            AND "searchVector" @@ plainto_tsquery('simple', ${parsed.search})
         `;
         const totalCount = Number(countResult[0]?.count ?? 0);
         const totalPages = Math.ceil(totalCount / pageSize);
@@ -627,16 +648,17 @@ export async function listDocuments(
       } else {
         // cursor mode (기존 동작)
         const limit = parsed.limit ?? (board.listCount ?? 20);
-        const docs = await ctx.prisma.$queryRaw<Document[]>`
-          SELECT * FROM "documents"
-          WHERE "board_id" = ${board.id}
-            AND "deleted_at" IS NULL
+        const matched = await ctx.prisma.$queryRaw<Array<{ id: number }>>`
+          SELECT "id" FROM "documents"
+          WHERE "boardId" = ${board.id}
+            AND "deletedAt" IS NULL
             AND "status" = ${parsed.status}::text::"DocumentStatus"
-            AND "is_notice" = false
-            AND "search_vector" @@ plainto_tsquery('simple', ${parsed.search})
+            AND "isNotice" = false
+            AND "searchVector" @@ plainto_tsquery('simple', ${parsed.search})
           ORDER BY "regdate" DESC
           LIMIT ${limit}
         `;
+        const docs = await fetchDocumentsInOrder(matched.map((r) => r.id), ctx);
         return { notices: [], items: docs, nextCursor: null };
       }
     } else if (searchField === 'title') {
