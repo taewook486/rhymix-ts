@@ -207,9 +207,9 @@ describe('Poll Domain Functions', () => {
         },
       };
 
-      (mockPrisma.$transaction as any).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (mockPrisma.$transaction as any).mockImplementation(
+        async (callback: (tx: typeof mockTx) => unknown) => callback(mockTx),
+      );
 
       const input: CastVoteInput = {
         pollId: 1,
@@ -248,9 +248,9 @@ describe('Poll Domain Functions', () => {
         },
       };
 
-      (mockPrisma.$transaction as any).mockImplementation(async (callback) => {
-        return callback(mockTx);
-      });
+      (mockPrisma.$transaction as any).mockImplementation(
+        async (callback: (tx: typeof mockTx) => unknown) => callback(mockTx),
+      );
 
       const input: CastVoteInput = {
         pollId: 1,
@@ -351,8 +351,8 @@ describe('Poll Domain Functions', () => {
       expect(result.pollId).toBe(1);
       expect(result.totalVotes).toBe(0);
       expect(result.options).toHaveLength(2);
-      expect(result.options[0].voteCount).toBe(0);
-      expect(result.options[0].percentage).toBe(0);
+      expect(result.options[0]!.voteCount).toBe(0);
+      expect(result.options[0]!.percentage).toBe(0);
     });
 
     it('should correctly calculate vote percentages', async () => {
@@ -378,10 +378,10 @@ describe('Poll Domain Functions', () => {
       const result = await getPollResults(input, { prisma: mockPrisma });
 
       expect(result.totalVotes).toBe(3);
-      expect(result.options[0].voteCount).toBe(2);
-      expect(result.options[0].percentage).toBeCloseTo(66.67, 1);
-      expect(result.options[1].voteCount).toBe(1);
-      expect(result.options[1].percentage).toBeCloseTo(33.33, 1);
+      expect(result.options[0]!.voteCount).toBe(2);
+      expect(result.options[0]!.percentage).toBeCloseTo(66.67, 1);
+      expect(result.options[1]!.voteCount).toBe(1);
+      expect(result.options[1]!.percentage).toBeCloseTo(33.33, 1);
     });
   });
 
