@@ -1,8 +1,8 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-29 (앱 라우트 85개 스윕으로 제품 결함 5건 발견·수리.
->       커밋 8개 `f7e6fff`..`5971299`. 트리 clean, `0 0`)
+> 갱신: 2026-08-29 (관리자 스윕으로 결함 5건 + 비로그인/회원 스윕으로 검색 3겹
+>       결함 수리. 커밋 10개 `f7e6fff`..`c75ec67`. 트리 clean, `0 0`)
 > source_session_id: e71d0210-bb89-428e-b01f-f78831a7daad
 
 ## 붙여넣을 메시지
@@ -10,21 +10,22 @@
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. rhymix-ts — 앱 라우트 스윕 2회차부터. 지난 회차에서 관리자 화면
-결함 5건을 찾아 고쳤다. 이번엔 로그인 사용자/비로그인 관점으로 훑는다.
+ultrathink. rhymix-ts — 게시판 내 검색 브라우저 실측부터.
+지난 회차에 검색 결함 3겹을 고쳤는데(c75ec67) 게시판 내 검색만 dev 서버
+재기동이 필요해 실측을 못 했다. 그것부터 닫고 다음 결함으로 간다.
 
 전제 검증:
 1) git rev-list --count --left-right origin/main...HEAD → 0 0
-2) Docker Desktop 켜고 `docker start rhymix-ts-db` → 3개 컨테이너 기동
-3) apps/web 에서 dev 서버 기동 (콜드 ~200초). /mnt/d 는 inotify 미작동이라
-   코드 수정마다 재기동 필요
+2) docker start rhymix-ts-db → 3개 컨테이너 기동
+3) apps/web dev 서버 기동 (콜드 ~175초). /mnt/d 는 inotify 미작동이라
+   패키지 수정 후에는 반드시 재기동해야 반영된다
 
-실행: docs/NEXT_SESSION.md 의 '라우트 스윕 방법' 절대로 스윕 스크립트를 만들어
-      (a) 비로그인 (b) 일반회원 세션으로 앱 라우트를 순회한다. 지난 회차는
-      관리자 세션만 훑었다. 스윕 중에는 vitest 를 절대 병행하지 말 것.
+실행: /free?search=확인&searchField=content 를 열어 200 + 결과가 나오는지 본다.
+      500 이면 dev 서버 로그에서 prisma 오류를 확인할 것.
+      이어서 docs/NEXT_SESSION.md '후보 작업' 에서 다음 항목을 고른다.
 
-후속: 남은 후보는 packages/file 의 미사용 server/ 계층, 15개 패키지 린트 구성,
-      주 DB 재시드(설치 마법사 경유), 미병합 브랜치 19개 정리.
+후속: /documents/[id]/history 배선(getUpdateHistory 는 이미 있다),
+      packages/file 미사용 server/ 계층, 15개 패키지 린트 구성, 주 DB 재시드.
 
 ✂──── 여기까지 복사 ────✂
 ```
@@ -66,6 +67,33 @@ ultrathink. rhymix-ts — 앱 라우트 스윕 2회차부터. 지난 회차에�
 (태그가 1건이라도 있으면 500 — DB 에 태그가 없어 스윕에선 200 으로 보였다).
 도메인(`renameTag`/`mergeTags`/`deleteTag`)은 이미 다 있었다. → Server Action 3개 +
 `TagRowActions` 로 배선. 브라우저에서 이름변경·병합·삭제 전부 실측 확인.
+
+### 2부 — 비로그인 / 일반회원 스윕 (권한 관점)
+
+관리자 세션만 훑었던 1부에 이어, 같은 스윕을 **비로그인** 과 **일반회원**
+세션으로 돌렸다. 목적은 가용성이 아니라 권한 게이트 검사였다.
+
+- **권한 누출 없음.** 관리자 라우트 77개가 비로그인에서, 그리고 일반회원
+  세션에서도 전부 리다이렉트로 차단됐다(`gated`). 회원 라우트가 회원에게
+  200 인 것은 정상이다
+- **`/search` 가 500 으로 잡혔다** — 공개 라우트라 확실한 결함. 파고 보니
+  원인이 3겹이었고 게시판 내 검색까지 같이 죽어 있었다 (`c75ec67`)
+
+검증용 일반회원(`member1` / `Member1234!`)은 **가입 폼으로 직접 만들었다.**
+가입 → UNAUTHED + 이메일 인증 안내 → 토큰으로 `/verify-email` → APPROVED 까지
+정상 동작을 확인했다(토큰은 `email_auth_tokens.authKey`).
+
+### 검색 결함 3겹 (`c75ec67`)
+
+| 겹 | 내용 |
+|---|---|
+| 1 | `searchParams` 를 await 하지 않아 `q` 가 항상 undefined → ZodError → 500 |
+| 2 | 원시 SQL 컬럼명이 전부 snake_case (`board_id` 등) — 실재하지 않아 42703 |
+| 3 | `SELECT *` 가 tsvector 컬럼을 끌고 와 Prisma 역직렬화 실패 |
+
+3겹 모두 **테스트가 결함을 고정**하고 있었다: 페이지 테스트가 searchParams 를
+평범한 객체로 넘겼고, 라우터 테스트가 `search_vector` 를 단언했고,
+`packages/document/src/search.test.ts` 5건이 snake_case 컬럼명을 단언했다.
 
 ### 정리 작업
 
@@ -129,11 +157,19 @@ Playwright 로 관리자 로그인 후 앱 라우트 85개를 순회하며 HTTP 
   아니라 e2e 시드로 만들어져 그룹·메뉴가 비어 있다. 설치 시드
   (`packages/db/src/install/seed.ts:181`)는 admin/member 그룹을 정상 생성하므로
   코드 결함이 아니다
-- 검증용 임시글/태그/그룹은 정리했다
+- 사용자 2명: `admin`/`Admin1234!` (관리자), `member1`/`Member1234!` (일반회원,
+  가입 폼 + 이메일 인증으로 생성)
+- 검증용 임시글/태그는 정리했다
 
 ## 후보 작업 (전부 선택적)
 
-- **라우트 스윕 2회차** — 비로그인 / 일반회원 관점. 지난 회차는 관리자만 훑었다
+- **게시판 내 검색 실측** — `/free?search=...&searchField=content`. 3겹 수리 중
+  마지막 겹만 브라우저 확인을 못 했다(타입체크·테스트는 통과)
+- **`/documents/[id]/history` 배선** — 페이지는 "구현 예정" 자리표시자인데
+  `packages/document/src/history.ts` 의 `getUpdateHistory` 가 이미 있다.
+  페이지 주석이 없는 이름(`listDocumentHistory`)을 찾고 있었다
+- **FTS 한국어 형태소** — config 가 'simple' 이라 "첫 공지입니다" 가 '공지' 로
+  검색되지 않는다(토큰이 '공지입니다'). pg_bigm 또는 n-gram 검토
 - **`packages/file/src/server/`** — document 와 같은 미사용 계층(호출자 0곳)이나
   테스트가 40KB 붙어 있어 이번 범위에서 제외했다. 지우면 커버리지 수치가 크게 움직인다
 - **린트 구성** — `packages/admin` 만이 아니라 15개 패키지 전부 `echo 'no lint'` 다
@@ -155,6 +191,11 @@ Playwright 로 관리자 로그인 후 앱 라우트 85개를 순회하며 HTTP 
 - **jsdom 콜드 임포트가 60초 기본 타임아웃을 넘긴다.** `document.test.ts` 의 A-9 이
   `sanitizeHtml`→`isomorphic-dompurify` 첫 호출자라 실패했다. 개별 타임아웃을 달았다.
   같은 증상이 다른 파일에서 나오면 코드 결함으로 오진하지 말 것
+- **Next dev 가 메모리 임계에서 자체 재시작한다** (`⚠ Server is approaching the
+  used memory threshold, restarting...`). 스윕 도중에 뜨면 그 이후 라우트가
+  전부 ERR_CONNECTION_REFUSED 로 찍힌다 — 제품 결함이 아니니 그 구간만 다시 돌릴 것
+- **스윕 스크립트에 라우트 목록을 커맨드라인으로 넘기지 말 것.** 파일 경로를
+  넘기고 스크립트가 읽게 한다(셸 인젝션 표면 제거)
 - **`moai gate` pre-commit 은 전체 vitest 스위트를 돌린다.** 범위에 맞는 검증을 직접 하고
   `SKIP_MOAI_PRECOMMIT=1` + 사유를 커밋 본문에 남기는 게 이 저장소의 규약이다
 - **Docker Desktop 은 WSL 에서 켤 수 있다**:
