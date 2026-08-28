@@ -15,6 +15,7 @@ import {
   makeDocumentFromInput,
   makeDocumentUpdateLog,
   makeTrash,
+  makeUser,
 } from './__fixtures__.js';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +40,9 @@ describe('createDocument', () => {
     mockPrisma.board.findUniqueOrThrow.mockResolvedValue(fakeBoard);
     mockPrisma.document.create.mockResolvedValue(fakeDocument);
     mockPrisma.documentExtraKey.findMany.mockResolvedValue([]);
+    // authorId 가 있으면 createDocument 가 작성자 스냅샷을 위해 User 를 조회한다.
+    // 이 테스트는 스냅샷을 검증하지 않으므로 "조회 결과 없음" 으로 고정한다.
+    mockPrisma.user.findUnique.mockResolvedValue(null);
 
     const result = await createDocument(
       // actor 미지정 시 기본값 (member, non-admin) 사용
@@ -57,7 +61,11 @@ describe('createDocument', () => {
     expect(typeof createCall?.data?.contentText).toBe('string');
 
     expect(result).toMatchObject({ id: 1, boardId: 7, status: 'TEMP' });
-  });
+    // 이 파일에서 sanitizeHtml 을 처음 부르는 테스트다. sanitizeHtml 은
+    // isomorphic-dompurify(jsdom)를 지연 로드하는데, /mnt/d 위에서는 이 콜드
+    // 임포트만으로 기본 타임아웃 60초를 넘겨 거짓 실패가 난다. 뒤따르는
+    // 테스트들은 이미 로드된 모듈을 쓰므로 영향이 없다.
+  }, 240_000);
 
   it('A-10: title 이 빈 문자열이면 ZodError', async () => {
     const { createDocument } = await import('./document.js');
@@ -1524,7 +1532,7 @@ describe('listDocuments (SPEC-BOARD-UI-001)', () => {
 describe('createDocument — 작성자 스냅샷', () => {
   async function runCreate(
     input: { authorId: number | null; nickName: string | null },
-    author?: { userId: string; nickName: string },
+    author?: ReturnType<typeof makeUser>,
   ) {
     const { createDocument } = await import('./document.js');
 
@@ -1552,7 +1560,7 @@ describe('createDocument — 작성자 스냅샷', () => {
   it('로그인 작성자면 User 를 조회해 nickName 과 userIdSnapshot 을 채운다', async () => {
     const { data, mockPrisma } = await runCreate(
       { authorId: 42, nickName: null },
-      { userId: 'admin', nickName: '관리자닉' },
+      makeUser({ id: 42, userId: 'admin', nickName: '관리자닉' }),
     );
 
     expect(mockPrisma.user.findUnique).toHaveBeenCalledOnce();
@@ -1563,7 +1571,7 @@ describe('createDocument — 작성자 스냅샷', () => {
   it('명시된 nickName 은 User 값보다 우선한다', async () => {
     const { data } = await runCreate(
       { authorId: 42, nickName: '직접입력' },
-      { userId: 'admin', nickName: '관리자닉' },
+      makeUser({ id: 42, userId: 'admin', nickName: '관리자닉' }),
     );
 
     expect(data.nickName).toBe('직접입력');

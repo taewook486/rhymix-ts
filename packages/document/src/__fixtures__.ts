@@ -16,10 +16,42 @@ import type {
   DocumentExtraKey,
   DocumentUpdateLog,
   Trash,
+  User,
 } from '@prisma/client';
 
 /** 픽스처 전반에서 공유하는 고정 시각 — 스냅샷 흔들림 방지 */
 const FIXED_DATE = new Date('2026-01-01T00:00:00.000Z');
+
+const userDefaults: User = {
+  id: 1,
+  userId: 'fixture-user',
+  emailAddress: 'fixture@example.com',
+  passwordHash: '$argon2id$fixture',
+  passwordVersion: 'argon2id-v1',
+  passwordAlgo: 'argon2id',
+  passwordChangedAt: FIXED_DATE,
+  userName: null,
+  nickName: 'fixture nick',
+  phoneNumber: null,
+  phoneCountry: null,
+  status: 'APPROVED',
+  isAdmin: false,
+  denied: false,
+  lastLoginAt: null,
+  lastLoginIp: null,
+  extraVars: {},
+  dashboardWidgetPrefs: {},
+  createdAt: FIXED_DATE,
+  updatedAt: FIXED_DATE,
+  deletedAt: null,
+  sessionsRevokedAt: null,
+  pointBalance: 0,
+  twoFactorSecret: null,
+  twoFactorEnabled: false,
+  twoFactorConfirmedAt: null,
+  twoFactorBackupCodes: [],
+  allowMessages: true,
+};
 
 const boardDefaults: Board = {
   id: 1,
@@ -158,6 +190,7 @@ export function makeDocumentFromInput<R>(data: unknown, base: Document = documen
   return { ...base, ...(data as Partial<Document>) } as R;
 }
 
+export const makeUser = build(userDefaults);
 export const makeBoard = build(boardDefaults);
 export const makeDocument = build(documentDefaults);
 export const makeDocumentExtraKey = build(documentExtraKeyDefaults);
