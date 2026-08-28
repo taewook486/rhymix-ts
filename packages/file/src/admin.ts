@@ -24,7 +24,20 @@ interface PrismaWithFileAttachment {
   fileAttachment: {
     findUnique(args: { where: { id: number } }): Promise<FileAttachment | null>;
     findUniqueOrThrow(args: { where: { id: number } }): Promise<FileAttachment>;
-    findMany(args: { where: Record<string, unknown>; orderBy?: Record<string, 'asc' | 'desc'>; take?: number; cursor?: Record<string, unknown>; include?: Record<string, boolean | Record<string, boolean> > }): Promise<FileAttachment[]>;
+    findMany(args: {
+      where: Record<string, unknown>;
+      orderBy?: Record<string, 'asc' | 'desc'>;
+      take?: number;
+      cursor?: Record<string, unknown>;
+      skip?: number;
+      // include 는 FileAttachment 가 실제로 가진 관계로만 좁힌다. 예전에는
+      // Record<string, ...> 라서 존재하지 않는 uploader 관계를 include 해도
+      // 컴파일을 통과했고, 런타임에서 목록 조회 전체가 깨졌다.
+      include?: {
+        document?: boolean | { select?: Record<string, boolean> };
+        comment?: boolean | { select?: Record<string, boolean> };
+      };
+    }): Promise<FileAttachment[]>;
     update(args: { where: { id: number }; data: Record<string, unknown> }): Promise<FileAttachment>;
     updateMany(args: { where: Record<string, unknown>; data: Record<string, unknown> }): Promise<{ count: number }>;
     delete(args: { where: { id: number } }): Promise<FileAttachment>;
@@ -32,6 +45,12 @@ interface PrismaWithFileAttachment {
   };
   document: {
     update(args: { where: { id: number }; data: Record<string, unknown> }): Promise<unknown>;
+  };
+  user: {
+    findMany(args: {
+      where: { id: { in: number[] } };
+      select: { id: true; nickName: true };
+    }): Promise<{ id: number; nickName: string }[]>;
   };
   $transaction<T>(fn: (tx: PrismaWithFileAttachment) => Promise<T>): Promise<T>;
 }
@@ -422,17 +441,18 @@ export async function listFiles(
   // totalCount 조회 (pagination 메타데이터용)
   const totalCount = await prisma.fileAttachment.count({ where });
 
-  // cursor pagination + uploader + document join
-  const items = await (prisma.fileAttachment.findMany as any)({
+  // cursor pagination + document join.
+  // FileAttachment 에는 uploader 관계가 없다 — memberId 는 User.id 를 담은 평범한
+  // 문자열 컬럼이라 include 로 join 할 수 없다. 업로더는 아래에서 별도 조회한다.
+  const items = (await prisma.fileAttachment.findMany({
     where,
     orderBy: { [sortField]: sortOrder },
     take: limit + 1, // nextCursor 확인용 +1
     include: {
-      uploader: { select: { id: true, nickname: true } },
       document: { select: { id: true, title: true } },
     },
     ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
-  }) as (FileAttachment & { uploader?: { id: string; nickname: string }; document?: { id: number; title: string } })[];
+  })) as (FileAttachment & { uploader?: { id: string; nickname: string }; document?: { id: number; title: string } })[];
 
   // nextCursor 계산
   let nextCursor: string | null = null;
@@ -441,6 +461,30 @@ export async function listFiles(
     if (nextItem) {
       items.pop(); // limit 개만 반환
       nextCursor = Buffer.from(nextItem.id.toString()).toString('base64');
+    }
+  }
+
+  // 업로더 복원 — memberId(문자열) → User.id(정수) 로 한 번에 조회한다.
+  const uploaderIds = [
+    ...new Set(
+      items
+        .map((item) => Number(item.memberId))
+        .filter((id) => Number.isInteger(id) && id > 0),
+    ),
+  ];
+
+  if (uploaderIds.length > 0) {
+    const users = await prisma.user.findMany({
+      where: { id: { in: uploaderIds } },
+      select: { id: true, nickName: true },
+    });
+    const byId = new Map(users.map((u) => [u.id, u]));
+
+    for (const item of items) {
+      const user = byId.get(Number(item.memberId));
+      if (user) {
+        item.uploader = { id: String(user.id), nickname: user.nickName };
+      }
     }
   }
 

@@ -64,6 +64,9 @@ function makePrisma(overrides: Record<string, unknown> = {}) {
     document: {
       update: vi.fn().mockResolvedValue({ id: 1, uploadedCount: 1 }),
     },
+    user: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
     ...overrides,
   };
   base.$transaction = vi.fn().mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(base));
@@ -593,36 +596,71 @@ describe('admin.ts — REQ-FILE-092', () => {
   // ---------------------------------------------------------------------------
 
   describe('listFiles — REQ-ADMIN2-078', () => {
-    it('파일 목록을 조회한다 (uploader + document join)', async () => {
+    // FileAttachment 에는 uploader 관계가 없다. 예전 구현은 include 로 join 을
+    // 시도해 실제 DB 에서 목록 조회 전체가 깨졌는데, 이 테스트가 mock 결과에
+    // uploader 를 손수 넣어 두는 바람에 통과하고 있었다. 이제는 memberId 로
+    // User 를 조회해 붙이는 실제 경로를 검증한다.
+    it('파일 목록을 조회하고 memberId 로 업로더를 붙인다', async () => {
       const mockFiles = [
         {
           id: 1,
           filename: 'test.jpg',
           filesize: BigInt(1024),
           downloadCount: 5,
-          memberId: 'member1',
+          memberId: '7',
           documentId: 100,
           regdate: new Date('2024-01-01'),
           isvalid: true,
-          uploader: { id: 'member1', nickname: '테스터' },
           document: { id: 100, title: '테스트 문서' },
-        } as FileAttachment & { uploader?: { id: string; nickname: string }; document?: { id: number; title: string } },
+        } as FileAttachment & { document?: { id: number; title: string } },
       ];
 
+      const userFindMany = vi.fn().mockResolvedValue([{ id: 7, nickName: '테스터' }]);
+      const fileFindMany = vi.fn().mockResolvedValue(mockFiles);
       const mockPrisma = makePrisma({
         fileAttachment: {
-          findMany: vi.fn().mockResolvedValue(mockFiles),
+          findMany: fileFindMany,
           count: vi.fn().mockResolvedValue(1),
         },
+        user: { findMany: userFindMany },
       });
 
       const result = await listFiles({ limit: 20, cursor: undefined }, { prisma: mockPrisma as never });
+
+      // 존재하지 않는 관계를 include 하지 않는다 — 이게 500 의 원인이었다.
+      const findManyArgs = fileFindMany.mock.calls[0]?.[0] as { include?: Record<string, unknown> };
+      expect(findManyArgs.include).not.toHaveProperty('uploader');
+      expect(findManyArgs.include).toHaveProperty('document');
+
+      expect(userFindMany).toHaveBeenCalledWith({
+        where: { id: { in: [7] } },
+        select: { id: true, nickName: true },
+      });
 
       expect(result.items).toHaveLength(1);
       expect(result.items[0].filename).toBe('test.jpg');
       expect(result.items[0].uploader?.nickname).toBe('테스터');
       expect(result.items[0].document?.title).toBe('테스트 문서');
       expect(result.totalCount).toBe(1);
+    });
+
+    it('비회원 업로드(memberId 가 숫자가 아님)면 User 를 조회하지 않는다', async () => {
+      const userFindMany = vi.fn().mockResolvedValue([]);
+      const mockPrisma = makePrisma({
+        fileAttachment: {
+          findMany: vi.fn().mockResolvedValue([
+            { id: 1, memberId: null, isvalid: true } as FileAttachment,
+            { id: 2, memberId: 'guest', isvalid: true } as FileAttachment,
+          ]),
+          count: vi.fn().mockResolvedValue(2),
+        },
+        user: { findMany: userFindMany },
+      });
+
+      const result = await listFiles({ limit: 20 }, { prisma: mockPrisma as never });
+
+      expect(userFindMany).not.toHaveBeenCalled();
+      expect(result.items[0].uploader).toBeUndefined();
     });
 
     it('sortBy=size, sortOrder=asc → orderBy fileSize asc (REQ-CPAR-022)', async () => {
