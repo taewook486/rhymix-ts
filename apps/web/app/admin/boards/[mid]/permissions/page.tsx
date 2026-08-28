@@ -9,6 +9,7 @@ import { auth } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 import type { BoardAction } from '@rhymix-ts/board';
+import { BackButton } from '@/app/admin/_components/BackButton';
 
 interface PermissionsPageProps {
   params: Promise<{ mid: string }>;
@@ -142,13 +143,7 @@ export default async function PermissionsPage({ params }: PermissionsPageProps) 
           >
             저장
           </button>
-          <button
-            type="button"
-            className="px-4 py-2 text-sm rounded-md bg-zinc-100 hover:bg-zinc-200 border border-zinc-300"
-            onClick={() => history.back()}
-          >
-            취소
-          </button>
+          <BackButton />
         </div>
       </form>
     </section>
