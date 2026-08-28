@@ -9,6 +9,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
+import { TagRowActions } from './TagRowActions';
 
 interface Tag {
   id: number;
@@ -92,45 +93,12 @@ export default async function AdminTagsPage() {
                   {tag.createdAt.toLocaleDateString('ko-KR')}
                 </td>
                 <td className="px-4 py-2">
-                  <div className="flex gap-2">
-                    {/* 이름 변경 버튼 */}
-                    <button
-                      type="button"
-                      className="px-2 py-1 text-sm bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 rounded hover:bg-yellow-200 dark:hover:bg-yellow-800"
-                      onClick={() => {
-                        // TODO: 이름 변경 모달 열기
-                        alert('이름 변경 기능 구현 예정');
-                      }}
-                    >
-                      이름 변경
-                    </button>
-
-                    {/* 병합 버튼 */}
-                    <button
-                      type="button"
-                      className="px-2 py-1 text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100 rounded hover:bg-purple-200 dark:hover:bg-purple-800"
-                      onClick={() => {
-                        // TODO: 병합 모달 열기
-                        alert('병합 기능 구현 예정');
-                      }}
-                    >
-                      병합
-                    </button>
-
-                    {/* 삭제 버튼 */}
-                    <button
-                      type="button"
-                      className="px-2 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded hover:bg-red-200 dark:hover:bg-red-800"
-                      onClick={() => {
-                        // TODO: 삭제 확인 모달
-                        if (confirm(`태그 "${tag.name}"을(를) 삭제하시겠습니까?\n연결된 모든 게시물에서 이 태그가 제거됩니다.`)) {
-                          alert('삭제 기능 구현 예정');
-                        }
-                      }}
-                    >
-                      삭제
-                    </button>
-                  </div>
+                  <TagRowActions
+                    tag={{ id: tag.id, name: tag.name }}
+                    mergeTargets={tags
+                      .filter((t) => t.id !== tag.id)
+                      .map((t) => ({ id: t.id, name: t.name }))}
+                  />
                 </td>
               </tr>
             ))}
