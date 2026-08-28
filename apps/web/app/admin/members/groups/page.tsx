@@ -7,7 +7,7 @@
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-040~042
  */
 import { getServerCaller } from '@/lib/trpc/server';
-import { deleteGroupAction } from './actions';
+import { DeleteGroupButton } from './DeleteGroupButton';
 import { GroupReorderList } from './GroupReorderList';
 
 export const dynamic = 'force-dynamic';
@@ -95,16 +95,7 @@ export default async function AdminMemberGroupsPage() {
                   >
                     수정
                   </a>
-                  <form
-                    action={async () => {
-                      'use server';
-                      await deleteGroupAction(group.id);
-                    }}
-                  >
-                    <button type="submit" className="text-red-600 hover:text-red-900">
-                      삭제
-                    </button>
-                  </form>
+                  <DeleteGroupButton groupId={group.id} groupTitle={group.title} />
                 </div>
               </td>
             </tr>

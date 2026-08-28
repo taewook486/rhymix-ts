@@ -107,6 +107,26 @@ export async function updateGroupAction(
   redirect('/admin/members/groups')
 }
 
+/**
+ * 삭제 form 용 래퍼 — useActionState 시그니처에 맞춘다.
+ *
+ * deleteGroupAction 은 실패를 { error } 로 돌려주는데, 페이지가 그 값을 버리면
+ * "마지막 그룹은 삭제할 수 없습니다" 같은 거부가 화면에 아무 흔적도 남기지 않아
+ * 관리자가 버튼이 고장난 것으로 읽는다. 이 래퍼로 오류를 폼 상태에 실어 보낸다.
+ */
+export async function deleteGroupFormAction(
+  _prev: ActionState | null,
+  formData: FormData,
+): Promise<ActionState> {
+  const id = Number(formData.get('id'))
+  if (!Number.isInteger(id) || id <= 0) {
+    return { error: '잘못된 그룹 ID 입니다.' }
+  }
+
+  const result = await deleteGroupAction(id)
+  return 'error' in result ? { error: result.error } : {}
+}
+
 export async function deleteGroupAction(
   id: number,
 ): Promise<{ ok: true } | { error: string }> {
