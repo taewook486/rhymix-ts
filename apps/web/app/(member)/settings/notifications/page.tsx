@@ -98,7 +98,7 @@ export default async function NotificationSettingsPage() {
   });
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold">알림 설정</h1>
         <p className="text-sm text-zinc-500 mt-1">
@@ -138,6 +138,6 @@ export default async function NotificationSettingsPage() {
           </button>
         </div>
       </form>
-    </main>
+    </div>
   );
 }

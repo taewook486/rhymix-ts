@@ -35,7 +35,7 @@ export default async function RootPage() {
   // REQ-LAYOUT-042: x-domain-id 헤더 없거나 비정상이면 welcome 화면 유지
   if (!Number.isFinite(domainId) || domainId <= 0) {
     return (
-      <main className="mx-auto max-w-2xl px-6 py-16">
+      <div className="mx-auto max-w-2xl px-6 py-16">
         <h1 className="text-4xl font-bold tracking-tight">Rhymix-TS</h1>
         <p className="mt-4 text-lg">
           TypeScript + Next.js 16 redesign of Rhymix CMS.
@@ -43,7 +43,7 @@ export default async function RootPage() {
         <p className="mt-2 text-sm">
           Status: <strong>scaffolded — install pending</strong>.
         </p>
-      </main>
+      </div>
     );
   }
 

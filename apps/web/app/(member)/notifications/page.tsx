@@ -60,7 +60,7 @@ export default async function NotificationsPage() {
   const notifications = result.items;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">알림</h1>
 
@@ -132,6 +132,6 @@ export default async function NotificationsPage() {
           })}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

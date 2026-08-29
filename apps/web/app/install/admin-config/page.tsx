@@ -30,7 +30,7 @@ export default async function AdminConfigPage() {
   const defaultTimeZone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-2xl font-bold">설치 4단계 — 관리자 계정</h1>
       <p className="mt-2 text-sm text-[rgb(var(--color-muted))]">
         관리자 정보와 사이트 운영 옵션을 입력하세요. 제출 시 데이터베이스에
@@ -38,6 +38,6 @@ export default async function AdminConfigPage() {
       </p>
 
       <AdminConfigForm timeZones={timeZones} defaultTimeZone={defaultTimeZone} />
-    </main>
+    </div>
   );
 }

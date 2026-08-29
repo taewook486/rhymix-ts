@@ -67,10 +67,10 @@ export default async function DocumentHistoryPage({ params }: DocumentHistoryPag
   } catch (err) {
     if (err instanceof BoardPermissionDeniedError) {
       return (
-        <main className="max-w-3xl mx-auto px-4 py-8">
+        <div className="max-w-3xl mx-auto px-4 py-8">
           <h1 className="text-2xl font-bold mb-2">수정 이력</h1>
           <p className="text-sm text-zinc-500">이 문서의 수정 이력을 볼 권한이 없습니다.</p>
-        </main>
+        </div>
       );
     }
     // 문서가 없으면 findUniqueOrThrow 가 P2025 로 던진다.
@@ -88,7 +88,7 @@ export default async function DocumentHistoryPage({ params }: DocumentHistoryPag
   const mid = doc?.board?.moduleInstance?.mid ?? null;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-2">수정 이력</h1>
       <p className="text-xs text-zinc-400 mb-6">문서 ID: {documentId}</p>
 
@@ -122,6 +122,6 @@ export default async function DocumentHistoryPage({ params }: DocumentHistoryPag
           </Link>
         </div>
       )}
-    </main>
+    </div>
   );
 }

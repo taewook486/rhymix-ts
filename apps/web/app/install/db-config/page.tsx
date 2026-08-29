@@ -16,7 +16,7 @@ export default async function DbConfigPage() {
   requireWizardStep('db', session);
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-2xl font-bold">설치 3단계 — 데이터베이스 설정</h1>
       <p className="mt-2 text-sm text-[rgb(var(--color-muted))]">
         PostgreSQL 접속 정보를 입력해주세요. 입력값은 다음 단계로 진행하기 전에
@@ -24,6 +24,6 @@ export default async function DbConfigPage() {
       </p>
 
       <DbConfigForm />
-    </main>
+    </div>
   );
 }

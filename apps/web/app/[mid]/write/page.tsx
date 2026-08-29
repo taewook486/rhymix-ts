@@ -66,7 +66,7 @@ export default async function WritePage({ params }: WritePageProps) {
   }
 
   return (
-    <main>
+    <div>
       <h1>{instance.name} — 글쓰기</h1>
       <form action={createDocumentAction}>
         <input type="hidden" name="moduleInstanceId" value={instance.id} />
@@ -127,6 +127,6 @@ export default async function WritePage({ params }: WritePageProps) {
         <button type="submit">작성</button>
         <a href={`/${mid}`}>취소</a>
       </form>
-    </main>
+    </div>
   );
 }

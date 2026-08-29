@@ -41,7 +41,7 @@ export default async function DraftsPage() {
   const drafts = result.items;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">내 임시글</h1>
 
       {drafts.length === 0 ? (
@@ -93,6 +93,6 @@ export default async function DraftsPage() {
           ))}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

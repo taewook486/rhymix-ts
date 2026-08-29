@@ -45,7 +45,7 @@ export default async function TagsPage() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto p-4">
+    <div className="max-w-4xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-2">태그 클라우드</h1>
       <p className="text-gray-600 text-sm mb-6">
         전체 <strong>{tags.length}</strong>개의 태그
@@ -79,6 +79,6 @@ export default async function TagsPage() {
           ← 관리자 페이지에서 태그 관리
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

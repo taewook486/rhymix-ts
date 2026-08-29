@@ -44,7 +44,7 @@ export default async function AdminTagsPage() {
   });
 
   return (
-    <main className="max-w-6xl mx-auto p-4">
+    <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">태그 관리</h1>
 
       {/* 통계 카드 */}
@@ -118,6 +118,6 @@ export default async function AdminTagsPage() {
           ← 태그 클라우드 보기
         </a>
       </div>
-    </main>
+    </div>
   );
 }

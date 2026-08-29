@@ -50,12 +50,12 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
   const { enabled } = await caller.content.message.getConfig();
   if (!enabled) {
     return (
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">쪽지함</h1>
         <p className="text-zinc-500 text-sm py-8 text-center">
           현재 쪽지 기능을 사용할 수 없습니다.
         </p>
-      </main>
+      </div>
     );
   }
 
@@ -75,7 +75,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">쪽지함</h1>
 
       <div className="flex gap-2 mb-4 border-b border-zinc-200">
@@ -185,6 +185,6 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

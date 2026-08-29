@@ -66,7 +66,7 @@ export default async function AdminLayout({
       <AdminSidebar />
       <div className="grid" style={{ gridTemplateRows: '56px 1fr auto' }}>
         <AdminTopbar userName={userName} />
-        <main className="p-6 overflow-y-auto bg-zinc-50">{children}</main>
+        <div className="p-6 overflow-y-auto bg-zinc-50">{children}</div>
         <AdminFooter />
       </div>
       <Toaster position="top-right" />

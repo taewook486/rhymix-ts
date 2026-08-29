@@ -8,7 +8,7 @@ import { LicenseForm } from './license-form';
 
 export default function InstallLicensePage() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
+    <div className="mx-auto max-w-2xl px-6 py-16">
       <h1 className="text-3xl font-bold">Rhymix-TS 설치</h1>
       <p className="mt-4 text-sm text-[rgb(var(--color-muted))]">
         1 / 4 단계 — 라이선스 동의
@@ -27,6 +27,6 @@ export default function InstallLicensePage() {
       </section>
 
       <LicenseForm />
-    </main>
+    </div>
   );
 }

@@ -23,7 +23,7 @@ export default async function InstallCompletePage() {
   // 또는 별도 cleanup hook으로 옮길 예정.
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-2xl font-bold">
         {justCompleted ? '설치가 완료되었습니다.' : '이미 설치가 완료된 사이트입니다.'}
       </h1>
@@ -78,6 +78,6 @@ export default async function InstallCompletePage() {
           로그인 페이지로 이동
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

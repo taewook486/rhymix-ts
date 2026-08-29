@@ -91,7 +91,7 @@ export default async function CheckEnvPage() {
   // 처리되며, action 내부에서 redirect까지 수행합니다.
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl px-6 py-12">
       <h1 className="text-2xl font-bold">설치 2단계 — 환경 자가진단</h1>
       <p className="mt-2 text-sm text-[rgb(var(--color-muted))]">
         서버 환경이 Rhymix-TS 실행에 적합한지 확인합니다.
@@ -136,6 +136,6 @@ export default async function CheckEnvPage() {
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

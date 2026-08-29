@@ -56,7 +56,7 @@ export default async function MessageSettingsPage() {
   const isChecked = user?.allowMessages ?? true;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold">쪽지 설정</h1>
         <p className="text-sm text-zinc-500 mt-1">
@@ -92,6 +92,6 @@ export default async function MessageSettingsPage() {
           </button>
         </div>
       </form>
-    </main>
+    </div>
   );
 }
