@@ -1,8 +1,8 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-29 (검색 실측으로 미검증분 종료 + 제품 결함 3건 수리 +
->       packages/file/src/server 정리. 커밋 5개 `137c527`..`3896250`)
+> 갱신: 2026-08-29 (검색 실측 + 제품 결함 3건 수리 + packages/file/src/server 정리 +
+>       17개 패키지 린트 구성. 커밋 6개 `137c527`..`754ffb1`)
 > source_session_id: 2f8b2d77-cc25-4db4-9f5c-046000108216
 
 ## 붙여넣을 메시지
@@ -23,7 +23,7 @@ ultrathink. rhymix-ts — 후보 작업에서 하나 골라 진행.
    패키지 수정 후에는 반드시 재기동해야 반영된다
 
 실행: docs/NEXT_SESSION.md '후보 작업' 에서 하나 고른다.
-      기본값은 '15개 패키지 린트 구성' 이다.
+      기본값은 'apps/web 린트 오류 240건' 이다 (패키지 쪽은 이번에 0 으로 만들었다).
 
 후속: FTS 한국어 형태소, 주 DB 재시드, 비회원 비밀글.
 
@@ -43,6 +43,7 @@ ultrathink. rhymix-ts — 후보 작업에서 하나 골라 진행.
 | 2 | `/documents/[id]/history` 가 "구현 예정" 자리표시자 | `64c3223` |
 | 3 | 페이지 16개가 루트 레이아웃의 `<main>` 안에 `<main>` 을 또 염 | `3a23950` |
 | 4 | `packages/file/src/server/` 미사용 계층 1,811행 (정리) | `3896250` |
+| 5 | 17개 패키지가 `echo 'no lint'` — 린트가 한 번도 돈 적 없음 | `754ffb1` |
 
 **1번**: `index-page.tsx` 의 `buildUrl` 이 `searchField: search` 로 되어 있었다.
 검색어가 `searchField` 자리에 들어가고, 그 값은 title/content/author 중 어느
@@ -71,6 +72,11 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 `vitest.config.ts` 의 `coverage.include` 에서 이미 지워진
 `packages/document/src/server/**` 도 함께 정리했다(지난 회차 누락분).
 
+**5번**: `packages/*` 전부와 `themes/default` 가 `"lint": "echo 'no lint'"` 였다.
+루트에 flat config(`eslint.config.mjs`)를 두고 각 패키지가 그걸 가리키게 배선했다.
+켜자마자 **오류 98건**이 나왔고 전부 정리해 0 으로 만들었다. 자세한 내용은
+아래 '린트 현황' 절.
+
 ### 검증
 
 - 브라우저 실측(admin 로그인): 비로그인 차단 / 이력 0건 / 문서 수정 후 이력 1건
@@ -83,6 +89,10 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 - 검증에 쓴 DB 변경(board.updateLog, 이력 행, 문서 제목)은 전부 되돌렸다
 - 정리 후: packages/file 8파일 97건, 소비자(admin.file 라우터 + FileManagementClient)
   2파일 10건 통과, packages/file·apps/web 타입체크 각 0건
+- 린트 구성 후: eslint packages themes error 0, turbo run typecheck 17/17,
+  vitest packages/ **141파일 1,535건 전부 통과**(`--testTimeout=300000`).
+  기본 60초로 돌리면 6건이 타임아웃으로 실패하는데, 전부 각 파일의 첫 테스트라
+  WSL2 jsdom 콜드 임포트다 — 로직 파손이 아니다
 
 ## 검증 방법론 메모 (계속 유효 + 이번 추가분)
 
@@ -95,6 +105,10 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
   그랬다. 테스트가 앱 전용 alias(`@/lib/...`)를 mock 하면, 패키지에서는 성립할 수
   없는 배선도 100% 로 찍힌다. 판단 기준은 커버리지 수치가 아니라 **도달 가능성**
   (호출자 / `exports` 서브패스 / tsconfig 포함 여부)이다
+- **일괄 치환은 "같은 문자열의 몇 번째"를 반드시 지정할 것.** 린트 정리 중
+  `const result = await voteComment(` 를 문자열로 바꿨더니 지적받은 141행이 아니라
+  **앞쪽의 정상 동작하던 39행**이 바뀌었다. 4개 파일에서 같은 사고가 났고
+  되돌린 뒤 줄 번호를 직접 지정해 다시 했다. 린터 출력의 line 을 쓸 것
 - **E2E 도구의 strict mode 위반은 제품 결함 신호일 수 있다.** `locator('main')`
   이 2개를 잡은 것이 곧 중첩 랜드마크 결함이었다
 - (이전 세션분) "테스트 0%" 는 대상이 없다는 뜻일 수도 있다 / `as any` 는 결함을
@@ -118,8 +132,9 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 
 ## 후보 작업 (전부 선택적)
 
-- **린트 구성** (기본 권장) — `packages/admin` 만이 아니라 15개 패키지 전부
-  `echo 'no lint'` 다
+- **apps/web 린트 오류 240건** (기본 권장) — 위 '린트 현황' 절의 표 참고.
+  `no-html-link-for-pages` 30건이 가장 값싸고, `react-hooks/error-boundaries`
+  61건이 가장 무겁다
 - **FTS 한국어 형태소** — config 가 'simple' 이라 "첫 공지입니다" 가 '공지' 로
   검색되지 않는다(토큰이 '공지입니다'). pg_bigm 또는 n-gram 검토
 - **주 DB 재시드** — 설치 마법사를 실제로 태워 그룹/메뉴가 있는 상태로 만들기
@@ -128,6 +143,42 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 - **`/admin/members` 하이드레이션 경고** — 재현이 들쭉날쭉해 원인 미특정
 - **비회원 비밀글** — `packages/document/src/secret.ts` 의 비밀번호/해제토큰 4함수는
   구현·테스트가 있으나 호출자 0곳. 회원 비밀글은 작성자·관리자 게이트로 동작한다
+
+## 린트 현황
+
+`eslint.config.mjs`(루트) 가 `packages/*` + `themes/*` 를 담당하고, apps/web 은
+기존 `apps/web/eslint.config.mjs`(eslint-config-next)를 그대로 쓴다. 각 패키지의
+`lint` 스크립트는 `eslint --config ../../eslint.config.mjs src` 다 — ESLint 9 는
+cwd 위로 설정을 찾아 올라가지 않으므로 경로를 명시해야 한다.
+
+심각도 방침: **error** 는 고치면 코드가 줄거나 위험이 사라지는 것,
+**warn** 은 한 번에 못 없애는 기존 부채.
+
+| 대상 | error | warning |
+|---|---|---|
+| `packages/*` + `themes/*` | **0** | 363 (`no-explicit-any` 308, 미사용 disable 53, `react/no-danger` 2) |
+| `apps/web` | **240** (기존) | 180 |
+
+### 켜면서 끈 규칙과 이유
+
+- `no-undef`, `no-redeclare`: TS 가 이미 담당. 특히 `const X = {...} as const` +
+  `type X = ...` 는 이 저장소가 열거형에 쓰는 정상 관용구라 TS 인지 버전까지 껐다
+- `no-explicit-any`: 308건이라 warn. 테스트에서 끄지 **않았다** — 저장소가 이미
+  줄 단위 `eslint-disable-next-line` 으로 표시해 온 관례가 있어서, 끄면 그 주석
+  245개가 전부 "미사용 disable" 이 된다
+
+### apps/web 240건 (다음 후보)
+
+| 규칙 | 건수 | 성격 |
+|---|---|---|
+| `@typescript-eslint/no-explicit-any` | 127 | 부채. 패키지 쪽처럼 warn 으로 내리는 것도 방법 |
+| `react-hooks/error-boundaries` | 61 | 실제 리팩터 필요 |
+| `@next/next/no-html-link-for-pages` | 30 | `<a>` → `<Link>` 기계적 치환 |
+| 나머지 | 22 | `set-state-in-effect` 7, `no-unescaped-entities` 4, `ban-ts-comment` 4 등 |
+
+가장 많은 파일은 `app/admin/modules/[id]/page.tsx` 한 곳에 58건이 몰려 있다.
+`pnpm lint` 는 이 240건 때문에 실패한다 — **이번 변경 전에도 같은 이유로 실패하던
+상태**였다(패키지들이 전부 `echo 'no lint'` 라 가려져 있었을 뿐).
 
 ## 커버리지 현황 메모
 
