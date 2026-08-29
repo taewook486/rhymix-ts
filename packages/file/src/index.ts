@@ -33,9 +33,3 @@ export type {
   BulkDeleteFilesInput,
   BulkDeleteFilesResult,
 } from './admin';
-
-// Server layer exports
-export { createFileRouter } from './server/router';
-
-// NOTE: Server Actions ('use server' files) are NOT exported from the main barrel for browser bundle safety
-// Import directly from '@rhymix-ts/file/server/actions' for Server Actions usage

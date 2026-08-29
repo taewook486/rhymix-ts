@@ -104,8 +104,6 @@ export default defineConfig({
         'apps/web/app/api/**/*.ts',
         'apps/web/app/install/actions.ts',
         'apps/web/server/api/**/*.ts',
-        'packages/document/src/server/**/*.ts',
-        'packages/file/src/server/**/*.ts',
       ],
       exclude: [
         '**/*.test.ts',
