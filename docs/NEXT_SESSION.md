@@ -1,8 +1,8 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-29 (게시판 내 검색 실측으로 미검증분 종료 + 제품 결함 3건 수리.
->       커밋 3개 `137c527`..`3a23950`)
+> 갱신: 2026-08-29 (검색 실측으로 미검증분 종료 + 제품 결함 3건 수리 +
+>       packages/file/src/server 정리. 커밋 5개 `137c527`..`3896250`)
 > source_session_id: 2f8b2d77-cc25-4db4-9f5c-046000108216
 
 ## 붙여넣을 메시지
@@ -23,9 +23,9 @@ ultrathink. rhymix-ts — 후보 작업에서 하나 골라 진행.
    패키지 수정 후에는 반드시 재기동해야 반영된다
 
 실행: docs/NEXT_SESSION.md '후보 작업' 에서 하나 고른다.
-      기본값은 'packages/file/src/server 죽은 코드 정리' 다.
+      기본값은 '15개 패키지 린트 구성' 이다.
 
-후속: 15개 패키지 린트 구성, FTS 한국어 형태소, 주 DB 재시드.
+후속: FTS 한국어 형태소, 주 DB 재시드, 비회원 비밀글.
 
 ✂──── 여기까지 복사 ────✂
 ```
@@ -42,6 +42,7 @@ ultrathink. rhymix-ts — 후보 작업에서 하나 골라 진행.
 | 1 | 검색 결과 화면의 모든 링크가 `searchField` 에 검색어를 실어 보냄 | `137c527` |
 | 2 | `/documents/[id]/history` 가 "구현 예정" 자리표시자 | `64c3223` |
 | 3 | 페이지 16개가 루트 레이아웃의 `<main>` 안에 `<main>` 을 또 염 | `3a23950` |
+| 4 | `packages/file/src/server/` 미사용 계층 1,811행 (정리) | `3896250` |
 
 **1번**: `index-page.tsx` 의 `buildUrl` 이 `searchField: search` 로 되어 있었다.
 검색어가 `searchField` 자리에 들어가고, 그 값은 title/content/author 중 어느
@@ -62,6 +63,14 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 `/tags` 가 `<main>` 을 2개 내보내고 있었다. 루트 레이아웃 것만 남기고 안쪽
 16개 파일을 `<div>` 로 바꿨다. className 무변경이라 화면은 그대로다.
 
+**4번**: document 쪽(`cf16c6e`)과 같은 형태의 미사용 계층. 근거 4가지가 전부
+같은 방향이었다 — 호출자 0곳 / `package.json` 의 `exports` 가 `.` 뿐이라 주석이
+안내하는 `@rhymix-ts/file/server/actions` 경로가 해석조차 안 됨 / 패키지 자신의
+`tsconfig.json` 이 `src/server/actions.ts` 를 exclude(앱 alias 를 못 풀어서) /
+**커버리지 100% 는 앱 전용 alias 를 mock 해서 나온 숫자**였다. 곁들여
+`vitest.config.ts` 의 `coverage.include` 에서 이미 지워진
+`packages/document/src/server/**` 도 함께 정리했다(지난 회차 누락분).
+
 ### 검증
 
 - 브라우저 실측(admin 로그인): 비로그인 차단 / 이력 0건 / 문서 수정 후 이력 1건
@@ -72,6 +81,8 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 - 테스트: index-page 24건, history/page 6건 통과.
   전체 `apps/web/app` 63파일 366건 통과(중첩 main 치환 후 회귀 확인)
 - 검증에 쓴 DB 변경(board.updateLog, 이력 행, 문서 제목)은 전부 되돌렸다
+- 정리 후: packages/file 8파일 97건, 소비자(admin.file 라우터 + FileManagementClient)
+  2파일 10건 통과, packages/file·apps/web 타입체크 각 0건
 
 ## 검증 방법론 메모 (계속 유효 + 이번 추가분)
 
@@ -80,6 +91,10 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
   "미구현" 주석을 보면 도메인 패키지에서 **기능**으로 먼저 grep 할 것
 - **링크를 만드는 코드도 검증 대상이다.** 첫 화면만 보면 결함 1번은 안 보인다.
   검색·필터 화면은 **거기서 나가는 링크를 한 번 따라가 봐야** 한다
+- **커버리지 100% 도 죽은 코드일 수 있다.** `packages/file/src/server` 가 정확히
+  그랬다. 테스트가 앱 전용 alias(`@/lib/...`)를 mock 하면, 패키지에서는 성립할 수
+  없는 배선도 100% 로 찍힌다. 판단 기준은 커버리지 수치가 아니라 **도달 가능성**
+  (호출자 / `exports` 서브패스 / tsconfig 포함 여부)이다
 - **E2E 도구의 strict mode 위반은 제품 결함 신호일 수 있다.** `locator('main')`
   이 2개를 잡은 것이 곧 중첩 랜드마크 결함이었다
 - (이전 세션분) "테스트 0%" 는 대상이 없다는 뜻일 수도 있다 / `as any` 는 결함을
@@ -103,10 +118,8 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 
 ## 후보 작업 (전부 선택적)
 
-- **`packages/file/src/server/`** (기본 권장) — document 와 같은 미사용 계층
-  (호출자 0곳)인데 테스트가 40KB 붙어 있다. 지우면 커버리지 수치가 크게 움직인다.
-  document 쪽은 `cf16c6e` 에서 752행을 지웠으니 같은 절차로
-- **린트 구성** — `packages/admin` 만이 아니라 15개 패키지 전부 `echo 'no lint'` 다
+- **린트 구성** (기본 권장) — `packages/admin` 만이 아니라 15개 패키지 전부
+  `echo 'no lint'` 다
 - **FTS 한국어 형태소** — config 가 'simple' 이라 "첫 공지입니다" 가 '공지' 로
   검색되지 않는다(토큰이 '공지입니다'). pg_bigm 또는 n-gram 검토
 - **주 DB 재시드** — 설치 마법사를 실제로 태워 그룹/메뉴가 있는 상태로 만들기
@@ -115,6 +128,15 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 - **`/admin/members` 하이드레이션 경고** — 재현이 들쭉날쭉해 원인 미특정
 - **비회원 비밀글** — `packages/document/src/secret.ts` 의 비밀번호/해제토큰 4함수는
   구현·테스트가 있으나 호출자 0곳. 회원 비밀글은 작성자·관리자 게이트로 동작한다
+
+## 커버리지 현황 메모
+
+`vitest.config.ts` 의 `coverage.include` 는 이제 11개 항목 14,022행이고
+`apps/web/server/api` 가 10,172행(73%)으로 지배적이다. 임계값 85% 는 CI 에서
+강제되지 않는다 — `package.json` 의 수동 `test:coverage` 뿐이고 워크플로에
+coverage 실행이 없다. `packages/file` 은 이번 정리로 include 에서 완전히
+빠졌으므로, 그 패키지의 커버리지를 다시 재고 싶으면 include 항목을 새로
+추가해야 한다(`attachment.ts` / `storage/**` / `admin.ts` 등).
 
 ## 환경 함정 (계속 유효 + 이번 추가분)
 
