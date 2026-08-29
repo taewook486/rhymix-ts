@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { pointHooks } from './hooks';
-import { PointService } from './service';
 
 // Mock helpers
 function makePrisma(overrides = {}) {

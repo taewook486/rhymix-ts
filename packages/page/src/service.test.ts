@@ -3,7 +3,7 @@
  *
  * loadPageContent / savePageContent / sanitizePageBody / parsePageConfig 단위 테스트.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import type { PrismaClient } from '@prisma/client'
 import { loadPageContent, savePageContent, sanitizePageBody } from './service'
 import { parsePageConfig } from './config'

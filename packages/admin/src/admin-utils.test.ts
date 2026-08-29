@@ -14,10 +14,10 @@ import {
 function createMockPrisma() {
   return {
     autoLogin: {
-      deleteMany: async ({ where }: any) => ({ count: 5 }),
+      deleteMany: async (_args: any) => ({ count: 5 }),
     },
     sessionRevocation: {
-      deleteMany: async ({ where }: any) => ({ count: 2 }),
+      deleteMany: async (_args: any) => ({ count: 2 }),
     },
   } as unknown as PrismaClient;
 }
@@ -75,10 +75,10 @@ describe('admin-utils — REQ-ADMIN2-150, REQ-ADMIN2-151', () => {
     it('should handle empty expired sessions gracefully', async () => {
       const prismaEmpty = {
         autoLogin: {
-          deleteMany: async ({ where }: any) => ({ count: 0 }),
+          deleteMany: async (_args: any) => ({ count: 0 }),
         },
         sessionRevocation: {
-          deleteMany: async ({ where }: any) => ({ count: 0 }),
+          deleteMany: async (_args: any) => ({ count: 0 }),
         },
       } as unknown as PrismaClient;
 

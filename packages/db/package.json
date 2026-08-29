@@ -16,7 +16,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "lint": "echo 'no lint'",
+    "lint": "eslint --config ../../eslint.config.mjs src",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf node_modules/.prisma .turbo"
   },

@@ -24,7 +24,6 @@ import { MAX_COMMENT_DEPTH } from './constants';
 import { CommentStatus } from './types';
 import {
   CommentDepthExceededError,
-  CommentAlreadyVotedError,
   SelfVoteNotAllowedError,
 } from './errors';
 import { emitCommentDeleted } from './events';

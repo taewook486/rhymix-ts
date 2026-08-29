@@ -4,7 +4,7 @@
  * C-1 ~ C-12: createCategory, listCategoryTree, updateCategory, deleteCategory,
  *              incrementDocumentCount, buildCategoryTree, canPerformAction(category) 검증.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ZodError } from 'zod';
 
 // ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@
  * Mocks: hand-rolled in-memory Prisma fake (login.test.ts 패턴 재사용).
  */
 import type { PrismaClient } from '@rhymix-ts/db';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { hashPassword } from './password';
 import { type LoginConfig, login } from './login';

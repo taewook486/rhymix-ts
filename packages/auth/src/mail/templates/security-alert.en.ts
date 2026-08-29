@@ -6,8 +6,7 @@ import { escapeHtml } from './render';
 import type { TemplateResult } from './render';
 
 export function render(vars: Record<string, string>): TemplateResult {
-  const { userName, alertType, details } = vars;
-  const safeName = escapeHtml(userName ?? 'Member');
+  const { alertType, details } = vars;
   const siteName = escapeHtml(vars.siteName ?? 'Rhymix');
   const safeAlert = escapeHtml(alertType ?? 'Security Issue');
   const safeDetails = escapeHtml(details ?? 'Check the logs for details.');

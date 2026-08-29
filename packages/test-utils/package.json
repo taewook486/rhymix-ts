@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "echo 'no lint'",
+    "lint": "eslint --config ../../eslint.config.mjs src",
     "clean": "rimraf node_modules .turbo"
   },
   "devDependencies": {

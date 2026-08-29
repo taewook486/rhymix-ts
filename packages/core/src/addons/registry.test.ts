@@ -1,7 +1,7 @@
 /**
  * Addon 레지스트리 단위 테스트 — SPEC-ADDON-001 REQ-ADDON-010~016
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import {
   registerAddon,
   getAddon,

@@ -7,7 +7,8 @@
   "scripts": {
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint --config ../../eslint.config.mjs src"
   },
   "dependencies": {
     "@rhymix-ts/db": "workspace:*",

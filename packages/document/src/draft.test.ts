@@ -9,7 +9,6 @@ import type { PrismaClient, Document } from '@prisma/client';
 
 // Mock Prisma
 const mockDocuments: Document[] = [];
-let mockDocumentCount = 0;
 
 const mockPrisma = {
   document: {
@@ -50,7 +49,6 @@ describe('draft - listDrafts', () => {
   beforeEach(() => {
     // Clear mock documents
     mockDocuments.length = 0;
-    mockDocumentCount = 0;
   });
 
   const createMockDocument = (id: number, authorId: number, status: 'TEMP' | 'PUBLIC' = 'TEMP'): Document => {
@@ -155,7 +153,6 @@ describe('draft - listDrafts', () => {
 describe('draft - publishDraft (AC-DOC-C2)', () => {
   beforeEach(() => {
     mockDocuments.length = 0;
-    mockDocumentCount = 0;
   });
 
   const createMockDocument = (id: number, authorId: number, categoryId: number | null): Document => {

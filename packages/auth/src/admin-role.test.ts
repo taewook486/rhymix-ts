@@ -4,7 +4,7 @@
  * REQ-AUTH-054, AC-AUTH-054:
  *   - toggleAdminRole: promote/demote with last-admin protection
  */
-import type { PrismaClient, Prisma } from '@rhymix-ts/db';
+import type { PrismaClient } from '@rhymix-ts/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // rbac.ts 가 `@rhymix-ts/db` 에서 Prisma 를 import 하므로 모킹 필요.

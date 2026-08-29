@@ -15,7 +15,6 @@ import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // GCM standard nonce size
-const AUTH_TAG_LENGTH = 16; // GCM auth tag size
 const KEY_LENGTH = 32; // 256 bits for AES-256
 
 /**
@@ -106,7 +105,7 @@ export function decryptSecret(encrypted: string): string {
     decrypted = Buffer.concat([decrypted, decipher.final()]);
 
     return decrypted.toString('utf8');
-  } catch (error) {
+  } catch {
     // REQ-2OTP-044: Fail closed on corrupt data
     throw new Error('Decryption failed - data may be corrupt or key changed');
   }

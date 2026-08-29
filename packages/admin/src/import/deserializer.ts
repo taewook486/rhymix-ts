@@ -9,12 +9,10 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import { z } from 'zod';
 import {
   adminExportBundleSchema,
   SUPPORTED_VERSIONS,
   type AdminExportBundle,
-  type ImportDecisions,
 } from '../export/bundle-schema';
 
 /**
@@ -189,7 +187,7 @@ export async function dryRun(
       }
 
       // MenuItem plan (recursive)
-      const processMenuItems = (items: unknown[], parentExportKey: string | null) => {
+      const processMenuItems = (items: unknown[], _parentExportKey: string | null) => {
         for (const item of items) {
           const menuItem = item as Record<string, unknown>;
           // MenuItem은 title 기준 충돌 체크
@@ -252,7 +250,7 @@ export async function dryRun(
 
   // 5. Document plan (stubbed - schema alignment needed)
   if (validatedBundle.documents) {
-    for (const doc of validatedBundle.documents) {
+    for (const _doc of validatedBundle.documents) {
       // NOTE: Document model uses boardId, not siteId/moduleInstanceId
       // Skip for now
       createCount++;
@@ -261,7 +259,7 @@ export async function dryRun(
 
   // 6. Comment plan (stubbed - schema alignment needed)
   if (validatedBundle.comments) {
-    for (const comment of validatedBundle.comments) {
+    for (const _comment of validatedBundle.comments) {
       // NOTE: Comment model doesn't match expected structure
       // Skip for now
       createCount++;

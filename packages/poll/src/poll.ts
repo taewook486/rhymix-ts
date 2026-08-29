@@ -16,10 +16,8 @@
 import type { PrismaClient, Prisma } from '@rhymix-ts/db';
 
 /** Prisma Poll 모델 타입 */
-type Poll = Prisma.PollGetPayload<Record<string, never>>;
 
 /** Prisma PollOption 모델 타입 */
-type PollOption = Prisma.PollOptionGetPayload<Record<string, never>>;
 
 /** Prisma PollVote 모델 타입 */
 type PollVote = Prisma.PollVoteGetPayload<Record<string, never>>;

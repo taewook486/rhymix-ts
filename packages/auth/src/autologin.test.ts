@@ -8,7 +8,7 @@
  *   - revokeAutoLogin: 레코드 삭제
  */
 import type { PrismaClient } from '@rhymix-ts/db';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { InMemoryMailDispatcher } from './mail';
 

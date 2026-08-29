@@ -49,7 +49,7 @@ export async function voteDocument(
 
   return ctx.prisma.$transaction(async (tx) => {
     // 문서 존재 확인 + 현재 카운트 조회
-    const doc = await (tx as unknown as PrismaClient).document.findUniqueOrThrow({
+    await (tx as unknown as PrismaClient).document.findUniqueOrThrow({
       where: { id: parsed.documentId },
       select: { id: true, votedCount: true, blamedCount: true },
     });

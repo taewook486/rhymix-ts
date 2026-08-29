@@ -3,9 +3,8 @@
  *
  * serializeBundle → bundle → applyImport(bundle, decisions) → final DB state === seed
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { AdminExportBundle } from '../export/bundle-schema';
-import { serializeBundle } from '../export/serializer';
 import { applyImport } from './apply';
 
 // ---------------------------------------------------------------------------

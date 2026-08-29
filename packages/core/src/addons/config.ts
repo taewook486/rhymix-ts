@@ -4,7 +4,7 @@
 
 import type { PrismaClient } from '@prisma/client'
 import type { AddonDefinition } from './types'
-import { getAddon, listAddons } from './registry'
+import { listAddons } from './registry'
 
 /**
  * Effective addon 목록 조회 — REQ-ADDON-021

@@ -141,6 +141,9 @@ export function createStorageFromEnv(): import('./types.js').FileStorage {
   }
 
   // fallback: InMemoryStorage (dev/test 환경)
+  // 지연 require: 이 함수는 동기라 await import() 로 바꾸면 시그니처가 바뀌고,
+  // ./memory 가 이 모듈을 되참조하는 순환도 생긴다.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { InMemoryStorage } = require('./memory') as typeof import('./memory');
   return new InMemoryStorage();
 }

@@ -411,7 +411,7 @@ describe('NotificationService', () => {
         JSON.stringify({ createdAt: '2024-01-01T00:00:00.000Z', id: 1 }),
       ).toString('base64url');
 
-      const result = await service.list({
+      await service.list({
         recipientId: 1,
         cursor,
         limit: 20,

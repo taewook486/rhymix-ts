@@ -10,7 +10,7 @@
  *             fan_in >= 2 (admin tRPC, future bulk moderation tools).
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-075, REQ-ADMIN2-076
  */
-import type { PrismaClient, Comment, AdminLog } from '@prisma/client';
+import type { PrismaClient, Comment } from '@prisma/client';
 import { BoardPermissionDeniedError } from '@rhymix-ts/document';
 
 // ---------------------------------------------------------------------------
@@ -195,7 +195,7 @@ export async function bulkDeleteComments(
         adminLogIds.push(log.id);
 
         success++;
-      } catch (err) {
+      } catch {
         failedIds.push(commentId);
       }
     }

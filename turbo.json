@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [".env", ".env.local"],
+  "globalDependencies": [".env", ".env.local", "eslint.config.mjs"],
   "globalEnv": ["NODE_ENV", "DATABASE_URL", "NEXTAUTH_SECRET", "NEXTAUTH_URL"],
   "tasks": {
     "build": {

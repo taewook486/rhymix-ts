@@ -13,7 +13,7 @@ import type {
   AnyProcedure,
 } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
-import { SpamFilter, SpamCheckResult } from '../filter';
+import { SpamFilter } from '../filter';
 
 /**
  * 인증 필요 프로시저 컨텍스트 타입
@@ -41,7 +41,7 @@ export interface TrpcBuilder {
  * - checkReportThreshold() - 신고 임계치 검사 (REQ-SPAM-003)
  */
 export function createSpamRouter<
-  TProcedure extends AnyProcedure,
+  _TProcedure extends AnyProcedure,
   TProtectedProcedure extends AnyProcedure
 >(trpc: {
   router: <T extends TRPCRouterRecord>(record: T) => T;

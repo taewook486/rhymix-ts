@@ -14,11 +14,18 @@
     "@prisma/client": "*"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": false },
-    "@prisma/client": { "optional": false }
+    "react": {
+      "optional": false
+    },
+    "@prisma/client": {
+      "optional": false
+    }
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
     "typescript": "^5.9.0"
+  },
+  "scripts": {
+    "lint": "eslint --config ../../eslint.config.mjs ."
   }
 }

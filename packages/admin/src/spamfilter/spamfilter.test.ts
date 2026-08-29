@@ -6,7 +6,6 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   checkSpamViolation,
   checkRateLimit,
-  type SpamFilterResult,
   type RateLimitConfig,
 } from './spamfilter';
 

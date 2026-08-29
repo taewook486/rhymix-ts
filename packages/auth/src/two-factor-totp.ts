@@ -10,7 +10,7 @@
  * @MX:SPEC: SPEC-ADMIN-2FA-OTP-001
  */
 
-import { generateSecret, generateURI, verifySync, TOTP } from 'otplib';
+import { generateSecret, generateURI, verifySync } from 'otplib';
 // qrcode 패키지의 타입 선언(@types/qrcode)은 apps/web 에 설치되어 있어
 // packages/auth 컴파일 시에는 해석되지 않는다. 런타임 시그니처만 사용.
 // @ts-expect-error — qrcode 타입 선언이 이 패키지 범위에서 누락됨 (workspace hoist)

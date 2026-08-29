@@ -8,36 +8,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// 공통 헬퍼 — Prisma mock 빌더
-// ---------------------------------------------------------------------------
-
-function makePrisma(overrides: Record<string, unknown> = {}) {
-  return {
-    documentVote: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      delete: vi.fn(),
-      findMany: vi.fn().mockResolvedValue([]),
-    },
-    document: {
-      findUniqueOrThrow: vi.fn(),
-      update: vi.fn(),
-    },
-    $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => unknown) => fn({
-      documentVote: {
-        findUnique: vi.fn(),
-        create: vi.fn(),
-        delete: vi.fn(),
-      },
-      document: {
-        update: vi.fn(),
-      },
-    })),
-    ...overrides,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // voteDocument
 // ---------------------------------------------------------------------------
 

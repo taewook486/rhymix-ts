@@ -52,7 +52,7 @@ function createMockPrisma() {
     comments,
     adminLogs,
     comment: {
-      findMany: async ({ where, include, orderBy, take }: any) => {
+      findMany: async ({ where, take }: any) => {
         let filtered = comments;
 
         // Filter by boardId

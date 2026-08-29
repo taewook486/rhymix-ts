@@ -537,7 +537,7 @@ describe('signup', () => {
   });
 
   it('24) REQ-MADM-023: spacing accepted when nicknamePolicy.allowSpacing=true', async () => {
-    const { prisma, state } = buildFakePrisma();
+    const { prisma } = buildFakePrisma();
     const result = await signup(
       { ...baseInput(), nickName: 'Al ice' },
       {

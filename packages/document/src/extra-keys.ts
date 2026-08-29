@@ -80,7 +80,6 @@ export async function listExtraKeys(
 // ---------------------------------------------------------------------------
 
 const VAR_TYPES = ['text', 'textarea', 'number', 'select', 'checkbox', 'date', 'email', 'url'] as const;
-type VarType = typeof VAR_TYPES[number];
 
 const CreateExtraKeySchema = z.object({
   boardId: z.number().int().positive(),

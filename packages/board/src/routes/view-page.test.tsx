@@ -64,7 +64,6 @@ describe('BoardViewPage', () => {
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
 
-    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -90,7 +89,6 @@ describe('BoardViewPage', () => {
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
 
-    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -116,7 +114,6 @@ describe('BoardViewPage', () => {
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
 
-    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -142,7 +139,6 @@ describe('BoardViewPage', () => {
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
 
-    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -168,7 +164,6 @@ describe('BoardViewPage', () => {
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
 
-    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -197,7 +192,6 @@ describe('BoardViewPage', () => {
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
 
-    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 
@@ -269,7 +263,6 @@ describe('BoardViewPage', () => {
       listAttachments: vi.fn().mockResolvedValue([]),
     }));
 
-    const mockPrisma = createMockPrismaClient();
 
     const { BoardViewPage } = await import('./view-page.js');
 

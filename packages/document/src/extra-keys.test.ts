@@ -5,7 +5,7 @@
  *
  * REQ-CONTENT-120: 게시판 별 커스텀 필드 정의 CRUD.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Prisma mock 빌더

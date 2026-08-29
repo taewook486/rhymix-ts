@@ -6,7 +6,6 @@ import type {
   MessageListInput,
   MessageReadInput,
   MessageDeleteInput,
-  MessageCountUnreadInput,
 } from './schemas';
 import {
   MessageReceiverNotFoundError,

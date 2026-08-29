@@ -86,7 +86,7 @@ describe('TagInput — SPEC-TAG-001 REQ-TAG-001', () => {
 
   it('최대 10개의 태그를 추가할 수 있다', async () => {
     const onChange = vi.fn();
-    const { rerender } = render(<TagInput onChange={onChange} maxTags={10} />);
+    render(<TagInput onChange={onChange} maxTags={10} />);
 
     const input = screen.getByTestId('tag-input');
 

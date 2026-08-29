@@ -3,7 +3,7 @@
  *
  * 문서 이벤트 버스 테스트 — SPEC-DOCUMENT-001 Slice C.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   documentEvents,
   emitDocumentCreated,

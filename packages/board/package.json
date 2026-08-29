@@ -17,7 +17,7 @@
     "./feed": "./src/feed/index.ts"
   },
   "scripts": {
-    "lint": "echo 'no lint'",
+    "lint": "eslint --config ../../eslint.config.mjs src",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist .turbo"

@@ -6,8 +6,7 @@ import { escapeHtml } from './render';
 import type { TemplateResult } from './render';
 
 export function render(vars: Record<string, string>): TemplateResult {
-  const { userName, alertType, details } = vars;
-  const safeName = escapeHtml(userName ?? '회원');
+  const { alertType, details } = vars;
   const siteName = escapeHtml(vars.siteName ?? 'Rhymix');
   const safeAlert = escapeHtml(alertType ?? '보안 이슈');
   const safeDetails = escapeHtml(details ?? '자세한 내용은 로그를 확인하세요.');

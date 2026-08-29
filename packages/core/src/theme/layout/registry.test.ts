@@ -1,7 +1,7 @@
 // SPEC-LAYOUT-001 Slice B — registry.ts TDD 테스트
 // REQ-LAYOUT-009: 레이아웃 컴포넌트 레지스트리
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { ComponentType } from 'react';
 import type { LayoutComponentProps } from './registry';
 

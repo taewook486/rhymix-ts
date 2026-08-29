@@ -3,6 +3,9 @@
  *
  * TDD RED phase: Write failing tests for TOTP generation/verification
  */
+/* otplib 를 테스트 본문에서 동기로 불러온다. it() 콜백이 동기라
+   await import() 로 바꾸려면 테스트 6건을 async 로 고쳐야 한다. */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { describe, it, expect } from 'vitest';
 import {
   generateTotpSecret,

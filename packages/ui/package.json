@@ -10,7 +10,7 @@
     "./components": "./src/components/index.ts"
   },
   "scripts": {
-    "lint": "echo 'no lint'",
+    "lint": "eslint --config ../../eslint.config.mjs src",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist .turbo"
   },

@@ -14,7 +14,6 @@ import {
   updateFileUploadSettings,
   getFileDownloadSettings,
   updateFileDownloadSettings,
-  SiteNotFoundError,
   getEmailQueueSettings,
   updateEmailQueueSettings,
   getSeoSettings,

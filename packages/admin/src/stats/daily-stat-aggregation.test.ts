@@ -43,14 +43,6 @@ describe('DailyStat aggregation job (REQ-STATS-002)', () => {
    */
   describe('aggregateDailyStats', () => {
     it('REQ-STATS-002: shall aggregate UV from PageView visitorId unique count', async () => {
-      // Mock PageView data for previous day
-      const mockPageViews = [
-        { visitorId: 'abc123', date: new Date('2026-07-05') },
-        { visitorId: 'abc123', date: new Date('2026-07-05') }, // Same visitor
-        { visitorId: 'def456', date: new Date('2026-07-05') }, // Different visitor
-        { visitorId: 'ghi789', date: new Date('2026-07-05') }, // Different visitor
-      ];
-
       mockPrisma.pageView.groupBy.mockResolvedValue([
         { _count: { visitorId: 3 } }, // 3 unique visitors
       ]);

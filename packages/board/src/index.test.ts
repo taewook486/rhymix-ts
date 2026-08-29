@@ -4,7 +4,7 @@
  * A-1 ~ A-5: boardModule 정의 검증 (RED → GREEN)
  * A-6 ~ A-8: onInstall 훅 + registerModule 통합
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // boardModule 테스트 (A-1 ~ A-5)

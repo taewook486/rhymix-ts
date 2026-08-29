@@ -8,7 +8,7 @@
  * @MX:SPEC: SPEC-BOARD-UI-001 REQ-BUI-007
  */
 import { z } from 'zod';
-import type { PrismaClient, Document } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 
 // ---------------------------------------------------------------------------
 // 스키마 / 타입

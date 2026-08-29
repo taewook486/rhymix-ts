@@ -71,7 +71,7 @@ const MENU_CACHE_PATH = '/admin';
  * (apps/web Server Action / tRPC resolver) is responsible for invoking
  * revalidatePath() with that path.
  */
-export async function invalidateAdminMenuCache(ctx: {
+export async function invalidateAdminMenuCache(_ctx: {
   prisma: PrismaClient;
 }): Promise<InvalidateMenuCacheResult> {
   return {

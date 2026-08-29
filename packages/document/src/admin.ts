@@ -10,7 +10,7 @@
  *             fan_in >= 2 (admin tRPC, future bulk import tools).
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-070, REQ-ADMIN2-071
  */
-import type { PrismaClient, Document, AdminLog } from '@prisma/client';
+import type { PrismaClient, Document } from '@prisma/client';
 import { BoardPermissionDeniedError } from './document';
 
 // ---------------------------------------------------------------------------
@@ -298,7 +298,7 @@ export async function bulkUpdateDocuments(
         adminLogIds.push(log.id);
 
         success++;
-      } catch (err) {
+      } catch {
         failedIds.push(documentId);
       }
     }

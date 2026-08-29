@@ -8,7 +8,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   listDocumentsAcrossAllBoards,
   bulkUpdateDocuments,
-  BulkOperationFailedError,
 } from './admin';
 import type { PrismaClient } from '@prisma/client';
 
@@ -56,7 +55,7 @@ function createMockPrisma() {
     documents,
     adminLogs,
     document: {
-      findMany: async ({ where, include, orderBy, take }: any) => {
+      findMany: async ({ where, take }: any) => {
         let filtered = documents;
 
         // Filter by boardId
@@ -141,7 +140,7 @@ function createMockPrisma() {
       },
     },
     trash: {
-      upsert: async ({ where, create, update }: any) => {
+      upsert: async ({ create }: any) => {
         return { id: 1, ...create };
       },
     },

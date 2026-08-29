@@ -314,7 +314,7 @@ describe('Hook Executor', () => {
         description: 'First counter',
         defaultPriority: 10,
         hooks: {
-          onPageView: async (mid: string) => {
+          onPageView: async (_mid: string) => {
             callOrder.push('counter-1')
           },
         },
@@ -326,7 +326,7 @@ describe('Hook Executor', () => {
         description: 'Second counter',
         defaultPriority: 20,
         hooks: {
-          onPageView: async (mid: string) => {
+          onPageView: async (_mid: string) => {
             callOrder.push('counter-2')
           },
         },

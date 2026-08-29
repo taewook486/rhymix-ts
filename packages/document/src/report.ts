@@ -161,13 +161,13 @@ export async function reportDocument(
 // resolveReport
 // ---------------------------------------------------------------------------
 
-const ActorSchema = z.object({
-  isAdmin: z.boolean(),
-  userId: z.number().int().positive(),
-  userGroupSrl: z.number().int().min(0),
-});
-
-export type AdminActor = z.infer<typeof ActorSchema>;
+// 런타임 파싱에 쓰이지 않고 z.infer 로만 소비되던 스키마라 타입으로 대체했다.
+// (zod 를 거쳐도 결과 타입은 아래와 동일하다)
+export type AdminActor = {
+  isAdmin: boolean;
+  userId: number;
+  userGroupSrl: number;
+};
 
 /**
  * 신고를 해결 처리한다 (admin 전용).

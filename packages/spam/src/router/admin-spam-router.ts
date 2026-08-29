@@ -11,7 +11,6 @@ import type {
   AnyProcedure,
 } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
-import { SpamFilter, SpamCheckResult } from '../filter';
 
 /**
  * 도메인 예외를 TRPCError 로 변환하는 헬퍼
@@ -29,7 +28,6 @@ function mapDomainError(err: unknown): never {
 /**
  * 공개 프로시저 컨텍스트 타입
  */
-type PubCtx = { prisma: PrismaClient; session: null | unknown };
 
 /**
  * 인증 필요 프로시저 컨텍스트 타입

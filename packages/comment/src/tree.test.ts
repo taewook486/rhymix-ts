@@ -5,7 +5,7 @@
  *
  * Tree 구성, depth 계산, orphan handling 검증.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { Comment } from '@prisma/client';
 import { buildCommentTree, getCommentDepth } from './tree';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createMockPrismaClient, type MockPrismaClient } from './prisma-mock.js';
+import { createMockPrismaClient } from './prisma-mock.js';
 
 describe('createMockPrismaClient', () => {
   it('should create a mock client with all model delegates defined', () => {

@@ -26,7 +26,7 @@ vi.mock('@rhymix-ts/db', () => ({
 }));
 
 import type { PrismaClient } from '@rhymix-ts/db';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   changeUserStatus,

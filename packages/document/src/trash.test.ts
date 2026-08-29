@@ -106,7 +106,7 @@ describe('softDeleteDocument', () => {
   it('T-2: trashUse=false → deletedAt set, Trash row 미생성', async () => {
     const { softDeleteDocument } = await import('./trash.js');
 
-    const { txDocFindUniqueOrThrow, txDocUpdate, txTrashUpsert, tx } = makeTrashTx({ board: makeBoard(false) });
+    const { txDocUpdate, txTrashUpsert, tx } = makeTrashTx({ board: makeBoard(false) });
 
     const mockPrisma = {
       $transaction: vi.fn().mockImplementation(async (fn: (t: unknown) => unknown) => fn(tx)),
@@ -214,7 +214,7 @@ describe('restoreDocument', () => {
       $transaction: vi.fn().mockImplementation(async (fn: (t: unknown) => unknown) => fn(tx)),
     };
 
-    const result = await restoreDocument(
+    await restoreDocument(
       { documentId: 10, actor: { userId: 100, userGroupSrl: 1, isAdmin: true } },
       { prisma: mockPrisma as never },
     );

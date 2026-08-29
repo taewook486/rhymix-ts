@@ -5,8 +5,8 @@
  *   - requestPasswordReset: 식별자 미노출 (REQ-AUTH-051), 토큰 발급 + 메일 발송
  *   - confirmPasswordReset: 토큰 소비, 비밀번호 변경, 세션 무효화, autologin 삭제
  */
-import type { PrismaClient, Prisma } from '@rhymix-ts/db';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PrismaClient } from '@rhymix-ts/db';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { InMemoryMailDispatcher } from './mail';
 import { hashPassword } from './password';

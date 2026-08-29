@@ -5,9 +5,9 @@
  *
  * REQ-COMMENT-030~034: 투표 카운터 원자성, 중복 투표, self-vote 거부 검증.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { voteComment } from './service';
-import { CommentAlreadyVotedError, SelfVoteNotAllowedError } from './errors';
+import { SelfVoteNotAllowedError } from './errors';
 
 // ---------------------------------------------------------------------------
 // voteComment
@@ -138,7 +138,7 @@ describe('voteComment', () => {
       $transaction: vi.fn(async (fn: (tx: any) => Promise<any>) => fn(mockTx)),
     };
 
-    const result = await voteComment(
+    await voteComment(
       { commentId: 1, memberId: 5, voteType: -1 },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { prisma: mockPrisma as any },
