@@ -545,6 +545,77 @@ describe('BoardIndexPage (SPEC-BOARD-UI-001 Slice A)', () => {
       expect(html).toContain('value="content"');
       expect(html).toContain('value="author"');
     });
+
+    it('검색 중 생성되는 링크가 searchField 에 검색어가 아니라 필드명을 싣는다', async () => {
+      // 회귀: buildUrl 이 searchField 자리에 search 를 넣어, 카드뷰/페이지네이션/정렬
+      // 링크를 누르면 searchField 가 유효하지 않은 값이 되어 title 로 폴백됐다.
+      // (content 검색 2건 → 링크 이동 후 1건으로 줄어드는 실제 결함)
+      vi.doMock('@rhymix-ts/document', () => ({
+        listDocuments: vi.fn().mockResolvedValue({
+          notices: [],
+          items: [],
+          nextCursor: null,
+          totalCount: 42,
+          totalPages: 3,
+          currentPage: 1,
+        }),
+        listCategoryTree: vi.fn().mockResolvedValue([]),
+      }));
+
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
+
+      const { BoardIndexPage } = await import('./index-page.js');
+
+      const fakeProps = {
+        instance: { id: 1, moduleCode: 'board', mid: 'board', name: '게시판', config: null },
+        params: {},
+        searchParams: { search: '검색어', searchField: 'content' },
+        prisma: mockPrisma,
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const node = await BoardIndexPage(fakeProps as any);
+      const html = renderToStaticMarkup(node as React.ReactElement);
+
+      expect(html).toContain('searchField=content');
+      // 검색어가 searchField 값으로 새어 들어가면 안 된다 (인코딩/원문 양쪽 확인)
+      expect(html).not.toContain(`searchField=${encodeURIComponent('검색어')}`);
+      expect(html).not.toContain('searchField=검색어');
+    });
+
+    it('검색어가 없으면 링크에 searchField 를 붙이지 않는다', async () => {
+      vi.doMock('@rhymix-ts/document', () => ({
+        listDocuments: vi.fn().mockResolvedValue({
+          notices: [],
+          items: [],
+          nextCursor: null,
+          totalCount: 42,
+          totalPages: 3,
+          currentPage: 1,
+        }),
+        listCategoryTree: vi.fn().mockResolvedValue([]),
+      }));
+
+      const mockPrisma = createMockPrismaClient();
+      mockPrisma.board.findUnique.mockResolvedValue({ listCount: 20, pageCount: 10 } as never);
+
+      const { BoardIndexPage } = await import('./index-page.js');
+
+      const fakeProps = {
+        instance: { id: 1, moduleCode: 'board', mid: 'board', name: '게시판', config: null },
+        params: {},
+        searchParams: {},
+        prisma: mockPrisma,
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const node = await BoardIndexPage(fakeProps as any);
+      const html = renderToStaticMarkup(node as React.ReactElement);
+
+      // select 박스의 name="searchField" 는 남지만, 링크 쿼리스트링에는 없어야 한다
+      expect(html).not.toContain('searchField=');
+    });
   });
 
   describe('정렬 (REQ-BUI-005)', () => {

@@ -130,7 +130,7 @@ export async function BoardIndexPage(props: ModuleRoutePageProps) {
       categoryId: rawCategoryId,
       pageSize: validPageSize !== listCount ? validPageSize : undefined,
       search,
-      searchField: search,
+      searchField: search ? searchField : undefined,
       view: view !== 'table' ? view : undefined,
       ...params,
     };
