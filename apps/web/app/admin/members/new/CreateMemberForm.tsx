@@ -4,6 +4,7 @@
  *
  * useActionState로 createUserAction(actions.ts)을 바인딩한다.
  */
+import Link from 'next/link'
 import { useActionState } from 'react';
 import { createUserAction, type ActionState } from './actions';
 
@@ -128,9 +129,9 @@ export function CreateMemberForm({
           >
             {isPending ? '등록 중...' : '등록'}
           </button>
-          <a href="/admin/members" className="px-4 py-2 text-sm bg-zinc-200 rounded hover:bg-zinc-300">
+          <Link href="/admin/members" className="px-4 py-2 text-sm bg-zinc-200 rounded hover:bg-zinc-300">
             취소
-          </a>
+          </Link>
         </div>
       </div>
     </form>

@@ -12,7 +12,7 @@
  * - z.object() → group field (재귀)
  */
 
-import type { ZodTypeAny, ZodObject, ZodString, ZodNumber } from 'zod';
+import type { ZodTypeAny, ZodObject, ZodString, ZodNumber, ZodRawShape } from 'zod';
 import { z } from 'zod';
 
 export type FieldType = 'color' | 'text' | 'number' | 'group';
@@ -70,7 +70,7 @@ const COLOR_FIELD_NAMES = new Set([
  * ```
  */
 export function buildFormFields(
-  schema: ZodObject<any>,
+  schema: ZodObject<ZodRawShape>,
   prefix: string = '',
 ): FormField[] {
   const fields: FormField[] = [];
@@ -110,7 +110,9 @@ export function buildFormFields(
 
       // @MX:NOTE: [AUTO] ZodNumber의 min/max 제약 조건을 추출
       // 내부 _def checks 배열에서 min/max 값을 찾음
-      const checks = (zodType as any)._def.checks || [];
+      // zod 의 내부 구조라 공개 타입이 없다.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const checks = (zodType as any)._def.checks || [];
       for (const check of checks) {
         if (check.kind === 'min') min = check.value;
         if (check.kind === 'max') max = check.value;

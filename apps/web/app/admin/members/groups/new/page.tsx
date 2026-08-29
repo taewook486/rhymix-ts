@@ -5,6 +5,7 @@
  *
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-041
  */
+import Link from 'next/link'
 import { CreateGroupForm } from '../forms';
 
 export const dynamic = 'force-dynamic';
@@ -13,9 +14,9 @@ export default async function AdminMemberGroupNewPage() {
   return (
     <div>
       <div className="mb-4">
-        <a href="/admin/members/groups" className="text-zinc-600 hover:text-zinc-900">
+        <Link href="/admin/members/groups" className="text-zinc-600 hover:text-zinc-900">
           ← 목록으로
-        </a>
+        </Link>
       </div>
 
       <h1 className="text-xl font-semibold mb-4">회원 그룹 추가</h1>

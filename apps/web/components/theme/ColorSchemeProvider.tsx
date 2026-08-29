@@ -58,11 +58,15 @@ export function ColorSchemeProvider({ children, supportsDarkMode = true }: Color
   // SSR: 항상 light 모드로 시작 (REQ-THEME-POLISH-034)
   const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
 
+  // SSR 은 항상 light 로 렌더해야 하므로(하이드레이션 불일치 방지) 클라이언트
+  // 마운트 후에만 실제 선호를 반영할 수 있다. lazy initializer 로 옮기면
+  // 서버/클라이언트 첫 렌더가 어긋난다.
   useEffect(() => {
     // 클라이언트 마운트 후 localStorage에서 읽어 sync
     // inline script가 이미 <html> class를 설정했으므로 시각적 FOIT 없음
     const pref = localStorage.getItem('rx-color-scheme');
     if (pref === 'dark') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setColorScheme('dark');
     } else if (pref === null && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setColorScheme('dark');

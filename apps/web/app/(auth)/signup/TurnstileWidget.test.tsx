@@ -22,18 +22,12 @@ const mockTurnstile = {
   getResponse: vi.fn(() => 'test-token'),
 };
 
-declare global {
-  interface Window {
-    turnstile: typeof mockTurnstile;
-  }
-}
-
 // Mock next/script to simulate script loading
 vi.mock('next/script', () => ({
-  default: ({ onLoad }: { onLoad?: () => void }) => {
+  default: function MockNextScript({ onLoad }: { onLoad?: () => void }) {
     React.useEffect(() => {
       // Simulate Turnstile script loading
-      window.turnstile = mockTurnstile;
+      window.turnstile = mockTurnstile as unknown as Window['turnstile'];
       onLoad?.();
     }, [onLoad]);
     return null;

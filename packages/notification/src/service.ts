@@ -1,7 +1,7 @@
 // SPEC-NOTIFICATION-001 REQ-NOTIF-001: NotificationService 핵심 로직
 // @MX:ANCHOR (fan_in: 3) — list, markRead, markAllRead 모두 이 클래스를 호출
 
-import type { PrismaClient, Prisma } from '@prisma/client';
+import type { PrismaClient, Prisma, Notification } from '@prisma/client';
 import {
   NotificationRecipientNotFoundError,
   NotificationForbiddenError,
@@ -178,7 +178,7 @@ export class NotificationService {
   /**
    * REQ-NOTIF-020: 알림 목록 조회 (본인만, 최신순)
    */
-  async list(query: NotificationListInput): Promise<{ items: unknown[]; nextCursor: string | null }> {
+  async list(query: NotificationListInput): Promise<{ items: Notification[]; nextCursor: string | null }> {
     const limit = query.limit ?? 20;
     const where: Record<string, unknown> = { recipientId: query.recipientId };
 

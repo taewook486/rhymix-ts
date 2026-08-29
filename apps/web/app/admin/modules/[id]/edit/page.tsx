@@ -26,28 +26,30 @@ export default async function ModuleEditPage({
 
   const caller = await getServerCaller()
 
+  let instance: Awaited<ReturnType<typeof caller.admin.module.getById>>
   try {
-    const instance = await caller.admin.module.getById({ instanceId })
-
-    return (
-      <section className="max-w-2xl">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold">모듈 편집</h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            {instance.title} ({instance.mid})
-          </p>
-        </header>
-        <div className="bg-white rounded-lg border border-zinc-200 p-6">
-          <ModuleEditForm
-            instanceId={instanceId}
-            initialTitle={instance.title}
-            initialBrowserTitle={instance.browserTitle ?? ''}
-            initialDescription={instance.description ?? ''}
-          />
-        </div>
-      </section>
-    )
-  } catch (error) {
+    instance = await caller.admin.module.getById({ instanceId })
+  } catch {
     notFound()
   }
+
+
+  return (
+    <section className="max-w-2xl">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold">모듈 편집</h1>
+        <p className="text-sm text-zinc-500 mt-1">
+          {instance.title} ({instance.mid})
+        </p>
+      </header>
+      <div className="bg-white rounded-lg border border-zinc-200 p-6">
+        <ModuleEditForm
+          instanceId={instanceId}
+          initialTitle={instance.title}
+          initialBrowserTitle={instance.browserTitle ?? ''}
+          initialDescription={instance.description ?? ''}
+        />
+      </div>
+    </section>
+  )
 }

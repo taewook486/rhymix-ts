@@ -6,6 +6,7 @@
  *
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-040~042
  */
+import Link from 'next/link'
 import { getServerCaller } from '@/lib/trpc/server';
 import { DeleteGroupButton } from './DeleteGroupButton';
 import { GroupReorderList } from './GroupReorderList';
@@ -20,12 +21,12 @@ export default async function AdminMemberGroupsPage() {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-semibold">회원 그룹 관리</h1>
-        <a
+        <Link
           href="/admin/members/groups/new"
           className="px-4 py-2 text-sm bg-zinc-800 text-white rounded hover:bg-zinc-700"
         >
           그룹 추가
-        </a>
+        </Link>
       </div>
 
       {/* 순서 변경 (REQ-MADM-011~014) — 드래그앤드롭 / 키보드 재배치 */}
@@ -89,12 +90,12 @@ export default async function AdminMemberGroupsPage() {
               <td className="px-3 py-2 text-zinc-400">{group.listOrder}</td>
               <td className="px-3 py-2">
                 <div className="flex gap-2">
-                  <a
+                  <Link
                     href={`/admin/members/groups/${group.id}/edit`}
                     className="text-zinc-600 hover:text-zinc-900"
                   >
                     수정
-                  </a>
+                  </Link>
                   <DeleteGroupButton groupId={group.id} groupTitle={group.title} />
                 </div>
               </td>

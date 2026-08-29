@@ -32,7 +32,6 @@ export default function SignupPage() {
   // 약관 동의 상태 관리 - {key, version}[] 형태로 저장
   const [agreements, setAgreements] = useState<Array<{ key: string; version: string }>>([]);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [requiredTermsCount, setRequiredTermsCount] = useState(0);
 
   const wrappedAction = async (
     prev: AuthActionState,
@@ -66,13 +65,9 @@ export default function SignupPage() {
   const { data: captchaConfig } = trpc.public.captcha.getConfig.useQuery();
   const { data: terms } = trpc.public.terms.listActive.useQuery();
 
-  // 필수 약관 수 계산 (AC-CAPTCHA-002: submit disabled until required terms checked)
-  React.useEffect(() => {
-    if (terms) {
-      const requiredCount = terms.filter((t: { id: number; type: string; title: string; content: string; required: boolean }) => t.required).length;
-      setRequiredTermsCount(requiredCount);
-    }
-  }, [terms]);
+  // 필수 약관 수 (AC-CAPTCHA-002: submit disabled until required terms checked)
+  // terms 에서 그대로 파생되므로 상태로 들고 있을 이유가 없다.
+  const requiredTermsCount = terms?.filter((t: { required: boolean }) => t.required).length ?? 0;
 
   const handleToggleAgreement = (term: { id: number; type: string; required: boolean }) => {
     setAgreements((prev) => {

@@ -29,6 +29,8 @@ export default async function SpamReviewPage() {
       <p className="text-muted-foreground mb-6">
         스팸 필터에 의해 차단된 콘텐츠를 검토하고 승인/삭제/차단 처리를 수행합니다.
       </p>
+      {/* tRPC 반환 형태와 컴포넌트 prop 형태가 어긋나 있다 — prop 타입 정리는 별도 작업. */}
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <SpamReviewQueue initialData={result as any} />
     </section>
   );

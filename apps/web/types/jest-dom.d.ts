@@ -15,6 +15,10 @@ import 'vitest';
 import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
 
 declare module 'vitest' {
+  // 모듈 확장(declaration merging)이라 interface 여야 한다. type 별칭으로 바꾸면
+  // vitest 의 기존 Assertion 과 병합되지 않아 매처 타입이 사라진다.
+  /* eslint-disable @typescript-eslint/no-empty-object-type */
   interface Assertion<T = unknown> extends TestingLibraryMatchers<unknown, T> {}
   interface AsymmetricMatchersContaining extends TestingLibraryMatchers<unknown, unknown> {}
+  /* eslint-enable @typescript-eslint/no-empty-object-type */
 }

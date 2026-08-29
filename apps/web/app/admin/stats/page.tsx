@@ -23,6 +23,8 @@ export default async function AdminStatsPage({ searchParams }: PageProps) {
   const siteId = await getCurrentSiteId()
   const caller = await getServerCaller()
 
+  // async Server Component 라 클라이언트 렌더가 없다. 요청 시점 기준 날짜 계산이다.
+  // eslint-disable-next-line react-hooks/purity
   const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 10)

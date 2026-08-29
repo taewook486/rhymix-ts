@@ -15,6 +15,7 @@
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { Prisma } from '@prisma/client';
 import { router, protectedAdminProcedure } from '../../trpc';
 import {
   listDocumentsAcrossAllBoards,
@@ -32,7 +33,7 @@ import {
  * ctx.siteId가 없을 때(hostname→domain 재해석 실패 등) 첫 번째 Site로 대체 해석한다.
  * packages/admin/src/settings.ts의 동일 패턴과 일치시킨다.
  */
-async function resolveSiteId(ctx: { prisma: any; siteId?: number }): Promise<number> {
+async function resolveSiteId(ctx: { prisma: Prisma.TransactionClient; siteId?: number }): Promise<number> {
   if (ctx.siteId !== undefined) {
     return ctx.siteId;
   }
@@ -49,10 +50,15 @@ async function resolveSiteId(ctx: { prisma: any; siteId?: number }): Promise<num
 /**
  * SiteSetting에서 값을 가져옴. 없으면 기본값 반환.
  */
+// SiteSetting.value 는 타입 없는 JSON 컬럼이다. Prisma.JsonValue 로 좁히면
+// 호출부 3곳에서 실제 타입 불일치가 드러나는데(예: null 이 boolean 자리),
+// 그 정리는 이 범위를 넘어 별도 작업으로 남긴다.
 async function getSiteSetting(
-  ctx: { prisma: any; siteId?: number },
+  ctx: { prisma: Prisma.TransactionClient; siteId?: number },
   key: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defaultValue: any = null,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
   const siteId = await resolveSiteId(ctx);
   const setting = await ctx.prisma.siteSetting.findUnique({
@@ -74,8 +80,9 @@ async function getSiteSetting(
  * 하나의 트랜잭션으로 묶어 원자적으로 적용할 수 있다 (REQ-ADMIN2-110/113/114).
  */
 async function setSiteSetting(
-  ctx: { prisma: any; siteId?: number; ip?: string; userAgent?: string },
+  ctx: { prisma: Prisma.TransactionClient; siteId?: number; ip?: string; userAgent?: string },
   key: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any,
   actorId: number,
 ): Promise<void> {

@@ -6,6 +6,7 @@
  *
  * @MX:SPEC: SPEC-TAG-001 REQ-TAG-006
  */
+import Link from 'next/link'
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
 import { prisma } from '@/lib/db/prisma';
@@ -114,9 +115,9 @@ export default async function AdminTagsPage() {
 
       {/* 태그 목록으로 돌아가기 */}
       <div className="mt-6">
-        <a href="/tags" className="text-sm text-blue-600 hover:underline">
+        <Link href="/tags" className="text-sm text-blue-600 hover:underline">
           ← 태그 클라우드 보기
-        </a>
+        </Link>
       </div>
     </div>
   );

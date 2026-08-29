@@ -71,6 +71,8 @@ export default async function FeedSettingsPage({ params }: FeedSettingsPageProps
 
     // REQ-FEED-042/052: 저장 즉시 공개 피드 캐시를 무효화하여 itemCount 등 변경이 바로 반영되게 한다.
     // Next.js 16 revalidateTag는 2번째 profile 인자를 받지만 실전에서는 선택적으로 동작한다.
+    // Next 타입 정의에 없는 2번째 인자를 런타임이 요구한다.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     revalidateTag(`feed:${instanceId}`, undefined as any);
 
     redirect(`/admin/boards/${mid}/feed`);

@@ -7,6 +7,7 @@
  *
  * @MX:SPEC: SPEC-MEMBER-ADMIN-001 REQ-MADM-004~008
  */
+import Link from 'next/link'
 import { getServerCaller } from '@/lib/trpc/server';
 import { AddDeniedForm } from './forms';
 import { removeDeniedFormAction } from './actions';
@@ -37,30 +38,30 @@ export default async function AdminDeniedListPage({ searchParams }: PageProps) {
       {/* 종류별 필터 (REQ-MADM-004) */}
       <div className="border-b border-zinc-200 mb-4">
         <nav className="-mb-px flex gap-4">
-          <a
+          <Link
             href="/admin/members/denied-list"
             className={`px-4 py-2 text-sm font-medium border-b-2 ${
               !sp.type ? 'border-zinc-800 text-zinc-900' : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
             전체
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/members/denied-list?type=USER_ID"
             className={`px-4 py-2 text-sm font-medium border-b-2 ${
               sp.type === 'USER_ID' ? 'border-zinc-800 text-zinc-900' : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
             아이디
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/members/denied-list?type=NICK_NAME"
             className={`px-4 py-2 text-sm font-medium border-b-2 ${
               sp.type === 'NICK_NAME' ? 'border-zinc-800 text-zinc-900' : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
             닉네임
-          </a>
+          </Link>
         </nav>
       </div>
 

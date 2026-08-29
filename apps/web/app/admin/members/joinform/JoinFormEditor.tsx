@@ -13,13 +13,13 @@ import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateJoinFormAction, type UpdateJoinFormActionField } from './actions';
 
-interface JoinFormField extends UpdateJoinFormActionField {}
+type JoinFormField = UpdateJoinFormActionField
 
 interface JoinFormEditorProps {
   initial: JoinFormField[];
 }
 
-const RESERVED_KEYS = ['email', 'password', 'nickname'] as const;
+const RESERVED_KEYS: readonly string[] = ['email', 'password', 'nickname'];
 
 export function JoinFormEditor({ initial }: JoinFormEditorProps): React.ReactElement {
   const router = useRouter();
@@ -41,7 +41,7 @@ export function JoinFormEditor({ initial }: JoinFormEditorProps): React.ReactEle
   function handleRemoveField(index: number): void {
     const field = fields[index];
     if (!field) return; // Guard against undefined
-    if (RESERVED_KEYS.includes(field.key as any)) {
+    if (RESERVED_KEYS.includes(field.key)) {
       return; // 예약된 필드는 제거 불가
     }
     const newFields = fields.filter((_, i) => i !== index);
@@ -76,7 +76,7 @@ export function JoinFormEditor({ initial }: JoinFormEditorProps): React.ReactEle
   function handleFieldChange(index: number, updates: Partial<JoinFormField>): void {
     const field = fields[index];
     if (!field) return; // Guard against undefined
-    if (RESERVED_KEYS.includes(field.key as any)) {
+    if (RESERVED_KEYS.includes(field.key)) {
       // 예약된 필드는 key와 required만 변경 불가
       if (updates.key !== undefined || updates.required !== undefined) {
         return;
@@ -124,7 +124,7 @@ export function JoinFormEditor({ initial }: JoinFormEditorProps): React.ReactEle
           </thead>
           <tbody className="divide-y divide-zinc-200">
             {fields.map((field, index) => {
-              const isReserved = RESERVED_KEYS.includes(field.key as any);
+              const isReserved = RESERVED_KEYS.includes(field.key);
               return (
                 <tr key={field.key} className={isReserved ? 'bg-zinc-50' : undefined}>
                   <td className="px-4 py-2 text-sm">{field.order + 1}</td>

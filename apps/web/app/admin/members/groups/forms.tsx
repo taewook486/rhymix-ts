@@ -2,6 +2,7 @@
 /**
  * 회원 그룹 생성/수정 폼 (Client Components) — SPEC-ADMIN-002 Slice 1C (REQ-ADMIN2-041).
  */
+import Link from 'next/link'
 import { useActionState } from 'react';
 import { createGroupAction, updateGroupAction, type ActionState } from './actions';
 
@@ -97,9 +98,9 @@ export function CreateGroupForm() {
           >
             {isPending ? '저장 중...' : '저장'}
           </button>
-          <a href="/admin/members/groups" className="px-4 py-2 text-sm bg-zinc-200 rounded hover:bg-zinc-300">
+          <Link href="/admin/members/groups" className="px-4 py-2 text-sm bg-zinc-200 rounded hover:bg-zinc-300">
             취소
-          </a>
+          </Link>
         </div>
       </div>
     </form>
@@ -225,9 +226,9 @@ export function EditGroupForm({
           >
             {isPending ? '저장 중...' : '저장'}
           </button>
-          <a href="/admin/members/groups" className="px-4 py-2 text-sm bg-zinc-200 rounded hover:bg-zinc-300">
+          <Link href="/admin/members/groups" className="px-4 py-2 text-sm bg-zinc-200 rounded hover:bg-zinc-300">
             취소
-          </a>
+          </Link>
         </div>
       </div>
     </form>

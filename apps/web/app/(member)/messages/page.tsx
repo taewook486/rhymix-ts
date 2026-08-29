@@ -66,7 +66,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
   const { messages } = await caller.content.message.list({ folder, limit: 50 });
 
   let selected =
-    selectedId != null ? (messages.find((m: any) => m.id === selectedId) ?? null) : null;
+    selectedId != null ? (messages.find((m) => m.id === selectedId) ?? null) : null;
 
   // REQ-MSG-002: 받은 쪽지를 클릭해 상세를 열람하면 읽음 상태로 변경한다.
   if (selected && folder === 'inbox' && !selected.readAt) {
@@ -119,7 +119,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 </button>
               </div>
               <ul className="divide-y divide-zinc-200 border border-zinc-200 rounded-lg overflow-hidden">
-                {messages.map((msg: any) => {
+                {messages.map((msg) => {
                   const counterpart = folder === 'inbox' ? msg.sender : msg.receiver;
                   const isUnread = folder === 'inbox' && !msg.readAt;
                   const isSelected = selected?.id === msg.id;

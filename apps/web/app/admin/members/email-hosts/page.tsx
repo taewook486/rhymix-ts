@@ -7,6 +7,7 @@
  *
  * @MX:SPEC: SPEC-MEMBER-ADMIN-001 REQ-MADM-029~031
  */
+import Link from 'next/link'
 import { getServerCaller } from '@/lib/trpc/server';
 import { AddEmailHostForm } from './forms';
 import { removeEmailHostFormAction } from './actions';
@@ -37,30 +38,30 @@ export default async function AdminEmailHostsPage({ searchParams }: PageProps) {
       {/* 정책별 필터 (REQ-MADM-029) */}
       <div className="border-b border-zinc-200 mb-4">
         <nav className="-mb-px flex gap-4">
-          <a
+          <Link
             href="/admin/members/email-hosts"
             className={`px-4 py-2 text-sm font-medium border-b-2 ${
               !sp.policy ? 'border-zinc-800 text-zinc-900' : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
             전체
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/members/email-hosts?policy=ALLOW"
             className={`px-4 py-2 text-sm font-medium border-b-2 ${
               sp.policy === 'ALLOW' ? 'border-zinc-800 text-zinc-900' : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
             허용
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/members/email-hosts?policy=DENY"
             className={`px-4 py-2 text-sm font-medium border-b-2 ${
               sp.policy === 'DENY' ? 'border-zinc-800 text-zinc-900' : 'border-transparent text-zinc-600 hover:text-zinc-900'
             }`}
           >
             차단
-          </a>
+          </Link>
         </nav>
       </div>
 

@@ -59,7 +59,7 @@ export function LayoutPreviewDialog({
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">
-            "{layoutName}" 레이아웃 미리보기
+            &quot;{layoutName}&quot; 레이아웃 미리보기
           </h2>
           <button
             type="button"

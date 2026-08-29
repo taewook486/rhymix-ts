@@ -44,7 +44,9 @@ export function registerFeedEvents(): void {
         revalidateTag: (tag: string) => {
           // Next.js 16 revalidateTag takes 2 arguments (tag, profile?)
           // The second parameter appears to be optional in practice
-          nextRevalidateTag(tag, undefined as any);
+          // Next 타입 정의에 없는 2번째 인자를 런타임이 요구한다.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    nextRevalidateTag(tag, undefined as any);
         },
       },
     );

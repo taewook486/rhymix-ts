@@ -34,10 +34,11 @@ export function SelectorPane({ themes, siteId }: SelectorPaneProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignmentType, setAssignmentType] = useState<AssignmentType>('theme');
 
-  // Theme 선택 시 layouts 조회
+  // 상위 선택이 바뀌면 하위 선택을 비운다. 연쇄 초기화라 파생값으로 못 만든다.
   useEffect(() => {
     if (selectedThemeId) {
       getLayoutsForTheme(selectedThemeId).then(setLayouts);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedLayoutId(null);
       setSelectedSkinName(null);
       setSkins([]);
@@ -49,12 +50,13 @@ export function SelectorPane({ themes, siteId }: SelectorPaneProps) {
     }
   }, [selectedThemeId]);
 
-  // Layout 선택 시 skins 조회
+  // 위와 같은 연쇄 초기화.
   useEffect(() => {
     if (selectedLayoutId && selectedThemeId) {
       getSkinsForLayout(selectedLayoutId, selectedThemeId).then((skinList) => {
         setSkins(skinList.map((s) => s.name));
       });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedSkinName(null);
     } else {
       setSkins([]);

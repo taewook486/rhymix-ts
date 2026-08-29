@@ -7,6 +7,7 @@
  *
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-044, REQ-ADMIN2-045
  */
+import Link from 'next/link'
 import { getServerCaller } from '@/lib/trpc/server';
 import { CreateMemberForm } from './CreateMemberForm';
 
@@ -19,9 +20,9 @@ export default async function AdminMemberNewPage() {
   return (
     <div>
       <div className="mb-4">
-        <a href="/admin/members" className="text-zinc-600 hover:text-zinc-900">
+        <Link href="/admin/members" className="text-zinc-600 hover:text-zinc-900">
           ← 목록으로
-        </a>
+        </Link>
       </div>
 
       <h1 className="text-xl font-semibold mb-4">회원 직접 등록</h1>

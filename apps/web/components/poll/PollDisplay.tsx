@@ -58,9 +58,11 @@ export function PollDisplay({ pollId, memberId, voterIp }: PollDisplayProps) {
     voterIp: voterIp ?? null,
   });
 
-  // 이미 투표했는지 확인
+  // hasVoted 는 서버 응답과 사용자의 투표 동작 두 곳에서 바뀌므로 파생값으로
+  // 만들 수 없다.
   useEffect(() => {
     if (canVoteData?.reason === 'already_voted') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasVoted(true);
     }
   }, [canVoteData]);

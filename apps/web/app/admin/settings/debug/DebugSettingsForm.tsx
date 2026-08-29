@@ -177,7 +177,7 @@ export function DebugSettingsForm({
                 id={`displayMethod-${method.value}`}
                 name="displayMethods"
                 value={method.value}
-                defaultChecked={initialSettings.displayMethods.includes(method.value as any)}
+                defaultChecked={(initialSettings.displayMethods as readonly string[]).includes(method.value)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor={`displayMethod-${method.value}`} className="ml-2 block text-sm text-gray-900">
@@ -208,7 +208,7 @@ export function DebugSettingsForm({
                 id={`contentType-${type.value}`}
                 name="contentTypes"
                 value={type.value}
-                defaultChecked={initialSettings.contentTypes.includes(type.value as any)}
+                defaultChecked={(initialSettings.contentTypes as readonly string[]).includes(type.value)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor={`contentType-${type.value}`} className="ml-2 block text-sm text-gray-900">

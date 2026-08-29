@@ -103,7 +103,7 @@ export function SpamReviewQueue({ initialData }: SpamReviewQueueProps) {
           <select
             id="statusFilter"
             value={filterStatus || ''}
-            onChange={(e) => setFilterStatus(e.target.value as any || undefined)}
+            onChange={(e) => setFilterStatus((e.target.value as 'pending' | 'approved' | 'deleted' | 'banned') || undefined)}
             className="px-3 py-2 border rounded-md"
           >
             <option value="">전체</option>
@@ -121,7 +121,7 @@ export function SpamReviewQueue({ initialData }: SpamReviewQueueProps) {
           <select
             id="typeFilter"
             value={filterType || ''}
-            onChange={(e) => setFilterType(e.target.value as any || undefined)}
+            onChange={(e) => setFilterType((e.target.value as 'document' | 'comment') || undefined)}
             className="px-3 py-2 border rounded-md"
           >
             <option value="">전체</option>
@@ -155,12 +155,16 @@ export function SpamReviewQueue({ initialData }: SpamReviewQueueProps) {
                 <td className="px-4 py-2">{item.contentId}</td>
                 <td className="px-4 py-2">
                   {getReasonText(item.reason)}
-                  {item.metadata && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {(item.metadata as any).matchedWord && `매칭: ${(item.metadata as any).matchedWord}`}
-                      {(item.metadata as any).matchedDomain && `도메인: ${(item.metadata as any).matchedDomain}`}
-                    </div>
-                  )}
+                  {item.metadata && (() => {
+                    // metadata 는 JSON 컬럼이라 읽는 필드만 좁혀서 쓴다.
+                    const meta = item.metadata as { matchedWord?: string; matchedDomain?: string };
+                    return (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {meta.matchedWord && `매칭: ${meta.matchedWord}`}
+                        {meta.matchedDomain && `도메인: ${meta.matchedDomain}`}
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className="px-4 py-2">{getStatusBadge(item.status)}</td>
                 <td className="px-4 py-2 text-sm">

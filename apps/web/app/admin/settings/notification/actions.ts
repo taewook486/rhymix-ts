@@ -101,7 +101,7 @@ export async function sendTestEmailAction(
 
     // Get current admin's email for test
     const session = await auth();
-    const userEmail = session?.user?.email || (session?.user as any)?.email;
+    const userEmail = session?.user?.email;
     if (!userEmail) {
       return { error: '로그인된 사용자의 이메일을 찾을 수 없습니다.' };
     }

@@ -16,6 +16,7 @@
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { Prisma } from '@prisma/client';
 import { router, protectedAdminProcedure } from '../../trpc';
 import { changeUserStatus, softDeleteUser, validateNickname } from '@rhymix-ts/auth';
 import { hashPassword } from '@rhymix-ts/auth';
@@ -46,7 +47,7 @@ function parseSearchDayRange(searchQuery: string): { gte: Date; lt: Date } | nul
  * 라우터 내부 헬퍼가 export되어 있지 않아 이 파일에서 최소한으로 재구현한다.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getNicknameChangeSettings(ctx: { prisma: any }) {
+async function getNicknameChangeSettings(ctx: { prisma: Prisma.TransactionClient }) {
   const site = await ctx.prisma.site.findFirst({ orderBy: { id: 'asc' } });
   const siteId = site?.id ?? 1;
 

@@ -205,6 +205,8 @@ function SortableFavoriteItem({
         >
           <GripVertical className="h-3 w-3" />
         </button>
+        {/* 아이콘은 즐겨찾기 데이터가 들고 있는 컴포넌트다 — 렌더 중 새로 만들지 않는다. */}
+        {/* eslint-disable-next-line react-hooks/static-components */}
         {IconComponent && <IconComponent className="h-4 w-4 text-amber-400" />}
         <span className="flex-1">{favorite.label}</span>
         <button
@@ -249,8 +251,10 @@ export function AdminSidebar() {
     },
   })
 
+  // 즐겨찾기는 DnD 로 로컬에서 재정렬되므로 서버 데이터를 로컬 상태로 복사한다.
   useEffect(() => {
     if (favoritesData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFavorites(favoritesData)
     }
   }, [favoritesData])

@@ -80,7 +80,7 @@ export default async function NotificationsPage() {
         <p className="text-zinc-500 text-sm">알림이 없습니다.</p>
       ) : (
         <ul className="divide-y divide-zinc-200 border border-zinc-200 rounded-lg overflow-hidden">
-          {notifications.map((notif: any) => {
+          {notifications.map((notif) => {
             const isUnread = !notif.read;
             const categoryLabel = CATEGORY_LABELS[notif.category as NotificationCategory] || notif.category;
             const timeLabel = formatRelativeTime(new Date(notif.createdAt));

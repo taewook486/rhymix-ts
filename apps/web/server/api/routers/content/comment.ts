@@ -97,6 +97,8 @@ export const contentCommentRouter = router({
           where: { siteId_key: { siteId: 1, key: 'spam_filter' } },
         });
 
+        // SiteSetting.value 는 JSON 컬럼이라 아래 기본값과 같은 모양으로 읽는다.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const spamConfig = (spamSettings?.value as any) || {
           forbiddenWordsEnabled: false, // 이미 checkSpamGuard에서 검사했으므로 비활성화
           urlBlacklistEnabled: true,

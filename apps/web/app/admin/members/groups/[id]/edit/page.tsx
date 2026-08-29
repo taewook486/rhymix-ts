@@ -5,6 +5,7 @@
  *
  * @MX:SPEC: SPEC-ADMIN-002 REQ-ADMIN2-041
  */
+import Link from 'next/link'
 import { getServerCaller } from '@/lib/trpc/server';
 import { notFound } from 'next/navigation';
 import { deleteGroupAction } from '../../actions';
@@ -44,9 +45,9 @@ export default async function AdminMemberGroupEditPage({ params }: PageProps) {
   return (
     <div>
       <div className="mb-4">
-        <a href="/admin/members/groups" className="text-zinc-600 hover:text-zinc-900">
+        <Link href="/admin/members/groups" className="text-zinc-600 hover:text-zinc-900">
           ← 목록으로
-        </a>
+        </Link>
       </div>
 
       <h1 className="text-xl font-semibold mb-4">회원 그룹 수정</h1>

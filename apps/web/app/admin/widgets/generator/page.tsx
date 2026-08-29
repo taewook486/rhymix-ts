@@ -80,11 +80,13 @@ export default function WidgetGeneratorPage() {
     { enabled: presetId !== null },
   )
 
-  // 프리셋 데이터가 로드되면 폼 프리필
+  // 프리셋 데이터가 로드되면 폼을 한 번 프리필한다. 이후에는 사용자가 자유롭게
+  // 수정하므로 파생값이 아니라 초기화다.
   useEffect(() => {
     if (!presetId || !presetsData) return
     const preset = presetsData.find((p) => p.id === presetId)
     if (!preset) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPresetWarning(`프리셋 ID ${presetId}를 찾을 수 없습니다.`)
       return
     }

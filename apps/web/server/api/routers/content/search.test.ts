@@ -38,7 +38,7 @@ vi.mock('@rhymix-ts/board', () => ({
 // Create complete mock Prisma client
 const mockPrisma = createMockPrismaClient();
 mockPrisma.siteSetting.findFirst.mockResolvedValue(null);
-// @ts-ignore - Mock implementation
+// @ts-expect-error - Mock implementation
 mockPrisma.moduleInstance.findFirst.mockImplementation((args?: any) => {
   if (!args?.where?.mid) return Promise.resolve(null);
   const instance = mockModuleInstances.find((mi) => mi.mid === args.where.mid);

@@ -5,6 +5,7 @@
  */
 'use client';
 
+import Link from 'next/link'
 import { useState } from 'react';
 import { trpc } from '@/providers/TRPCProvider';
 import { toast } from 'sonner';
@@ -125,9 +126,9 @@ export function PollForm({ documentId, onPollAttached }: PollFormProps) {
             <div className="text-center py-4 text-gray-500">
               사용 가능한 설문이 없습니다.
               <br />
-              <a href="/admin/polls" className="text-blue-600 hover:underline">
+              <Link href="/admin/polls" className="text-blue-600 hover:underline">
                 관리자 페이지에서 설문을 생성해주세요.
-              </a>
+              </Link>
             </div>
           )}
 

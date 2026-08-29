@@ -158,7 +158,6 @@ describe('/search page', () => {
       totalPages: 1,
     });
 
-    // @ts-ignore
     const page = await SearchPage({
       searchParams: Promise.resolve({ q: 'test' }),
     });
@@ -176,7 +175,6 @@ describe('/search page', () => {
       totalPages: 0,
     });
 
-    // @ts-ignore
     const page = await SearchPage({
       searchParams: Promise.resolve({ q: 'nonexistent' }),
     });
@@ -193,7 +191,6 @@ describe('/search page', () => {
       totalPages: 3,
     });
 
-    // @ts-ignore
     const page = await SearchPage({
       searchParams: Promise.resolve({ q: 'test', page: '1' }),
     });

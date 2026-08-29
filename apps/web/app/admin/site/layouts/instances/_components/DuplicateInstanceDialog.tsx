@@ -60,7 +60,7 @@ export function DuplicateInstanceDialog({
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <h2 className="text-lg font-semibold mb-4">레이아웃 인스턴스 복제</h2>
         <p className="text-sm text-zinc-600 mb-4">
-          "{instanceName || '이름 없는'}" 인스턴스를 복제합니다.
+          &quot;{instanceName || '이름 없는'}&quot; 인스턴스를 복제합니다.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

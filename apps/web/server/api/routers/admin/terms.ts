@@ -11,9 +11,10 @@
  */
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { Prisma } from '@prisma/client';
 import { router, protectedAdminProcedure } from '../../trpc';
 
-async function resolveSiteId(ctx: { prisma: any; siteId?: number }): Promise<number> {
+async function resolveSiteId(ctx: { prisma: Prisma.TransactionClient; siteId?: number }): Promise<number> {
   if (ctx.siteId !== undefined) {
     return ctx.siteId;
   }

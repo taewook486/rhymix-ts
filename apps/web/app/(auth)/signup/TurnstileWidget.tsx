@@ -14,6 +14,7 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import Script from 'next/script';
 
+
 export interface TurnstileWidgetProps {
   /** Turnstile Site Key */
   siteKey: string;
@@ -58,7 +59,7 @@ export const TurnstileWidget = forwardRef<TurnstileWidgetRef, TurnstileWidgetPro
     React.useEffect(() => {
       if (!siteKey || typeof window === 'undefined') return;
 
-      const turnstile = (window as any).turnstile;
+      const turnstile = window.turnstile;
       if (!turnstile || !containerRef.current) return;
 
       // Render Turnstile widget

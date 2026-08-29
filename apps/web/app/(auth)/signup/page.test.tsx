@@ -94,7 +94,10 @@ vi.mock('./TermsConsent', () => ({
 }));
 
 vi.mock('./TurnstileWidget', () => ({
-  TurnstileWidget: React.forwardRef(({ onSuccess }: any, ref: any) => {
+  TurnstileWidget: React.forwardRef(function MockTurnstileWidget(
+    { onSuccess }: any,
+    ref: any,
+  ) {
     React.useImperativeHandle(ref, () => ({ reset: vi.fn() }));
     return <div data-testid="turnstile-widget" />;
   }),
