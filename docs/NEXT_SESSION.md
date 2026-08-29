@@ -2,7 +2,8 @@
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
 > 갱신: 2026-08-29 (검색 실측 + 제품 결함 3건 수리 + packages/file/src/server 정리 +
->       17개 패키지 린트 구성. 커밋 6개 `137c527`..`754ffb1`)
+>       워크스페이스 전체 린트 구성. 커밋 8개 `137c527`..`f28e993`)
+> ⚠️ 마지막 커밋 `f28e993` 은 **테스트 미검증분**이 있다 — 아래 '붙여넣을 메시지' 참고
 > source_session_id: 2f8b2d77-cc25-4db4-9f5c-046000108216
 
 ## 붙여넣을 메시지
@@ -10,22 +11,26 @@
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. rhymix-ts — 후보 작업에서 하나 골라 진행.
-지난 회차에 미검증분(게시판 내 검색)을 브라우저로 닫았고, 그 과정에서
-결함 3건(검색 링크 searchField / 이력 페이지 자리표시자 / 중첩 main)을
-수리했다. 지금은 열려 있는 미검증분이 없다.
+ultrathink. rhymix-ts — f28e993 미검증분 마감부터.
+직전 회차에 워크스페이스 전체 린트를 초록으로 만들었는데(240건 → 0),
+apps/web 테스트 스위트가 실행 중 PC 종료로 중단돼 결과가 없다.
+그것부터 닫고 후보 작업으로 간다.
 
 전제 검증:
 1) git rev-list --count --left-right origin/main...HEAD → 0 0
 2) docker start rhymix-ts-db → 컨테이너 기동
    (docker CLI 가 안 잡히면 Docker Desktop 부터: 아래 '환경 함정' 참고)
-3) apps/web dev 서버 기동 (콜드 ~220초). /mnt/d 는 inotify 미작동이라
-   패키지 수정 후에는 반드시 재기동해야 반영된다
+3) pnpm lint → 19/19 성공 (직전 상태 재확인)
 
-실행: docs/NEXT_SESSION.md '후보 작업' 에서 하나 고른다.
-      기본값은 'apps/web 린트 오류 240건' 이다 (패키지 쪽은 이번에 0 으로 만들었다).
+실행: vitest run 'apps/web/' --testTimeout=300000 --reporter=dot
+      (기본 60초로 돌리면 WSL2 jsdom 콜드 임포트로 거짓 실패가 난다.
+       40분 이상 걸리므로 백그라운드로 돌릴 것)
+      이어서 브라우저로 아래 2가지를 확인한다:
+        /admin/modules/2 와 /admin/modules/2/edit  → try 범위 축소한 화면
+        /admin/members/groups, /admin/members/denied-list, /admin/tags
+                                                   → <a>→<Link> 바꾼 화면
 
-후속: FTS 한국어 형태소, 주 DB 재시드, 비회원 비밀글.
+후속: docs/NEXT_SESSION.md '후보 작업' — FTS 한국어 형태소, 주 DB 재시드.
 
 ✂──── 여기까지 복사 ────✂
 ```
@@ -44,6 +49,7 @@ ultrathink. rhymix-ts — 후보 작업에서 하나 골라 진행.
 | 3 | 페이지 16개가 루트 레이아웃의 `<main>` 안에 `<main>` 을 또 염 | `3a23950` |
 | 4 | `packages/file/src/server/` 미사용 계층 1,811행 (정리) | `3896250` |
 | 5 | 17개 패키지가 `echo 'no lint'` — 린트가 한 번도 돈 적 없음 | `754ffb1` |
+| 6 | apps/web 린트 오류 240건 (try 가 JSX 를 감싸 렌더 오류가 404 로 둔갑 포함) | `f28e993` |
 
 **1번**: `index-page.tsx` 의 `buildUrl` 이 `searchField: search` 로 되어 있었다.
 검색어가 `searchField` 자리에 들어가고, 그 값은 title/content/author 중 어느
@@ -71,6 +77,15 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 **커버리지 100% 는 앱 전용 alias 를 mock 해서 나온 숫자**였다. 곁들여
 `vitest.config.ts` 의 `coverage.include` 에서 이미 지워진
 `packages/document/src/server/**` 도 함께 정리했다(지난 회차 누락분).
+
+**6번**: apps/web 240건. 가장 컸던 `error-boundaries` 61건은 파일 **2개**뿐이었다 —
+`admin/modules/[id]` 상세·편집 페이지가 `try` 로 JSX 전체를 감싸고 `catch` 에서
+`notFound()` 를 불러, **렌더 중 어떤 오류가 나도 404 로 둔갑**하고 있었다.
+`try` 를 데이터 조회로 좁혀 린트와 그 결함을 같이 없앴다.
+소스 `any` 43건은 0으로 만들었고(그중 `ctx.prisma: any` 11건은
+`Prisma.TransactionClient` 로, `packages/notification` 의 `list()` 가 findMany
+결과를 `unknown[]` 으로 버리던 것도 바로잡음), 테스트 84건은 `'invalid' as any`
+처럼 잘못된 입력을 일부러 주입하는 자리라 루트와 같은 방침(warn)으로 통일했다.
 
 **5번**: `packages/*` 전부와 `themes/default` 가 `"lint": "echo 'no lint'"` 였다.
 루트에 flat config(`eslint.config.mjs`)를 두고 각 패키지가 그걸 가리키게 배선했다.
@@ -132,9 +147,8 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 
 ## 후보 작업 (전부 선택적)
 
-- **apps/web 린트 오류 240건** (기본 권장) — 위 '린트 현황' 절의 표 참고.
-  `no-html-link-for-pages` 30건이 가장 값싸고, `react-hooks/error-boundaries`
-  61건이 가장 무겁다
+- **`f28e993` 미검증분 마감** (기본 권장) — 위 '미검증으로 남은 것' 절 참고.
+  린트 작업은 끝났고 확인만 남았다
 - **FTS 한국어 형태소** — config 가 'simple' 이라 "첫 공지입니다" 가 '공지' 로
   검색되지 않는다(토큰이 '공지입니다'). pg_bigm 또는 n-gram 검토
 - **주 DB 재시드** — 설치 마법사를 실제로 태워 그룹/메뉴가 있는 상태로 만들기
@@ -156,8 +170,10 @@ cwd 위로 설정을 찾아 올라가지 않으므로 경로를 명시해야 한
 
 | 대상 | error | warning |
 |---|---|---|
-| `packages/*` + `themes/*` | **0** | 363 (`no-explicit-any` 308, 미사용 disable 53, `react/no-danger` 2) |
-| `apps/web` | **240** (기존) | 180 |
+| `packages/*` + `themes/*` | **0** | 363 |
+| `apps/web` | **0** | 263 |
+
+`pnpm lint` 는 이제 19/19 성공한다.
 
 ### 켜면서 끈 규칙과 이유
 
@@ -167,18 +183,30 @@ cwd 위로 설정을 찾아 올라가지 않으므로 경로를 명시해야 한
   줄 단위 `eslint-disable-next-line` 으로 표시해 온 관례가 있어서, 끄면 그 주석
   245개가 전부 "미사용 disable" 이 된다
 
-### apps/web 240건 (다음 후보)
+### 미검증으로 남은 것 (다음 세션 첫 작업)
 
-| 규칙 | 건수 | 성격 |
-|---|---|---|
-| `@typescript-eslint/no-explicit-any` | 127 | 부채. 패키지 쪽처럼 warn 으로 내리는 것도 방법 |
-| `react-hooks/error-boundaries` | 61 | 실제 리팩터 필요 |
-| `@next/next/no-html-link-for-pages` | 30 | `<a>` → `<Link>` 기계적 치환 |
-| 나머지 | 22 | `set-state-in-effect` 7, `no-unescaped-entities` 4, `ban-ts-comment` 4 등 |
+`f28e993` 은 아래 두 가지를 **확인하지 못한 채** 커밋했다. PC 종료로 중단됐다.
 
-가장 많은 파일은 `app/admin/modules/[id]/page.tsx` 한 곳에 58건이 몰려 있다.
-`pnpm lint` 는 이 240건 때문에 실패한다 — **이번 변경 전에도 같은 이유로 실패하던
-상태**였다(패키지들이 전부 `echo 'no lint'` 라 가려져 있었을 뿐).
+1. **apps/web vitest 스위트** — 17분 실행 중 중단, 결과 없음.
+   `--testTimeout=300000` 으로 돌릴 것(기본 60초는 거짓 실패를 낸다)
+2. **브라우저 실측** — 실제 렌더가 바뀐 곳:
+   - `/admin/modules/2`, `/admin/modules/2/edit` (try 범위 축소)
+   - `<a>`→`<Link>` 10개 파일 중 대표: `/admin/members/groups`,
+     `/admin/members/denied-list`, `/admin/members/email-hosts`, `/admin/tags`
+   - `/signup` (requiredTermsCount 를 상태→파생값으로 바꿈, 약관 체크 후
+     제출 버튼 활성화가 그대로인지)
+   - `/notifications` (알림 서비스 반환 타입 변경)
+
+타입체크는 통과했다(apps/web·packages/notification 각 0건). 린트도 0건이다.
+남은 위험은 "타입은 맞는데 화면 동작이 달라지는" 경우다.
+
+### 남긴 부채
+
+- `getSiteSetting` / `setSiteSetting` 의 `any`: `Prisma.JsonValue` 로 좁히면
+  호출부 3곳에서 실제 타입 불일치가 드러난다(`null` 이 `boolean` 자리 등).
+  값진 신호이므로 그 정리는 별도 작업으로 남겼다
+- `set-state-in-effect` 6건: 서버 데이터를 로컬 상태로 복사하거나 연쇄 초기화하는
+  자리라 파생값으로 만들 수 없어 사유를 적어 disable 했다
 
 ## 커버리지 현황 메모
 
