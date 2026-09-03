@@ -58,6 +58,19 @@ Index: [.moai/specs/INDEX.md](.moai/specs/INDEX.md).
 
 ## Bootstrap
 
+**WSL2 주의 (해당 환경만)** — PATH 에 Windows 항목이 섞여 있고 `~/.local/bin` 이나
+`/usr/local/bin` 에 `npx` 가 없으면, `npx` 가 `/mnt/c/Program Files/nodejs/npx`
+(Windows Node 설치본의 래퍼)로 해석된다. 그 래퍼는 리눅스 `node_modules/.bin` 을
+보지 못하므로 `npx eslint` 같은 호출이 "명령을 찾을 수 없음"(cp949 로 깨진 cmd
+메시지)으로 실패한다. `node`/`npm`/`pnpm` 은 멀쩡한데 `npx` 로만 실패하는 것이 신호다.
+
+```bash
+ln -s "$(npm prefix -g)/bin/npx" ~/.local/bin/npx
+which -a npx   # ~/.local/bin/npx 가 /mnt/c/... 보다 위에 오면 정상
+```
+
+노드 버전을 바꾸면 이 심링크가 죽은 경로를 가리키므로 다시 걸어야 한다.
+
 ```bash
 # 1. Enable pnpm via corepack (one-time)
 corepack enable
