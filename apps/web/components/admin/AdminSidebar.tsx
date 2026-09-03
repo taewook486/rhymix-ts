@@ -359,7 +359,10 @@ export function AdminSidebar() {
                 <Star className="h-3 w-3 text-amber-400" />
                 즐겨찾기
               </h3>
+              {/* dnd-kit 은 React useId 가 아니라 모듈 전역 카운터로 aria 기술자 id 를 만든다.
+                  서버 렌더의 카운터 시작값이 클라이언트와 달라 하이드레이션 속성 불일치가 나므로 id 를 고정한다. */}
               <DndContext
+                id="admin-sidebar-favorites"
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}

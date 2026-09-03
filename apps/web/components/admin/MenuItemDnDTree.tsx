@@ -456,7 +456,10 @@ export function MenuItemDnDTree({ menuId, initialItems }: MenuItemDnDTreeProps) 
         드래그하여 메뉴 항목의 순서를 변경하거나 다른 메뉴의 자식으로 이동하세요. Escape 키로 취소할 수 있습니다.
       </p>
 
+      {/* dnd-kit 은 React useId 가 아니라 모듈 전역 카운터로 aria 기술자 id 를 만든다.
+          서버 렌더의 카운터 시작값이 클라이언트와 달라 하이드레이션 속성 불일치가 나므로 id 를 고정한다. */}
       <DndContext
+        id="menu-item-dnd-tree"
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
