@@ -2,7 +2,6 @@
 # MoAI-ADK Package Distribution .gitignore
 # ============================================
 # Version: 0.33.0
-# Updated: 2026-01-10
 # Purpose: Essential patterns for user projects
 # ============================================
 
@@ -116,6 +115,7 @@ logs/*
 # ===========================================
 .moai-backups/
 .moai/backups/
+.moai/backup/
 *.backup/
 *-backup/
 *_backup_*/
@@ -143,19 +143,6 @@ logs/*
 *-api-key.*
 api-key-*
 secret-key-*
-# 위 키 패턴들이 정상 소스까지 삼키는 것을 막는다.
-# 실제 사례: apps/web/server/api/routers/admin/content-extra-key.ts 와 그 테스트가
-# *-key.* 에 걸려 한 번도 커밋되지 못했다(다른 PC 에서 체크아웃하면 빌드가 깨진다).
-# 자격증명은 .pem/.p12/.pfx/.jks 확장자로 관리하므로 소스 확장자만 되살린다.
-!*-key.ts
-!*-key.tsx
-!*_key.ts
-!*_key.tsx
-# .test.ts / .spec.ts 처럼 중간 확장자가 붙는 형태도 되살린다
-!*-key.*.ts
-!*-key.*.tsx
-!*_key.*.ts
-!*_key.*.tsx
 private-key*
 *-secret.*
 *_secret.*
@@ -191,6 +178,7 @@ secret-*.*
 .claude/local/
 .claude/plans/
 .claude/agent-memory/
+**/.claude/agent-memory/
 .claude/worktrees/
 
 # Skill-specific credentials
@@ -209,10 +197,6 @@ secret-*.*
 .moai/memory/
 .moai/worktrees/
 .moai/branches/
-# 로컬 파일 저장소 — M3 버튼 이미지 업로드가 처음 쓰기 시작한 런타임 디렉터리다.
-# 추적 대상 소스가 하나도 없는데 무시 목록에 없어서, 넓은 `git add` 가 업로드 파일과
-# e2e 잔여 PNG 를 삼킬 수 있었다 (실측: 1x1 테스트 PNG 21개 방치).
-apps/web/uploads/
 
 # ===========================================
 # Update Noise-Suppression Ledgers (per-machine, never tracked)
@@ -258,10 +242,16 @@ dist-ssr/
 .netlify/
 .firebase/
 
-# ===========================================
-# MoAI Runtime Reports / Logs / Per-package State
-# Auto-generated per-session/per-run artifacts; not meant for git tracking.
-# ===========================================
+# User Custom Patterns (preserved by moai update)
+!*-key.ts
+!*-key.tsx
+!*_key.ts
+!*_key.tsx
+!*-key.*.ts
+!*-key.*.tsx
+!*_key.*.ts
+!*_key.*.tsx
+apps/web/uploads/
 .claude/*.lock
 .moai/reports/session-*.md
 .moai/reports/sync-report-*.md
@@ -271,16 +261,9 @@ dist-ssr/
 .moai/lessons-inbox.jsonl
 **/.moai/plans/
 **/.moai/state/
-# pnpm 워크스페이스 패키지(apps/*, packages/*, themes/*) 안에 생기는 .moai/ 폴더는
-# 전부 MoAI 툴링이 만드는 세션 스크래치(state/context-usage.json, state/session-memo.md 등)
-# — 루트 .moai/(SPEC, 설정)는 이 패턴에 걸리지 않는다.
 apps/*/.moai/
 packages/*/.moai/
 themes/*/.moai/
-
-# ===========================================
-# Test / E2E Generated Artifacts
-# ===========================================
 coverage/
 screenshots/
 .playwright-mcp/

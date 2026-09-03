@@ -264,7 +264,7 @@ case "$GATE_LANG" in
         ;;
     cpp)
         C1_LABEL="g++ syntax check"
-        run_step g++ c1 sh -c 'find . \( -name "*.cpp" -o -name "*.cc" \) -exec g++ -fsyntax-only -std=c++17 {} \; 2>&1' || true
+        run_step g++ c1 sh -c 'find . -name "*.cpp" -o -name "*.cc" -exec g++ -fsyntax-only -std=c++17 {} \; 2>&1' || true
         ;;
     scala)
         C1_LABEL="scalac"
@@ -272,7 +272,7 @@ case "$GATE_LANG" in
         ;;
     r)
         C1_LABEL="R syntax"
-        run_step R c1 sh -c 'find . -name "*.R" -o -name "*.r" | head -5 | while IFS= read -r f; do Rscript -e "parse(commandArgs(TRUE)[1])" "$f" 2>&1; done' || true
+        run_step R c1 sh -c 'find . -name "*.R" -o -name "*.r" | head -5 | while read f; do Rscript -e "parse(\"$f\")" 2>&1; done' || true
         ;;
     flutter)
         C1_LABEL="dart analyze"
@@ -335,6 +335,31 @@ fi
 case "${MOAI_SYNC_GATE_BLOCKING:-1}" in
     0|off|false|advisory|no) MODE="advisory" ;;
     *) MODE="blocking" ;;
+esac
+
+# SPEC-STOPCHAIN-TRIM-001 REQ-004 (A11): tier-aware mode override. Read
+# $MOAI_AUTONOMY_TIER at the shell layer (no moai binary — the token is an
+# env-key per OQ-1/REQ-003 so shell can read it directly). The tier relaxes
+# ONLY the advisory-vs-blocking MODE of this gate, never the deny/ask denylist
+# (that lives in pre_tool.go and is tier-invariant per REQ-007).
+#   - fully-autonomous: advisory only (systemMessage, no decision:block).
+#   - automatic:        build-only-block — a C2 (build) failure still blocks,
+#                        but C1 (vet/lint) failures become advisory.
+#   - semi-auto/unset:  current MODE (no change — backward compat, AC-007).
+AUTONOMY_TIER=$(printf '%s' "${MOAI_AUTONOMY_TIER:-}" | tr '[:upper:]' '[:lower:]')
+case "$AUTONOMY_TIER" in
+    fully-autonomous)
+        MODE="advisory"
+        ;;
+    automatic)
+        # Build (C2) failure still blocks; vet/lint (C1) failure → advisory.
+        if [ "$DECISION" = "block" ] && [ "$C1_EXIT" -ne 0 ] && [ "$C2_EXIT" -eq 0 ]; then
+            MODE="advisory"
+        fi
+        ;;
+    *)
+        # semi-auto / unset / unrecognized → MODE unchanged (AC-007 backward compat).
+        ;;
 esac
 
 # Emit a Stop-schema-compliant response.
