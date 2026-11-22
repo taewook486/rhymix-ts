@@ -9,6 +9,8 @@
  */
 import { z } from 'zod';
 import type { PrismaClient } from '@prisma/client';
+import { canPerformAction } from './permissions';
+import { BoardPermissionDeniedError, type DocumentViewer } from './document';
 
 // ---------------------------------------------------------------------------
 // 스키마 / 타입
@@ -46,8 +48,10 @@ export interface AdjacentResult {
 export async function getAdjacentDocuments(
   input: GetAdjacentDocumentsInput,
   ctx: { prisma: PrismaClient },
+  opts?: { viewer?: DocumentViewer },
 ): Promise<AdjacentResult> {
   const parsed = GetAdjacentDocumentsSchema.parse(input);
+  const viewer = opts?.viewer;
 
   // 현재 문서 조회
   const current = await ctx.prisma.document.findUnique({
@@ -59,12 +63,26 @@ export async function getAdjacentDocuments(
       updateOrder: true,
       status: true,
       isNotice: true,
+      authorId: true,
+      deletedAt: true,
     },
   });
 
   if (!current || current.boardId !== parsed.boardId) {
     // 현재 문서가 없거나 다른 게시판이면 빈 결과
     return { prev: null, next: null };
+  }
+
+  // D-6: viewer 지정(외부 노출 경로) 시 게시판 list 권한과 기준 글 상태를 검사한다.
+  // 생략하면 종전 동작 — 서버 내부 호출(view-page)은 이미 소속·권한 검사 후 부른다.
+  if (viewer !== undefined) {
+    const board = await ctx.prisma.board.findUnique({ where: { id: parsed.boardId } });
+    if (!board) return { prev: null, next: null };
+    if (!canPerformAction(board, 'list', viewer)) throw new BoardPermissionDeniedError('list');
+    if (current.deletedAt !== null) return { prev: null, next: null };
+    const isAuthorOrAdmin =
+      viewer.isAdmin || (viewer.userId !== null && current.authorId === viewer.userId);
+    if (current.status !== 'PUBLIC' && !isAuthorOrAdmin) return { prev: null, next: null };
   }
 
   // 정렬 필드 결정

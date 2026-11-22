@@ -531,3 +531,46 @@ describe('content.document list/get — viewer 전달 (D-1)', () => {
     await expect((await caller(memberCtx)).get({ id: 11 })).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
+
+// ---------------------------------------------------------------------------
+// D-6: adjacent 는 호출자 정보를 viewer 로 넘기고 도메인 예외를 변환한다
+// ---------------------------------------------------------------------------
+describe('content.document adjacent — viewer 전달 (D-6)', () => {
+  const mockGetAdjacent = mockGetAdjacentDocuments;
+
+  beforeEach(() => {
+    mockGetAdjacent.mockReset();
+  });
+
+  const caller = async (ctx: unknown) => {
+    const { contentDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return createCallerFactory(contentDocumentRouter)(ctx as any);
+  };
+
+  it('비로그인 → viewer { userId:null, userGroupSrl:0, isAdmin:false } 를 3번째 인자로 전달', async () => {
+    mockGetAdjacent.mockResolvedValueOnce({ prev: null, next: null });
+    await (await caller(guestCtx)).adjacent({ documentId: 1, boardId: 2 });
+    expect(mockGetAdjacent.mock.calls[0]?.[2]).toEqual({
+      viewer: { userId: null, userGroupSrl: 0, isAdmin: false },
+    });
+  });
+
+  it('회원 → 세션 기반 viewer 전달', async () => {
+    mockGetAdjacent.mockResolvedValueOnce({ prev: null, next: null });
+    await (await caller(memberCtx)).adjacent({ documentId: 1, boardId: 2 });
+    expect(mockGetAdjacent.mock.calls[0]?.[2]).toEqual({
+      viewer: { userId: 42, userGroupSrl: 1, isAdmin: false },
+    });
+  });
+
+  it('권한 거부 → FORBIDDEN', async () => {
+    const { BoardPermissionDeniedError } = await import('@rhymix-ts/document');
+    mockGetAdjacent.mockRejectedValueOnce(new BoardPermissionDeniedError('list'));
+    await expect((await caller(guestCtx)).adjacent({ documentId: 1, boardId: 2 })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+  });
+});
+

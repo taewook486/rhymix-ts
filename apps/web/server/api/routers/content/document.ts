@@ -301,7 +301,13 @@ export const contentDocumentRouter = router({
         sort: z.enum(['list_order', 'update_order']).optional(),
       }),
     )
-    .query(async ({ ctx, input }) => getAdjacentDocuments(input, { prisma: ctx.prisma })),
+    .query(async ({ ctx, input }) => {
+      try {
+        return await getAdjacentDocuments(input, { prisma: ctx.prisma }, { viewer: buildViewer(ctx.session) });
+      } catch (err) {
+        mapDomainError(err);
+      }
+    }),
 
   /**
    * 투표 — 인증 필수.
