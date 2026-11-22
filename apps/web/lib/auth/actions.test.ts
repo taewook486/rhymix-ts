@@ -11,6 +11,7 @@
  *   - `@rhymix-ts/db` 의 prisma client
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { redirect } from 'next/navigation';
 
 const {
   headersGetMock,
@@ -201,6 +202,30 @@ describe('loginAction', () => {
       identifier: 'alice',
       password: 'correct-passphrase',
       redirect: false,
+    });
+  });
+
+  describe('callbackUrl 오픈 리다이렉트 방어 (D-2)', () => {
+    const loginWith = async (callbackUrl: string) => {
+      signInMock.mockResolvedValue(undefined);
+      vi.mocked(redirect).mockClear();
+      await loginAction(
+        initialAuthActionState,
+        buildForm({ identifier: 'alice', password: 'correct-passphrase', callbackUrl }),
+      );
+    };
+
+    it.each(['//evil.com', '/\\evil.com', 'https:/evil.com', 'https://evil.com', '/%2F/evil.com'])(
+      '외부 주소 %s → 홈(/)으로 이동',
+      async (bad) => {
+        await loginWith(bad);
+        expect(redirect).toHaveBeenCalledWith('/');
+      },
+    );
+
+    it('내부 경로는 그대로 이동', async () => {
+      await loginWith('/free?page=2');
+      expect(redirect).toHaveBeenCalledWith('/free?page=2');
     });
   });
 

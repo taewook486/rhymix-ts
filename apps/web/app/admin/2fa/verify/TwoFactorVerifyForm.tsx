@@ -18,6 +18,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { trpc } from '@/providers/TRPCProvider'
+import { safeInternalPath } from '@/lib/auth/safe-redirect'
 import { Button, Input, Label } from '@rhymix-ts/ui/components'
 import { toast } from 'sonner'
 import { Loader2, ShieldCheck } from 'lucide-react'
@@ -71,7 +72,7 @@ export function TwoFactorVerifyForm() {
       //   클라이언트 페이로드는 무시되므로 인자 없이 호출.
       await update()
       toast.success('2단계 인증이 확인되었습니다.')
-      const callbackUrl = searchParams.get('callbackUrl') || '/admin'
+      const callbackUrl = safeInternalPath(searchParams.get('callbackUrl'), '/admin')
       router.push(callbackUrl)
     } catch (error) {
       // REQ-2OTP-043/049/051: 서버는 동일한 일반 메시지로 응답. 모드·이유 추가 추론 금지.

@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 import { loginAction } from '@/lib/auth/actions';
+import { safeInternalPath } from '@/lib/auth/safe-redirect';
 import { initialAuthActionState, type AuthActionState } from '@/lib/auth/auth-state';
 import { signIn } from 'next-auth/react';
 import { trpc } from '@/providers/TRPCProvider';
@@ -24,7 +25,7 @@ import { TurnstileWidget } from '../signup/TurnstileWidget';
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') ?? '/';
+  const callbackUrl = safeInternalPath(searchParams.get('callbackUrl'));
   const turnstileRef = React.useRef<TurnstileWidgetRef>(null);
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
   const [captchaRequired, setCaptchaRequired] = React.useState(false);

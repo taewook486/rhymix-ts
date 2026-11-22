@@ -34,6 +34,7 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 
 import { resolveDefaultSiteId } from './site';
+import { safeInternalPath } from './safe-redirect';
 import type { AuthActionState } from './auth-state';
 export type { AuthActionState } from './auth-state';
 
@@ -237,7 +238,7 @@ export async function loginAction(
   const identifier = String(formData.get('identifier') ?? '').trim();
   const rememberMe = String(formData.get('rememberMe') ?? '') === 'on';
   const password = String(formData.get('password') ?? '');
-  const callbackUrl = String(formData.get('callbackUrl') ?? '').trim() || '/';
+  const callbackUrl = safeInternalPath(String(formData.get('callbackUrl') ?? ''));
   if (!identifier || !password) {
     return {
       ok: false,

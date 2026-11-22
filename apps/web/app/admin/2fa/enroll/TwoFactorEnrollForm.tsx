@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { trpc } from '@/providers/TRPCProvider'
+import { safeInternalPath } from '@/lib/auth/safe-redirect'
 import { Button, Checkbox, Input, Label } from '@rhymix-ts/ui/components'
 import { toast } from 'sonner'
 import { AlertTriangle, Copy, Loader2 } from 'lucide-react'
@@ -91,7 +92,7 @@ export function TwoFactorEnrollForm() {
     //   다음 요청의 jwt callback 이 marker 를 소비하여 twoFactorVerified=true 를 채운다.
     //   클라이언트 페이로드는 jwt callback 이 무시하므로 인자 없이 호출한다.
     await update()
-    const callbackUrl = searchParams.get('callbackUrl') || '/admin'
+    const callbackUrl = safeInternalPath(searchParams.get('callbackUrl'), '/admin')
     router.push(callbackUrl)
   }
 
