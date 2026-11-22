@@ -170,11 +170,14 @@ export default async function ViewPage({ params, searchParams }: ViewPageProps) 
   }
 
   const session = await auth();
-  const sessionUser = session?.user as { id?: string | number; isAdmin?: boolean } | null | undefined;
+  const sessionUser = session?.user as
+    | { id?: string | number; isAdmin?: boolean; groups?: Array<{ id?: number }> }
+    | null
+    | undefined;
 
   const typedSession =
     sessionUser?.id != null
-      ? { user: { id: Number(sessionUser.id), isAdmin: !!sessionUser.isAdmin } }
+      ? { user: { id: Number(sessionUser.id), isAdmin: !!sessionUser.isAdmin, groups: sessionUser.groups } }
       : null;
 
   // SPEC-POLL-001 REQ-POLL-001~003: 이 게시물에 연결된 설문이 있는지 조회

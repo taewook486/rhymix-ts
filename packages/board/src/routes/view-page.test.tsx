@@ -29,6 +29,13 @@ const FIXED_DOC = {
   blamedCount: 0,
 };
 
+/** 이 화면의 게시판(instance.id=1 에 대응하는 Board id=1) 을 돌려주는 prisma mock */
+function makeFakePrisma(board: { id: number } | null = { id: 1 }) {
+  const prisma = createMockPrismaClient();
+  prisma.board.findUnique.mockResolvedValue(board as never);
+  return prisma;
+}
+
 /** 공통 fakeProps 생성 헬퍼 */
 function makeFakeProps(overrides: {
   documentId?: number;
@@ -38,7 +45,7 @@ function makeFakeProps(overrides: {
     instance: { id: 1, moduleCode: 'board', mid: 'free', name: '자유게시판', config: null },
     params: { mid: 'free' },
     searchParams: {},
-    prisma: createMockPrismaClient(),
+    prisma: makeFakePrisma(),
     documentId: overrides.documentId ?? 42,
     session: overrides.session !== undefined ? overrides.session : null,
   };
@@ -569,5 +576,125 @@ describe('BoardViewPage', () => {
     // 다음글 링크가 표시되지 않아야 함
     expect(html).toContain('이전글');
     expect(html).not.toContain('다음글');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// D-4: 상세 화면 접근 규칙 — 삭제 글 / TEMP / 게시판 소속
+// ---------------------------------------------------------------------------
+
+describe('BoardViewPage — 접근 규칙 (D-4)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  async function render(doc: Record<string, unknown>, session: { user: { id: number; isAdmin: boolean } } | null, board: { id: number } | null = { id: 1 }) {
+    vi.doMock('next/navigation', () => ({
+      notFound: () => {
+        throw new Error('NEXT_NOT_FOUND');
+      },
+    }));
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue({ ...FIXED_DOC, ...doc }),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({ listComments: vi.fn().mockResolvedValue([]) }));
+    vi.doMock('@rhymix-ts/file', () => ({ listAttachments: vi.fn().mockResolvedValue([]) }));
+    const { BoardViewPage } = await import('./view-page.js');
+    const props = { ...makeFakeProps({ session }), prisma: makeFakePrisma(board) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const node = await BoardViewPage(props as any);
+    return renderToStaticMarkup(node as React.ReactElement);
+  }
+
+  it('D4-1: 삭제된 글(deletedAt≠null)은 notFound', async () => {
+    await expect(render({ deletedAt: new Date('2026-01-02') }, { user: { id: 7, isAdmin: true } })).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('D4-2a: TEMP 글은 비로그인에게 notFound', async () => {
+    await expect(render({ status: 'TEMP' }, null)).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('D4-2b: TEMP 글은 작성자가 아닌 회원에게 notFound', async () => {
+    await expect(render({ status: 'TEMP' }, { user: { id: 99, isAdmin: false } })).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('D4-2c: TEMP 글은 작성자에게 보인다', async () => {
+    const html = await render({ status: 'TEMP' }, { user: { id: 7, isAdmin: false } });
+    expect(html).toContain('테스트 문서 제목');
+  });
+
+  it('D4-2d: TEMP 글은 관리자에게 보인다', async () => {
+    const html = await render({ status: 'TEMP' }, { user: { id: 1, isAdmin: true } });
+    expect(html).toContain('테스트 문서 제목');
+  });
+
+  it('D4-3a: 글이 다른 게시판 소속(boardId≠board.id)이면 notFound', async () => {
+    await expect(render({ boardId: 2 }, null)).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('D4-3b: 이 화면의 게시판 글이면 정상 렌더', async () => {
+    const html = await render({ boardId: 1 }, null);
+    expect(html).toContain('테스트 문서 제목');
+  });
+
+  it('D4-3c: 게시판을 찾을 수 없으면 notFound', async () => {
+    await expect(render({}, null, null)).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('D4-5: SECRET 안내("비밀글입니다")는 그대로 유지', async () => {
+    const html = await render({ status: 'SECRET' }, null);
+    expect(html).toContain('비밀글입니다');
+  });
+
+  // D4-4: 게시판 view 권한 검사 (기본값은 전체 허용 — permissions.ts DEFAULT_PERMISSIONS)
+  async function renderWithPerms(
+    permissions: unknown,
+    session: { user: { id: number; isAdmin: boolean; groups?: Array<{ id: number }> } } | null,
+  ) {
+    vi.doMock('next/navigation', () => ({
+      notFound: () => {
+        throw new Error('NEXT_NOT_FOUND');
+      },
+    }));
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue(FIXED_DOC),
+      getAdjacentDocuments: vi.fn().mockResolvedValue({ prev: null, next: null }),
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({ listComments: vi.fn().mockResolvedValue([]) }));
+    vi.doMock('@rhymix-ts/file', () => ({ listAttachments: vi.fn().mockResolvedValue([]) }));
+    const { BoardViewPage } = await import('./view-page.js');
+    const props = { ...makeFakeProps({ session: session as never }), prisma: makeFakePrisma({ id: 1, permissions } as never) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return renderToStaticMarkup((await BoardViewPage(props as any)) as React.ReactElement);
+  }
+
+  it('D4-4a: permissions 가 비어 있으면(기본값) 비회원도 글이 보인다', async () => {
+    const html = await renderWithPerms({}, null);
+    expect(html).toContain('테스트 문서 제목');
+  });
+
+  it('D4-4b: view:[1] 이면 비회원은 안내 화면만, 글 내용은 렌더되지 않는다', async () => {
+    const html = await renderWithPerms({ view: [1] }, null);
+    expect(html).toContain('열람 권한이 없습니다');
+    expect(html).not.toContain('테스트 문서 제목');
+    expect(html).not.toContain('안전한 HTML 콘텐츠');
+  });
+
+  it('D4-4c: view:[1] 이어도 회원(그룹 정보 없음 → 1)은 본다', async () => {
+    const html = await renderWithPerms({ view: [1] }, { user: { id: 99, isAdmin: false } });
+    expect(html).toContain('테스트 문서 제목');
+  });
+
+  it('D4-4d: view:[2] 는 그룹 2 회원만 — 그룹 1 회원은 안내 화면, 그룹 2 회원은 본다', async () => {
+    const denied = await renderWithPerms({ view: [2] }, { user: { id: 99, isAdmin: false, groups: [{ id: 1 }] } });
+    expect(denied).toContain('열람 권한이 없습니다');
+    const allowed = await renderWithPerms({ view: [2] }, { user: { id: 99, isAdmin: false, groups: [{ id: 2 }] } });
+    expect(allowed).toContain('테스트 문서 제목');
+  });
+
+  it('D4-4e: view:[] 여도 관리자는 본다', async () => {
+    const html = await renderWithPerms({ view: [] }, { user: { id: 1, isAdmin: true } });
+    expect(html).toContain('테스트 문서 제목');
   });
 });

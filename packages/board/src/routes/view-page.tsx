@@ -8,9 +8,11 @@
  * @MX:SPEC: SPEC-CONTENT-001, SPEC-BOARD-UI-001 REQ-BUI-006, REQ-BUI-007
  */
 import React from 'react';
+import { notFound } from 'next/navigation';
 import type { PrismaClient } from '@prisma/client';
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
 import { getDocument, getAdjacentDocuments } from '@rhymix-ts/document';
+import { canPerformAction } from '../permissions';
 import { listComments } from '@rhymix-ts/comment';
 import { listAttachments } from '@rhymix-ts/file';
 import { sanitize } from '../components/sanitize';
@@ -38,7 +40,7 @@ export interface BoardViewPageProps extends ModuleRoutePageProps {
   /** apps/web 에서 주입되는 Prisma 클라이언트 */
   prisma: PrismaClient;
   /** 현재 세션 — null이면 비로그인 */
-  session: { user: { id: number; isAdmin: boolean } } | null;
+  session: { user: { id: number; isAdmin: boolean; groups?: Array<{ id?: number }> } } | null;
   /**
    * SPEC-MESSAGE-001 REQ-MSG-001: 작성자 닉네임 옆에 표시할 "쪽지 보내기" 액션.
    * apps/web 레이어에서 주입되는 render-prop — packages/board 는 실제 발송 로직을
@@ -74,8 +76,10 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
   const mid = instance.mid;
 
   // 병렬 데이터 로드 — 문서/댓글/첨부파일
-  const [doc, comments, attachments, adjacent] = await Promise.all([
+  const [doc, board, comments, attachments, adjacent] = await Promise.all([
     getDocument(documentId, { prisma }),
+    // D-4: 이 화면의 게시판(Board.id 는 instance.id 와 다른 값) — 글의 소속 검사용
+    prisma.board.findUnique({ where: { moduleInstanceId: instance.id } }),
     listComments({ documentId }, { prisma }),
     listAttachments({ documentId }, { prisma }),
     getAdjacentDocuments(
@@ -83,6 +87,29 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
       { prisma },
     ),
   ]);
+
+  // D-4: 삭제된 글 / 다른 게시판의 글 / 남의 임시저장 글은 존재하지 않는 글로 취급한다.
+  if (doc.deletedAt !== null && doc.deletedAt !== undefined) notFound();
+  if (!board || doc.boardId !== board.id) notFound();
+  const isAuthorOrAdmin =
+    session !== null && (session.user.id === doc.authorId || session.user.isAdmin);
+  if (doc.status === 'TEMP' && !isAuthorOrAdmin) notFound();
+
+  // D-4 규칙 4: 게시판 view 권한. 그룹은 tRPC 쪽 buildActorWithId 와 같은 규칙(첫 그룹, 없으면 회원=1, 비회원=0).
+  const viewerContext = {
+    userGroupSrl: session === null ? 0 : (session.user.groups?.[0]?.id ?? 1),
+    isAdmin: session?.user.isAdmin ?? false,
+  };
+  if (!canPerformAction(board as { permissions: Record<string, number[]> | null }, 'view', viewerContext)) {
+    return (
+      <div className="max-w-3xl mx-auto p-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 font-medium">열람 권한이 없습니다</p>
+          <p className="text-yellow-600 text-sm mt-2">이 게시판의 글을 볼 수 있는 권한이 없습니다.</p>
+        </div>
+      </div>
+    );
+  }
 
   // 비밀글 접근 권한 판단 (REQ-BUI-006)
   const canViewSecret =

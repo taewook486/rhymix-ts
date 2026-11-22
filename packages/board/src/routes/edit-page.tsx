@@ -9,6 +9,7 @@
  * @MX:SPEC: SPEC-BOARD-CRUD-001 REQ-BOARD-053, REQ-BOARD-054
  */
 import React from 'react';
+import { notFound } from 'next/navigation';
 import type { PrismaClient } from '@prisma/client';
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
 import { getDocument } from '@rhymix-ts/document';
@@ -53,6 +54,9 @@ export async function BoardEditPage({
       </main>
     );
   }
+
+  // D-4: 삭제된 글은 작성자·관리자에게도 수정 화면을 열지 않는다.
+  if (doc.deletedAt !== null && doc.deletedAt !== undefined) notFound();
 
   // 소유권 + 관리자 가드
   const userId = session?.user.id;
