@@ -1,113 +1,101 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-08-29 (검색 실측 + 제품 결함 3건 수리 + packages/file/src/server 정리 +
->       워크스페이스 전체 린트 구성. 커밋 8개 `137c527`..`f28e993`)
-> ⚠️ 마지막 커밋 `f28e993` 은 **테스트 미검증분**이 있다 — 아래 '붙여넣을 메시지' 참고
-> source_session_id: 2f8b2d77-cc25-4db4-9f5c-046000108216
+> 갱신: 2026-11-22 (3세션 협업 첫 회차 — 레거시 2.1.41 보안 대조 + 결함 수리 7건,
+>       main HEAD `3f88ab5`. 미완성 D-7 은 브랜치 `WT-admin-guard-wip` `e5a54f5`)
+> source_session_id: a7f0ac2e-6672-4e9c-82b3-efba47bd0e71
 
 ## 붙여넣을 메시지
 
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. rhymix-ts — f28e993 미검증분 마감부터.
-직전 회차에 워크스페이스 전체 린트를 초록으로 만들었는데(240건 → 0),
-apps/web 테스트 스위트가 실행 중 PC 종료로 중단돼 결과가 없다.
-그것부터 닫고 후보 작업으로 간다.
+ultrathink. rhymix-ts — D-7 관리자 서버 액션 가드 통일 마무리.
+applied lessons: feedback-agent-test-claims-verify-by-rerun.md, feedback-domain-fix-count-all-callers.md, feedback-batch-replace-needs-line-numbers.md
+source_session_id: a7f0ac2e-6672-4e9c-82b3-efba47bd0e71
 
 전제 검증:
-1) git rev-list --count --left-right origin/main...HEAD → 0 0
-2) docker start rhymix-ts-db → 컨테이너 기동
-   (docker CLI 가 안 잡히면 Docker Desktop 부터: 아래 '환경 함정' 참고)
-3) pnpm lint → 19/19 성공 (직전 상태 재확인)
+1) git fetch origin && git rev-list --count --left-right origin/main...main → 0 0
+2) git rev-parse --short origin/WT-admin-guard-wip → e5a54f5
+3) docker start rhymix-ts-db → 컨테이너 기동
 
-실행: vitest run 'apps/web/' --testTimeout=300000 --reporter=dot
-      (기본 60초로 돌리면 WSL2 jsdom 콜드 임포트로 거짓 실패가 난다.
-       40분 이상 걸리므로 백그라운드로 돌릴 것)
-      이어서 브라우저로 아래 2가지를 확인한다:
-        /admin/modules/2 와 /admin/modules/2/edit  → try 범위 축소한 화면
-        /admin/members/groups, /admin/members/denied-list, /admin/tags
-                                                   → <a>→<Link> 바꾼 화면
+실행: WT-admin-guard-wip 를 워크트리로 열어(main 체크아웃에서 브랜치 전환 금지)
+      실패 테스트 3파일 31건을 고치고 tsc apps/web 0건 확인 → main 에 병합·푸시.
+      상세는 docs/NEXT_SESSION.md 'D-7 이어하기' 절.
 
-후속: docs/NEXT_SESSION.md '후보 작업' — FTS 한국어 형태소, 주 DB 재시드.
+후속: 보고서 §2 남은 항목(로그아웃 출처 검사, 상담 게시판, 무살균 HTML 출력 2곳),
+      레거시 2.1.41 기능 변경 대조.
 
 ✂──── 여기까지 복사 ────✂
 ```
 
-## 이번 세션 결과 (2026-08-29)
+## 이번 세션 결과 (2026-11-22)
 
-지난 회차가 남긴 유일한 미검증분(게시판 내 검색)을 브라우저로 확인했다.
-**3겹 수리는 전부 정상이었고**, 확인하는 과정에서 새 결함 3건이 나왔다.
+3세션 협업 구성(moai=opus 총괄, moai2=sonnet 구현, moai3=haiku 보조)으로 진행했다.
+구성 규칙은 각 컴퓨터의 `CLAUDE.local.md`(커밋 안 함). `start-moai-cg.ps1 -Session <이름> -Model <모델>`.
 
-### 수리한 결함 3건
+### 지난 회차 미검증분 마감 (`c660c23` 린트 정리)
 
-| # | 결함 | 커밋 |
+- apps/web vitest 전체: 157파일 1,112 통과 / 5 skip, exit 0 (`--testTimeout=300000`, 39분)
+- 브라우저: 관리자 모듈·`<Link>` 변경 4화면·`/signup` 약관·`/notifications`·그룹 하이드레이션 정상,
+  그룹 추가 화면 "← 목록으로" 링크 정상. 알림 데이터가 있을 때의 목록은 미확인
+
+### 레거시 Rhymix 2.1.33 → 2.1.41 보안 대조
+
+`/mnt/d/project/rhymix` 를 pull(커밋 253, `4e8c55108`→`08dda97d6`). RVE-2026-19~47 의 28건을
+rhymix-ts 와 대조 → 결함 3, 확인 필요 4, 해당 없음 12, 안전 8.
+보고서: `.moai/reports/legacy-2.1.41-security-audit-2026-11-22.md` (`9da9003`)
+
+### 수리 (전부 main 에 푸시, 재현 테스트 → 수정 → 통과, 총괄이 재실행으로 확인)
+
+| 커밋 | 내용 | 실측 |
 |---|---|---|
-| 1 | 검색 결과 화면의 모든 링크가 `searchField` 에 검색어를 실어 보냄 | `137c527` |
-| 2 | `/documents/[id]/history` 가 "구현 예정" 자리표시자 | `64c3223` |
-| 3 | 페이지 16개가 루트 레이아웃의 `<main>` 안에 `<main>` 을 또 염 | `3a23950` |
-| 4 | `packages/file/src/server/` 미사용 계층 1,811행 (정리) | `3896250` |
-| 5 | 17개 패키지가 `echo 'no lint'` — 린트가 한 번도 돈 적 없음 | `754ffb1` |
-| 6 | apps/web 린트 오류 240건 (try 가 JSX 를 감싸 렌더 오류가 404 로 둔갑 포함) | `f28e993` |
+| `b21130d` | 로그인·2FA `callbackUrl` 오픈 리다이렉트 차단(`lib/auth/safe-redirect.ts`) | 브라우저: 외부 주소 3종 → `/`, `/free` 정상 |
+| `61a794c` | `content.document.get/list` 열람 권한 + 비밀번호 해시·메일·IP 응답 제외 | curl: 없는 글 404, 비로그인 TEMP 빈 목록 |
+| `dd4e66e` | 페이지 본문 `rx-widget` 원본 토큰 복원 중단(저장형 XSS) | 단위 테스트만 |
+| `b397b1a` | 권한 미설정 게시판의 list·view 기본값을 전체 허용(레거시 default="guest") | — |
+| `4a93f65` | 상세·수정 화면: 삭제 글·남의 TEMP·다른 게시판 글 404, view 권한 검사 | curl: `/notice/2` 404, `/free/2` 200 |
+| `fdf524c` | 상세 이전글·다음글을 `Board.id` 로 조회(인스턴스 id 를 넘기던 결함) | 단위 테스트만(dev DB 는 두 id 가 같음) |
+| `3f88ab5` | `content.document.adjacent` 에 list 권한·기준 글 상태 검사 | 단위 테스트만 |
 
-**1번**: `index-page.tsx` 의 `buildUrl` 이 `searchField: search` 로 되어 있었다.
-검색어가 `searchField` 자리에 들어가고, 그 값은 title/content/author 중 어느
-것도 아니라 페이지 파싱에서 `title` 로 폴백된다. 결과적으로 **내용 검색을 한 뒤
-링크를 한 번 누르면 조용히 제목 검색으로 바뀐다**.
-실측: `/free?search=작성자&searchField=content` 2건 → 카드형 링크 이동 후 1건.
-수리 후 2건 유지. 회귀 테스트 2건 추가(결함 되돌려 RED 확인).
+부수 영향: `b397b1a` 로 권한 미설정 게시판의 RSS 피드가 공개로 바뀜(레거시와 동일, 실측 안 함).
 
-**2번**: 페이지 주석이 "listDocumentHistory 가 패키지에 없다" 고 적어 뒀는데,
-실제 함수 이름은 `getUpdateHistory` 였고 `packages/document/src/history.ts` 에
-이미 있었다. tRPC 라우터(`content.history.document`)도 그 함수를 쓰고 있었다.
-drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 호출)으로 배선.
-권한 판정은 도메인이 하고 페이지는 `BoardPermissionDeniedError` 를 안내로 바꾼다.
-돌아가기 링크는 `board.moduleInstance.mid` 를 조회해 `/{mid}/{id}` 로 만든다
-(`/documents/{id}` 라우트는 존재하지 않는다).
+## D-7 이어하기 — 관리자 서버 액션 가드 통일 (미완성)
 
-**3번**: 2번을 실측하다 Playwright 가 `locator('main')` strict mode 위반을 냈다.
-`/tags` 가 `<main>` 을 2개 내보내고 있었다. 루트 레이아웃 것만 남기고 안쪽
-16개 파일을 `<div>` 로 바꿨다. className 무변경이라 화면은 그대로다.
+**문제**: tRPC `protectedAdminProcedure` 는 ① 관리자 판정 ② 관리자 IP 제한·사이트 잠금
+③ 2FA 를 거치는데, tRPC 를 거치지 않는 관리자 Server Action 은 ①만 하거나
+(`session.user.isAdmin` 만 보는 7개는 관리자 그룹 사용자를 오히려 막음) ②③을 건너뛴다.
+**가장 큰 구멍**: `apps/web/app/admin/boards/[mid]/{categories,extra-keys,feed,permissions}/page.tsx`
+의 인라인 Server Action 6개는 본문에 가드가 전혀 없고 렌더 시점 검사에만 의존한다
+(feed·permissions 는 `board.update` 직접 수행).
 
-**4번**: document 쪽(`cf16c6e`)과 같은 형태의 미사용 계층. 근거 4가지가 전부
-같은 방향이었다 — 호출자 0곳 / `package.json` 의 `exports` 가 `.` 뿐이라 주석이
-안내하는 `@rhymix-ts/file/server/actions` 경로가 해석조차 안 됨 / 패키지 자신의
-`tsconfig.json` 이 `src/server/actions.ts` 를 exclude(앱 alias 를 못 풀어서) /
-**커버리지 100% 는 앱 전용 alias 를 mock 해서 나온 숫자**였다. 곁들여
-`vitest.config.ts` 의 `coverage.include` 에서 이미 지워진
-`packages/document/src/server/**` 도 함께 정리했다(지난 회차 누락분).
+**브랜치 `WT-admin-guard-wip` (`e5a54f5`) 상태**
+- `apps/web/server/api/admin-guard.ts` — tRPC 에서 ②③ 로직 추출(trpc.ts 는 이 함수를 import).
+  server/api 50파일 408건 통과로 회귀 없음 확인
+- `apps/web/lib/auth/admin-guard.ts` — Server Action 용 헬퍼 `assertAdminServerAction()`
+- 33개 함수에 적용 완료. 실패 방식: 가드 없던 8개(인라인 6 + theme 2)는 throw Error,
+  기존 계약이 있는 함수는 각자 계약(throw / redirect / {error}) 유지
+- **실패 중**: 테스트 3파일 31건
+  - `apps/web/app/admin/site/design/actions.test.ts`, `apps/web/lib/auth/admin-actions.test.ts` — auth mock 이 옛 방식
+  - `apps/web/app/admin/pages/[instanceId]/edit/actions.guard.test.ts` — `adminServerActionCheck` 대신
+    `assertAdminServerAction` 을 mock 한 오류
+- **미실행**: 헬퍼 적용 후 `tsc --noEmit -p apps/web/tsconfig.json`
 
-**6번**: apps/web 240건. 가장 컸던 `error-boundaries` 61건은 파일 **2개**뿐이었다 —
-`admin/modules/[id]` 상세·편집 페이지가 `try` 로 JSX 전체를 감싸고 `catch` 에서
-`notFound()` 를 불러, **렌더 중 어떤 오류가 나도 404 로 둔갑**하고 있었다.
-`try` 를 데이터 조회로 좁혀 린트와 그 결함을 같이 없앴다.
-소스 `any` 43건은 0으로 만들었고(그중 `ctx.prisma: any` 11건은
-`Prisma.TransactionClient` 로, `packages/notification` 의 `list()` 가 findMany
-결과를 `unknown[]` 으로 버리던 것도 바로잡음), 테스트 84건은 `'invalid' as any`
-처럼 잘못된 입력을 일부러 주입하는 자리라 루트와 같은 방침(warn)으로 통일했다.
+**마무리 순서**: 실패 3파일 수정 → 헬퍼·인라인 액션 재현 테스트가 수정 전 상태에서 실패하는지 확인
+→ `apps/web/app/admin` + `apps/web/lib` + `apps/web/server/api` 테스트 → tsc → main 병합·푸시.
 
-**5번**: `packages/*` 전부와 `themes/default` 가 `"lint": "echo 'no lint'"` 였다.
-루트에 flat config(`eslint.config.mjs`)를 두고 각 패키지가 그걸 가리키게 배선했다.
-켜자마자 **오류 98건**이 나왔고 전부 정리해 0 으로 만들었다. 자세한 내용은
-아래 '린트 현황' 절.
+⚠️ 이 컴퓨터(작성 시점)의 main 체크아웃에는 같은 D-7 변경이 **미커밋으로 남아 있다**.
+브랜치와 동일하므로, 브랜치에서 이어 작업한다면 main 체크아웃의 미커밋분은 버려도 된다
+(버리기 전에 `git diff --stat` 이 23파일인지 확인). 워크트리: `/mnt/d/project/rhymix-ts-wt-admin-guard`.
 
-### 검증
+## 보고서 §2 남은 확인 항목
 
-- 브라우저 실측(admin 로그인): 비로그인 차단 / 이력 0건 / 문서 수정 후 이력 1건
-  렌더 / 돌아가기 링크 `/free/2` / 없는 문서·잘못된 id 404 / member1 권한 거부
-- 로그인 상태 11개 라우트 전부 200 · `<main>` 1개 · 에러 화면 없음
-- 설치 라우트 4개 410(설치 완료 상태), `/install/complete` 200
-- 타입체크: packages/board, apps/web 각 0건
-- 테스트: index-page 24건, history/page 6건 통과.
-  전체 `apps/web/app` 63파일 366건 통과(중첩 main 치환 후 회귀 확인)
-- 검증에 쓴 DB 변경(board.updateLog, 이력 행, 문서 제목)은 전부 되돌렸다
-- 정리 후: packages/file 8파일 97건, 소비자(admin.file 라우터 + FileManagementClient)
-  2파일 10건 통과, packages/file·apps/web 타입체크 각 0건
-- 린트 구성 후: eslint packages themes error 0, turbo run typecheck 17/17,
-  vitest packages/ **141파일 1,535건 전부 통과**(`--testTimeout=300000`).
-  기본 60초로 돌리면 6건이 타임아웃으로 실패하는데, 전부 각 파일의 첫 테스트라
-  WSL2 jsdom 콜드 임포트다 — 로직 파손이 아니다
+- 로그아웃 출처 검사 없음(`apps/web/app/auth/signout/route.ts`) — `SameSite=Lax` 라 외부 사이트 공격은 막힘
+- 상담 게시판 `Board.consultation` — 값은 있으나 미구현
+- 무살균 innerHTML 2곳 — `packages/board/src/actions/comment-update.ts:90`+`CommentItem.tsx:108`,
+  `apps/web/lib/widgets/renderer.tsx:57` (현재 호출자 없음)
+- 회원 다중 그룹은 첫 그룹으로만 권한 판정(기존 규칙, 미변경)
+
 
 ## 검증 방법론 메모 (계속 유효 + 이번 추가분)
 
@@ -147,16 +135,17 @@ drafts 페이지와 같은 방식(Server Component → 도메인 함수 직접 �
 
 ## 후보 작업 (전부 선택적)
 
-- **`f28e993` 미검증분 마감** (기본 권장) — 위 '미검증으로 남은 것' 절 참고.
-  린트 작업은 끝났고 확인만 남았다
+- **D-7 마무리** (기본 권장) — 위 절 참고
+- **레거시 2.1.41 기능 변경 대조** — 회원 인증 로그 통합(`member_auth_log`), 계정 찾기 보안 옵션,
+  세션 ID 갱신 옵션, 문서·댓글 관리에서 차단, 존재하지 않는 페이지·분류 404 등. 목록만 있음
+- **글쓰기·댓글 기본 권한** — ts 는 회원만, 레거시는 비회원 허용. 의도 확인 필요
 - **FTS 한국어 형태소** — config 가 'simple' 이라 "첫 공지입니다" 가 '공지' 로
   검색되지 않는다(토큰이 '공지입니다'). pg_bigm 또는 n-gram 검토
 - **주 DB 재시드** — 설치 마법사를 실제로 태워 그룹/메뉴가 있는 상태로 만들기
-- **미병합 브랜치 19개** — 17개는 동일한 harness 훅 커밋 중복, 1개는 두 달 전
-  feature 브랜치. 제품 작업은 아니다
-- **`/admin/members` 하이드레이션 경고** — 재현이 들쭉날쭉해 원인 미특정
 - **비회원 비밀글** — `packages/document/src/secret.ts` 의 비밀번호/해제토큰 4함수는
-  구현·테스트가 있으나 호출자 0곳. 회원 비밀글은 작성자·관리자 게이트로 동작한다
+  구현·테스트가 있으나 호출자 0곳
+- **레이아웃 extraVars 경고** — `/`·`/notifications` 에서 `extraVars 파싱 실패 … received null`
+
 
 ## 린트 현황
 
@@ -182,23 +171,6 @@ cwd 위로 설정을 찾아 올라가지 않으므로 경로를 명시해야 한
 - `no-explicit-any`: 308건이라 warn. 테스트에서 끄지 **않았다** — 저장소가 이미
   줄 단위 `eslint-disable-next-line` 으로 표시해 온 관례가 있어서, 끄면 그 주석
   245개가 전부 "미사용 disable" 이 된다
-
-### 미검증으로 남은 것 (다음 세션 첫 작업)
-
-`f28e993` 은 아래 두 가지를 **확인하지 못한 채** 커밋했다. PC 종료로 중단됐다.
-
-1. **apps/web vitest 스위트** — 17분 실행 중 중단, 결과 없음.
-   `--testTimeout=300000` 으로 돌릴 것(기본 60초는 거짓 실패를 낸다)
-2. **브라우저 실측** — 실제 렌더가 바뀐 곳:
-   - `/admin/modules/2`, `/admin/modules/2/edit` (try 범위 축소)
-   - `<a>`→`<Link>` 10개 파일 중 대표: `/admin/members/groups`,
-     `/admin/members/denied-list`, `/admin/members/email-hosts`, `/admin/tags`
-   - `/signup` (requiredTermsCount 를 상태→파생값으로 바꿈, 약관 체크 후
-     제출 버튼 활성화가 그대로인지)
-   - `/notifications` (알림 서비스 반환 타입 변경)
-
-타입체크는 통과했다(apps/web·packages/notification 각 0건). 린트도 0건이다.
-남은 위험은 "타입은 맞는데 화면 동작이 달라지는" 경우다.
 
 ### 남긴 부채
 
@@ -253,3 +225,7 @@ coverage 실행이 없다. `packages/file` 은 이번 정리로 include 에서 �
   `SKIP_MOAI_PRECOMMIT=1` + 사유를 커밋 본문에 남기는 게 이 저장소의 규약이다
 - **커밋은 명시 pathspec 으로만.** 미커밋 400+ 하네스 템플릿 상주 — `git add -A` 금지
 - **docker**: rhymix-app(8080)/rhymix-db(3307)/rhymix-ts-db(5444)
+
+- **`.git/index.lock` 이 몇 초 만에 다시 남는다.** 3세션 상태표시줄의 `git status` 가 부하로
+  느려졌다가 시간 초과로 죽으며 잠금을 남긴다. 잠금 파일의 생성 시각이 지금 떠 있는 git 프로세스보다
+  오래됐으면 지우고 **같은 명령 안에서** 바로 add·commit 할 것
