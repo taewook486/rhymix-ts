@@ -125,11 +125,39 @@ export async function savePageContent(
 // rx-widget 토큰 정규식 (자기 닫힘 + 쌍 태그 모두 지원)
 const RX_WIDGET_RE = /<rx-widget\s[^>]*?\/>|<rx-widget\s[^>]*?><\/rx-widget>/g
 
+// 위젯 이름: 등록된 위젯 키 형태(영숫자·_·-)만 허용한다.
+const WIDGET_NAME_RE = /^[A-Za-z0-9_-]+$/
+// 토큰 안의 `속성="값"` 쌍 (큰따옴표 값만 인정 — 그 밖의 표기는 버린다)
+const WIDGET_ATTR_RE = /\s([^\s=/>"']+)="([^"]*)"/g
+const WIDGET_DATA_ATTR_RE = /^data-[a-z][a-z0-9-]*$/
+
+/**
+ * 원본 rx-widget 토큰을 `name` + 검증된 `data-*` 만으로 다시 만든다 (D-3).
+ *
+ * 원본 문자열을 복원하지 않으므로 on* 이벤트 핸들러·style·그 밖의 속성은 구조적으로 남을 수 없다.
+ * name 이 없거나 형식이 틀리면 토큰 전체를 버린다. data-* 값에 `<`·`>`·`"` 가 있으면 그 속성만 버린다.
+ */
+function rebuildWidgetToken(raw: string): string {
+  let name: string | null = null
+  const dataAttrs: string[] = []
+  for (const m of raw.matchAll(WIDGET_ATTR_RE)) {
+    const key = m[1] ?? ''
+    const value = m[2] ?? ''
+    if (key === 'name') {
+      if (name === null && WIDGET_NAME_RE.test(value)) name = value
+    } else if (WIDGET_DATA_ATTR_RE.test(key) && !/[<>"]/.test(value)) {
+      dataAttrs.push(`${key}="${value}"`)
+    }
+  }
+  if (name === null) return ''
+  return `<rx-widget name="${name}"${dataAttrs.map((a) => ` ${a}`).join('')} />`
+}
+
 /**
  * HTML 본문을 XSS 필터링한다.
  *
- * 전략: rx-widget 토큰을 DOMPurify 처리 전에 플레이스홀더로 교체하고,
- * 살균 후 원본 토큰을 복원한다. DOMPurify 설정 복잡성 없이 토큰을 100% 보존한다.
+ * 전략: rx-widget 토큰을 DOMPurify 처리 전에 플레이스홀더로 교체하고, 살균 후
+ * 토큰을 `name` + 검증된 `data-*` 만으로 재구성해 복원한다 (원본 문자열은 복원하지 않는다 — D-3).
  *
  * 허용 태그: 표준 마크업 (제목/텍스트/리스트/미디어/테이블).
  * 금지: script, style, on* 이벤트 핸들러.
@@ -173,6 +201,6 @@ export async function sanitizePageBody(raw: string): Promise<string> {
   // 3단계: 플레이스홀더를 원본 rx-widget 토큰으로 복원
   return sanitized.replace(
     /<span data-rxw-placeholder="(\d+)"><\/span>/g,
-    (_, idx: string) => tokens[parseInt(idx, 10)] ?? '',
+    (_, idx: string) => rebuildWidgetToken(tokens[parseInt(idx, 10)] ?? ''),
   )
 }

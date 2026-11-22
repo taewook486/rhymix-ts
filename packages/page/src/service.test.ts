@@ -197,6 +197,60 @@ describe('sanitizePageBody', () => {
     expect(result).toContain('data-list-count')
   })
 
+  // D-3: rx-widget 토큰은 name + 검증된 data-* 만으로 재구성된다 (RVE-2026-21 계열)
+  it('SVC-D3-1: rx-widget 의 on* 속성·style 은 출력에 남지 않는다 (자기 닫힘)', async () => {
+    const raw = '<rx-widget name="login_info" onmouseover="alert(1)" style="position:fixed" />'
+    const result = await sanitizePageBody(raw)
+    expect(result).not.toContain('onmouseover')
+    expect(result).not.toContain('alert(1)')
+    expect(result).not.toContain('style')
+    expect(result).toContain('name="login_info"')
+  })
+
+  it('SVC-D3-2: 쌍 태그 rx-widget 의 on* 속성도 제거된다', async () => {
+    const raw = '<rx-widget name="content" data-list-count="5" onload="evil()" onerror="evil()"></rx-widget>'
+    const result = await sanitizePageBody(raw)
+    expect(result).not.toMatch(/on\w+=/i)
+    expect(result).not.toContain('evil()')
+    expect(result).toContain('name="content"')
+    expect(result).toContain('data-list-count="5"')
+  })
+
+  it('SVC-D3-3: 이름에 따옴표·공백이 섞인 위젯 토큰은 통째로 버린다', async () => {
+    const raw = '<p>a</p><rx-widget name="x&quot; onmouseover=&quot;alert(1)" /><rx-widget name="a b" />'
+    const result = await sanitizePageBody(raw)
+    expect(result).not.toContain('rx-widget')
+    expect(result).not.toContain('alert(1)')
+    expect(result).toContain('<p>a</p>')
+  })
+
+  it('SVC-D3-4: data-* 값에 < 가 있으면 그 속성만 버리고 나머지는 유지', async () => {
+    const raw = '<rx-widget name="content" data-title="a<b" data-list-count="5" />'
+    const result = await sanitizePageBody(raw)
+    expect(result).not.toContain('data-title')
+    expect(result).toContain('name="content"')
+    expect(result).toContain('data-list-count="5"')
+  })
+
+  it('SVC-D3-4b: 값 안에 > 가 들어간 토큰은 토큰으로 인식되지 않고 통째로 걸러진다 (script 도 남지 않음)', async () => {
+    const raw = '<rx-widget name="content" data-title="<script>alert(1)</script>" data-list-count="5" />'
+    const result = await sanitizePageBody(raw)
+    expect(result).not.toContain('<script')
+    expect(result).not.toContain('alert(1)')
+    expect(result).not.toContain('data-title')
+  })
+
+  it('SVC-D3-5: name 이 없는 rx-widget 은 버린다', async () => {
+    const result = await sanitizePageBody('<rx-widget onmouseover="alert(1)" />')
+    expect(result).not.toContain('rx-widget')
+    expect(result).not.toContain('alert(1)')
+  })
+
+  it('SVC-D3-6: 정상 위젯 토큰은 자기 닫힘 형태로 유지된다', async () => {
+    const result = await sanitizePageBody('<p>x</p><rx-widget name="content" data-list-count="5" />')
+    expect(result).toBe('<p>x</p><rx-widget name="content" data-list-count="5" />')
+  })
+
   it('SVC-12: 표준 HTML 태그 보존', async () => {
     // Arrange
     const raw = '<h1>제목</h1><p>단락</p><strong>강조</strong>'
