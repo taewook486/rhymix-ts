@@ -71,6 +71,10 @@ function mapDomainError(err: unknown): never {
   // Slice F: extraVars 관련 에러 → BAD_REQUEST (code 프로퍼티로 비교하여 mock 호환성 확보)
   if (err instanceof Error) {
     const code = (err as { code?: string }).code;
+    // D-1: 삭제된 글(도메인) · 없는 글(Prisma findUniqueOrThrow P2025) → NOT_FOUND
+    if (code === 'DOCUMENT_NOT_FOUND' || code === 'P2025') {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' });
+    }
     if (code === 'EXTRA_VARS_REQUIRED' || err instanceof ExtraVarsRequiredError) {
       throw new TRPCError({ code: 'BAD_REQUEST', message: err.message });
     }
@@ -81,9 +85,23 @@ function mapDomainError(err: unknown): never {
   throw err;
 }
 
+/**
+ * 조회 주체(viewer) — 비로그인은 그룹 0(guest). 클라이언트 입력이 아니라 세션에서만 만든다.
+ */
+function buildViewer(
+  session: {
+    user: { id: number; isAdmin: boolean; groups?: Array<{ id?: number; isAdmin?: boolean }> };
+  } | null,
+): { userId: number | null; userGroupSrl: number; isAdmin: boolean } {
+  if (!session) return { userId: null, userGroupSrl: 0, isAdmin: false };
+  const { userId, userGroupSrl, isAdmin } = buildActorWithId(session);
+  return { userId, userGroupSrl, isAdmin };
+}
+
 export const contentDocumentRouter = router({
   /**
-   * 게시판 글 목록 조회 — 누구나 호출 가능 (게시판 권한은 도메인에서 처리).
+   * 게시판 글 목록 조회 — 호출은 누구나 가능하지만 게시판 `list` 권한·비공개 글 규칙은
+   * 도메인이 viewer 로 검사한다 (D-1).
    * Slice C: cursor pagination, categoryId, tags, sort 파라미터 추가.
    * SPEC-BOARD-UI-001: offset pagination (page, pageSize), searchField, sort 확장.
    */
@@ -108,14 +126,27 @@ export const contentDocumentRouter = router({
         searchField: z.enum(['title', 'content', 'author']).optional(),
       }),
     )
-    .query(async ({ ctx, input }) => listDocuments(input, { prisma: ctx.prisma })),
+    .query(async ({ ctx, input }) => {
+      try {
+        return await listDocuments(input, { prisma: ctx.prisma }, { viewer: buildViewer(ctx.session) });
+      } catch (err) {
+        mapDomainError(err);
+      }
+    }),
 
   /**
-   * 단일 글 조회 — public.
+   * 단일 글 조회 — 호출은 누구나 가능하지만 `view` 권한·삭제/비공개 글 규칙은 도메인이 검사하고,
+   * 응답에서 password·email·ipAddress 는 제외된다 (D-1).
    */
   get: publicProcedure
     .input(z.object({ id: z.number().int().positive() }))
-    .query(async ({ ctx, input }) => getDocument(input.id, { prisma: ctx.prisma })),
+    .query(async ({ ctx, input }) => {
+      try {
+        return await getDocument(input.id, { prisma: ctx.prisma }, { viewer: buildViewer(ctx.session) });
+      } catch (err) {
+        mapDomainError(err);
+      }
+    }),
 
   /**
    * 글 작성 — 인증 필수.

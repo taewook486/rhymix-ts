@@ -1599,3 +1599,164 @@ describe('createDocument — 작성자 스냅샷', () => {
     expect(data.userIdSnapshot).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// D-1: 글 조회 권한 (viewer 지정 시) — RVE-2026-33·34 계열
+//
+// viewer 를 넘기면 권한 검사·삭제/비공개 글 차단·민감 열 제거가 적용된다.
+// viewer 를 생략한 호출(게시판 화면 등 서버 내부 호출)은 종전 동작 그대로다.
+// ---------------------------------------------------------------------------
+
+describe('getDocument — viewer 권한 (D-1)', () => {
+  const anon = { userId: null, userGroupSrl: 0, isAdmin: false };
+  const member = { userId: 7, userGroupSrl: 1, isAdmin: false };
+  const other = { userId: 8, userGroupSrl: 1, isAdmin: false };
+  const admin = { userId: 1, userGroupSrl: 1, isAdmin: true };
+
+  const setup = (docOverride: Record<string, unknown> = {}, boardOverride: Record<string, unknown> = {}) => {
+    const mockPrisma = createMockPrismaClient();
+    mockPrisma.document.findUniqueOrThrow.mockResolvedValue(
+      makeDocument({
+        id: 1,
+        boardId: 5,
+        authorId: 7,
+        status: 'PUBLIC',
+        deletedAt: null,
+        password: '$argon2id$secret-hash',
+        email: 'guest@example.com',
+        ipAddress: '203.0.113.9',
+        author: { id: 7, userId: 'u7', nickName: '작성자' },
+        documentTags: [],
+        ...docOverride,
+      }),
+    );
+    mockPrisma.board.findUnique.mockResolvedValue(
+      makeBoard({ id: 5, permissions: { view: [0, 1], list: [0, 1] }, ...boardOverride }),
+    );
+    return mockPrisma;
+  };
+
+  it('view 권한이 없는 그룹(비회원, 기본 권한)은 거부된다', async () => {
+    const { getDocument, BoardPermissionDeniedError } = await import('./document.js');
+    const mockPrisma = setup({}, { permissions: {} });
+    await expect(
+      getDocument(1, { prisma: mockPrisma as any }, { viewer: anon }),
+    ).rejects.toBeInstanceOf(BoardPermissionDeniedError);
+  });
+
+  it('삭제된 글은 없는 글처럼 NotFound', async () => {
+    const { getDocument, DocumentNotFoundError } = await import('./document.js');
+    const mockPrisma = setup({ deletedAt: new Date('2026-01-02T00:00:00Z') });
+    await expect(
+      getDocument(1, { prisma: mockPrisma as any }, { viewer: admin }),
+    ).rejects.toBeInstanceOf(DocumentNotFoundError);
+  });
+
+  it.each(['SECRET', 'TEMP'] as const)('%s 글: 작성자·관리자만 볼 수 있다', async (status) => {
+    const { getDocument, BoardPermissionDeniedError } = await import('./document.js');
+    const mockPrisma = setup({ status });
+    await expect(
+      getDocument(1, { prisma: mockPrisma as any }, { viewer: other }),
+    ).rejects.toBeInstanceOf(BoardPermissionDeniedError);
+    await expect(
+      getDocument(1, { prisma: mockPrisma as any }, { viewer: anon }),
+    ).rejects.toBeInstanceOf(BoardPermissionDeniedError);
+    await expect(getDocument(1, { prisma: mockPrisma as any }, { viewer: member })).resolves.toMatchObject({ id: 1 });
+    await expect(getDocument(1, { prisma: mockPrisma as any }, { viewer: admin })).resolves.toMatchObject({ id: 1 });
+  });
+
+  it('응답에서 password·email·ipAddress 가 빠진다', async () => {
+    const { getDocument } = await import('./document.js');
+    const result = await getDocument(1, { prisma: setup() as any }, { viewer: other });
+    expect(result).toMatchObject({ id: 1, author: { userId: 'u7' } });
+    expect(result).not.toHaveProperty('password');
+    expect(result).not.toHaveProperty('email');
+    expect(result).not.toHaveProperty('ipAddress');
+  });
+
+  it('viewer 를 생략한 내부 호출은 종전 동작 그대로 (게시판 화면 호환)', async () => {
+    const { getDocument } = await import('./document.js');
+    const mockPrisma = setup({ status: 'SECRET', deletedAt: null });
+    const result = await getDocument(1, { prisma: mockPrisma as any });
+    expect(result).toMatchObject({ id: 1, status: 'SECRET', password: '$argon2id$secret-hash' });
+    expect(mockPrisma.board.findUnique).not.toHaveBeenCalled();
+  });
+});
+
+describe('listDocuments — viewer 권한 (D-1)', () => {
+  const anon = { userId: null, userGroupSrl: 0, isAdmin: false };
+  const member = { userId: 7, userGroupSrl: 1, isAdmin: false };
+  const admin = { userId: 1, userGroupSrl: 1, isAdmin: true };
+
+  const setup = (boardOverride: Record<string, unknown> = {}, docs: unknown[] = []) => {
+    const mockPrisma = createMockPrismaClient();
+    mockPrisma.board.findUnique.mockResolvedValue(
+      makeBoard({ id: 5, moduleInstanceId: 3, exceptNotice: true, permissions: { list: [0, 1], view: [0, 1] }, ...boardOverride }),
+    );
+    mockPrisma.document.findMany.mockResolvedValue(docs as any);
+    mockPrisma.document.count.mockResolvedValue(docs.length);
+    return mockPrisma;
+  };
+
+  const lastWhere = (mockPrisma: ReturnType<typeof createMockPrismaClient>) =>
+    (mockPrisma.document.findMany.mock.calls.at(-1)?.[0] as { where: Record<string, unknown> }).where;
+
+  it('list 권한이 없으면 거부된다', async () => {
+    const { listDocuments, BoardPermissionDeniedError } = await import('./document.js');
+    const mockPrisma = setup({ permissions: {} });
+    await expect(
+      listDocuments({ moduleInstanceId: 3, status: 'PUBLIC' }, { prisma: mockPrisma as any }, { viewer: anon }),
+    ).rejects.toBeInstanceOf(BoardPermissionDeniedError);
+  });
+
+  it.each(['SECRET', 'TEMP'] as const)('%s 목록: 일반 회원은 본인 글만 (authorId 필터)', async (status) => {
+    const { listDocuments } = await import('./document.js');
+    const mockPrisma = setup();
+    await listDocuments({ moduleInstanceId: 3, status }, { prisma: mockPrisma as any }, { viewer: member });
+    expect(lastWhere(mockPrisma)).toMatchObject({ status, deletedAt: null, authorId: 7 });
+  });
+
+  it('비회원은 SECRET/TEMP 목록이 비어 있고 DB 를 조회하지 않는다', async () => {
+    const { listDocuments } = await import('./document.js');
+    const mockPrisma = setup();
+    const result = await listDocuments({ moduleInstanceId: 3, status: 'TEMP' }, { prisma: mockPrisma as any }, { viewer: anon });
+    expect(result).toMatchObject({ notices: [], items: [], nextCursor: null });
+    expect(mockPrisma.document.findMany).not.toHaveBeenCalled();
+  });
+
+  it('관리자는 authorId 필터 없이 전체', async () => {
+    const { listDocuments } = await import('./document.js');
+    const mockPrisma = setup();
+    await listDocuments({ moduleInstanceId: 3, status: 'SECRET' }, { prisma: mockPrisma as any }, { viewer: admin });
+    expect(lastWhere(mockPrisma)).not.toHaveProperty('authorId');
+  });
+
+  it('PUBLIC 목록은 deletedAt:null 이고 authorId 필터가 없다', async () => {
+    const { listDocuments } = await import('./document.js');
+    const mockPrisma = setup();
+    await listDocuments({ moduleInstanceId: 3, status: 'PUBLIC' }, { prisma: mockPrisma as any }, { viewer: member });
+    expect(lastWhere(mockPrisma)).toMatchObject({ status: 'PUBLIC', deletedAt: null });
+    expect(lastWhere(mockPrisma)).not.toHaveProperty('authorId');
+  });
+
+  it('응답 항목에서 password·email·ipAddress 가 빠진다', async () => {
+    const { listDocuments } = await import('./document.js');
+    const doc = makeDocument({ id: 1, boardId: 5, status: 'PUBLIC', password: 'h', email: 'a@b.c', ipAddress: '1.2.3.4' });
+    const mockPrisma = setup({}, [doc]);
+    const result = await listDocuments({ moduleInstanceId: 3, status: 'PUBLIC' }, { prisma: mockPrisma as any }, { viewer: anon });
+    expect(result.items).toHaveLength(1);
+    for (const item of result.items) {
+      expect(item).not.toHaveProperty('password');
+      expect(item).not.toHaveProperty('email');
+      expect(item).not.toHaveProperty('ipAddress');
+    }
+  });
+
+  it('viewer 를 생략한 내부 호출은 종전 동작 그대로', async () => {
+    const { listDocuments } = await import('./document.js');
+    const doc = makeDocument({ id: 1, boardId: 5, status: 'PUBLIC', password: 'h' });
+    const mockPrisma = setup({ permissions: {} }, [doc]);
+    const result = await listDocuments({ moduleInstanceId: 3, status: 'PUBLIC' }, { prisma: mockPrisma as any });
+    expect(result.items[0]).toHaveProperty('password', 'h');
+  });
+});

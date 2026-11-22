@@ -468,3 +468,66 @@ describe('content.document tRPC router (SPEC-BOARD-UI-001)', () => {
     expect(callArgs.searchField).toBe('title');
   });
 });
+
+// ---------------------------------------------------------------------------
+// D-1: list/get 은 호출자 정보를 viewer 로 도메인에 넘겨 권한 검사를 받는다
+// ---------------------------------------------------------------------------
+describe('content.document list/get — viewer 전달 (D-1)', () => {
+  const adminCtx = {
+    session: { user: { id: 1, isAdmin: true, groups: [{ id: 2 }] } },
+    prisma: mockPrisma,
+    ip: '::1',
+    userAgent: 'test',
+  };
+
+  beforeEach(() => {
+    mockListDocuments.mockReset();
+    mockGetDocument.mockReset();
+  });
+
+  const caller = async (ctx: unknown) => {
+    const { contentDocumentRouter } = await import('./document');
+    const { createCallerFactory } = await import('../../trpc');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return createCallerFactory(contentDocumentRouter)(ctx as any);
+  };
+
+  it('비로그인 list → viewer { userId:null, userGroupSrl:0, isAdmin:false }', async () => {
+    mockListDocuments.mockResolvedValueOnce({ notices: [], items: [], nextCursor: null });
+    await (await caller(guestCtx)).list({ moduleInstanceId: 3 });
+    expect(mockListDocuments.mock.calls[0]?.[2]).toEqual({
+      viewer: { userId: null, userGroupSrl: 0, isAdmin: false },
+    });
+  });
+
+  it('회원 get → viewer { userId, userGroupSrl, isAdmin }', async () => {
+    mockGetDocument.mockResolvedValueOnce({ id: 10 });
+    await (await caller(memberCtx)).get({ id: 10 });
+    expect(mockGetDocument.mock.calls[0]?.[2]).toEqual({
+      viewer: { userId: 42, userGroupSrl: 1, isAdmin: false },
+    });
+  });
+
+  it('관리자 get → isAdmin:true 전달', async () => {
+    mockGetDocument.mockResolvedValueOnce({ id: 10 });
+    await (await caller(adminCtx)).get({ id: 10 });
+    expect(mockGetDocument.mock.calls[0]?.[2]).toEqual({
+      viewer: { userId: 1, userGroupSrl: 2, isAdmin: true },
+    });
+  });
+
+  it('권한 거부 → FORBIDDEN', async () => {
+    const { BoardPermissionDeniedError } = await import('@rhymix-ts/document');
+    mockGetDocument.mockRejectedValueOnce(new BoardPermissionDeniedError('view'));
+    await expect((await caller(guestCtx)).get({ id: 10 })).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    mockListDocuments.mockRejectedValueOnce(new BoardPermissionDeniedError('list'));
+    await expect((await caller(guestCtx)).list({ moduleInstanceId: 3 })).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('삭제·없는 글(DocumentNotFoundError, Prisma P2025) → NOT_FOUND', async () => {
+    mockGetDocument.mockRejectedValueOnce(Object.assign(new Error('gone'), { code: 'DOCUMENT_NOT_FOUND' }));
+    await expect((await caller(memberCtx)).get({ id: 10 })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    mockGetDocument.mockRejectedValueOnce(Object.assign(new Error('No Document found'), { code: 'P2025' }));
+    await expect((await caller(memberCtx)).get({ id: 11 })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});

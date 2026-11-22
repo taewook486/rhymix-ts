@@ -86,6 +86,46 @@ export class BoardPermissionDeniedError extends Error {
 }
 
 /**
+ * 존재하지 않거나 삭제된 글 (viewer 지정 조회에서 두 경우를 구분하지 않는다).
+ * tRPC 레이어에서 NOT_FOUND 로 변환된다.
+ */
+export class DocumentNotFoundError extends Error {
+  readonly code = 'DOCUMENT_NOT_FOUND';
+  constructor(documentId: number) {
+    super(`Document ${documentId} not found`);
+    this.name = 'DocumentNotFoundError';
+  }
+}
+
+/**
+ * 글 조회 주체 (D-1). `userId` 가 null 이면 비회원이다.
+ *
+ * `getDocument` / `listDocuments` 의 `opts.viewer` 로 넘기면 권한 검사가 적용된다.
+ * 생략(undefined)하면 종전처럼 검사 없이 동작한다 — 게시판 화면 같은 서버 내부 호출용이다.
+ * 외부에 노출되는 경로(tRPC 등)는 반드시 viewer 를 넘겨야 한다.
+ */
+export interface DocumentViewer {
+  userId: number | null;
+  userGroupSrl: number;
+  isAdmin: boolean;
+}
+
+/** viewer 지정 조회의 응답에서 빼는 열 — 비회원 글의 비밀번호 해시·메일·IP. */
+const SENSITIVE_DOCUMENT_KEYS = ['password', 'email', 'ipAddress'] as const;
+export type SensitiveDocumentKey = (typeof SENSITIVE_DOCUMENT_KEYS)[number];
+
+function omitSensitive<T extends object>(row: T): Omit<T, SensitiveDocumentKey> {
+  const copy = { ...row } as Record<string, unknown>;
+  for (const key of SENSITIVE_DOCUMENT_KEYS) delete copy[key];
+  return copy as Omit<T, SensitiveDocumentKey>;
+}
+
+/** SECRET/TEMP 는 작성자와 관리자만 볼 수 있다. */
+function canSeeNonPublic(viewer: DocumentViewer, authorId: number | null): boolean {
+  return viewer.isAdmin || (viewer.userId !== null && authorId === viewer.userId);
+}
+
+/**
  * 본인 외 작성자 권한 위배 (수정/삭제 시).
  */
 export class DocumentOwnershipError extends Error {
@@ -552,11 +592,75 @@ export interface DocumentListResult {
   pageSize?: number;
 }
 
+export type PublicDocument = Omit<Document, SensitiveDocumentKey>;
+export interface DocumentListResultPublic {
+  notices: PublicDocument[];
+  items: PublicDocument[];
+  nextCursor: string | null;
+  totalCount?: number;
+  totalPages?: number;
+  currentPage?: number;
+  pageSize?: number;
+}
+
+/**
+ * 글 목록 조회.
+ *
+ * - `opts.viewer` 생략: 종전 동작(검사 없음, 모든 열 반환) — 서버 내부 호출용.
+ * - `opts.viewer` 지정: 게시판 `list` 권한을 검사하고, SECRET/TEMP 는 작성자·관리자만
+ *   (일반 회원은 본인 글만, 비회원은 빈 목록), 응답에서 password·email·ipAddress 를 뺀다.
+ */
 export async function listDocuments(
   input: ListDocumentsInput,
   ctx: { prisma: PrismaClient },
+  opts: { viewer: DocumentViewer },
+): Promise<DocumentListResultPublic>;
+export async function listDocuments(
+  input: ListDocumentsInput,
+  ctx: { prisma: PrismaClient },
+  opts?: { viewer?: undefined },
+): Promise<DocumentListResult>;
+export async function listDocuments(
+  input: ListDocumentsInput,
+  ctx: { prisma: PrismaClient },
+  opts?: { viewer?: DocumentViewer },
+): Promise<DocumentListResult | DocumentListResultPublic> {
+  const viewer = opts?.viewer;
+  if (viewer === undefined) return listDocumentsInternal(input, ctx);
+
+  const parsed = ListDocumentsSchema.parse(input);
+  const board = await ctx.prisma.board.findUnique({
+    where: { moduleInstanceId: parsed.moduleInstanceId },
+  });
+  if (!board) return { notices: [], items: [], nextCursor: null };
+  if (!canPerformAction(board, 'list', viewer)) {
+    throw new BoardPermissionDeniedError('list');
+  }
+
+  let restrictAuthorId: number | undefined;
+  if (parsed.status !== 'PUBLIC' && !viewer.isAdmin) {
+    // 비회원은 비공개/임시 글이 없다. 일반 회원은 본인 글만.
+    if (viewer.userId === null) return { notices: [], items: [], nextCursor: null };
+    restrictAuthorId = viewer.userId;
+  }
+
+  const result = await listDocumentsInternal(input, ctx, restrictAuthorId);
+  return {
+    ...result,
+    notices: result.notices.map(omitSensitive),
+    items: result.items.map(omitSensitive),
+  };
+}
+
+async function listDocumentsInternal(
+  input: ListDocumentsInput,
+  ctx: { prisma: PrismaClient },
+  restrictAuthorId?: number,
 ): Promise<DocumentListResult> {
   const parsed = ListDocumentsSchema.parse(input);
+  // D-1: 작성자 제한 — 원시 SQL 경로에도 동일하게 적용한다.
+  const authorSql =
+    restrictAuthorId !== undefined ? Prisma.sql`AND "authorId" = ${restrictAuthorId}` : Prisma.empty;
 
   // page 모드와 cursor 모드 분기
   const isOffsetMode = parsed.page !== undefined;
@@ -594,6 +698,7 @@ export async function listDocuments(
       deletedAt: null,
       isNotice: false, // 검색 시 공지 제외
     };
+    if (restrictAuthorId !== undefined) searchWhere.authorId = restrictAuthorId;
 
     if (parsed.categoryId !== undefined) {
       searchWhere.categoryId = parsed.categoryId;
@@ -617,6 +722,7 @@ export async function listDocuments(
             AND "deletedAt" IS NULL
             AND "status" = ${parsed.status}::text::"DocumentStatus"
             AND "isNotice" = false
+            ${authorSql}
             AND "searchVector" @@ plainto_tsquery('simple', ${parsed.search})
           ORDER BY "regdate" DESC
           LIMIT ${pageSize}
@@ -631,6 +737,7 @@ export async function listDocuments(
             AND "deletedAt" IS NULL
             AND "status" = ${parsed.status}::text::"DocumentStatus"
             AND "isNotice" = false
+            ${authorSql}
             AND "searchVector" @@ plainto_tsquery('simple', ${parsed.search})
         `;
         const totalCount = Number(countResult[0]?.count ?? 0);
@@ -654,6 +761,7 @@ export async function listDocuments(
             AND "deletedAt" IS NULL
             AND "status" = ${parsed.status}::text::"DocumentStatus"
             AND "isNotice" = false
+            ${authorSql}
             AND "searchVector" @@ plainto_tsquery('simple', ${parsed.search})
           ORDER BY "regdate" DESC
           LIMIT ${limit}
@@ -720,6 +828,7 @@ export async function listDocuments(
       deletedAt: null,
       isNotice: true,
     };
+    if (restrictAuthorId !== undefined) baseNoticeWhere.authorId = restrictAuthorId;
     if (parsed.categoryId !== undefined) {
       baseNoticeWhere.categoryId = parsed.categoryId;
     }
@@ -740,6 +849,7 @@ export async function listDocuments(
     deletedAt: null,
     isNotice: false,
   };
+  if (restrictAuthorId !== undefined) baseItemWhere.authorId = restrictAuthorId;
 
   if (parsed.categoryId !== undefined) {
     baseItemWhere.categoryId = parsed.categoryId;
@@ -821,14 +931,34 @@ export async function listDocuments(
 // getDocument
 // ---------------------------------------------------------------------------
 
-export async function getDocument(
-  id: number,
-  ctx: { prisma: PrismaClient },
-): Promise<Document & {
+type DocumentWithRelations = Document & {
   author: { id: number; userId: string; nickName: string } | null;
   // SPEC-TAG-001 REQ-TAG-003: tags 는 DocumentTag 조인을 통해 매핑된 string[]
   tags: string[];
-}> {
+};
+
+/**
+ * 글 단건 조회.
+ *
+ * - `opts.viewer` 생략: 종전 동작(검사 없음, 모든 열 반환) — 서버 내부 호출용.
+ * - `opts.viewer` 지정: 삭제된 글은 NotFound, 게시판 `view` 권한 검사, SECRET/TEMP 는
+ *   작성자·관리자만, 응답에서 password·email·ipAddress 제외.
+ */
+export async function getDocument(
+  id: number,
+  ctx: { prisma: PrismaClient },
+  opts: { viewer: DocumentViewer },
+): Promise<Omit<DocumentWithRelations, SensitiveDocumentKey>>;
+export async function getDocument(
+  id: number,
+  ctx: { prisma: PrismaClient },
+  opts?: { viewer?: undefined },
+): Promise<DocumentWithRelations>;
+export async function getDocument(
+  id: number,
+  ctx: { prisma: PrismaClient },
+  opts?: { viewer?: DocumentViewer },
+): Promise<DocumentWithRelations | Omit<DocumentWithRelations, SensitiveDocumentKey>> {
   const doc = await ctx.prisma.document.findUniqueOrThrow({
     where: { id },
     include: {
@@ -851,8 +981,20 @@ export async function getDocument(
     documentTags: Array<{ tag: { name: string } }>;
   };
 
+  const viewer = opts?.viewer;
+  if (viewer !== undefined) {
+    if (doc.deletedAt !== null) throw new DocumentNotFoundError(id);
+    const board = await ctx.prisma.board.findUnique({ where: { id: doc.boardId } });
+    if (!board) throw new DocumentNotFoundError(id);
+    if (!canPerformAction(board, 'view', viewer)) throw new BoardPermissionDeniedError('view');
+    if (doc.status !== 'PUBLIC' && !canSeeNonPublic(viewer, doc.authorId)) {
+      throw new BoardPermissionDeniedError('view');
+    }
+  }
+
   // DocumentTag[] → string[] 매핑 (REQ-TAG-003 게시물 상세 뷰 태그 표시)
   // 위 include 가 documentTags 를 항상 지정하므로 undefined 일 수 없다.
   const tags = doc.documentTags.map((dt) => dt.tag.name);
-  return { ...doc, tags };
+  const full = { ...doc, tags };
+  return viewer === undefined ? full : omitSensitive(full);
 }
