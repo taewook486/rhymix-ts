@@ -19,8 +19,7 @@
 import { changeUserStatus, softDeleteUser, toggleAdminRole } from '@rhymix-ts/auth';
 import { prisma } from '@rhymix-ts/db';
 
-import { auth } from './config';
-import { isAdminSession } from './admin-middleware';
+import { adminServerActionCheck } from './admin-guard';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -90,10 +89,11 @@ export async function setMemberStatusAction(
   _prev: AdminActionState,
   formData: FormData,
 ): Promise<AdminActionState> {
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     return fail('INSUFFICIENT_PRIVILEGES');
   }
+  const session = guard.session;
   const actorId = session.user.id;
 
   const targetUserId = parseTargetUserId(formData);
@@ -124,10 +124,11 @@ export async function deleteMemberAction(
   _prev: AdminActionState,
   formData: FormData,
 ): Promise<AdminActionState> {
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     return fail('INSUFFICIENT_PRIVILEGES');
   }
+  const session = guard.session;
   const actorId = session.user.id;
 
   const targetUserId = parseTargetUserId(formData);
@@ -153,10 +154,11 @@ export async function toggleAdminRoleAction(
   _prev: AdminActionState,
   formData: FormData,
 ): Promise<AdminActionState> {
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     return fail('INSUFFICIENT_PRIVILEGES');
   }
+  const session = guard.session;
   const actorId = session.user.id;
 
   const targetUserId = parseTargetUserId(formData);

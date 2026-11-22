@@ -14,8 +14,7 @@ import {
   deleteWidgetInstance,
 } from '@rhymix-ts/core/widgets'
 import { prisma } from '@rhymix-ts/db'
-import { auth } from '@/lib/auth/config'
-import { isAdminSession } from '@/lib/auth/admin-middleware'
+import { adminServerActionDenied } from '@/lib/auth/admin-guard'
 
 /** Server Action 결과 타입 */
 export interface ActionResult {
@@ -23,13 +22,13 @@ export interface ActionResult {
 }
 
 /**
- * admin 세션을 확인한다.
- * 비관리자이면 Error를 던진다.
+ * 관리자 가드(세션 + IP 제어/사이트 잠금 + 2FA, D-7)를 확인한다.
+ * 거부되면 사유를 담은 Error를 던진다.
  */
 async function requireAdmin(): Promise<void> {
-  const session = await auth()
-  if (!isAdminSession(session)) {
-    throw new Error('관리자 권한이 필요합니다.')
+  const denied = await adminServerActionDenied()
+  if (denied) {
+    throw new Error(denied)
   }
 }
 

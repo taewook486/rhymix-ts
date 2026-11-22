@@ -6,6 +6,7 @@
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
+import { assertAdminServerAction } from '@/lib/auth/admin-guard';
 import { prisma } from '@/lib/db/prisma';
 import { getModuleInstanceByMid } from '@rhymix-ts/core/modules';
 
@@ -46,6 +47,9 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
   async function addCategory(formData: FormData) {
     'use server';
 
+    // D-7: 인라인 액션은 페이지와 별개로 직접 호출될 수 있어 본문에서 관리자 가드(IP·2FA 포함)를 다시 통과한다.
+    await assertAdminServerAction();
+
     const title = String(formData.get('title') ?? '');
     const description = String(formData.get('description') ?? '') || null;
     const parentId = formData.get('parentId') ? Number(formData.get('parentId')) : null;
@@ -70,6 +74,9 @@ export default async function CategoriesPage({ params }: CategoriesPageProps) {
   // Server Action: 카테고리 삭제
   async function deleteCategory(formData: FormData) {
     'use server';
+
+    // D-7: 인라인 액션은 페이지와 별개로 직접 호출될 수 있어 본문에서 관리자 가드(IP·2FA 포함)를 다시 통과한다.
+    await assertAdminServerAction();
 
     const categoryId = Number(formData.get('categoryId'));
 

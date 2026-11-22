@@ -22,6 +22,12 @@ vi.mock('@/lib/auth/config', () => ({
   auth: mockAuth,
 }));
 
+// D-7: 인라인 액션이 관리자 가드(IP·2FA 포함)를 호출한다. 이 파일은 저장 동작을 검증하므로 통과로 대체
+// (가드 거부 동작은 page.guard.test.tsx).
+vi.mock('@/lib/auth/admin-guard', () => ({
+  assertAdminServerAction: vi.fn().mockResolvedValue({ user: { id: 1 } }),
+}));
+
 vi.mock('@/lib/db/prisma', () => ({
   prisma: {
     board: {

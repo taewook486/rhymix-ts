@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
 import { isAdminSession } from '@/lib/auth/admin-middleware';
+import { adminServerActionCheck } from '@/lib/auth/admin-guard';
 import { getServerCaller } from '@/lib/trpc/server';
 
 export type ActionState = {
@@ -122,8 +123,9 @@ export async function attachPollToDocumentAction(
   prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  // D-7: 호출하는 content.poll 프로시저가 protectedProcedure(회원 수준)라 IP 제어·사이트 잠금·2FA 는 여기서 확인한다.
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     return { error: '권한이 없습니다.' };
   }
 
@@ -156,8 +158,9 @@ export async function detachPollFromDocumentAction(
   prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  // D-7: 호출하는 content.poll 프로시저가 protectedProcedure(회원 수준)라 IP 제어·사이트 잠금·2FA 는 여기서 확인한다.
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     return { error: '권한이 없습니다.' };
   }
 

@@ -8,12 +8,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockAuth = vi.fn();
+const mockDenied = vi.fn();
 const mockRenameTag = vi.fn();
 const mockMergeTags = vi.fn();
 const mockDeleteTag = vi.fn();
 const mockRevalidatePath = vi.fn();
 
 vi.mock('@/lib/auth/config', () => ({ auth: mockAuth }));
+// D-7: 관리자 판정(세션·IP·사이트 잠금·2FA)은 공용 가드. null 이면 통과, 문자열이면 거부 사유.
+vi.mock('@/lib/auth/admin-guard', () => ({ adminServerActionDenied: mockDenied }));
 vi.mock('@/lib/db/prisma', () => ({ prisma: { __marker: 'prisma' } }));
 vi.mock('next/cache', () => ({ revalidatePath: mockRevalidatePath }));
 vi.mock('@rhymix-ts/tag', () => {
@@ -42,11 +45,12 @@ describe('관리자 태그 Server Actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuth.mockResolvedValue({ user: { id: '1', isAdmin: true } });
+    mockDenied.mockResolvedValue(null);
   });
 
   describe('권한', () => {
     it('비관리자는 어떤 작업도 수행하지 못한다', async () => {
-      mockAuth.mockResolvedValue({ user: { id: '2', isAdmin: false } });
+      mockDenied.mockResolvedValue('관리자 권한이 필요합니다.');
       const { renameTagAction, mergeTagsAction, deleteTagAction } = await loadActions();
 
       const r = await renameTagAction(null, fd({ tagId: '1', newName: 'x' }));
@@ -59,6 +63,32 @@ describe('관리자 태그 Server Actions', () => {
       expect(mockRenameTag).not.toHaveBeenCalled();
       expect(mockMergeTags).not.toHaveBeenCalled();
       expect(mockDeleteTag).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('공용 관리자 가드 (D-7)', () => {
+    it('IP 거부·2FA 미완료 등 가드 거부 시 기존 계약({ error })으로 거부하고 도메인 함수를 호출하지 않는다', async () => {
+      // 세션은 관리자(mockAuth) — 거부 사유는 session.user.isAdmin 밖의 가드다.
+      mockDenied.mockResolvedValue('허용되지 않은 IP입니다.');
+      const { renameTagAction, mergeTagsAction, deleteTagAction } = await loadActions();
+
+      const r = await renameTagAction(null, fd({ tagId: '1', newName: 'x' }));
+      const m = await mergeTagsAction(null, fd({ sourceTagId: '1', targetTagId: '2' }));
+      const d = await deleteTagAction(null, fd({ tagId: '1' }));
+
+      for (const state of [r, m, d]) expect(state.error).toBe('관리자만 수행할 수 있습니다.');
+      expect(mockRenameTag).not.toHaveBeenCalled();
+      expect(mockMergeTags).not.toHaveBeenCalled();
+      expect(mockDeleteTag).not.toHaveBeenCalled();
+    });
+
+    it('관리자 그룹 소속(session.user.isAdmin=false)이어도 가드가 통과시키면 수행된다', async () => {
+      mockAuth.mockResolvedValue({ user: { id: '5', isAdmin: false, groups: [{ isAdmin: true }] } });
+      mockDenied.mockResolvedValue(null);
+      const { renameTagAction } = await loadActions();
+      const state = await renameTagAction(null, fd({ tagId: '3', newName: '새이름' }));
+      expect(state.success).toBeDefined();
+      expect(mockRenameTag).toHaveBeenCalledOnce();
     });
   });
 

@@ -1,6 +1,6 @@
 'use server';
 
-import { auth } from '@/lib/auth/config';
+import { adminServerActionCheck } from '@/lib/auth/admin-guard';
 import { redirect } from 'next/navigation';
 import { mailDispatcher } from '@/lib/mail/dispatcher';
 import { SmtpMailDispatcher } from '@rhymix-ts/auth';
@@ -15,8 +15,10 @@ export async function testMailConnectionAction(): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/login');
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    redirect('/login');
+  }
 
   if (!(mailDispatcher instanceof SmtpMailDispatcher)) {
     return { ok: false, error: 'SMTP not configured' };
@@ -36,8 +38,10 @@ const SendTestMailInput = z.object({ to: z.string().email() });
 export async function sendTestMailAction(input: {
   to: string;
 }): Promise<{ ok: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/login');
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    redirect('/login');
+  }
 
   const parsed = SendTestMailInput.safeParse(input);
   if (!parsed.success) return { ok: false, error: 'Invalid email' };

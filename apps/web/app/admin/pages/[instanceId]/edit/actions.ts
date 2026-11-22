@@ -15,8 +15,7 @@
  * @MX:SPEC: SPEC-PAGE-001 REQ-PAGE-032 + SPEC-ADMIN-002 REQ-ADMIN2-027, REQ-ADMIN2-028, REQ-ADMIN2-029
  */
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth/config';
-import { isAdminSession } from '@/lib/auth/admin-middleware';
+import { adminServerActionCheck } from '@/lib/auth/admin-guard';
 import { prisma, Prisma } from '@rhymix-ts/db';
 import { savePageContent } from '@rhymix-ts/page';
 import { revalidatePath } from 'next/cache';
@@ -33,9 +32,9 @@ export async function savePageAction(
   mcontent: string,
 ): Promise<void> {
   // 관리자 권한 검증 (REQ-PAGE-032)
-  const session = await auth();
-  if (!isAdminSession(session)) {
-    throw new Error('관리자 권한이 필요합니다.');
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    throw new Error(guard.message);
   }
 
   await savePageContent(
@@ -63,9 +62,9 @@ export async function updatePageSettingsAction(
     grant: unknown;
   },
 ): Promise<void> {
-  const session = await auth();
-  if (!isAdminSession(session)) {
-    throw new Error('관리자 권한이 필요합니다.');
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    throw new Error(guard.message);
   }
 
   await prisma.moduleInstance.update({
@@ -94,10 +93,11 @@ export async function updatePageSettingsAction(
  * @param instanceId 삭제할 모듈 인스턴스 ID
  */
 export async function deletePageAction(instanceId: number): Promise<void> {
-  const session = await auth();
-  if (!isAdminSession(session)) {
-    throw new Error('관리자 권한이 필요합니다.');
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    throw new Error(guard.message);
   }
+  const session = guard.session;
 
   // AdminLog 기록
   await prisma.adminLog.create({
@@ -132,9 +132,9 @@ export async function saveMobilePageAction(
   mcontentMobile: string,
 ): Promise<void> {
   // 관리자 권한 검증
-  const session = await auth();
-  if (!isAdminSession(session)) {
-    throw new Error('관리자 권한이 필요합니다.');
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    throw new Error(guard.message);
   }
 
   // 데스크톱 콘텐츠는 유지하면서 모바일 콘텐츠만 저장

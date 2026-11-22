@@ -11,8 +11,7 @@
  */
 
 import { z } from 'zod';
-import { auth } from '@/lib/auth/config';
-import { isAdminSession } from '@/lib/auth/admin-middleware';
+import { adminServerActionCheck } from '@/lib/auth/admin-guard';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { prisma, Prisma } from '@rhymix-ts/db';
@@ -83,8 +82,8 @@ export async function loadTokens(
   input: z.infer<typeof LoadTokensSchema>,
 ): Promise<{ success: boolean; error?: string; tokens?: ThemeTokens }> {
   // Admin auth check — REQ-THEME-POLISH-015
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     redirect('/login');
   }
 
@@ -136,8 +135,8 @@ export async function assignTheme(
   input: z.infer<typeof AssignThemeSchema>,
 ): Promise<{ success: boolean; error?: string }> {
   // Admin auth check — REQ-THEME-POLISH-015
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     redirect('/login');
   }
 
@@ -225,8 +224,8 @@ export async function assignLayout(
   input: z.infer<typeof AssignLayoutSchema>,
 ): Promise<{ success: boolean; error?: string }> {
   // Admin auth check — REQ-THEME-POLISH-015
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     redirect('/login');
   }
 
@@ -325,8 +324,8 @@ export async function assignSkin(
   input: z.infer<typeof AssignSkinSchema>,
 ): Promise<{ success: boolean; error?: string }> {
   // Admin auth check — REQ-THEME-POLISH-015
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     redirect('/login');
   }
 
@@ -386,8 +385,8 @@ export async function saveTokens(
   input: z.infer<typeof SaveTokensSchema>,
 ): Promise<{ success: boolean; error?: string }> {
   // Admin auth check — REQ-THEME-POLISH-015
-  const session = await auth();
-  if (!isAdminSession(session)) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
     redirect('/login');
   }
 
