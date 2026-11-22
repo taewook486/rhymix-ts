@@ -76,16 +76,12 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
   const mid = instance.mid;
 
   // 병렬 데이터 로드 — 문서/댓글/첨부파일
-  const [doc, board, comments, attachments, adjacent] = await Promise.all([
+  const [doc, board, comments, attachments] = await Promise.all([
     getDocument(documentId, { prisma }),
     // D-4: 이 화면의 게시판(Board.id 는 instance.id 와 다른 값) — 글의 소속 검사용
     prisma.board.findUnique({ where: { moduleInstanceId: instance.id } }),
     listComments({ documentId }, { prisma }),
     listAttachments({ documentId }, { prisma }),
-    getAdjacentDocuments(
-      { documentId, boardId: instance.id, sort: 'list_order' },
-      { prisma },
-    ),
   ]);
 
   // D-4: 삭제된 글 / 다른 게시판의 글 / 남의 임시저장 글은 존재하지 않는 글로 취급한다.
@@ -110,6 +106,13 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
       </div>
     );
   }
+
+  // D-5: 이전글/다음글은 Board.id 로 조회한다 (instance.id 는 모듈 인스턴스 id 라 Board.id 와 다를 수 있음).
+  // 소속·권한 검사를 통과한 글에 대해서만 조회한다.
+  const adjacent = await getAdjacentDocuments(
+    { documentId, boardId: board.id, sort: 'list_order' },
+    { prisma },
+  );
 
   // 비밀글 접근 권한 판단 (REQ-BUI-006)
   const canViewSecret =

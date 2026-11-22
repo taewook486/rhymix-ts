@@ -697,4 +697,46 @@ describe('BoardViewPage — 접근 규칙 (D-4)', () => {
     const html = await renderWithPerms({ view: [] }, { user: { id: 1, isAdmin: true } });
     expect(html).toContain('테스트 문서 제목');
   });
+
+  // D5: 이전글/다음글은 모듈 인스턴스 id 가 아니라 Board.id 로 조회한다
+  it('D5-1: Board.id(9) ≠ instance.id(1) 일 때 getAdjacentDocuments 는 boardId 9 로 호출된다', async () => {
+    const getAdjacentDocuments = vi.fn().mockResolvedValue({ prev: null, next: null });
+    vi.doMock('next/navigation', () => ({
+      notFound: () => {
+        throw new Error('NEXT_NOT_FOUND');
+      },
+    }));
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue({ ...FIXED_DOC, boardId: 9 }),
+      getAdjacentDocuments,
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({ listComments: vi.fn().mockResolvedValue([]) }));
+    vi.doMock('@rhymix-ts/file', () => ({ listAttachments: vi.fn().mockResolvedValue([]) }));
+    const { BoardViewPage } = await import('./view-page.js');
+    const props = { ...makeFakeProps({}), prisma: makeFakePrisma({ id: 9 }) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await BoardViewPage(props as any);
+    expect(getAdjacentDocuments).toHaveBeenCalledOnce();
+    expect(getAdjacentDocuments.mock.calls[0]?.[0]).toMatchObject({ documentId: 42, boardId: 9 });
+  });
+
+  it('D5-2: 소속 검사(notFound)에 걸린 글은 이전/다음글을 조회하지 않는다', async () => {
+    const getAdjacentDocuments = vi.fn().mockResolvedValue({ prev: null, next: null });
+    vi.doMock('next/navigation', () => ({
+      notFound: () => {
+        throw new Error('NEXT_NOT_FOUND');
+      },
+    }));
+    vi.doMock('@rhymix-ts/document', () => ({
+      getDocument: vi.fn().mockResolvedValue({ ...FIXED_DOC, boardId: 2 }),
+      getAdjacentDocuments,
+    }));
+    vi.doMock('@rhymix-ts/comment', () => ({ listComments: vi.fn().mockResolvedValue([]) }));
+    vi.doMock('@rhymix-ts/file', () => ({ listAttachments: vi.fn().mockResolvedValue([]) }));
+    const { BoardViewPage } = await import('./view-page.js');
+    const props = { ...makeFakeProps({}), prisma: makeFakePrisma({ id: 9 }) };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(BoardViewPage(props as any)).rejects.toThrow('NEXT_NOT_FOUND');
+    expect(getAdjacentDocuments).not.toHaveBeenCalled();
+  });
 });
