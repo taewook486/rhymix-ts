@@ -8,6 +8,10 @@
 # 사용법 (PowerShell):
 #   .\start-moai-cg.ps1                  (세션 이름 기본값 moai)
 #   .\start-moai-cg.ps1 -Session moai2   (다른 이름으로 새 세션)
+#   .\start-moai-cg.ps1 -Session moai2 -Model sonnet   (리더 모델 지정)
+#   -Model 을 빼면 설정 파일의 model(.claude/settings.local.json)을 쓴다.
+#   값은 ANTHROPIC_MODEL 로 그 세션의 Claude 프로세스에만 넘어가며 설정 파일보다 우선한다.
+#   예: opus, opus[1m], sonnet, haiku, claude-sonnet-5-5
 # 실행 정책에 막히면:
 #   powershell -ExecutionPolicy Bypass -File .\start-moai-cg.ps1 -Session moai2
 #
@@ -18,7 +22,11 @@ param(
     # tmux 세션 이름 규칙(. 과 : 금지)보다 좁게 영문·숫자·_·- 만 허용한다.
     # 이 값은 bash 명령에 그대로 들어가므로 따옴표가 필요 없는 문자로 제한한다.
     [ValidatePattern('^[A-Za-z0-9_-]+$')]
-    [string]$Session = 'moai'
+    [string]$Session = 'moai',
+
+    # 모델 별칭 또는 ID. 끝에 [1m] 만 추가로 허용한다(예: opus[1m]).
+    [ValidatePattern('^([A-Za-z0-9._-]+(\[1m\])?)?$')]
+    [string]$Model = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -29,17 +37,13 @@ Set-Location 'D:\project\rhymix-ts'
 # 2. WSL 배포판 목록
 wsl -l -v
 
-# 3. tmux 세션 생성 -> 그 안에 'moai cg' 입력 -> attach
-#    - has-session    : 같은 이름 세션이 이미 있으면 새로 만들지도, 'moai cg' 를 보내지도 않는다
-#    - new-session -d : 세션을 백그라운드로 먼저 만든다
-#    - -c <경로>      : 세션의 시작 디렉터리를 프로젝트 루트로 고정한다
-#    - send-keys      : 새 세션의 셸에 'moai cg' 를 실제로 타이핑한 것처럼 넣는다
-#    - attach         : 그 세션으로 들어간다 (수동으로 tmux new 후 화면 보는 것과 동일)
-#    - '=이름'        : 정확히 그 이름만 대상으로 한다 (그냥 -t moai 는 moai2 같은 접두어 일치도 잡는다)
-#    wsl.exe 로 넘기는 문자열에는 큰따옴표를 쓰지 않는다 (PowerShell 5.1 인수 전달에서 깨진다).
-#    -e 는 빼면 안 된다: -e 가 없으면 wsl 이 기본 셸로 명령줄을 한 번 더 해석하면서 $S 를
-#    빈 값으로 미리 치환한다. 그러면 'new-session -s  -c <경로>' 가 되어 경로를 명령으로 실행한
-#    창이 바로 죽고, 'no server running' / 'no sessions' 만 남는다.
-$bash = 'S=__SESSION__; if tmux has-session -t =$S 2>/dev/null; then echo tmux session $S already exists - attaching only, moai cg not sent; else tmux new-session -d -s $S -c /mnt/d/project/rhymix-ts && tmux send-keys -t =$S: ''moai cg'' C-m; fi; tmux attach -t =$S'
-$bash = $bash.Replace('__SESSION__', $Session)
-wsl.exe -e bash -lic $bash
+# 3. tmux 세션 준비 + 'moai cg' 실행 -> attach
+#    실제 로직은 scripts/moai-cg.sh 안에 있다.
+#    예전에는 이 자리에서 bash 한 줄을 문자열로 만들어 wsl.exe 에 넘겼는데,
+#    PowerShell 5.1 -> wsl.exe 인수 전달 구간에서 그 문자열이 온전히 전달되지
+#    않아 리다이렉션(2>/dev/null)과 if/else 구조가 깨질 수 있었다
+#    (-e 를 빼면 $S 가 빈 값으로 미리 치환되는 문제도 있었다).
+#    인수를 파일 경로 하나로 줄이면 깨질 지점이 없다.
+#    두 값 모두 ValidatePattern 으로 공백·따옴표가 없으므로 작은따옴표로만 감싼다
+#    ([1m] 의 대괄호가 glob 으로 해석되지 않게).
+wsl.exe bash -lic "bash /mnt/d/project/rhymix-ts/scripts/moai-cg.sh '$Session' '$Model'"
