@@ -25,21 +25,56 @@ describe('canPerformAction (board — 7-grant)', () => {
     expect(canPerformAction(board, 'consultation_read', ctx)).toBe(true);
   });
 
-  // B-402: list/view/write_document/write_comment 기본값은 [1] (member only)
-  it('B-402: permissions 없을 때 list/view/write_document/write_comment 는 member(1) 허용, guest(0) 거부', async () => {
+  // B-402: write_document/write_comment 기본값은 [1] (member only) — list/view 는 B-402b 로 분리
+  it('B-402: permissions 없을 때 write_document/write_comment 는 member(1) 허용, guest(0) 거부', async () => {
     const { canPerformAction } = await import('./permissions.js');
     const board = {};
     const guest = { userGroupSrl: 0, isAdmin: false };
     const member = { userGroupSrl: 1, isAdmin: false };
 
-    expect(canPerformAction(board, 'list', guest)).toBe(false);
-    expect(canPerformAction(board, 'list', member)).toBe(true);
-    expect(canPerformAction(board, 'view', guest)).toBe(false);
-    expect(canPerformAction(board, 'view', member)).toBe(true);
     expect(canPerformAction(board, 'write_document', guest)).toBe(false);
     expect(canPerformAction(board, 'write_document', member)).toBe(true);
     expect(canPerformAction(board, 'write_comment', guest)).toBe(false);
     expect(canPerformAction(board, 'write_comment', member)).toBe(true);
+  });
+
+  // B-402b: 레거시(module.xml list·view default="guest")와 같이 list/view 기본값은 전체 허용
+  it('B-402b: permissions 없을 때 list/view 는 비회원(0)·회원(1)·그룹 2+ 모두 허용', async () => {
+    const { canPerformAction } = await import('./permissions.js');
+    const boards: Array<{ permissions?: Record<string, number[]> | null }> = [
+      {},
+      { permissions: null },
+      { permissions: {} },
+      { permissions: { write_document: [1] } },
+    ];
+    for (const board of boards) {
+      for (const userGroupSrl of [0, 1, 2, 7]) {
+        const ctx = { userGroupSrl, isAdmin: false };
+        expect(canPerformAction(board, 'list', ctx)).toBe(true);
+        expect(canPerformAction(board, 'view', ctx)).toBe(true);
+      }
+    }
+  });
+
+  // B-402c: 명시된 permissions[action] 이 있으면 그것이 우선 — 기본값 변경과 무관하게 종전과 같다
+  it('B-402c: 명시된 list/view 는 기본값보다 우선한다 ([1] / [] / [0,1] 은 그대로 제한)', async () => {
+    const { canPerformAction } = await import('./permissions.js');
+    const guest = { userGroupSrl: 0, isAdmin: false };
+    const member = { userGroupSrl: 1, isAdmin: false };
+    const group2 = { userGroupSrl: 2, isAdmin: false };
+    const admin = { userGroupSrl: 1, isAdmin: true };
+
+    const memberOnly = { permissions: { view: [1], list: [1] } };
+    expect(canPerformAction(memberOnly, 'view', guest)).toBe(false);
+    expect(canPerformAction(memberOnly, 'view', member)).toBe(true);
+    expect(canPerformAction(memberOnly, 'list', group2)).toBe(false);
+
+    const locked = { permissions: { view: [], list: [] } };
+    expect(canPerformAction(locked, 'view', member)).toBe(false);
+    expect(canPerformAction(locked, 'view', admin)).toBe(true);
+
+    const guestAndMember = { permissions: { view: [0, 1] } };
+    expect(canPerformAction(guestAndMember, 'view', group2)).toBe(false);
   });
 
   // B-403: vote_log_view/update_view/consultation_read 기본값은 [] (admin-only)
@@ -99,14 +134,14 @@ describe('canPerformAction (board — 7-grant)', () => {
   });
 
   // B-407: permissions 가 null 이면 기본값 적용
-  it('B-407: permissions=null 이면 기본값 적용 (list/view=member-only, vote_log_view=admin-only)', async () => {
+  it('B-407: permissions=null 이면 기본값 적용 (list/view=전체 허용, vote_log_view=admin-only)', async () => {
     const { canPerformAction } = await import('./permissions.js');
     const board = { permissions: null };
     const member = { userGroupSrl: 1, isAdmin: false };
     const guest = { userGroupSrl: 0, isAdmin: false };
 
     expect(canPerformAction(board, 'list', member)).toBe(true);
-    expect(canPerformAction(board, 'list', guest)).toBe(false);
+    expect(canPerformAction(board, 'list', guest)).toBe(true);
     expect(canPerformAction(board, 'vote_log_view', member)).toBe(false);
   });
 

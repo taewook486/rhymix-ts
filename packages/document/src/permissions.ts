@@ -7,7 +7,7 @@
  * 설계 결정:
  *   - admin 은 항상 통과 (관리자 escape hatch).
  *   - permissions[action] 이 정의되어 있으면 그 groupSrl 배열을 사용.
- *   - 정의가 없으면 default = [1] (member only).
+ *   - 정의가 없으면 list/view = 전체 허용(레거시 default="guest"), 그 외 default = [1] (member only).
  *   - 빈 배열 [] 은 admin 외 전원 거부를 의미 (의도된 보안 잠금).
  *
  * @MX:NOTE [AUTO]: Slice B 권한 검사 — list/view/write_document/write_comment 4개 액션만 지원.
@@ -54,7 +54,12 @@ export function canPerformAction(
       ? (board.permissions as Record<string, number[] | undefined>)
       : undefined;
 
-  // permissions[action] 이 명시되어 있으면 그것을, 아니면 default [1] (member only)
-  const allowed = perms?.[action] ?? [1];
-  return allowed.includes(ctx.userGroupSrl);
+  // permissions[action] 이 명시되어 있으면 그것을 우선한다.
+  const explicit = perms?.[action];
+  if (explicit !== undefined) return explicit.includes(ctx.userGroupSrl);
+
+  // 기본값: list/view 는 전체 허용(비회원 0 · 회원 1 · 그룹 2+ — 레거시 module.xml default="guest"),
+  // 나머지는 member only [1].
+  if (action === 'list' || action === 'view') return true;
+  return [1].includes(ctx.userGroupSrl);
 }

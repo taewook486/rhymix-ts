@@ -1636,9 +1636,9 @@ describe('getDocument — viewer 권한 (D-1)', () => {
     return mockPrisma;
   };
 
-  it('view 권한이 없는 그룹(비회원, 기본 권한)은 거부된다', async () => {
+  it('view 권한이 없는 그룹(비회원, view:[1] 명시)은 거부된다', async () => {
     const { getDocument, BoardPermissionDeniedError } = await import('./document.js');
-    const mockPrisma = setup({}, { permissions: {} });
+    const mockPrisma = setup({}, { permissions: { view: [1] } });
     await expect(
       getDocument(1, { prisma: mockPrisma as any }, { viewer: anon }),
     ).rejects.toBeInstanceOf(BoardPermissionDeniedError);
@@ -1701,9 +1701,9 @@ describe('listDocuments — viewer 권한 (D-1)', () => {
   const lastWhere = (mockPrisma: ReturnType<typeof createMockPrismaClient>) =>
     (mockPrisma.document.findMany.mock.calls.at(-1)?.[0] as { where: Record<string, unknown> }).where;
 
-  it('list 권한이 없으면 거부된다', async () => {
+  it('list 권한이 없으면(list:[1] 명시, 비회원) 거부된다', async () => {
     const { listDocuments, BoardPermissionDeniedError } = await import('./document.js');
-    const mockPrisma = setup({ permissions: {} });
+    const mockPrisma = setup({ permissions: { list: [1] } });
     await expect(
       listDocuments({ moduleInstanceId: 3, status: 'PUBLIC' }, { prisma: mockPrisma as any }, { viewer: anon }),
     ).rejects.toBeInstanceOf(BoardPermissionDeniedError);

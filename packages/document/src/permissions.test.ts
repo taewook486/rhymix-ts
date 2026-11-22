@@ -60,6 +60,29 @@ describe('canPerformAction', () => {
     expect(canPerformAction(board, 'view', admin)).toBe(true);
   });
 
+  it('B-308: list/view 기본값은 전체 허용 (비회원 0, 회원 1, 그룹 2+) — write_* 는 member only 유지', async () => {
+    const { canPerformAction } = await import('./permissions.js');
+    for (const board of [{}, { permissions: null }, { permissions: { write_document: [1] } }]) {
+      for (const userGroupSrl of [0, 1, 2, 7]) {
+        const ctx = { userGroupSrl, isAdmin: false };
+        expect(canPerformAction(board, 'list', ctx)).toBe(true);
+        expect(canPerformAction(board, 'view', ctx)).toBe(true);
+      }
+      expect(canPerformAction(board, 'write_document', { userGroupSrl: 0, isAdmin: false })).toBe(false);
+      expect(canPerformAction(board, 'write_comment', { userGroupSrl: 0, isAdmin: false })).toBe(false);
+    }
+  });
+
+  it('B-309: 명시된 list/view 는 기본값보다 우선 ([1] 이면 비회원·그룹 2 거부)', async () => {
+    const { canPerformAction } = await import('./permissions.js');
+    const board = { permissions: { list: [1], view: [] } };
+    expect(canPerformAction(board, 'list', { userGroupSrl: 0, isAdmin: false })).toBe(false);
+    expect(canPerformAction(board, 'list', { userGroupSrl: 2, isAdmin: false })).toBe(false);
+    expect(canPerformAction(board, 'list', { userGroupSrl: 1, isAdmin: false })).toBe(true);
+    expect(canPerformAction(board, 'view', { userGroupSrl: 1, isAdmin: false })).toBe(false);
+    expect(canPerformAction(board, 'view', { userGroupSrl: 1, isAdmin: true })).toBe(true);
+  });
+
   it('B-306: write_comment 도 동일한 기본값 정책 (member only)', async () => {
     const { canPerformAction } = await import('./permissions.js');
     const board = {};

@@ -9,7 +9,8 @@
  *   - admin 은 항상 통과 (관리자 escape hatch).
  *   - permissions[action] 이 명시되어 있으면 그 groupSrl 배열을 사용.
  *   - 기본값:
- *       list / view / write_document / write_comment → [1] (member only)
+ *       list / view → 'all' (비회원 0 · 회원 1 · 그룹 2+ 전체 허용 — 레거시 module.xml default="guest")
+ *       write_document / write_comment → [1] (member only)
  *       vote_log_view / update_view / consultation_read → [] (admin-only, 빈 배열 = 전원 거부)
  *   - 빈 배열 [] 은 admin 외 전원 거부를 의미 (의도된 보안 잠금).
  *
@@ -49,9 +50,10 @@ export interface PermissionContext {
  * 기본 권한 테이블 — permissions 컬럼에 해당 액션 키가 없을 때 사용.
  * [] 은 admin-only (빈 배열 = 누구도 허용하지 않음 → admin escape hatch 로만 통과).
  */
-const DEFAULT_PERMISSIONS: Record<BoardAction, number[]> = {
-  list: [1],
-  view: [1],
+const DEFAULT_PERMISSIONS: Record<BoardAction, number[] | 'all'> = {
+  // 'all' = 어떤 userGroupSrl 이든 허용. [0, 1] 처럼 나열하면 그룹 2+ 회원이 막히므로 별도 표기를 쓴다.
+  list: 'all',
+  view: 'all',
   write_document: [1],
   write_comment: [1],
   vote_log_view: [],
@@ -89,5 +91,6 @@ export function canPerformAction(
 
   // permissions[action] 이 명시되어 있으면 그것을, 아니면 기본값 적용
   const allowed = perms?.[action] ?? DEFAULT_PERMISSIONS[action];
+  if (allowed === 'all') return true;
   return allowed.includes(context.userGroupSrl);
 }
