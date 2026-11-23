@@ -1,6 +1,6 @@
 'use server';
 
-import { auth } from '@/lib/auth/config';
+import { adminServerActionCheck } from '@/lib/auth/admin-guard';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@rhymix-ts/db';
@@ -18,8 +18,10 @@ export async function toggleAddonAction(
   name: string,
   enabled: boolean
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/login');
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    redirect('/login');
+  }
 
   try {
     await coreToggleAddon(name, enabled, prisma);
@@ -42,8 +44,10 @@ export async function reorderAddonAction(
   name: string,
   priority: number
 ): Promise<{ success: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/login');
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    redirect('/login');
+  }
 
   try {
     await coreSetAddonPriority(name, priority, prisma);

@@ -42,6 +42,32 @@ vi.mock('@/lib/auth/admin-middleware', () => ({
   isAdminSession: vi.fn(),
 }));
 
+// D-7: 실제 admin-guard 는 next/headers 의 headers() 를 호출하므로 요청 범위 밖에서 실패한다.
+// 이 테스트가 이미 제어하는 auth()/isAdminSession 판정에 위임하는 가드로 대체해 기존 계약을 유지한다.
+vi.mock('@/lib/auth/admin-guard', async () => {
+  const { auth } = await import('@/lib/auth/config');
+  const { isAdminSession } = await import('@/lib/auth/admin-middleware');
+  const check = async () => {
+    const session = await auth();
+    if (!isAdminSession(session)) {
+      return { ok: false as const, message: '관리자 권한이 필요합니다.' };
+    }
+    return { ok: true as const, session };
+  };
+  return {
+    adminServerActionCheck: check,
+    adminServerActionDenied: async () => {
+      const r = await check();
+      return r.ok ? null : r.message;
+    },
+    assertAdminServerAction: async () => {
+      const r = await check();
+      if (!r.ok) throw new Error(r.message);
+      return r.session;
+    },
+  };
+});
+
 // PageEditForm 을 test-friendly 목으로 교체
 vi.mock(
   './_components/PageEditForm',

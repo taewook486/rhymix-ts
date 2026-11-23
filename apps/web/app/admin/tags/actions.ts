@@ -11,7 +11,7 @@
  * @MX:SPEC: SPEC-TAG-001 REQ-TAG-006
  */
 import { revalidatePath } from 'next/cache'
-import { auth } from '@/lib/auth/config'
+import { adminServerActionDenied } from '@/lib/auth/admin-guard'
 import { prisma } from '@/lib/db/prisma'
 import {
   renameTag,
@@ -28,9 +28,9 @@ export interface TagActionState {
 
 const ADMIN_ONLY: TagActionState = { error: '관리자만 수행할 수 있습니다.' }
 
+// D-7: 세션(관리자 그룹 포함)·관리자 IP 제어·사이트 잠금·2FA 를 tRPC 와 같은 공용 가드로 판정한다.
 async function isAdmin(): Promise<boolean> {
-  const session = await auth()
-  return Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin)
+  return (await adminServerActionDenied()) === null
 }
 
 function toId(raw: FormDataEntryValue | null): number | null {

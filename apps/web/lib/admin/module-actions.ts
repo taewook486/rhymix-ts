@@ -7,8 +7,7 @@
  * @MX:SPEC: SPEC-ADMIN-001 REQ-ADMIN-090
  */
 import { prisma } from '@rhymix-ts/db'
-import { auth } from '@/lib/auth/config'
-import { isAdminSession } from '@/lib/auth/admin-middleware'
+import { adminServerActionCheck } from '@/lib/auth/admin-guard'
 
 /**
  * 모듈 인스턴스 일괄 삭제 (REQ-ADMIN-090).
@@ -19,9 +18,9 @@ import { isAdminSession } from '@/lib/auth/admin-middleware'
 export async function bulkDeleteModulesAction(
   ids: number[],
 ): Promise<{ deleted: number; failed: number[] }> {
-  const session = await auth()
-  if (!isAdminSession(session)) {
-    throw new Error('관리자 권한이 필요합니다.')
+  const guard = await adminServerActionCheck()
+  if (!guard.ok) {
+    throw new Error(guard.message)
   }
 
   if (ids.length === 0) {
