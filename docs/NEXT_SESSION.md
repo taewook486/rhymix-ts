@@ -1,33 +1,45 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-11-22 (3세션 협업 첫 회차 — 레거시 2.1.41 보안 대조 + 결함 수리 7건,
->       main HEAD `3f88ab5`. 미완성 D-7 은 브랜치 `WT-admin-guard-wip` `e5a54f5`)
-> source_session_id: a7f0ac2e-6672-4e9c-82b3-efba47bd0e71
+> 갱신: 2026-11-24 (D-7 재검증 후 origin/main 반영 — HEAD `3f83a44` 다음 이 문서 커밋)
+> source_session_id: 2e62006e-6a35-4cbd-a898-8dfd3b6839e3
 
 ## 붙여넣을 메시지
 
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. rhymix-ts — D-7 관리자 서버 액션 가드 통일 마무리.
-applied lessons: feedback-agent-test-claims-verify-by-rerun.md, feedback-domain-fix-count-all-callers.md, feedback-batch-replace-needs-line-numbers.md
-source_session_id: a7f0ac2e-6672-4e9c-82b3-efba47bd0e71
+ultrathink. rhymix-ts — 레거시 2.1.41 보안 보고서 §2 남은 항목 처리.
+applied lessons: feedback-stale-git-index-lock.md, feedback-agent-test-claims-verify-by-rerun.md, feedback-domain-fix-count-all-callers.md
+source_session_id: 2e62006e-6a35-4cbd-a898-8dfd3b6839e3
 
 전제 검증:
-1) git fetch origin && git rev-list --count --left-right origin/main...main → 0 0
-2) git rev-parse --short origin/WT-admin-guard-wip → e5a54f5
+1) git fetch origin && git merge --ff-only origin/main → main 이 origin/main 과 같아짐 (지난 세션은 index.lock 때문에 로컬 main 을 못 올림)
+2) git rev-list --count --left-right origin/main...main → 0 0
 3) docker start rhymix-ts-db → 컨테이너 기동
 
-실행: WT-admin-guard-wip 를 워크트리로 열어(main 체크아웃에서 브랜치 전환 금지)
-      실패 테스트 3파일 31건을 고치고 tsc apps/web 0건 확인 → main 에 병합·푸시.
-      상세는 docs/NEXT_SESSION.md 'D-7 이어하기' 절.
+실행: 무살균 innerHTML 2곳 확인·수리부터
+      (packages/board/src/actions/comment-update.ts:90 + CommentItem.tsx:108, apps/web/lib/widgets/renderer.tsx:57).
+      상세는 docs/NEXT_SESSION.md '보고서 §2 남은 확인 항목' 절.
 
-후속: 보고서 §2 남은 항목(로그아웃 출처 검사, 상담 게시판, 무살균 HTML 출력 2곳),
-      레거시 2.1.41 기능 변경 대조.
+후속: 로그아웃 출처 검사, 상담 게시판, 레거시 2.1.41 기능 변경 대조, 워크트리 2개 정리.
 
 ✂──── 여기까지 복사 ────✂
 ```
+
+## 이번 세션 결과 (2026-11-24)
+
+- **D-7 관리자 서버 액션 가드 완료** — `3f83a44` 를 origin/main 에 fast-forward 푸시.
+  - 11-23 에 moai2 가 실패 테스트 4파일의 mock 을 고쳤고(프로덕션 코드 무수정, 단언 무변경), 워크트리에서 한 커밋으로 정리됨
+  - 재검증(워크트리 `3f83a44`): `vitest run apps/web/app/admin apps/web/lib apps/web/server/api` → 112파일 864건 통과 exit 0,
+    `tsc --noEmit -p apps/web/tsconfig.json` → exit 0, `error TS` 0건. 로그: 메인 체크아웃 `.moai/state/verify/d7-merge/`
+  - admin 아래 `'use server'` 파일 중 가드 패턴이 없는 파일 0개 (grep)
+- **미완료 — 로컬 main 체크아웃이 `057b6db` 에 머묾.** `.git/index.lock` 을 지워도 몇 분 안에 다시 생김(빈 파일,
+  살아 있는 git 프로세스 없음 → Windows 쪽 편집기/다른 세션의 git 폴링 추정). 그래서 푸시는 워크트리에서 `git push origin 3f83a44:main` 으로 함.
+  다음 세션에서 lock 원인(VS Code 등)을 끈 뒤 `git merge --ff-only origin/main`
+- 원격 `origin/WT-admin-guard-wip` 는 옛 WIP `e5a54f5` 그대로 — main 에 이미 반영됐으므로 삭제 대상
+- 워크트리 `/mnt/d/project/rhymix-ts-wt-admin-guard`, `/mnt/d/project/rhymix-ts-baseline` 정리 대상
+- 브라우저 실측은 하지 않음(관리자 IP 제한·2FA 상태에서 Server Action 거부 화면)
 
 ## 이번 세션 결과 (2026-11-22)
 
@@ -60,33 +72,11 @@ rhymix-ts 와 대조 → 결함 3, 확인 필요 4, 해당 없음 12, 안전 8.
 
 부수 영향: `b397b1a` 로 권한 미설정 게시판의 RSS 피드가 공개로 바뀜(레거시와 동일, 실측 안 함).
 
-## D-7 이어하기 — 관리자 서버 액션 가드 통일 (미완성)
+## D-7 관리자 서버 액션 가드 — 완료 (2026-11-24, `3f83a44`)
 
-**문제**: tRPC `protectedAdminProcedure` 는 ① 관리자 판정 ② 관리자 IP 제한·사이트 잠금
-③ 2FA 를 거치는데, tRPC 를 거치지 않는 관리자 Server Action 은 ①만 하거나
-(`session.user.isAdmin` 만 보는 7개는 관리자 그룹 사용자를 오히려 막음) ②③을 건너뛴다.
-**가장 큰 구멍**: `apps/web/app/admin/boards/[mid]/{categories,extra-keys,feed,permissions}/page.tsx`
-의 인라인 Server Action 6개는 본문에 가드가 전혀 없고 렌더 시점 검사에만 의존한다
-(feed·permissions 는 `board.update` 직접 수행).
-
-**브랜치 `WT-admin-guard-wip` (`e5a54f5`) 상태**
-- `apps/web/server/api/admin-guard.ts` — tRPC 에서 ②③ 로직 추출(trpc.ts 는 이 함수를 import).
-  server/api 50파일 408건 통과로 회귀 없음 확인
-- `apps/web/lib/auth/admin-guard.ts` — Server Action 용 헬퍼 `assertAdminServerAction()`
-- 33개 함수에 적용 완료. 실패 방식: 가드 없던 8개(인라인 6 + theme 2)는 throw Error,
-  기존 계약이 있는 함수는 각자 계약(throw / redirect / {error}) 유지
-- **실패 중**: 테스트 3파일 31건
-  - `apps/web/app/admin/site/design/actions.test.ts`, `apps/web/lib/auth/admin-actions.test.ts` — auth mock 이 옛 방식
-  - `apps/web/app/admin/pages/[instanceId]/edit/actions.guard.test.ts` — `adminServerActionCheck` 대신
-    `assertAdminServerAction` 을 mock 한 오류
-- **미실행**: 헬퍼 적용 후 `tsc --noEmit -p apps/web/tsconfig.json`
-
-**마무리 순서**: 실패 3파일 수정 → 헬퍼·인라인 액션 재현 테스트가 수정 전 상태에서 실패하는지 확인
-→ `apps/web/app/admin` + `apps/web/lib` + `apps/web/server/api` 테스트 → tsc → main 병합·푸시.
-
-⚠️ 이 컴퓨터(작성 시점)의 main 체크아웃에는 같은 D-7 변경이 **미커밋으로 남아 있다**.
-브랜치와 동일하므로, 브랜치에서 이어 작업한다면 main 체크아웃의 미커밋분은 버려도 된다
-(버리기 전에 `git diff --stat` 이 23파일인지 확인). 워크트리: `/mnt/d/project/rhymix-ts-wt-admin-guard`.
+tRPC `protectedAdminProcedure` 의 판정(관리자 → IP 제한·사이트 잠금 → 2FA)을 `apps/web/server/api/admin-guard.ts` 로 추출하고,
+Server Action 은 `apps/web/lib/auth/admin-guard.ts` 의 `assertAdminServerAction` / `adminServerActionCheck` 로 같은 판정을 받는다.
+가드가 없던 게시판 인라인 액션 6개 + 테마 2개에 추가, 기존 33개는 실패 계약 유지한 채 교체.
 
 ## 보고서 §2 남은 확인 항목
 
@@ -135,7 +125,7 @@ rhymix-ts 와 대조 → 결함 3, 확인 필요 4, 해당 없음 12, 안전 8.
 
 ## 후보 작업 (전부 선택적)
 
-- **D-7 마무리** (기본 권장) — 위 절 참고
+- **보고서 §2 무살균 innerHTML 2곳** (기본 권장) — 위 절 참고
 - **레거시 2.1.41 기능 변경 대조** — 회원 인증 로그 통합(`member_auth_log`), 계정 찾기 보안 옵션,
   세션 ID 갱신 옵션, 문서·댓글 관리에서 차단, 존재하지 않는 페이지·분류 404 등. 목록만 있음
 - **글쓰기·댓글 기본 권한** — ts 는 회원만, 레거시는 비회원 허용. 의도 확인 필요
