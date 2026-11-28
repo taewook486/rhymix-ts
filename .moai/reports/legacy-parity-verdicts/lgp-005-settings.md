@@ -83,3 +83,9 @@
 # 판정 열 재집계
 awk -F'|' '/^\| `disp/{gsub(/^ +| +$/,"",$6); c[$6]++; n++} END{for(k in c) print k, c[k]; print "total", n}' .moai/state/collab/lgp-005-settings-draft.md
 ```
+
+## 미검증 확정 (moai3, 2026-11-28, moai 재확인) — 상세: `lgp-005-006-unverified-check.md`
+
+- `dispAdminConfigGeneral` 다름(읽기 전용, `unregistered_domain_action` 없음), SEO 레거시 12필드 중 제목 규칙·OG·트위터 계열 없음, 고급 설정의 객체 캐시 접속·외부 프록시·썸네일 품질 등 없음.
+- **보안 설정 화면의 CAPTCHA 저장이 목업이다**(moai 스캔): `apps/web/app/admin/settings/security/actions.ts:137-141` `console.log('[Mock] Update CAPTCHA settings:', …)`. 폼(`SecuritySettingsForm.tsx:44`)에 연결돼 있어 저장한 것처럼 보이지만 DB 에 남지 않는다. 같은 기능의 정상 화면은 `settings/spamfilter/captcha`(`admin.spamfilter.captcha`) → 중복 화면 정리 + 버그 수리 대상.
+- 라우터 mutation 115개 중 화면 호출처 0 인 것 20개(목록은 상세 파일 §F). 다수는 Server Action 이 Prisma 를 직접 쓰는 우회라 기능은 동작하나, 같은 규칙(권한·감사 로그)이 두 경로로 갈라져 있다.

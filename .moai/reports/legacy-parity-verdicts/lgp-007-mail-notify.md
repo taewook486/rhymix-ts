@@ -122,3 +122,9 @@
 
 - 판정 3종은 거친 분류다. "대응 있음" 3행과 방문자 2행 모두 부분 누락이 있으며 세부는 비고에 적었다.
 - 의도적 제외 후보 6행(SMS 2·푸시 2, 스킨·더미 데이터)과 방문자 수신거부 2행은 설계 결정이 필요하다. 이 초안은 제외를 권고하지 않는다. 특히 SMS·푸시는 "구현할지, 범위에서 뺄지" 결정이 먼저다.
+
+## 미검증·교차 발견 확정 (moai3, 2026-11-28, moai 재확인) — 상세: `lgp-007-unverified-check.md`
+
+- SMTP 정본: 실제 발송은 환경변수 `SMTP_*`(`apps/web/lib/mail/dispatcher.ts:11-12`). `site/mail` 화면은 환경변수 표시 전용, `settings/notification` 의 SMTP 저장값은 테스트 발송 버튼에만 쓰인다 → 관리자가 화면에서 바꾼 SMTP 값이 실제 발송에 반영되지 않는 격차(007 요구사항 후보).
+- 이메일 큐 설정: 저장 프로시저·SiteSetting 키는 있으나 화면 0, `queued` 모드를 소비하는 큐도 0 → 죽은 설정.
+- 알림 종류: rhymix-ts 4종(COMMENT, COMMENT_REPLY, MENTION, MESSAGE) vs 레거시 8종 — vote·scrap·admin_content·custom 이 격차.

@@ -66,3 +66,26 @@
 | 쉬운 설치·우편번호 | rhymix-ts 0건 | C·A 와 같은 결정 |
 | 설치 마법사 | 4화면 ↔ 4단계+완료 | 판정 불필요(대응) |
 | 짧은 주소 | 레거시 rewrite 수준 1/2 ↔ Next.js 동적 라우트 | 레거시 URL 형태 호환이 필요한가(옛 링크 유지) |
+
+## 사용자 결정 (2026-11-28)
+
+| 묶음 | 결정 | 결과 |
+|---|---|---|
+| A 레거시 폐기·차단·결함 11건 + B 에디터 계열 8건 | 19건 모두 **의도적 제외** 확정 | `dispBoardVoteLog` 제외에 따라 rhymix-ts 권한 키 `vote_log_view` 는 정리 후보(별도 처리) |
+| C 레이아웃·컬러셋·모바일 스킨 체계 | **반응형 한 벌 유지 — 의도적 제외** | `dispMemberAdminDesignConfig`, `dispNcenterliteAdminSkinsetting` 과 판정표 비고의 `mskin`·`mlayout_srl`·`colorset` 항목 전부 제외 |
+| C SMS·푸시 발송 | **범위 포함 → 격차** | 007: SMSLog / SMSTest / PushLog / PushTest |
+| C 메일 수신 거부 | **범위 포함 → 격차** | 007: `dispNcenterliteInsertUnsubscribe` (+ 같은 이유로 `dispNcenterliteUnsubscribeList` 는 A 에서 제외됐으나 목록 화면은 등록 기능 설계 때 함께 검토) |
+| C 쉬운 설치(외부 패키지) | **범위 포함 → 격차** | 006: `dispAutoinstallAdminIndex`, `dispAutoinstallAdminPackageDetail` |
+| C 우편번호 검색 | **범위 포함 → 격차** | 006: `dispKrzipAdminConfig`(이미 격차) + 검색 기능·확장 변수 `kr_zip`. `dispKrzipSearchForm` 자체는 레거시 결함 화면이라 A 로 제외 |
+| C 알림 더미 생성 | 선택되지 않음 → **의도적 제외** | 007: `dispNcenterliteAdminTest` |
+| D 레거시 데이터 이전 도구 | **범위 포함** (010) | 레거시 MySQL → rhymix-ts PostgreSQL |
+| D 화면 문구 다국어 | **범위 포함** (010) | `next-intl` 도입·문구 카탈로그화 |
+| D 옛 URL 호환 | **범위 포함** (010) | 레거시 `index.php?mid=…&document_srl=…` 등 → rhymix-ts 주소 |
+
+결정 반영 후 집계: 의도적 제외 **22** (A 11 + B 8 + 레이아웃 체계 2 + 알림 더미 1), 격차 **91** (84 + SMS·푸시 4 + 수신 거부 1 + 쉬운 설치 2), 대응 있음 97. 비-UI 범위 3건(데이터 이전·다국어·옛 URL) 추가.
+
+## 조용한 미저장(목업) 전수 조사 (moai3, 2026-11-28) — `silent-noop-scan.md`
+
+- 확정 목업 3건: 약관 저장·삭제(`admin/members/terms/actions.ts`), 보안 화면 CAPTCHA 저장(`admin/settings/security/actions.ts`). 무쓰기 후보 16건은 본문 확인 결과 정상. → moai2 가 수리.
+- 참고(새 결함 아님): 자동 로그인 신뢰 마커는 프로세스 메모리 Map(`packages/auth/src/autologin-marker.ts:22`)이라 다중 인스턴스에서 동작하지 않는다 — 이미 `@MX:WARN` 으로 기록된 알려진 제약.
+- 한계: 스캐너는 `export function POST` 형태만 찾았다(화살표 함수 export 는 미검사).

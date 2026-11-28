@@ -105,3 +105,7 @@
 
 - 판정 3종은 거친 분류다. "대응 있음" 9행 모두 부분 누락이 있으며, 세부는 비고에 적었다. 부분 대응을 별도 판정으로 나눌지는 사용자 결정 사항이다.
 - 의도적 제외 후보 1건과 격차 중 제외 후보 4종은 설계 결정이 필요하다. 이 초안은 제외를 권고하지 않는다.
+
+## 정정 (2026-11-28, moai3 발견 · moai 재확인) — 상세: `lgp-005-006-unverified-check.md`
+
+- `dispMemberAdminAgreementsConfig` → **격차로 정정.** 약관 편집 화면(`apps/web/app/admin/members/terms`)의 저장·삭제 Server Action 이 목업이다: `terms/actions.ts:48-53` `console.log('[Mock] Upsert term:', …)`, `:77-82` `[Mock] Delete term`. tRPC `admin.terms.create/update/delete` 는 있으나 연결이 주석 처리돼 있다. 관리자가 저장해도 DB 에 남지 않는다(조용한 데이터 손실) → 버그 수리 대상.

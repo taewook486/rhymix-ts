@@ -25,6 +25,7 @@ import path from 'node:path';
 
 import { chromium, type Page } from '@playwright/test';
 
+// @ts-expect-error TS5097 — Node 22 타입 제거 실행(node e2e/...ts)은 ESM 이라 .ts 확장자를 붙여야 모듈을 찾는다.
 import { BASE_URL, OUT_DIR as ADMIN_OUT_DIR, inspect, login, type PageRecord } from './crawl-admin.ts';
 
 const OUT_DIR = path.join(path.dirname(ADMIN_OUT_DIR), 'legacy-front-map');

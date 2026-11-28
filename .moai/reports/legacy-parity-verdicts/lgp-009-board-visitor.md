@@ -107,3 +107,9 @@
 ```bash
 awk -F'|' '/^\| `disp/{gsub(/^ +| +$/,"",$6); c[$6]++; n++} END{for(k in c) print k, c[k]; print "total", n}' .moai/state/collab/lgp-009-board-visitor-draft.md
 ```
+
+## 미검증 항목 확정 (moai2, 2026-11-28, moai 재확인) — 상세: `lgp-009-unverified-check.md`
+
+- **보안 결함 후보 (moai 소스 재확인)**: `apps/web/app/api/files/[id]/download/route.ts` 는 `fileAttachment.findUnique({ id, isvalid: true })` 뒤 바로 파일을 보낸다 — 세션·게시판 열람 권한·글 상태(SECRET/TEMP/삭제) 검사가 없고 id 는 순차 정수다. `api/files/by-key/[key]/download/route.ts` 는 DB 조회 없이 저장소 키를 그대로 읽는다(경로 이탈은 `packages/file/src/storage/local-disk.ts:26` 이 막음). 관리자 파일 설정 `downloadPermission` 은 저장만 되고 쓰는 곳이 0건. 2026-11-22 보안 대조 보고서 32번은 저장 키·MIME 측면만 보고 "안전"으로 분류했다. 런타임 재현은 아직 하지 않았다.
+- 비회원 글·댓글 비밀번호: 해시·검증 함수(`packages/document/src/secret.ts`)는 있으나 호출처 0. 비회원 작성 경로 자체가 막혀 있다(tRPC `protectedProcedure`, 글쓰기 화면 로그인 리다이렉트). 레거시 이전 시 들어오는 비회원 글 비밀번호는 검증할 곳이 없다 → 010 데이터 이전과 009 격차 요구사항에 함께 반영.
+- 쪽지 보관함 개념 없음, 수정 이력 화면 접근 정책이 레거시 `update_view` 권한과 다름 — 009 SPEC 요구사항 후보.

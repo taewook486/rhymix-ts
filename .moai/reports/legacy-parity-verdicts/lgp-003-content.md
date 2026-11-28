@@ -167,3 +167,21 @@
 # 판정 열 재집계 (표의 5번째 열)
 awk -F'|' '/^\| `disp/{gsub(/^ +| +$/,"",$6); c[$6]++} END{for(k in c) print k, c[k]}' .moai/state/collab/lgp-003-content-draft.md
 ```
+
+## 5. 미검증 항목 확정 (moai3, 2026-11-28, moai 재확인)
+
+원본: `.moai/state/collab/lgp-003-unverified-check.md`. 판정표 §1 해당 행은 아래가 우선한다.
+
+
+| # | 항목 | 결론 | 한 줄 근거 |
+|---|---|---|---|
+| 1 | `dispBoardAdminExtraVars` 확장 변수 **수정** UI | **없음** | 페이지는 추가·삭제 Server Action 만 있고, `contentExtraKey.update` 호출처 0건 |
+| 2 | `dispTrashAdminList` 휴지통 **일괄** 처리 | **없음 (행 단위 복원·삭제와 전체 비우기만 있음)** | 체크박스·선택 상태 코드 0건. 행 단위 `handleRestore`·`handlePurge`, 전체 `handleEmpty` 만 있음 |
+| 3 | `dispFileAdminUploadConfig` 의 `target_actions` 대응 | **레거시 파일 모듈에는 `target_actions` 가 없음 — 판정표의 전제가 잘못됨** | `target_actions` 는 스팸필터(captcha) 모듈 용어. rhymix-ts 트리거 대응 코드도 없음 |
+| 4 | `dispBoardAdminCategoryInfo` 분류 **수정** UI | **없음** | 페이지는 추가·삭제 Server Action 만 있음. `admin.category.update` 는 라우터에만 있고 UI 호출처 0건 |
+| 5 | `progress.md` M7 의 `[staged]` 표기 | **변경 자체는 커밋됨 (`baf71b3`). 다만 progress.md 의 `[staged]` 자리표시자는 SHA 로 바뀌지 않은 채 남음** | `baf71b3` 가 `mail-log.test.ts` 의 `timeout: 30000` 을 추가. `[staged]` 문자열은 `baf71b3` 에서 들어와 지금도 1건 남아 있음 |
+
+---
+
+
+- 정정 결과: `dispBoardAdminExtraVars`·`dispBoardAdminCategoryInfo` 는 "대응 있음"을 유지하되 수정 UI 부재를 격차 요구사항으로 넣는다(라우터 `update` 는 있고 화면 호출처 0). `dispTrashAdminList` 는 선택 일괄 복원·삭제 부재를 비고에 추가. 파일 설정 `target_actions` 는 잘못된 전제 — 레거시 file 모듈에 없음(스팸필터 캡차 설정의 필드). CONTENT-PARITY-001 M7 은 `baf71b3` 로 커밋됨, `progress.md` 의 `[staged]` 표기만 정정 대상.
