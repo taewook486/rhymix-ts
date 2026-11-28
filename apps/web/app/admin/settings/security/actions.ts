@@ -133,12 +133,16 @@ export async function updateCaptchaSettingsAction(
 
   try {
     const caller = await getServerCaller();
-
-    // TODO: Replace with actual tRPC call when backend is ready
-    // await caller.admin.settings.updateCaptcha(parsed.data);
-
-    // Mock: just log for now
-    console.log('[Mock] Update CAPTCHA settings:', parsed.data);
+    // 화면이 읽는 admin.settings.getCaptcha 와 같은 저장소(security.captcha.*)에 쓴다.
+    // 빈 키는 보내지 않는다 — 라우터는 undefined 를 "기존 값 유지"로 해석하므로
+    // 키를 다시 입력하지 않은 저장이 기존 키를 지우지 않는다.
+    await caller.admin.settings.updateCaptcha({
+      signupEnabled: parsed.data.captchaSignupEnabled,
+      loginEnabled: parsed.data.captchaLoginEnabled,
+      turnstileSiteKey: parsed.data.captchaSiteKey || undefined,
+      turnstileSecretKey: parsed.data.captchaSecretKey || undefined,
+      loginCaptchaThreshold: parsed.data.captchaLoginThreshold,
+    });
   } catch (err) {
     if (err instanceof TRPCError) {
       return { error: err.message };

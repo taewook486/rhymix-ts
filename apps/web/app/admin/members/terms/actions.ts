@@ -9,6 +9,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { getServerCaller } from '@/lib/trpc/server';
 
 export interface ActionState {
   error?: string;
@@ -45,12 +46,13 @@ export async function upsertTermAction(
   }
 
   try {
-    // TODO: Replace with actual tRPC call when backend is ready
-    // const caller = await getServerCaller();
-    // await caller.admin.terms.upsert(parsed.data);
-
-    // Mock: just log for now
-    console.log('[Mock] Upsert term:', parsed.data);
+    const caller = await getServerCaller();
+    const { id, ...fields } = parsed.data;
+    if (id !== undefined) {
+      await caller.admin.terms.update({ id, ...fields });
+    } else {
+      await caller.admin.terms.create(fields);
+    }
 
     revalidatePath('/admin/members/terms');
     return { success: true };
@@ -74,12 +76,8 @@ export async function deleteTermAction(
   }
 
   try {
-    // TODO: Replace with actual tRPC call when backend is ready
-    // const caller = await getServerCaller();
-    // await caller.admin.terms.delete({ id });
-
-    // Mock: just log for now
-    console.log('[Mock] Delete term:', id);
+    const caller = await getServerCaller();
+    await caller.admin.terms.delete({ id });
 
     revalidatePath('/admin/members/terms');
     return { success: true };
