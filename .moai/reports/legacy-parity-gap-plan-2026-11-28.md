@@ -155,3 +155,23 @@ DB 지원 범위, 데이터 이전(importer), 모바일 레이아웃, 다국어,
 - `apps/web/e2e/legacy-crawl/crawl-admin.ts` — 함수 내보내기 + 직접 실행할 때만 크롤. 실행 안내를 `node`(Node 22 타입 제거)로 수정 — 저장소에 `tsx` 가 없다.
 - `apps/web/e2e/legacy-crawl/crawl-supplement.ts` (신규) — 선언 대비 커버리지 + 파라미터 화면 보충 방문 → `coverage.md`
 - `apps/web/e2e/legacy-crawl/crawl-front.ts` (신규) — 방문자 화면 지도 → `legacy-front-map/`
+
+### 쓰기처럼 보이는 이름의 disp 화면 13개 — 방문 전 소스 확인 (REQ-LGP-008 허용 목록 근거)
+
+관리자 7개·방문자 6개. 각 화면 함수 본문에서 DB 쓰기(`executeQuery(...insert|update|delete)`, `->insert/update/delete/remove/purge`)와 파일 쓰기(`FileHandler::write/remove/move/copy`) 호출을 찾았다. 함수 본문만 본 것이라 그 안에서 부르는 도우미 함수의 쓰기는 이 표가 보장하지 않는다 — 대신 방문 뒤 DB 를 기준선 덤프로 복원했다.
+
+| act | 소스 위치 | DB·파일 쓰기 호출 |
+|---|---|---|
+| `dispAdminInsertDomain` | modules/admin/controllers/systemconfig/Domains.php:55 | 없음 |
+| `dispBoardAdminDeleteBoard` | modules/board/board.admin.view.php:236 | 없음 |
+| `dispBoardAdminInsertBoard` | modules/board/board.admin.view.php:145 | 없음 |
+| `dispBoardDelete` | modules/board/board.view.php:1077 | 없음 |
+| `dispBoardDeleteComment` | modules/board/board.view.php:1376 | 없음 |
+| `dispBoardDeleteTrackback` | modules/board/board.view.php:1463 | 없음 |
+| `dispBoardUpdateLog` | modules/board/board.view.php:1495 | 없음 |
+| `dispBoardUpdateLogView` | modules/board/board.view.php:1528 | 없음 |
+| `dispLayoutAdminInsert` | modules/layout/layout.admin.view.php:158 | 없음 |
+| `dispMemberAdminInsert` | modules/member/member.admin.view.php:404 | 없음 |
+| `dispMemberAdminInsertJoinForm` | modules/member/member.admin.view.php:773 | 없음 |
+| `dispNcenterliteInsertUnsubscribe` | modules/ncenterlite/ncenterlite.view.php:147 | 없음 |
+| `dispPageAdminDelete` | modules/page/page.admin.view.php:317 | 없음 |
