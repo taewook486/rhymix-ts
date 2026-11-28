@@ -6,6 +6,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getStorage } from '@rhymix-ts/file';
+import { canReadAttachment, getAccessSession } from '@/app/api/files/_lib/can-read-attachment';
+
+/** 허용되는 이미지 변형. 그 외 값은 저장소 키를 만드는 데 쓰지 않는다. */
+const ALLOWED_VARIANTS = new Set(['thumb', 'small', 'medium', 'large', 'original']);
 
 export async function GET(
   req: NextRequest,
@@ -17,6 +21,11 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }
 
+  const variant = req.nextUrl.searchParams.get('variant') ?? 'original';
+  if (!ALLOWED_VARIANTS.has(variant)) {
+    return NextResponse.json({ error: 'Invalid variant' }, { status: 400 });
+  }
+
   const attachment = await prisma.fileAttachment.findUnique({
     where: { id: fileId, isvalid: true },
   });
@@ -24,8 +33,12 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
+  // 글 보기 화면과 같은 규칙. 거부는 없는 파일과 구분되지 않도록 같은 404.
+  if (!(await canReadAttachment(attachment, await getAccessSession()))) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const storage = getStorage();
-  const variant = req.nextUrl.searchParams.get('variant') ?? 'original';
   const storageKey =
     variant === 'original'
       ? attachment.storageKey

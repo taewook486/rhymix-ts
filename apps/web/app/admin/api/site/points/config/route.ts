@@ -8,8 +8,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@rhymix-ts/db';
 import { setSitePointConfig } from '@rhymix-ts/point';
+import { adminServerActionCheck } from '@/lib/auth/admin-guard';
 
 export async function POST(req: NextRequest) {
+  const guard = await adminServerActionCheck();
+  if (!guard.ok) {
+    return NextResponse.json({ message: guard.message }, { status: 403 });
+  }
+
   try {
     const body = await req.json();
     const config = await setSitePointConfig(prisma, body);

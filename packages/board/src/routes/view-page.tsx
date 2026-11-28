@@ -12,7 +12,7 @@ import { notFound } from 'next/navigation';
 import type { PrismaClient } from '@prisma/client';
 import type { ModuleRoutePageProps } from '@rhymix-ts/core/modules';
 import { getDocument, getAdjacentDocuments } from '@rhymix-ts/document';
-import { canPerformAction } from '../permissions';
+import { resolveDocumentAccess, type DocumentAccessBoard } from '../document-access';
 import { listComments } from '@rhymix-ts/comment';
 import { listAttachments } from '@rhymix-ts/file';
 import { sanitize } from '../components/sanitize';
@@ -84,19 +84,12 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
     listAttachments({ documentId }, { prisma }),
   ]);
 
-  // D-4: 삭제된 글 / 다른 게시판의 글 / 남의 임시저장 글은 존재하지 않는 글로 취급한다.
-  if (doc.deletedAt !== null && doc.deletedAt !== undefined) notFound();
-  if (!board || doc.boardId !== board.id) notFound();
-  const isAuthorOrAdmin =
-    session !== null && (session.user.id === doc.authorId || session.user.isAdmin);
-  if (doc.status === 'TEMP' && !isAuthorOrAdmin) notFound();
-
-  // D-4 규칙 4: 게시판 view 권한. 그룹은 tRPC 쪽 buildActorWithId 와 같은 규칙(첫 그룹, 없으면 회원=1, 비회원=0).
-  const viewerContext = {
-    userGroupSrl: session === null ? 0 : (session.user.groups?.[0]?.id ?? 1),
-    isAdmin: session?.user.isAdmin ?? false,
-  };
-  if (!canPerformAction(board as { permissions: Record<string, number[]> | null }, 'view', viewerContext)) {
+  // D-4: 열람 규칙은 첨부 다운로드 라우트와 같은 함수(document-access.ts)를 쓴다.
+  // 삭제된 글 / 다른 게시판의 글 / 남의 임시저장 글은 존재하지 않는 글로 취급하고,
+  // 게시판 view 권한(그룹: 첫 그룹, 없으면 회원=1, 비회원=0)이 없으면 안내를 보인다.
+  const access = resolveDocumentAccess({ doc, board: board as DocumentAccessBoard | null, session });
+  if (access === 'not_found' || !board) notFound();
+  if (access === 'view_denied') {
     return (
       <div className="max-w-3xl mx-auto p-4">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
@@ -115,9 +108,7 @@ export async function BoardViewPage(props: BoardViewPageProps): Promise<React.Re
   );
 
   // 비밀글 접근 권한 판단 (REQ-BUI-006)
-  const canViewSecret =
-    doc.status !== 'SECRET' ||
-    (session !== null && (session.user.id === doc.authorId || session.user.isAdmin));
+  const canViewSecret = access !== 'secret_denied';
 
   // 수정 권한 판단: 작성자 본인 또는 admin
   const canEdit =
