@@ -175,3 +175,11 @@ DB 지원 범위, 데이터 이전(importer), 모바일 레이아웃, 다국어,
 | `dispMemberAdminInsertJoinForm` | modules/member/member.admin.view.php:773 | 없음 |
 | `dispNcenterliteInsertUnsubscribe` | modules/ncenterlite/ncenterlite.view.php:147 | 없음 |
 | `dispPageAdminDelete` | modules/page/page.admin.view.php:317 | 없음 |
+
+## 6. 2~4단계 결과 (2026-11-28)
+
+영역 002~009 판정표와 010 비-UI 사실 조사를 `.moai/reports/legacy-parity-verdicts/` 에 모았다(집계·결정 목록은 그 폴더 `README.md`).
+합계 210행: 대응 있음 97 / 격차 84 / 의도적 제외 후보 29. 판정 누락 0(관리자 2개는 001 소관).
+
+**정정**: §2 F7 의 "DB 지원(레거시 MySQL/MariaDB/PostgreSQL ↔ PostgreSQL 전용)"은 2026-06-27 보고서를 옮긴 것이었는데 틀렸다.
+레거시 2.1.41 의 DB 연결은 `mysql:` DSN 하나뿐이다(`common/framework/DB.php:122`, `common/defaults/config.php:12`). 두 시스템 모두 단일 엔진이라 판정 대상이 아니다.
