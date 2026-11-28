@@ -118,7 +118,7 @@ export const credentialsProvider = Credentials({
     // ISSUE #1 FIX: SiteSettings에서 CAPTCHA 설정 동적으로 로드
     // SPEC-MEMBER-ADMIN-001 REQ-MADM-027: 자동 재해싱 토글도 함께 로드한다.
     const siteId = await resolveDefaultSiteId(prisma);
-    const [captchaLoginEnabled, captchaSecretKey, captchaThreshold, autoRehashSetting] =
+    const [captchaLoginEnabled, captchaSecretKey, captchaThreshold, autoRehashSetting, maxFailedSetting] =
       await Promise.all([
         prisma.siteSetting.findUnique({
           where: { siteId_key: { siteId, key: 'security.captcha.login.enabled' } },
@@ -132,7 +132,19 @@ export const credentialsProvider = Credentials({
         prisma.siteSetting.findUnique({
           where: { siteId_key: { siteId, key: 'security.password.autoRehashEnabled' } },
         }),
+        // 관리자 회원 설정 "최대 로그인 실패 횟수" (admin.settings.updateLogin 이 저장하는 키)
+        prisma.siteSetting.findUnique({
+          where: { siteId_key: { siteId, key: 'member.login.maxFailedAttempts' } },
+        }),
       ]);
+
+    // 저장된 값이 양의 정수일 때만 쓴다. 없거나 쓸 수 없는 값이면 지정하지 않아
+    // login() 의 기본값(5)이 유지된다. windowMinutes 는 저장 화면이 없어 건드리지 않는다.
+    const storedMaxFailed = maxFailedSetting?.value;
+    const maxErrorCount =
+      typeof storedMaxFailed === 'number' && Number.isInteger(storedMaxFailed) && storedMaxFailed > 0
+        ? storedMaxFailed
+        : undefined;
 
     const captchaEnabled = Boolean(captchaLoginEnabled?.value) && Boolean(captchaSecretKey?.value);
 
@@ -148,6 +160,8 @@ export const credentialsProvider = Credentials({
           captchaThreshold: (captchaThreshold?.value as number) ?? 5,
           // REQ-MADM-027: 미지정 시 기존 동작(켜짐) 유지.
           autoRehashEnabled: (autoRehashSetting?.value as boolean | undefined) ?? true,
+          // 관리자가 저장한 최대 로그인 실패 횟수 (없으면 login() 기본값 5)
+          maxErrorCount,
         },
       },
     );
