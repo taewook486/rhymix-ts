@@ -1,0 +1,143 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispMemberSpammer",
+  "act": "dispMemberSpammer",
+  "group": "방문자(admin)",
+  "title": "회원",
+  "links": [
+    {
+      "href": "javascript:window.close()",
+      "text": "×",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "모두 삭제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "중지",
+      "kind": "onclick",
+      "handler": "cancelSpammerManage();",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "member",
+      "actField": "procMemberSpammerManage",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "proc_type",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "member_srl",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module_srl",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "cnt_loop",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "spam_description",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "name": "to_trash",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "member",
+  "permission": "root",
+  "route": null,
+  "excerpt": "스패머 관리 × 지정된 회원을 차단하고, 회원이 남긴 글과 댓글을 삭제합니다. 회원이 작성한 게시물의 양에 따라 오래걸릴 수 있습니다. 닉네임 : 회원에 대한 관리자 메모입니다. 휴지통으로 이동 모두 삭제"
+}

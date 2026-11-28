@@ -1,0 +1,464 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispWidgetGenerateCode",
+  "act": "dispWidgetGenerateCode",
+  "group": "방문자(guest)",
+  "title": "",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?act=dispWidgetGenerateCode#content",
+      "text": "메뉴 건너뛰기",
+      "module": null,
+      "act": "dispWidgetGenerateCode",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispWidgetGenerateCode#",
+      "text": "검색창 닫기",
+      "module": null,
+      "act": "dispWidgetGenerateCode",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispWidgetGenerateCode#",
+      "text": "검색",
+      "module": null,
+      "act": "dispWidgetGenerateCode",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLoginForm&mid=index",
+      "text": "로그인/회원가입",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLoginForm&mid=index",
+      "text": "로그인",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm&mid=index",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index",
+      "text": "Welcome",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/board",
+      "text": "Free Board",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/qna",
+      "text": "Q&A",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/notice",
+      "text": "Notice",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberFindAccount",
+      "text": "cmd_find_member_account",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm",
+      "text": "cmd_signup",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
+      "text": "사이트 제목 바꾸기",
+      "module": "admin",
+      "act": "dispAdminConfigGeneral",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAdminConfigGeneral",
+      "text": "[관리 > 설정 > 일반 > 기본]",
+      "module": "admin",
+      "act": "dispAdminConfigGeneral",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
+      "text": "메뉴 구조 구성하기",
+      "module": "admin",
+      "act": "dispMenuAdminSiteMap",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
+      "text": "[관리 > 사이트 제작/편집 > 사이트 메뉴 편집]",
+      "module": "admin",
+      "act": "dispMenuAdminSiteMap",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteDesign",
+      "text": "레이아웃 디자인 바꾸기",
+      "module": "admin",
+      "act": "dispMenuAdminSiteDesign",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteDesign",
+      "text": "[관리 > 사이트 제작/편집 > 사이트 디자인 설정]",
+      "module": "admin",
+      "act": "dispMenuAdminSiteDesign",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
+      "text": "초기화면 바꾸기",
+      "module": "admin",
+      "act": "dispMenuAdminSiteMap",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMenuAdminSiteMap",
+      "text": "[관리 > 사이트 제작/편집 > 사이트 메뉴 편집]",
+      "module": "admin",
+      "act": "dispMenuAdminSiteMap",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
+      "text": "기능과 디자인 추가하기",
+      "module": "admin",
+      "act": "dispAutoinstallAdminIndex",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
+      "text": "[관리 > 고급 > 쉬운 설치]",
+      "module": "admin",
+      "act": "dispAutoinstallAdminIndex",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
+      "text": "레이아웃 꾸미기",
+      "module": "admin",
+      "act": "dispAutoinstallAdminIndex",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispLayoutAdminModify&layout_srl=65",
+      "text": "[관리 > 고급 > 설치된 레이아웃]",
+      "module": "admin",
+      "act": "dispLayoutAdminModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "https://rhymix.org/community",
+      "text": "COMMUNITY",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://xetown.com/questions",
+      "text": "Q&A",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://xetown.com/point_contents",
+      "text": "DOWNLOAD",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://github.com/rhymix/rhymix",
+      "text": "GITHUB",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/terms",
+      "text": "Terms of Service",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/privacy",
+      "text": "Privacy Policy",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://www.rhymix.org/",
+      "text": "Rhymix",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=index&act=dispMemberLoginForm",
+      "text": "로그인",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=index&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispWidgetGenerateCode#",
+      "text": "위로",
+      "module": null,
+      "act": "dispWidgetGenerateCode",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=index&act=dispMemberFindAccount",
+      "text": "ID/PW 찾기",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=index&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispWidgetGenerateCode#",
+      "text": "닫기",
+      "module": null,
+      "act": "dispWidgetGenerateCode",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "검색창 닫기",
+      "kind": "onclick",
+      "handler": "return false",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "onclick",
+      "handler": "jQuery('#warning')[(jQuery('#keepid:checked').size()>0?'addClass':'removeClass')]('open');",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "cmd_login",
+      "kind": "onclick",
+      "handler": "$('#message_login_form').submit()",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "로그인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "http://localhost:8080/",
+      "method": "get",
+      "moduleField": null,
+      "actField": "IS",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "is_keyword",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": "member",
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "ruleset",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": null,
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "widget",
+  "permission": "root",
+  "route": null,
+  "excerpt": "메뉴 건너뛰기 검색 로그인/회원가입 로그인 회원가입 Welcome Free Board Q&A Notice CREATE A GOOD DESIGN WITH THE POSSIILITY OF TECHNOLOGY 기술의 가능성을 발굴하고 좋은 디자인을 만들어 갑니다. SHARING, PUBLISHING. & PLEASURE. 지식을 나누고 컨텐츠를 출판하며 즐거움을 함께합니다. MAKING WEB CULTURES 올바른 웹 문화를 지향합니다. EVOLUTION & INNOVATION TOGETHER 함께 진화하고 혁신을 추구합니다. CREA"
+}

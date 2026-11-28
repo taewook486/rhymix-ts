@@ -1,0 +1,12 @@
+{
+  "baseUrl": "http://localhost:8080",
+  "crawledAt": "2026-11-28T07:27:29.182Z",
+  "declared": 81,
+  "visited": 76,
+  "samples": {
+    "mid": "board",
+    "document_srl": "114",
+    "comment_srl": "116",
+    "member_srl": "5"
+  }
+}

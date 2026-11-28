@@ -1,0 +1,72 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispModuleSelectList",
+  "act": "dispModuleSelectList",
+  "group": "방문자(admin)",
+  "title": "서버 오류",
+  "links": [
+    {
+      "href": "http://localhost:8080/",
+      "text": "돌아가기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "module": "module",
+  "permission": "all-managers",
+  "route": null,
+  "excerpt": "서버 오류 TypeError #0 \"escape_js(): Argument #1 ($str) must be of type string, null given, called in /var/www/html/files/cache/template/modules/module/tpl/module_selector.html.compiled.php on line 34\" in modules/module/tpl/module_selector.html on line 34 (via common/functions.php on line 225) common/fu"
+}

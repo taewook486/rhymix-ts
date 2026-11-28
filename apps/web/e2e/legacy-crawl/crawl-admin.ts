@@ -13,7 +13,7 @@
  *
  * 실행:
  *   LEGACY_ADMIN_ID=admin LEGACY_ADMIN_PW=... \
- *     pnpm --filter @rhymix-ts/web exec tsx e2e/legacy-crawl/crawl-admin.ts
+ *     node e2e/legacy-crawl/crawl-admin.ts   (apps/web 에서, Node 22 타입 제거 실행)
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -24,9 +24,9 @@ import { chromium, type Page, type Browser } from '@playwright/test';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '../../../..');
-const OUT_DIR = path.join(REPO_ROOT, '.moai/reports/legacy-admin-map');
+export const OUT_DIR = path.join(REPO_ROOT, '.moai/reports/legacy-admin-map');
 
-const BASE_URL = process.env.LEGACY_BASE_URL ?? 'http://localhost:8080';
+export const BASE_URL = process.env.LEGACY_BASE_URL ?? 'http://localhost:8080';
 const ADMIN_ID = process.env.LEGACY_ADMIN_ID ?? '';
 const ADMIN_PW = process.env.LEGACY_ADMIN_PW ?? '';
 const MAX_PAGES = Number(process.env.LEGACY_CRAWL_MAX_PAGES ?? 400);
@@ -88,7 +88,7 @@ interface FormRecord {
   fields: { name: string; type: string; required: boolean }[];
 }
 
-interface PageRecord {
+export interface PageRecord {
   url: string;
   act: string | null;
   group: string;
@@ -120,7 +120,7 @@ function extractTargets(source: string): string[] {
   return [...found];
 }
 
-function parseQuery(href: string): { module: string | null; act: string | null } {
+export function parseQuery(href: string): { module: string | null; act: string | null } {
   try {
     const u = new URL(href, BASE_URL);
     return { module: u.searchParams.get('module'), act: u.searchParams.get('act') };
@@ -144,7 +144,7 @@ function isAdminUrl(href: string): boolean {
   return module === 'admin' || (act !== null && /^disp.*Admin/i.test(act));
 }
 
-async function login(page: Page): Promise<void> {
+export async function login(page: Page): Promise<void> {
   await page.goto(`${BASE_URL}/index.php?module=admin`, { waitUntil: 'domcontentloaded' });
 
   // 이미 로그인된 세션이면 로그인 폼이 없다.
@@ -248,7 +248,7 @@ function buildGroupMapFromGnb(gnb: GnbGroup[]): Map<string, string> {
 }
 
 /** 한 화면을 읽어 링크·이벤트·폼·XHR 을 수집한다 (클릭하지 않는다). */
-async function inspect(page: Page, url: string, group: string): Promise<PageRecord> {
+export async function inspect(page: Page, url: string, group: string): Promise<PageRecord> {
   const xhr: { method: string; url: string }[] = [];
   const onRequest = (req: { resourceType(): string; method(): string; url(): string }) => {
     if (req.resourceType() === 'xhr' || req.resourceType() === 'fetch') {
@@ -368,7 +368,7 @@ async function inspect(page: Page, url: string, group: string): Promise<PageReco
  * 파일명 생성. act 만 쓰면 같은 act 의 다른 화면(srl/페이지 파라미터 차이)이
  * 서로 덮어쓰므로 전체 URL 해시를 붙여 충돌을 막는다.
  */
-function slugify(url: string): string {
+export function slugify(url: string): string {
   const { module, act } = parseQuery(url);
   const base = (act ?? module ?? 'page').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 60);
   let hash = 0;
@@ -568,7 +568,10 @@ async function main(): Promise<void> {
   console.log(`\n[완료] ${pages.length}개 화면 → ${OUT_DIR}`);
 }
 
-main().catch((err) => {
-  console.error('[크롤 실패]', err);
-  process.exit(1);
-});
+// 다른 스크립트(crawl-supplement.ts)가 inspect/login 을 가져다 쓸 때는 크롤을 돌리지 않는다.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error('[크롤 실패]', err);
+    process.exit(1);
+  });
+}

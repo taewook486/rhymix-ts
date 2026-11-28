@@ -1,0 +1,130 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispDocumentAdminDeclaredLogByDocumentSrl&target_srl=67",
+  "act": "dispDocumentAdminDeclaredLogByDocumentSrl",
+  "group": "보충(파라미터 화면)",
+  "title": "문서",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispDocumentAdminDeclaredLogByDocumentSrl&target_srl=67#popup_menu_area",
+      "text": "admin",
+      "module": "admin",
+      "act": "dispDocumentAdminDeclaredLogByDocumentSrl",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispDocumentAdminDeclaredLogByDocumentSrl&target_srl=67",
+      "text": "« 첫 페이지",
+      "module": "admin",
+      "act": "dispDocumentAdminDeclaredLogByDocumentSrl",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispDocumentAdminDeclaredLogByDocumentSrl&target_srl=67&page=1",
+      "text": "1",
+      "module": "admin",
+      "act": "dispDocumentAdminDeclaredLogByDocumentSrl",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispDocumentAdminDeclaredLogByDocumentSrl&target_srl=67&page=1",
+      "text": "끝 페이지 »",
+      "module": "admin",
+      "act": "dispDocumentAdminDeclaredLogByDocumentSrl",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/",
+      "method": "get",
+      "moduleField": "document",
+      "actField": "dispDocumentAdminDeclaredLogByDocumentSrl",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "page",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "get",
+      "moduleField": "admin",
+      "actField": "dispDocumentAdminDeclaredLogByDocumentSrl",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "supplement": {
+    "module": "document",
+    "sampleParams": {
+      "target_srl": "67"
+    },
+    "bodyExcerpt": "불량 게시글 신고 Welcome to Rhymix HELLO, WORLD! WELCOME TO RHYMIX Rhymix는 자유로운 웹 콘텐츠 발행을 돕는 CMS입니다. 간편한 설치와 다양한 추가 프로그램을 활용하여 자신만의 웹페이지를 쉽고 빠르게 만들 수 있습니다. 시작하기 admin 신고 이유 신고자 신고 이유 날짜 « 첫 페이지 1 끝 페이지 »"
+  }
+}

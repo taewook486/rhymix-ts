@@ -799,6 +799,11 @@
           "required": false
         },
         {
+          "name": "dark_favicon",
+          "type": "file",
+          "required": false
+        },
+        {
           "name": "mobicon",
           "type": "file",
           "required": false

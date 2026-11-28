@@ -606,6 +606,16 @@
           "required": false
         },
         {
+          "name": "admin_url_prefix",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "admin_url_prefix",
+          "type": "radio",
+          "required": false
+        },
+        {
           "name": "autologin_lifetime",
           "type": "number",
           "required": false
@@ -613,6 +623,16 @@
         {
           "name": "autologin_refresh",
           "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "use_session_refresh",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "use_session_refresh",
+          "type": "radio",
           "required": false
         },
         {

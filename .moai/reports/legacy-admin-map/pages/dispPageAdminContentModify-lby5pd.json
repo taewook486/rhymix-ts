@@ -1,0 +1,776 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49",
+  "act": "dispPageAdminContentModify",
+  "group": "보충(파라미터 화면)",
+  "title": "페이지",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#content",
+      "text": "메뉴 건너뛰기",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "검색창 닫기",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "검색",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin",
+      "text": "관리",
+      "module": "admin",
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberInfo&module_srl=49",
+      "text": "",
+      "module": "admin",
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberInfo",
+      "text": "회원정보 보기",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberScrappedDocument",
+      "text": "스크랩 보기",
+      "module": null,
+      "act": "dispMemberScrappedDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSavedDocument",
+      "text": "저장함 보기",
+      "module": null,
+      "act": "dispMemberSavedDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberOwnDocument",
+      "text": "작성 글 보기",
+      "module": null,
+      "act": "dispMemberOwnDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberOwnComment",
+      "text": "작성 댓글 보기",
+      "module": null,
+      "act": "dispMemberOwnComment",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberActiveLogins",
+      "text": "자동 로그인 관리",
+      "module": null,
+      "act": "dispMemberActiveLogins",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberLogout&module_srl=49",
+      "text": "로그아웃",
+      "module": "admin",
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index",
+      "text": "Welcome",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/board",
+      "text": "Free Board",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/qna",
+      "text": "Q&A",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/notice",
+      "text": "Notice",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin",
+      "text": "시작하기",
+      "module": "admin",
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/terms",
+      "text": "Terms of Service",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/privacy",
+      "text": "Privacy Policy",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://www.rhymix.org/",
+      "text": "Rhymix",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberInfo",
+      "text": "회원정보 보기",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "위로",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberFindAccount",
+      "text": "ID/PW 찾기",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "닫기",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "취소",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "취소",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "취소",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "취소",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispPageAdminContentModify&module_srl=49#",
+      "text": "취소",
+      "module": "admin",
+      "act": "dispPageAdminContentModify",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "검색창 닫기",
+      "kind": "onclick",
+      "handler": "return false",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "onclick",
+      "handler": "doAddWidgetBox()",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "onclick",
+      "handler": "doAddContent('index')",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "onclick",
+      "handler": "doAddWidget(this.form)",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "onclick",
+      "handler": "removeAllWidget()",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "설정",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "위젯 크기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "위젯스타일",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "복사",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "위젯 크기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "위젯스타일",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "삭제",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "로그인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "줄이기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "선택",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "줄이기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "선택",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "줄이기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "선택",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "줄이기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "선택",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "줄이기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "선택",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "onclick",
+      "handler": "$(document).trigger('click');",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "http://localhost:8080/",
+      "method": "get",
+      "moduleField": null,
+      "actField": "IS",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "is_keyword",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "page",
+      "actField": "dispPageAdminContentModify",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module_srl",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "content",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "button",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "button",
+          "required": false
+        },
+        {
+          "name": "widget_list",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "button",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "submit",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "button",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": null,
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "index.php",
+      "method": "get",
+      "moduleField": null,
+      "actField": "dispPageAdminContentModify",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "css_class",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "widget_align",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "width",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "height",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "margin_top",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "margin_left",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "margin_right",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "margin_bottom",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "padding_top",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "padding_left",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "padding_right",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "padding_bottom",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "border_top_thick",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "border_top_type",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "border_top_color",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "border_left_thick",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "border_left_type",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "border_left_color",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "border_right_thick",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "border_right_type",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "border_right_color",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "border_bottom_thick",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "border_bottom_type",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "border_bottom_color",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "background_color",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "background_image_url",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "background_repeat",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "background_x",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "background_y",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "submit",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "supplement": {
+    "module": "page",
+    "sampleParams": {
+      "module_srl": "49"
+    },
+    "bodyExcerpt": "메뉴 건너뛰기 검색 관리 회원정보 보기 스크랩 보기 저장함 보기 작성 글 보기 작성 댓글 보기 자동 로그인 관리 로그아웃 Welcome Free Board Q&A Notice Welcome HELLO, WORLD! WELCOME TO RHYMIX Rhymix는 자유로운 웹 콘텐츠 발행을 돕는 CMS입니다. 간편한 설치와 다양한 추가 프로그램을 활용하여 자신만의 웹페이지를 쉽고 빠르게 만들 수 있습니다. 시작하기 Content 위젯 기본 카운터 위젯 언어 선택 로그인 정보 출력 모바일 콘텐츠 위젯 설문조사 위젯 Rhymix Rhymi"
+  }
+}

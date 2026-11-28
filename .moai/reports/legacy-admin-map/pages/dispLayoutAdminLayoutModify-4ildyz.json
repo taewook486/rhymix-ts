@@ -1,0 +1,39 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispLayoutAdminLayoutModify&layout_srl=106",
+  "act": "dispLayoutAdminLayoutModify",
+  "group": "보충(파라미터 화면)",
+  "title": "",
+  "links": [],
+  "events": [
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "supplement": {
+    "module": "layout",
+    "sampleParams": {
+      "layout_srl": "106"
+    },
+    "bodyExcerpt": "Template not found: modules/layout/tpl/about_faceoff.html"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispAddonAdminInfo&selected_addon=autolink",
+  "act": "dispAddonAdminInfo",
+  "group": "보충(파라미터 화면)",
+  "title": "설치된 애드온",
+  "links": [
+    {
+      "href": "http://xpressengine.com/",
+      "text": "http://xpressengine.com/",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "mailto:developers@xpressengine.com",
+      "text": "developers@xpressengine.com",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [
+    {
+      "method": "GET",
+      "url": "https://api.rhymix.org/version.json"
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:8080/index.php?act=procAutoinstallAdminUpdatePackageList"
+    }
+  ],
+  "supplement": {
+    "module": "addon",
+    "sampleParams": {
+      "selected_addon": "autolink"
+    },
+    "bodyExcerpt": "애드온 제작자 제목 자동 링크 애드온 ver. 작성자 NAVER (http://xpressengine.com/, developers@xpressengine.com) 등록일 1970-01-01 설명 글과 댓글의 내용 중 URL 문자열에 링크를 걸어주는 애드온입니다."
+  }
+}

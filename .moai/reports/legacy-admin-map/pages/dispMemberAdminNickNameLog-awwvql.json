@@ -355,6 +355,13 @@
       "disposition": "visited"
     },
     {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminAuthLog",
+      "text": "인증 기록",
+      "module": "admin",
+      "act": "dispMemberAdminAuthLog",
+      "disposition": "visited"
+    },
+    {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminNickNameLog",
       "text": "닉네임 변경 기록",
       "module": "admin",
@@ -422,6 +429,13 @@
     {
       "tag": "button",
       "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "일 이상 지난 기록 삭제",
       "kind": "submit-button",
       "handler": "",
       "targets": []
@@ -565,10 +579,58 @@
     },
     {
       "action": "/",
+      "method": "post",
+      "moduleField": "admin",
+      "actField": "procMemberAdminClearModifyNickNameLog",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "days",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/",
       "method": "get",
       "moduleField": "admin",
       "actField": "dispMemberAdminNickNameLog",
       "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
         {
           "name": "act",
           "type": "hidden",

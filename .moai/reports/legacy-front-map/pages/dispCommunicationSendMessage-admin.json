@@ -1,0 +1,72 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispCommunicationSendMessage",
+  "act": "dispCommunicationSendMessage",
+  "group": "방문자(admin)",
+  "title": "회원",
+  "links": [
+    {
+      "href": "http://localhost:8080/",
+      "text": "돌아가기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "module": "communication",
+  "permission": "member",
+  "route": "messages/send",
+  "excerpt": "잘못된 요청입니다. modules/communication/communication.view.php:246 돌아가기 로그아웃"
+}

@@ -1,0 +1,57 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispWidgetInfo",
+  "act": "dispWidgetInfo",
+  "group": "방문자(admin)",
+  "title": "",
+  "links": [],
+  "events": [
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "module": "widget",
+  "permission": "all-managers",
+  "route": null,
+  "excerpt": "위젯 위젯 제작자 제목 ver 작성자 등록일"
+}

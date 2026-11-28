@@ -1,0 +1,136 @@
+{
+  "url": "http://localhost:8080/index.php?mid=board&act=dispDocumentDeclare&target_srl=114",
+  "act": "dispDocumentDeclare",
+  "group": "방문자(admin)",
+  "title": "Free Board",
+  "links": [
+    {
+      "href": "javascript:window.close()",
+      "text": "×",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "등록",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "document",
+      "actField": "procDocumentDeclare",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "ruleset",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "target_srl",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "message_option",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "declare_message",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "document",
+  "permission": "member",
+  "route": null,
+  "excerpt": "불량 게시글 신고 × [크롤 표본] 레거시 지도 수집용 글 크롤 표본 본문. 수집 후 기준선 덤프로 복원된다. 신고 이유 주제나 흐름에 맞지 않는 광고 글입니다. 주제에 맞지 않는 글입니다. 과도한 욕설을 담고 있습니다. 폭력적인 내용을 담고 있습니다. 인종차별적인 내용을 담고 있습니다. 음란물을 포함하고 있습니다. 민감한 개인정보가 노출 되어있습니다. 기타(직접작성) 게시글을 신고하신 이유를 간단히 적어서 제출해주시면 관리자 검토 후 조치하겠습니다. 등록"
+}

@@ -1,0 +1,121 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispCommentAdminDeclaredLogByCommentSrl",
+  "act": "dispCommentAdminDeclaredLogByCommentSrl",
+  "group": "보충(파라미터 화면)",
+  "title": "댓글",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispCommentAdminDeclaredLogByCommentSrl",
+      "text": "« 첫 페이지",
+      "module": "admin",
+      "act": "dispCommentAdminDeclaredLogByCommentSrl",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispCommentAdminDeclaredLogByCommentSrl&page=1",
+      "text": "1",
+      "module": "admin",
+      "act": "dispCommentAdminDeclaredLogByCommentSrl",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispCommentAdminDeclaredLogByCommentSrl&page=1",
+      "text": "끝 페이지 »",
+      "module": "admin",
+      "act": "dispCommentAdminDeclaredLogByCommentSrl",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/",
+      "method": "get",
+      "moduleField": "comment",
+      "actField": "dispCommentAdminDeclaredLogByCommentSrl",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "page",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "get",
+      "moduleField": "admin",
+      "actField": "dispCommentAdminDeclaredLogByCommentSrl",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "supplement": {
+    "module": "comment",
+    "sampleParams": null,
+    "bodyExcerpt": "불량 댓글 신고 댓글 신고 이유 신고자 신고 이유 날짜 « 첫 페이지 1 끝 페이지 »"
+  }
+}

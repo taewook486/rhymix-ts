@@ -1,0 +1,394 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList",
+  "act": "dispNcenterliteNotifyList",
+  "group": "방문자(admin)",
+  "title": "내 알림 목록",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList&mid=member#content",
+      "text": "메뉴 건너뛰기",
+      "module": null,
+      "act": "dispNcenterliteNotifyList",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList&mid=member#",
+      "text": "검색창 닫기",
+      "module": null,
+      "act": "dispNcenterliteNotifyList",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList&mid=member#",
+      "text": "검색",
+      "module": null,
+      "act": "dispNcenterliteNotifyList",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin",
+      "text": "관리",
+      "module": "admin",
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberInfo&mid=member",
+      "text": "",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberInfo",
+      "text": "회원정보 보기",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberScrappedDocument",
+      "text": "스크랩 보기",
+      "module": null,
+      "act": "dispMemberScrappedDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberSavedDocument",
+      "text": "저장함 보기",
+      "module": null,
+      "act": "dispMemberSavedDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberOwnDocument",
+      "text": "작성 글 보기",
+      "module": null,
+      "act": "dispMemberOwnDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberOwnComment",
+      "text": "작성 댓글 보기",
+      "module": null,
+      "act": "dispMemberOwnComment",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberActiveLogins",
+      "text": "자동 로그인 관리",
+      "module": null,
+      "act": "dispMemberActiveLogins",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLogout&mid=member",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index",
+      "text": "Welcome",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/board",
+      "text": "Free Board",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/qna",
+      "text": "Q&A",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/notice",
+      "text": "Notice",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberInfo&mid=member",
+      "text": "회원정보 보기",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberScrappedDocument&mid=member",
+      "text": "스크랩 보기",
+      "module": null,
+      "act": "dispMemberScrappedDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSavedDocument&mid=member",
+      "text": "저장함 보기",
+      "module": null,
+      "act": "dispMemberSavedDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberOwnDocument&mid=member",
+      "text": "작성 글 보기",
+      "module": null,
+      "act": "dispMemberOwnDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberOwnComment&mid=member",
+      "text": "작성 댓글 보기",
+      "module": null,
+      "act": "dispMemberOwnComment",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberActiveLogins&mid=member",
+      "text": "자동 로그인 관리",
+      "module": null,
+      "act": "dispMemberActiveLogins",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList&mid=member",
+      "text": "« 첫 페이지",
+      "module": null,
+      "act": "dispNcenterliteNotifyList",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList&mid=member&page=1",
+      "text": "1",
+      "module": null,
+      "act": "dispNcenterliteNotifyList",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList&mid=member&page=1",
+      "text": "끝 페이지 »",
+      "module": null,
+      "act": "dispNcenterliteNotifyList",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/terms",
+      "text": "Terms of Service",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/privacy",
+      "text": "Privacy Policy",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://www.rhymix.org/",
+      "text": "Rhymix",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberInfo",
+      "text": "회원정보 보기",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList&mid=member#",
+      "text": "위로",
+      "module": null,
+      "act": "dispNcenterliteNotifyList",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberFindAccount",
+      "text": "ID/PW 찾기",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispNcenterliteNotifyList&mid=member#",
+      "text": "닫기",
+      "module": null,
+      "act": "dispNcenterliteNotifyList",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "검색창 닫기",
+      "kind": "onclick",
+      "handler": "return false",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "로그인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "http://localhost:8080/",
+      "method": "get",
+      "moduleField": null,
+      "actField": "IS",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "is_keyword",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": null,
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "ncenterlite",
+  "permission": "member",
+  "route": "notifications",
+  "excerpt": "메뉴 건너뛰기 검색 관리 회원정보 보기 스크랩 보기 저장함 보기 작성 글 보기 작성 댓글 보기 자동 로그인 관리 로그아웃 Welcome Free Board Q&A Notice Membership 회원정보 보기 스크랩 보기 저장함 보기 작성 글 보기 작성 댓글 보기 자동 로그인 관리 보낸 사람 받는 사람 내용 읽음 확인 날짜 « 첫 페이지 1 끝 페이지 » Rhymix Rhymix is free software. You can redistribute or modify it under the terms of the GNU General"
+}

@@ -1,0 +1,380 @@
+{
+  "url": "http://localhost:8080/index.php?mid=board&act=dispBoardDelete&document_srl=114",
+  "act": "dispBoardDelete",
+  "group": "방문자(guest)",
+  "title": "Free Board",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardDelete&document_srl=114#content",
+      "text": "메뉴 건너뛰기",
+      "module": null,
+      "act": "dispBoardDelete",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardDelete&document_srl=114#",
+      "text": "검색창 닫기",
+      "module": null,
+      "act": "dispBoardDelete",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardDelete&document_srl=114#",
+      "text": "검색",
+      "module": null,
+      "act": "dispBoardDelete",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberLoginForm&document_srl=114",
+      "text": "로그인/회원가입",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberLoginForm&document_srl=114",
+      "text": "로그인",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberSignUpForm&document_srl=114",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index",
+      "text": "Welcome",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/board",
+      "text": "Free Board",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/qna",
+      "text": "Q&A",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/notice",
+      "text": "Notice",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberFindAccount",
+      "text": "cmd_find_member_account",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm",
+      "text": "cmd_signup",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/terms",
+      "text": "Terms of Service",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/privacy",
+      "text": "Privacy Policy",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://www.rhymix.org/",
+      "text": "Rhymix",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberLoginForm",
+      "text": "로그인",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardDelete&document_srl=114#",
+      "text": "위로",
+      "module": null,
+      "act": "dispBoardDelete",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberFindAccount",
+      "text": "ID/PW 찾기",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardDelete&document_srl=114#",
+      "text": "닫기",
+      "module": null,
+      "act": "dispBoardDelete",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "검색창 닫기",
+      "kind": "onclick",
+      "handler": "return false",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "onclick",
+      "handler": "jQuery('#warning')[(jQuery('#keepid:checked').size()>0?'addClass':'removeClass')]('open');",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "cmd_login",
+      "kind": "onclick",
+      "handler": "$('#message_login_form').submit()",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "로그인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "http://localhost:8080/",
+      "method": "get",
+      "moduleField": null,
+      "actField": "IS",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "is_keyword",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": "member",
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "ruleset",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": null,
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "board",
+  "permission": "write_document",
+  "route": "$document_srl/delete",
+  "excerpt": "메뉴 건너뛰기 검색 로그인/회원가입 로그인 회원가입 Welcome Free Board Q&A Notice Free Board 권한이 없습니다. keep_signed cmd_login cmd_find_member_account | cmd_signup Rhymix Rhymix is free software. You can redistribute or modify it under the terms of the GNU General Public License (version 2 or later) as published by the Free"
+}

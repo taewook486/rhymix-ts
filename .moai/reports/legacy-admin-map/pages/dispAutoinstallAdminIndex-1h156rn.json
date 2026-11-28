@@ -313,144 +313,74 @@
       "disposition": "queued"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
-      "text": "전체 (1341)",
-      "module": "admin",
-      "act": "dispAutoinstallAdminIndex",
-      "disposition": "visited"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminInstalledPackages",
-      "text": "Installed(8)",
-      "module": "admin",
-      "act": "dispAutoinstallAdminInstalledPackages",
-      "disposition": "queued"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminConfig",
-      "text": "설정",
-      "module": "admin",
-      "act": "dispAutoinstallAdminConfig",
-      "disposition": "queued"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322923",
-      "text": "모듈(171)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=updates",
+      "text": "업데이트",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "queued"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322925",
-      "text": "애드온(322)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=featured",
+      "text": "추천 자료",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "queued"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322927",
-      "text": "위젯(173)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=module",
+      "text": "모듈",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "queued"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322929",
-      "text": "에디터컴포넌트(20)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=addon",
+      "text": "애드온",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "skipped-act-cap"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18631347",
-      "text": "단락에디터컴포넌트(3)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=layout",
+      "text": "레이아웃",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "skipped-act-cap"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322954",
-      "text": "레이아웃(256)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=widget",
+      "text": "위젯",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "skipped-act-cap"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18994172",
-      "text": "모바일 레이아웃(12)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=module-skin",
+      "text": "스킨",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "skipped-act-cap"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322943",
-      "text": "모듈 스킨(128)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=editor-skin",
+      "text": "에디터",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "skipped-act-cap"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18994170",
-      "text": "모듈 모바일 스킨(23)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=editor-component",
+      "text": "에디터 컴포넌트",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "skipped-act-cap"
     },
     {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322950",
-      "text": "위젯 스킨(149)",
+      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&type=theme-package",
+      "text": "테마 패키지",
       "module": "admin",
       "act": "dispAutoinstallAdminIndex",
       "disposition": "skipped-act-cap"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322952",
-      "text": "위젯 스타일(33)",
-      "module": "admin",
-      "act": "dispAutoinstallAdminIndex",
-      "disposition": "skipped-act-cap"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18904838",
-      "text": "에디터 스타일(10)",
-      "module": "admin",
-      "act": "dispAutoinstallAdminIndex",
-      "disposition": "skipped-act-cap"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&category_srl=18322977",
-      "text": "회원레벨 아이콘(40)",
-      "module": "admin",
-      "act": "dispAutoinstallAdminIndex",
-      "disposition": "skipped-act-cap"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&order_target=newest&order_type=asc",
-      "text": "신규 등록 asc",
-      "module": "admin",
-      "act": "dispAutoinstallAdminIndex",
-      "disposition": "skipped-act-cap"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&order_target=download&order_type=desc",
-      "text": "다운로드",
-      "module": "admin",
-      "act": "dispAutoinstallAdminIndex",
-      "disposition": "skipped-act-cap"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex&order_target=popular&order_type=desc",
-      "text": "인기",
-      "module": "admin",
-      "act": "dispAutoinstallAdminIndex",
-      "disposition": "skipped-act-cap"
-    },
-    {
-      "href": "http://localhost:8080/index.php?module=admin&act=dispAutoinstallAdminIndex",
-      "text": "취소",
-      "module": "admin",
-      "act": "dispAutoinstallAdminIndex",
-      "disposition": "visited"
     },
     {
       "href": "http://localhost:8080/index.php?module=admin&act=dispAdminCleanupList",
@@ -498,35 +428,7 @@
     },
     {
       "tag": "button",
-      "text": "간단보기",
-      "kind": "submit-button",
-      "handler": "",
-      "targets": []
-    },
-    {
-      "tag": "button",
-      "text": "상세보기",
-      "kind": "submit-button",
-      "handler": "",
-      "targets": []
-    },
-    {
-      "tag": "button",
-      "text": "간단보기",
-      "kind": "submit-button",
-      "handler": "",
-      "targets": []
-    },
-    {
-      "tag": "button",
-      "text": "상세보기",
-      "kind": "submit-button",
-      "handler": "",
-      "targets": []
-    },
-    {
-      "tag": "button",
-      "text": "검색",
+      "text": "자료 목록 새로고침",
       "kind": "submit-button",
       "handler": "",
       "targets": []
@@ -658,44 +560,6 @@
           "name": "_rx_csrf_token",
           "type": "hidden",
           "required": false
-        }
-      ]
-    },
-    {
-      "action": "/",
-      "method": "get",
-      "moduleField": "admin",
-      "actField": "dispAutoinstallAdminIndex",
-      "fields": [
-        {
-          "name": "mid",
-          "type": "hidden",
-          "required": false
-        },
-        {
-          "name": "module",
-          "type": "hidden",
-          "required": false
-        },
-        {
-          "name": "act",
-          "type": "hidden",
-          "required": false
-        },
-        {
-          "name": "order_target",
-          "type": "hidden",
-          "required": false
-        },
-        {
-          "name": "order_type",
-          "type": "hidden",
-          "required": false
-        },
-        {
-          "name": "search_keyword",
-          "type": "search",
-          "required": true
         }
       ]
     }

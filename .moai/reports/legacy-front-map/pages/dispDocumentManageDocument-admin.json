@@ -1,0 +1,113 @@
+{
+  "url": "http://localhost:8080/index.php?mid=board&act=dispDocumentManageDocument",
+  "act": "dispDocumentManageDocument",
+  "group": "방문자(admin)",
+  "title": "Free Board",
+  "links": [
+    {
+      "href": "javascript:window.close()",
+      "text": "×",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": "document",
+      "actField": "procDocumentManageCheckedDocument",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "type",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [
+    {
+      "method": "POST",
+      "url": "http://localhost:8080/"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8080/common/js/xml2json.js"
+    }
+  ],
+  "module": "document",
+  "permission": "all-managers",
+  "route": null,
+  "excerpt": "게시물 관리 × 선택한 문서가 없습니다."
+}

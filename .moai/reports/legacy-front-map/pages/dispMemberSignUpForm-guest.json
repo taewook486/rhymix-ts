@@ -1,0 +1,438 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispMemberSignUpForm",
+  "act": "dispMemberSignUpForm",
+  "group": "방문자(guest)",
+  "title": "회원가입",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm&mid=member#content",
+      "text": "메뉴 건너뛰기",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm&mid=member#",
+      "text": "검색창 닫기",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm&mid=member#",
+      "text": "검색",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLoginForm&mid=member",
+      "text": "로그인/회원가입",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLoginForm&mid=member",
+      "text": "로그인",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm&mid=member",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index",
+      "text": "Welcome",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/board",
+      "text": "Free Board",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/qna",
+      "text": "Q&A",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/notice",
+      "text": "Notice",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/member",
+      "text": "취소",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/terms",
+      "text": "Terms of Service",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/privacy",
+      "text": "Privacy Policy",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://www.rhymix.org/",
+      "text": "Rhymix",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberLoginForm",
+      "text": "로그인",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm&mid=member#",
+      "text": "위로",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberFindAccount",
+      "text": "ID/PW 찾기",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=member&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberSignUpForm&mid=member#",
+      "text": "닫기",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "검색창 닫기",
+      "kind": "onclick",
+      "handler": "return false",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "로그인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "http://localhost:8080/",
+      "method": "get",
+      "moduleField": null,
+      "actField": "IS",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "is_keyword",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": null,
+      "actField": "procMemberInsert",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "ruleset",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "password2",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "email_address",
+          "type": "email",
+          "required": false
+        },
+        {
+          "name": "user_name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "nick_name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "homepage",
+          "type": "url",
+          "required": false
+        },
+        {
+          "name": "blog",
+          "type": "url",
+          "required": false
+        },
+        {
+          "name": "birthday",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "birthday_ui",
+          "type": "date",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "button",
+          "required": false
+        },
+        {
+          "name": "allow_mailing",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "allow_mailing",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "allow_message",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "allow_message",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "allow_message",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "submit",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": null,
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "member",
+  "permission": null,
+  "route": null,
+  "excerpt": "메뉴 건너뛰기 검색 로그인/회원가입 로그인 회원가입 Welcome Free Board Q&A Notice Membership 회원가입 * 아이디 * 비밀번호 비밀번호는 6자리 이상이어야 하며 영문과 숫자를 반드시 포함해야 합니다. * 비밀번호 확인 * 이메일 주소 * 이름 * 닉네임 홈페이지 블로그 생일 메일링 가입 예 아니오 쪽지 수신 허용 전체 수신 수신 거부 친구만 허용 취소 Rhymix Rhymix is free software. You can redistribute or modify it under the terms of "
+}

@@ -1,0 +1,65 @@
+{
+  "url": "http://localhost:8080/index.php?mid=board&act=dispDocumentPrint&document_srl=114",
+  "act": "dispDocumentPrint",
+  "group": "방문자(admin)",
+  "title": "[크롤 표본] 레거시 지도 수집용 글",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispDocumentPrint&document_srl=114#popup_menu_area",
+      "text": "admin",
+      "module": null,
+      "act": "dispDocumentPrint",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "module": "document",
+  "permission": null,
+  "route": null,
+  "excerpt": "[크롤 표본] 레거시 지도 수집용 글 admin 2026.11.28 14:18:18 크롤 표본 본문. 수집 후 기준선 덤프로 복원된다."
+}

@@ -762,6 +762,16 @@
           "required": false
         },
         {
+          "name": "deny_authors",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "deny_ips",
+          "type": "checkbox",
+          "required": false
+        },
+        {
           "name": "_rx_csrf_token",
           "type": "hidden",
           "required": false

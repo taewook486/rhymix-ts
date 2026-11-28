@@ -355,6 +355,13 @@
       "disposition": "queued"
     },
     {
+      "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminAuthLog",
+      "text": "인증 기록",
+      "module": "admin",
+      "act": "dispMemberAdminAuthLog",
+      "disposition": "queued"
+    },
+    {
       "href": "http://localhost:8080/index.php?module=admin&act=dispMemberAdminNickNameLog",
       "text": "닉네임 변경 기록",
       "module": "admin",
@@ -625,6 +632,16 @@
         },
         {
           "name": "active_logins",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "auth_log",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "auth_log",
           "type": "radio",
           "required": false
         },

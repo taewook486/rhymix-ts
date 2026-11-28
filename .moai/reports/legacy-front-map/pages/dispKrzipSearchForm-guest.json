@@ -1,0 +1,57 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispKrzipSearchForm",
+  "act": "dispKrzipSearchForm",
+  "group": "방문자(guest)",
+  "title": "",
+  "links": [],
+  "events": [
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "module": "krzip",
+  "permission": null,
+  "route": null,
+  "excerpt": "Template not found: modules/krzip/tpl/searchForm.daumapi.html"
+}

@@ -421,100 +421,121 @@
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('member')",
+      "text": "DB 테이블 생성",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('document')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('comment')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('file')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('advanced_mailer')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('board')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('communication')",
+      "text": "DB 테이블 생성",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('editor')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('ncenterlite')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('poll')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('rss')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('spamfilter')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('tag')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "설정 완료하기",
-      "kind": "onclick",
-      "handler": "doUpdateModule('widget')",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "설치 마무리하기",
+      "kind": "submit-button",
+      "handler": "",
       "targets": []
     },
     {
@@ -766,6 +787,10 @@
     {
       "method": "GET",
       "url": "https://api.rhymix.org/version.json"
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:8080/index.php?act=procAutoinstallAdminUpdatePackageList"
     }
   ]
 }

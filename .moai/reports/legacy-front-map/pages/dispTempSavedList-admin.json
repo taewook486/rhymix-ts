@@ -1,0 +1,29 @@
+{
+  "url": "http://localhost:8080/index.php?mid=board&act=dispTempSavedList",
+  "act": "dispTempSavedList",
+  "group": "방문자(admin)",
+  "title": "Free Board",
+  "links": [
+    {
+      "href": "http://localhost:8080/",
+      "text": "돌아가기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    }
+  ],
+  "events": [],
+  "forms": [],
+  "xhr": [],
+  "module": "document",
+  "permission": "member",
+  "route": null,
+  "excerpt": "잘못된 요청입니다. ERR_ACT_NOT_FOUND classes/module/ModuleHandler.class.php:487 돌아가기 로그아웃"
+}

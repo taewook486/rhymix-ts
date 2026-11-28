@@ -1,0 +1,15 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispAdminRewriteTest",
+  "act": "dispAdminRewriteTest",
+  "group": "보충(파라미터 화면)",
+  "title": "",
+  "links": [],
+  "events": [],
+  "forms": [],
+  "xhr": [],
+  "supplement": {
+    "module": "admin",
+    "sampleParams": null,
+    "bodyExcerpt": "{\"result\":0,\"error\":0,\"message\":\"success\"}"
+  }
+}

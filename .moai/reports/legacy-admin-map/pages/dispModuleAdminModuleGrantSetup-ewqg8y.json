@@ -1,0 +1,54 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminModuleGrantSetup&module_srls=51",
+  "act": "dispModuleAdminModuleGrantSetup",
+  "group": "보충(파라미터 화면)",
+  "title": "설치된 모듈 - 서버 오류",
+  "links": [
+    {
+      "href": "http://localhost:8080/",
+      "text": "돌아가기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "supplement": {
+    "module": "module",
+    "sampleParams": {
+      "module_srls": "51"
+    },
+    "bodyExcerpt": "서버 오류 TypeError #0 \"count(): Argument #1 ($value) must be of type Countable|array, stdClass given\" in modules/module/module.admin.view.php on line 234 배열이 아닌 변수에 배열 함수를 사용하려 하고 있습니다. 오래된 자료에서 종종 사용하던 코딩 방식이나 최근 PHP에서는 허용되지 않으니, 에러 메시지에 포함된 파일명과 줄 번호를 참고하여 수정하세요. modules/module/module.admin.view.php:"
+  }
+}

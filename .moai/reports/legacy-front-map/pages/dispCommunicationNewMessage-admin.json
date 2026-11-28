@@ -1,0 +1,29 @@
+{
+  "url": "http://localhost:8080/index.php?act=dispCommunicationNewMessage",
+  "act": "dispCommunicationNewMessage",
+  "group": "방문자(admin)",
+  "title": "회원 - 서버 오류",
+  "links": [
+    {
+      "href": "http://localhost:8080/",
+      "text": "돌아가기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    }
+  ],
+  "events": [],
+  "forms": [],
+  "xhr": [],
+  "module": "communication",
+  "permission": "member",
+  "route": "messages/new",
+  "excerpt": "서버 오류 TypeError #0 \"count(): Argument #1 ($value) must be of type Countable|array, null given\" in modules/communication/communication.model.php on line 180 배열이 아닌 변수에 배열 함수를 사용하려 하고 있습니다. 오래된 자료에서 종종 사용하던 코딩 방식이나 최근 PHP에서는 허용되지 않으니, 에러 메시지에 포함된 파일명과 줄 번호를 참고하여 수정하세요. modules/communication/communicat"
+}

@@ -820,16 +820,16 @@
     },
     {
       "tag": "button",
-      "text": "즐겨찾기 (꺼짐)",
+      "text": "",
       "kind": "onclick",
-      "handler": "doToggleFavoriteModule(this, 'admin')",
+      "handler": "return false",
       "targets": []
     },
     {
       "tag": "button",
-      "text": "즐겨찾기 (꺼짐)",
+      "text": "",
       "kind": "onclick",
-      "handler": "doToggleFavoriteModule(this, 'adminlogging')",
+      "handler": "return false",
       "targets": []
     },
     {
@@ -858,6 +858,34 @@
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'autoinstall')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "생성하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doInstallModule('autoinstall')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "업데이트하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doUpdateModule('autoinstall')",
       "targets": []
     },
     {
@@ -1009,9 +1037,9 @@
     },
     {
       "tag": "button",
-      "text": "즐겨찾기 (꺼짐)",
+      "text": "",
       "kind": "onclick",
-      "handler": "doToggleFavoriteModule(this, 'install')",
+      "handler": "return false",
       "targets": []
     },
     {
@@ -1040,6 +1068,20 @@
       "text": "즐겨찾기 (꺼짐)",
       "kind": "onclick",
       "handler": "doToggleFavoriteModule(this, 'member')",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "생성하시겠습니까?",
+      "kind": "onclick",
+      "handler": "doInstallModule('member')",
       "targets": []
     },
     {

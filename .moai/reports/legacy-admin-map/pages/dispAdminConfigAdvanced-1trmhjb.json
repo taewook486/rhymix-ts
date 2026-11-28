@@ -885,6 +885,16 @@
           "required": false
         },
         {
+          "name": "make_sourcemap",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "make_sourcemap",
+          "type": "radio",
+          "required": false
+        },
+        {
           "name": "jquery_version",
           "type": "radio",
           "required": false
@@ -905,7 +915,7 @@
   "xhr": [
     {
       "method": "GET",
-      "url": "http://localhost:8080/common/rewrite/test/5943"
+      "url": "http://localhost:8080/common/rewrite/test/6380"
     }
   ]
 }

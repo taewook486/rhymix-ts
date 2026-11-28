@@ -1,0 +1,39 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispModuleAdminModuleAdditionSetup&module_srls=51",
+  "act": "dispModuleAdminModuleAdditionSetup",
+  "group": "보충(파라미터 화면)",
+  "title": "설치된 모듈",
+  "links": [],
+  "events": [
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "supplement": {
+    "module": "module",
+    "sampleParams": {
+      "module_srls": "51"
+    },
+    "bodyExcerpt": "일괄 추가 설정"
+  }
+}

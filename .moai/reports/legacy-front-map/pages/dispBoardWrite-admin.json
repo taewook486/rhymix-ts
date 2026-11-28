@@ -1,0 +1,1120 @@
+{
+  "url": "http://localhost:8080/index.php?mid=board&act=dispBoardWrite&document_srl=114",
+  "act": "dispBoardWrite",
+  "group": "방문자(admin)",
+  "title": "Free Board",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardWrite&document_srl=114#content",
+      "text": "메뉴 건너뛰기",
+      "module": null,
+      "act": "dispBoardWrite",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardWrite&document_srl=114#",
+      "text": "검색창 닫기",
+      "module": null,
+      "act": "dispBoardWrite",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardWrite&document_srl=114#",
+      "text": "검색",
+      "module": null,
+      "act": "dispBoardWrite",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?module=admin",
+      "text": "관리",
+      "module": "admin",
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberInfo&document_srl=114",
+      "text": "",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberInfo",
+      "text": "회원정보 보기",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberScrappedDocument",
+      "text": "스크랩 보기",
+      "module": null,
+      "act": "dispMemberScrappedDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberSavedDocument",
+      "text": "저장함 보기",
+      "module": null,
+      "act": "dispMemberSavedDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberOwnDocument",
+      "text": "작성 글 보기",
+      "module": null,
+      "act": "dispMemberOwnDocument",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberOwnComment",
+      "text": "작성 댓글 보기",
+      "module": null,
+      "act": "dispMemberOwnComment",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberActiveLogins",
+      "text": "자동 로그인 관리",
+      "module": null,
+      "act": "dispMemberActiveLogins",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberLogout&document_srl=114",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index",
+      "text": "Welcome",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/board",
+      "text": "Free Board",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/qna",
+      "text": "Q&A",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/notice",
+      "text": "Notice",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%8B%A4%ED%96%89 %EC%B7%A8%EC%86%8C')",
+      "text": "실행 취소 키보드 단축키 컨트롤+Z",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%8B%A4%EC%8B%9C %EC%8B%A4%ED%96%89')",
+      "text": "다시 실행 키보드 단축키 컨트롤+Y",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%ED%85%8D%EC%8A%A4%ED%8A%B8%EB%A1%9C %EB%B6%99%EC%97%AC%EB%84%A3%EA%B8%B0')",
+      "text": "텍스트로 붙여넣기 키보드 단축키 컨트롤+시프트+V",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('MS Word %EC%97%90%EC%84%9C %EB%B6%99%EC%97%AC%EB%84%A3%EA%B8%B0')",
+      "text": "MS Word 에서 붙여넣기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%B0%BE%EA%B8%B0')",
+      "text": "찾기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%B0%94%EA%BE%B8%EA%B8%B0')",
+      "text": "바꾸기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%AA%A8%EB%91%90 %EC%84%A0%ED%83%9D')",
+      "text": "모두 선택",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%A7%81%ED%81%AC %EC%82%BD%EC%9E%85/%EB%B3%80%EA%B2%BD')",
+      "text": "링크 삽입/변경 키보드 단축키 컨트롤+K",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%A7%81%ED%81%AC %EC%A7%80%EC%9A%B0%EA%B8%B0')",
+      "text": "링크 지우기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%B1%85%EA%B0%88%ED%94%BC')",
+      "text": "책갈피",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%9D%B4%EB%AF%B8%EC%A7%80')",
+      "text": "이미지",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%ED%91%9C')",
+      "text": "표",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EA%B0%80%EB%A1%9C %EC%A4%84 %EC%82%BD%EC%9E%85')",
+      "text": "가로 줄 삽입",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%9D%B4%EB%AA%A8%ED%8B%B0%EC%BD%98')",
+      "text": "이모티콘",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%ED%8A%B9%EC%88%98%EB%AC%B8%EC%9E%90 %EC%82%BD%EC%9E%85')",
+      "text": "특수문자 삽입",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%9D%B8%EC%87%84%EC%8B%9C %ED%8E%98%EC%9D%B4%EC%A7%80 %EB%82%98%EB%88%84%EA%B8%B0 %EC%82%BD%EC%9E%85')",
+      "text": "인쇄시 페이지 나누기 삽입",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%95%84%EC%9D%B4%ED%94%84%EB%A0%88%EC%9E%84')",
+      "text": "아이프레임",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%B5%9C%EB%8C%80%ED%99%94')",
+      "text": "최대화",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%B8%94%EB%A1%9D %EB%B3%B4%EA%B8%B0')",
+      "text": "블록 보기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%86%8C%EC%8A%A4')",
+      "text": "소스",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EA%B5%B5%EA%B2%8C')",
+      "text": "굵게 키보드 단축키 컨트롤+B",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EA%B8%B0%EC%9A%B8%EC%9E%84%EA%BC%B4')",
+      "text": "기울임꼴 키보드 단축키 컨트롤+I",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%B0%91%EC%A4%84')",
+      "text": "밑줄 키보드 단축키 컨트롤+U",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%B7%A8%EC%86%8C%EC%84%A0')",
+      "text": "취소선",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%95%84%EB%9E%98 %EC%B2%A8%EC%9E%90')",
+      "text": "아래 첨자",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%9C%84 %EC%B2%A8%EC%9E%90')",
+      "text": "위 첨자",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%96%91%EC%8B%9D %EB%B3%B5%EC%82%AC')",
+      "text": "양식 복사 키보드 단축키 컨트롤+시프트+C",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%ED%98%95%EC%8B%9D %EC%A7%80%EC%9A%B0%EA%B8%B0')",
+      "text": "형식 지우기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%99%BC%EC%AA%BD %EC%A0%95%EB%A0%AC')",
+      "text": "왼쪽 정렬",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%A4%91%EC%95%99')",
+      "text": "중앙",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%98%A4%EB%A5%B8%EC%AA%BD %EC%A0%95%EB%A0%AC')",
+      "text": "오른쪽 정렬",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%96%91%EC%AA%BD %EC%A0%95%EB%A0%AC')",
+      "text": "양쪽 정렬",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%88%9C%EC%84%9C %EC%9E%88%EB%8A%94 %EB%AA%A9%EB%A1%9D')",
+      "text": "순서 있는 목록",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%88%9C%EC%84%9C %EC%97%86%EB%8A%94 %EB%AA%A9%EB%A1%9D')",
+      "text": "순서 없는 목록",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%82%B4%EC%96%B4%EC%93%B0%EA%B8%B0')",
+      "text": "내어쓰기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%93%A4%EC%97%AC%EC%93%B0%EA%B8%B0')",
+      "text": "들여쓰기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%9D%B8%EC%9A%A9 %EB%8B%A8%EB%9D%BD')",
+      "text": "인용 단락",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('Div %ED%83%9C%EA%B7%B8 %EC%83%9D%EC%84%B1')",
+      "text": "Div 태그 생성",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%ED%85%8D%EC%8A%A4%ED%8A%B8 %EB%B0%A9%ED%96%A5%EC%9D%B4 %EC%99%BC%EC%AA%BD%EC%97%90%EC%84%9C %EC%98%A4%EB%A5%B8%EC%AA%BD%EC%9C%BC%EB%A1%9C ')",
+      "text": "텍스트 방향이 왼쪽에서 오른쪽으로",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%ED%85%8D%EC%8A%A4%ED%8A%B8 %EB%B0%A9%ED%96%A5%EC%9D%B4 %EC%98%A4%EB%A5%B8%EC%AA%BD%EC%97%90%EC%84%9C %EC%99%BC%EC%AA%BD%EC%9C%BC%EB%A1%9C')",
+      "text": "텍스트 방향이 오른쪽에서 왼쪽으로",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%A0%84%EC%B2%B4 %EA%B5%AC%EC%84%B1 %EC%8A%A4%ED%83%80%EC%9D%BC')",
+      "text": "스타일",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%AC%B8%EB%8B%A8 %ED%98%95%EC%8B%9D')",
+      "text": "문단",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EA%B8%80%EA%BC%B4')",
+      "text": "글꼴",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EA%B8%80%EC%9E%90 %ED%81%AC%EA%B8%B0')",
+      "text": "크기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EA%B8%80%EC%9E%90 %EC%83%89%EC%83%81')",
+      "text": "글자 색상",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EB%B0%B0%EA%B2%BD %EC%83%89%EC%83%81')",
+      "text": "배경 색상",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "javascript:void('%EC%84%A4%EB%AC%B8%EC%A1%B0%EC%82%AC')",
+      "text": "설문조사",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/terms",
+      "text": "Terms of Service",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/privacy",
+      "text": "Privacy Policy",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://www.rhymix.org/",
+      "text": "Rhymix",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberInfo",
+      "text": "회원정보 보기",
+      "module": null,
+      "act": "dispMemberInfo",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardWrite&document_srl=114#",
+      "text": "위로",
+      "module": null,
+      "act": "dispBoardWrite",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberFindAccount",
+      "text": "ID/PW 찾기",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardWrite&document_srl=114#",
+      "text": "닫기",
+      "module": null,
+      "act": "dispBoardWrite",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "검색창 닫기",
+      "kind": "onclick",
+      "handler": "return false",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "실행 취소 키보드 단축키 컨트롤+Z",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(6,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "다시 실행 키보드 단축키 컨트롤+Y",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(9,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "텍스트로 붙여넣기 키보드 단축키 컨트롤+시프트+V",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(12,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "MS Word 에서 붙여넣기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(15,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "찾기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(18,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "바꾸기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(21,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "모두 선택",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(24,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "링크 삽입/변경 키보드 단축키 컨트롤+K",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(27,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "링크 지우기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(30,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "책갈피",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(33,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "이미지",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(36,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "표",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(39,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "가로 줄 삽입",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(42,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "이모티콘",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(45,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "특수문자 삽입",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(48,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "인쇄시 페이지 나누기 삽입",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(51,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "아이프레임",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(54,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "최대화",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(57,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "블록 보기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(60,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "소스",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(63,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "굵게 키보드 단축키 컨트롤+B",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(66,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "기울임꼴 키보드 단축키 컨트롤+I",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(69,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "밑줄 키보드 단축키 컨트롤+U",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(72,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "취소선",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(75,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "아래 첨자",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(78,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "위 첨자",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(81,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "양식 복사 키보드 단축키 컨트롤+시프트+C",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(84,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "형식 지우기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(87,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "왼쪽 정렬",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(90,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "중앙",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(93,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "오른쪽 정렬",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(96,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "양쪽 정렬",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(99,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "순서 있는 목록",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(102,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "순서 없는 목록",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(105,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "내어쓰기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(108,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "들여쓰기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(111,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "인용 단락",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(114,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "Div 태그 생성",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(117,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "텍스트 방향이 왼쪽에서 오른쪽으로",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(120,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "텍스트 방향이 오른쪽에서 왼쪽으로",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(123,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "스타일",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(124,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "문단",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(127,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "글꼴",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(130,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "크기",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(133,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "글자 색상",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(138,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "배경 색상",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(141,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "설문조사",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(144,this);return false;",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "▲",
+      "kind": "onclick",
+      "handler": "CKEDITOR.tools.callFunction(145)",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "input",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "등록",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "로그인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "http://localhost:8080/",
+      "method": "get",
+      "moduleField": null,
+      "actField": "IS",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "is_keyword",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "action": "/",
+      "method": "post",
+      "moduleField": null,
+      "actField": "dispBoardWrite",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "content",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "document_srl",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "is_notice",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "Filedata",
+          "type": "file",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "button",
+          "required": false
+        },
+        {
+          "name": "",
+          "type": "button",
+          "required": false
+        },
+        {
+          "name": "title_bold",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "comment_status",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "allow_trackback",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "notify_message",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "radio",
+          "required": false
+        },
+        {
+          "name": "tags",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "use_editor",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "use_html",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": null,
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "board",
+  "permission": "write_document",
+  "route": null,
+  "excerpt": "메뉴 건너뛰기 검색 관리 회원정보 보기 스크랩 보기 저장함 보기 작성 글 보기 작성 댓글 보기 자동 로그인 관리 로그아웃 Welcome Free Board Q&A Notice Free Board 일반 공지 전체공지 소스 스타일 문단 글꼴 크기 ▲ ◢ 사진 및 파일 첨부 여기에 파일을 끌어 놓거나 왼쪽의 버튼을 클릭하세요. 제목 굵게 댓글 허용 엮인글 허용 알림 공개 태그: 쉼표(,)를 이용하여 복수 등록 등록 Rhymix Rhymix is free software. You can redistribute or modify it und"
+}

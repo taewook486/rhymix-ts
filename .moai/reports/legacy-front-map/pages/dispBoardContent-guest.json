@@ -1,0 +1,394 @@
+{
+  "url": "http://localhost:8080/index.php?mid=board&act=dispBoardContent",
+  "act": "dispBoardContent",
+  "group": "방문자(guest)",
+  "title": "Free Board",
+  "links": [
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent#content",
+      "text": "메뉴 건너뛰기",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent#",
+      "text": "검색창 닫기",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/",
+      "text": "",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent#",
+      "text": "검색",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberLoginForm",
+      "text": "로그인/회원가입",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberLoginForm",
+      "text": "로그인",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index",
+      "text": "Welcome",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/board",
+      "text": "Free Board",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/qna",
+      "text": "Q&A",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/notice",
+      "text": "Notice",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent&sort_index=regdate&order_type=desc",
+      "text": "날짜",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent&sort_index=readed_count&order_type=desc",
+      "text": "조회 수",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent&document_srl=114",
+      "text": "[크롤 표본] 레거시 지도 수집용 글",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent&document_srl=114#comment",
+      "text": "[1]",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent#popup_menu_area",
+      "text": "admin",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardWrite",
+      "text": "쓰기",
+      "module": null,
+      "act": "dispBoardWrite",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardTagList",
+      "text": "태그",
+      "module": null,
+      "act": "dispBoardTagList",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent",
+      "text": "첫 페이지",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent&page=1",
+      "text": "끝 페이지",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/terms",
+      "text": "Terms of Service",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/privacy",
+      "text": "Privacy Policy",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "https://www.rhymix.org/",
+      "text": "Rhymix",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberLoginForm",
+      "text": "로그인",
+      "module": null,
+      "act": "dispMemberLoginForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent#",
+      "text": "위로",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberFindAccount",
+      "text": "ID/PW 찾기",
+      "module": null,
+      "act": "dispMemberFindAccount",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispMemberSignUpForm",
+      "text": "회원가입",
+      "module": null,
+      "act": "dispMemberSignUpForm",
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?mid=board&act=dispBoardContent#",
+      "text": "닫기",
+      "module": null,
+      "act": "dispBoardContent",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "a",
+      "text": "검색창 닫기",
+      "kind": "onclick",
+      "handler": "return false",
+      "targets": []
+    },
+    {
+      "tag": "a",
+      "text": "admin",
+      "kind": "onclick",
+      "handler": "return false",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "검색",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "로그인",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "http://localhost:8080/",
+      "method": "get",
+      "moduleField": null,
+      "actField": "IS",
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "is_keyword",
+          "type": "text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "action": "http://localhost:8080/",
+      "method": "get",
+      "moduleField": null,
+      "actField": null,
+      "fields": [
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "category",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "search_target",
+          "type": "select-one",
+          "required": false
+        },
+        {
+          "name": "search_keyword",
+          "type": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": null,
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "keep_signed",
+          "type": "checkbox",
+          "required": false
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "board",
+  "permission": "list",
+  "route": null,
+  "excerpt": "메뉴 건너뛰기 검색 로그인/회원가입 로그인 회원가입 Welcome Free Board Q&A Notice Free Board 번호 제목 글쓴이 날짜 조회 수 1 [크롤 표본] 레거시 지도 수집용 글 [1] admin 2026.11.28 0 쓰기 태그 제목+내용 제목 내용 댓글 이름 닉네임 아이디 등록일 태그 검색 첫 페이지 1 끝 페이지 Rhymix Rhymix is free software. You can redistribute or modify it under the terms of the GNU General Public Li"
+}

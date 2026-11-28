@@ -1,0 +1,81 @@
+{
+  "url": "http://localhost:8080/index.php?mid=board&act=dispTempSavedList",
+  "act": "dispTempSavedList",
+  "group": "방문자(guest)",
+  "title": "Free Board",
+  "links": [],
+  "events": [
+    {
+      "tag": "button",
+      "text": "관리자 로그인",
+      "kind": "onclick",
+      "handler": "$('#message_login_form').submit()",
+      "targets": []
+    }
+  ],
+  "forms": [
+    {
+      "action": "/index.php?act=procMemberLogin",
+      "method": "post",
+      "moduleField": "member",
+      "actField": "procMemberLogin",
+      "fields": [
+        {
+          "name": "error_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "mid",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "ruleset",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "module",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "act",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "success_return_url",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "xe_validator_id",
+          "type": "hidden",
+          "required": false
+        },
+        {
+          "name": "user_id",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "password",
+          "type": "password",
+          "required": true
+        },
+        {
+          "name": "_rx_csrf_token",
+          "type": "hidden",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "xhr": [],
+  "module": "document",
+  "permission": "member",
+  "route": null,
+  "excerpt": "잘못된 요청입니다. ERR_ACT_NOT_FOUND 관리자 로그인"
+}

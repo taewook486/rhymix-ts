@@ -1,0 +1,52 @@
+{
+  "url": "http://localhost:8080/index.php?module=admin&act=dispPollAdminResult",
+  "act": "dispPollAdminResult",
+  "group": "보충(파라미터 화면)",
+  "title": "설문",
+  "links": [
+    {
+      "href": "http://localhost:8080/",
+      "text": "돌아가기",
+      "module": null,
+      "act": null,
+      "disposition": "queued"
+    },
+    {
+      "href": "http://localhost:8080/index.php?act=dispMemberLogout",
+      "text": "로그아웃",
+      "module": null,
+      "act": "dispMemberLogout",
+      "disposition": "queued"
+    }
+  ],
+  "events": [
+    {
+      "tag": "button",
+      "text": "×",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    },
+    {
+      "tag": "button",
+      "text": "undefined",
+      "kind": "submit-button",
+      "handler": "",
+      "targets": []
+    }
+  ],
+  "forms": [],
+  "xhr": [],
+  "supplement": {
+    "module": "poll",
+    "sampleParams": null,
+    "bodyExcerpt": "선택한 설문이 존재하지 않습니다. modules/poll/poll.admin.view.php:145 돌아가기 로그아웃"
+  }
+}

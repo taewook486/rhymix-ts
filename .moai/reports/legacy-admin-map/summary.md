@@ -1,9 +1,9 @@
 # 레거시 관리자 화면 지도
 
 - 대상: http://localhost:8080
-- 수집 시각: 2026-08-15T07:31:08.683Z
-- 방문 페이지: 164
-- 변경 위험으로 방문하지 않은 링크: 181
+- 수집 시각: 2026-11-28T05:11:24.191Z
+- 방문 페이지: 162
+- 변경 위험으로 방문하지 않은 링크: 179
 
 ## 사이트 제작/편집 (2개 화면)
 
@@ -12,23 +12,24 @@
 | `dispMenuAdminSiteMap` | 사이트 메뉴 편집 | 95 | 85 | 10 | 5 |
 | `dispMenuAdminSiteDesign` | 사이트 디자인 설정 | 53 | 29 | 5 | 4 |
 
-## 회원 (17개 화면)
+## 회원 (18개 화면)
 
 | act | 제목 | 링크 | 이벤트 | 폼 | XHR |
 |---|---|---:|---:|---:|---:|
 | `dispMemberAdminList` | 회원 목록 | 66 | 14 | 6 | 0 |
-| `dispMemberAdminConfig` | 회원 설정 | 54 | 11 | 3 | 0 |
+| `dispMemberAdminConfig` | 회원 설정 | 55 | 11 | 3 | 0 |
 | `dispMemberAdminGroupList` | 회원 그룹 | 64 | 22 | 4 | 1 |
 | `dispPointAdminConfig` | 포인트 | 50 | 21 | 3 | 0 |
 | `dispMemberAdminList` | 회원 목록 | 66 | 14 | 6 | 0 |
 | `dispMemberAdminList` | 회원 목록 | 66 | 14 | 6 | 0 |
 | `dispMemberAdminList` | 회원 목록 | 64 | 14 | 6 | 0 |
-| `dispMemberAdminFeaturesConfig` | 회원 설정 | 54 | 10 | 3 | 0 |
-| `dispMemberAdminAgreementsConfig` | 회원 설정 | 54 | 10 | 3 | 0 |
-| `dispMemberAdminSignUpConfig` | 회원 설정 | 65 | 74 | 5 | 1 |
-| `dispMemberAdminLoginConfig` | 회원 설정 | 54 | 10 | 3 | 0 |
-| `dispMemberAdminDesignConfig` | 회원 설정 | 54 | 10 | 3 | 2 |
-| `dispMemberAdminNickNameLog` | 회원 설정 | 57 | 10 | 3 | 0 |
+| `dispMemberAdminFeaturesConfig` | 회원 설정 | 55 | 10 | 3 | 0 |
+| `dispMemberAdminAgreementsConfig` | 회원 설정 | 55 | 10 | 3 | 0 |
+| `dispMemberAdminSignUpConfig` | 회원 설정 | 66 | 74 | 5 | 1 |
+| `dispMemberAdminLoginConfig` | 회원 설정 | 55 | 10 | 3 | 0 |
+| `dispMemberAdminDesignConfig` | 회원 설정 | 55 | 10 | 3 | 2 |
+| `dispMemberAdminAuthLog` | 회원 설정 | 57 | 11 | 4 | 0 |
+| `dispMemberAdminNickNameLog` | 회원 설정 | 58 | 11 | 4 | 0 |
 | `dispPointAdminModuleConfig` | 포인트 | 50 | 10 | 3 | 0 |
 | `dispPointAdminPointList` | 포인트 | 55 | 11 | 6 | 0 |
 | `dispPointAdminPointList` | 포인트 | 55 | 11 | 6 | 0 |
@@ -146,23 +147,21 @@
 | `dispAdminConfigGeneral` | 시스템 설정 | 62 | 13 | 3 | 0 |
 | `dispModuleAdminFileBox` | 파일박스 | 50 | 14 | 4 | 0 |
 
-## 고급 (44개 화면)
+## 고급 (41개 화면)
 
 | act | 제목 | 링크 | 이벤트 | 폼 | XHR |
 |---|---|---:|---:|---:|---:|
-| `dispAutoinstallAdminIndex` | 쉬운 설치 | 67 | 14 | 3 | 0 |
+| `dispAutoinstallAdminIndex` | 쉬운 설치 | 57 | 10 | 2 | 0 |
 | `dispLayoutAdminInstalledList` | 설치된 레이아웃 | 63 | 14 | 2 | 0 |
-| `dispModuleAdminContent` | 설치된 모듈 | 110 | 71 | 2 | 0 |
+| `dispModuleAdminContent` | 설치된 모듈 | 110 | 77 | 2 | 0 |
 | `dispAddonAdminIndex` | 설치된 애드온 | 66 | 12 | 3 | 0 |
 | `dispWidgetAdminDownloadedList` | 설치된 위젯 | 59 | 11 | 2 | 0 |
 | `dispModuleAdminLangcode` | 다국어 | 52 | 12 | 5 | 1 |
 | `dispImporterAdminImportForm` | 데이터 들여오기 | 49 | 15 | 6 | 0 |
 | `dispRssAdminIndex` | RSS | 51 | 14 | 4 | 0 |
-| `dispAutoinstallAdminInstalledPackages` | 쉬운 설치 | 53 | 13 | 3 | 0 |
-| `dispAutoinstallAdminConfig` | 쉬운 설치 | 50 | 10 | 3 | 0 |
-| `dispAutoinstallAdminIndex` | 쉬운 설치 | 67 | 14 | 3 | 0 |
-| `dispAutoinstallAdminIndex` | 쉬운 설치 | 67 | 14 | 3 | 0 |
-| `dispAutoinstallAdminIndex` | 쉬운 설치 | 67 | 14 | 3 | 0 |
+| `dispAutoinstallAdminIndex` | 쉬운 설치 | 57 | 10 | 2 | 0 |
+| `dispAutoinstallAdminIndex` | 쉬운 설치 | 59 | 10 | 3 | 0 |
+| `dispAutoinstallAdminIndex` | 쉬운 설치 | 59 | 10 | 3 | 0 |
 | `dispLayoutAdminInstalledList` | 설치된 레이아웃 | 63 | 14 | 2 | 0 |
 | `dispLayoutAdminInstalledList` | 설치된 레이아웃 | 63 | 14 | 2 | 0 |
 | `dispLayoutAdminAllInstanceList` | 설치된 레이아웃 | 57 | 14 | 2 | 0 |
@@ -188,7 +187,6 @@
 | `dispWidgetAdminGenerateCode` | 설치된 위젯 | 51 | 25 | 3 | 0 |
 | `dispWidgetAdminGenerateCode` | 설치된 위젯 | 50 | 13 | 3 | 0 |
 | `dispWidgetAdminGenerateCode` | 설치된 위젯 | 50 | 13 | 3 | 0 |
-| `dispAutoinstallAdminInstalledPackages` | 쉬운 설치 | 53 | 13 | 3 | 0 |
 | `dispLayoutAdminAllInstanceList` | 설치된 레이아웃 | 57 | 14 | 2 | 0 |
 | `dispLayoutAdminAllInstanceList` | 설치된 레이아웃 | 57 | 14 | 2 | 0 |
 | `dispCounterAdminIndex` | 접속통계 | 51 | 10 | 4 | 0 |
@@ -199,7 +197,7 @@
 
 | act | 제목 | 링크 | 이벤트 | 폼 | XHR |
 |---|---|---:|---:|---:|---:|
-| `-` | Dashboard | 56 | 27 | 4 | 1 |
+| `-` | Dashboard | 56 | 30 | 4 | 2 |
 | `dispMemberAdminInfo` | 회원 목록 | 48 | 10 | 2 | 0 |
 | `dispAdminCleanupList` | 시스템 설정 | 47 | 11 | 3 | 0 |
 | `dispAdminViewServerEnv` | 시스템 설정 | 49 | 10 | 2 | 0 |
@@ -237,6 +235,7 @@
 - `procAdminLogout` — 로그아웃
 - `procAdminLogout` — 로그아웃
 - `procAdminLogout` — 로그아웃
+- `procAdminLogout` — 로그아웃
 - `dispBoardAdminDeleteBoard` — 삭제
 - `dispBoardAdminDeleteBoard` — 삭제
 - `dispBoardAdminDeleteBoard` — 삭제
@@ -345,9 +344,6 @@
 - `procAdminLogout` — 로그아웃
 - `dispAdminInsertDomain` — 수정
 - `dispAdminInsertDomain` — 새 도메인 추가
-- `procAdminLogout` — 로그아웃
-- `procAdminLogout` — 로그아웃
-- `procAdminLogout` — 로그아웃
 - `procAdminLogout` — 로그아웃
 - `procAdminLogout` — 로그아웃
 - `procAdminLogout` — 로그아웃
