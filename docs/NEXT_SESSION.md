@@ -1,31 +1,68 @@
 # 다음 세션 시작점 (paste-ready resume message)
 
 > 다른 컴퓨터에서 이어서 작업할 때 이 문서 내용을 그대로 붙여넣으세요.
-> 갱신: 2026-11-24 (D-7 재검증 후 origin/main 반영 — HEAD `3f83a44` 다음 이 문서 커밋)
-> source_session_id: 2e62006e-6a35-4cbd-a898-8dfd3b6839e3
+> 갱신: 2026-11-29 (레거시 parity 갭 분석 0~4단계 + 002 SPEC 감사 통과 + 보안·목업 결함 6건 수리 — HEAD `419af07` 다음 이 문서 커밋)
+> source_session_id: efd876a2-63c9-46be-8b05-799ffb429ff8
 
 ## 붙여넣을 메시지
 
 ```text
 ✂──── 여기부터 복사 ────✂
 
-ultrathink. rhymix-ts — 레거시 2.1.41 보안 보고서 §2 남은 항목 처리.
-applied lessons: feedback-stale-git-index-lock.md, feedback-agent-test-claims-verify-by-rerun.md, feedback-domain-fix-count-all-callers.md
-source_session_id: 2e62006e-6a35-4cbd-a898-8dfd3b6839e3
+ultrathink. rhymix-ts — 레거시 parity 시리즈: SPEC-LEGACY-PARITY-002 run 진입(M1) + 003 SPEC 작성 재개.
+applied lessons: feedback-notify-on-user-decision.md, feedback-stale-git-index-lock.md, feedback-agent-test-claims-verify-by-rerun.md, feedback-verify-command-matched-what-you-meant.md
+source_session_id: efd876a2-63c9-46be-8b05-799ffb429ff8
 
 전제 검증:
-1) git fetch origin && git merge --ff-only origin/main → main 이 origin/main 과 같아짐 (지난 세션은 index.lock 때문에 로컬 main 을 못 올림)
-2) git rev-list --count --left-right origin/main...main → 0 0
-3) docker start rhymix-ts-db → 컨테이너 기동
+1) git fetch origin && git rev-list --count --left-right origin/main...main → 0 0 (다른 PC 라면 git merge --ff-only origin/main 먼저)
+2) git log -1 --format=%h → 이 문서 커밋(419af07 다음)
+3) docker start rhymix-ts-db rhymix-db rhymix-app → 세 컨테이너 기동
+4) ls .moai/state/collab/content-parity-001-runtime.md → moai2 의 CONTENT-PARITY-001 실측 결과(없으면 moai2 에 다시 지시)
 
-실행: 무살균 innerHTML 2곳 확인·수리부터
-      (packages/board/src/actions/comment-update.ts:90 + CommentItem.tsx:108, apps/web/lib/widgets/renderer.tsx:57).
-      상세는 docs/NEXT_SESSION.md '보고서 §2 남은 확인 항목' 절.
+실행: /moai run SPEC-LEGACY-PARITY-002 — 구현 승인·main 마일스톤별 커밋은 사용자 결정 완료. M1(데이터 모델·마이그레이션)부터, 구현 moai2 · 재실행 판정과 커밋 moai.
 
-후속: 로그아웃 출처 검사, 상담 게시판, 레거시 2.1.41 기능 변경 대조, 워크트리 2개 정리.
+후속: 003 콘텐츠 SPEC 작성 재개(.moai/specs/SPEC-LEGACY-PARITY-003/ 는 중단된 부분 초안, 미커밋) → 005·006·007·008·009·010 순.
 
 ✂──── 여기까지 복사 ────✂
 ```
+
+## 이번 세션 결과 (2026-11-28 ~ 29)
+
+3세션 협업(moai 총괄 · moai2 구현 · moai3 보조)으로 진행. 사용자 결정이 필요할 때는 AskUserQuestion 직전에 알림(PushNotification)을 보낸다(사용자 요청, 메모리 기록).
+
+### 갭 분석 (계획서 `.moai/reports/legacy-parity-gap-plan-2026-11-28.md`)
+
+| 단계 | 결과 | 커밋 |
+|---|---|---|
+| 점검 | 기존 계획(SPEC-LEGACY-PARITY-000 v0.1.0) 완결도 낮음 — 발견 F1~F7 | `66d2686` |
+| 0 근거 재정비 | 레거시 2.1.41 컨테이너 직접 실행. 관리자 지도 162화면 재크롤 + 선언 133개 전부 근거(`legacy-admin-map/coverage.md`), 방문자 지도 76개(`legacy-front-map/`). 표본 글·댓글은 덤프로 복원 | `66d2686` |
+| 1 규약 개정 | 000 v0.2.0 — 영역 001~010 재편(GNB 위치가 아니라 소속 모듈 기준), REQ-LGP-009 시드 규칙, tier M | `736e83c` |
+| 2~4 판정 | 210행: 대응 97 / 격차 91 / 의도적 제외 22(사용자 결정 반영). `.moai/reports/legacy-parity-verdicts/` (README 에 결정 목록) | `b6a847b`, `e23712d` |
+| 002 SPEC | 회원 영역 tier L, REQ 23개, plan-auditor 0.76 → 0.89 → **PASS 0.93**. 구현 승인 받음 | `419af07` |
+
+### 사용자 결정 (README § 사용자 결정)
+
+- 레거시 폐기·결함 화면 11 + 에디터 계열 8 → 제외. 레이아웃·컬러셋·모바일 스킨 체계 → 제외(반응형 한 벌)
+- SMS·푸시, 메일 수신 거부, 쉬운 설치, 우편번호 → 범위 포함(격차). 레거시 데이터 이전·화면 문구 다국어·옛 URL 호환 → 010 범위
+- 002: 게시판 포인트 0 → 사이트 기본값(NULL), 기능 토글 설정은 002·동작은 008, 스크랩·저장함·내 글·내 댓글 포함, 제한 회원 로그인은 같은 실패 응답 유지
+- 구현은 main 에 마일스톤별 커밋(PR 없음)
+
+### 결함 수리 (전부 재현 테스트 → 수정 → moai 재실행 판정)
+
+| 커밋 | 내용 |
+|---|---|
+| `9c74cde` | **보안**: 첨부 다운로드(`/api/files/[id]`, `by-key`)에 권한 검사가 없던 결함 — 글 보기와 같은 규칙(`packages/board/src/document-access.ts`) / 관리자 포인트 API 2개(`/admin/api/points/*`)에 관리자 가드가 없던 결함 |
+| `2f30dc7` | 약관 저장·삭제, 보안 화면 CAPTCHA 저장이 `console.log('[Mock]')` 만 하던 목업 → 실제 저장 |
+| `14d04b2` | 관리자가 저장한 최대 로그인 실패 횟수가 로그인 제한에 반영되지 않던 결함 |
+
+### 남은 것
+
+- **003 SPEC**: manager-spec 이 연구를 마치고 문서 작성 중 세션 정리로 중단 — `SPEC-LEGACY-PARITY-003/spec.md` 만 있고 미검증·미커밋. 이어 쓰거나 새로 작성
+- **moai2**: CONTENT-PARITY-001 미확인 AC 7건 런타임 실측 중이었음(결과 파일 위 전제 4번). 002 M1 은 보류 지시함
+- 사소한 감사 지적 D3-1(AC-023 정규식), D3-2(AC-017 grep) 는 002 run M1·M8 에서 처리
+- CONTENT-PARITY-001 기록 오류: progress.md:96 ac_pass_count 11(실제 9), progress.md:88 `[staged]` = `baf71b3` — 003 sync 때 정정
+- 판정 중 확인된 사실: 레거시 2.1.41 은 MySQL 단일(6월 보고서의 "PostgreSQL 지원" 기록은 틀림), next-intl 은 의존성만 있고 미사용, 비회원 글 비밀번호 검증 경로 없음
+- 작업 방법 메모: vitest 위치 인자는 이 버전에서 부분 문자열 일치 — `\[id\]`·`.*` 가 든 경로는 조용히 0파일. 실행 파일 수를 셀 것. 문서만 바꾼 커밋도 pre-commit 이 `moai gate`(lint+test)를 돌려 수 분 걸림. `.moai/reports/plan-audit/` 는 git 제외라 커밋 경로에 넣으면 커밋 전체가 거부됨
 
 ## 이번 세션 결과 (2026-11-24)
 
@@ -34,9 +71,8 @@ source_session_id: 2e62006e-6a35-4cbd-a898-8dfd3b6839e3
   - 재검증(워크트리 `3f83a44`): `vitest run apps/web/app/admin apps/web/lib apps/web/server/api` → 112파일 864건 통과 exit 0,
     `tsc --noEmit -p apps/web/tsconfig.json` → exit 0, `error TS` 0건. 로그: 메인 체크아웃 `.moai/state/verify/d7-merge/`
   - admin 아래 `'use server'` 파일 중 가드 패턴이 없는 파일 0개 (grep)
-- **미완료 — 로컬 main 체크아웃이 `057b6db` 에 머묾.** `.git/index.lock` 을 지워도 몇 분 안에 다시 생김(빈 파일,
-  살아 있는 git 프로세스 없음 → Windows 쪽 편집기/다른 세션의 git 폴링 추정). 그래서 푸시는 워크트리에서 `git push origin 3f83a44:main` 으로 함.
-  다음 세션에서 lock 원인(VS Code 등)을 끈 뒤 `git merge --ff-only origin/main`
+- **index.lock 재발** — 이 PC main 체크아웃에서 `rm` 후 몇 분 안에 다시 생김(빈 파일, 쓰기 계열 git 프로세스 없음).
+  `rm` 과 git 명령을 같은 Bash 호출 안에서 재시도하는 루프로 통과(`feedback-stale-git-index-lock.md`). 원격 푸시는 워크트리에서 해도 됨
 - 원격 `origin/WT-admin-guard-wip` 는 옛 WIP `e5a54f5` 그대로 — main 에 이미 반영됐으므로 삭제 대상
 - 워크트리 `/mnt/d/project/rhymix-ts-wt-admin-guard`, `/mnt/d/project/rhymix-ts-baseline` 정리 대상
 - 브라우저 실측은 하지 않음(관리자 IP 제한·2FA 상태에서 Server Action 거부 화면)
