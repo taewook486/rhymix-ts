@@ -221,7 +221,7 @@ MASTER-PLAN-002의 5-Phase 우선순위 축(사용자 가시성 기반).
 |---|---|---|---|
 | [SPEC-LEGACY-PARITY-000](./SPEC-LEGACY-PARITY-000/spec.md) | 시리즈 공통 규약 (기준선·근거·불변식·승계) | — | 📝 draft |
 | [SPEC-LEGACY-PARITY-001](./SPEC-LEGACY-PARITY-001/spec.md) | 사이트 제작/편집 | SPEC-MENU-001 Slice D 잔여 흡수 (superseded 전환 완료) | ✅ completed |
-| SPEC-LEGACY-PARITY-002 | 회원 | SPEC-MEMBER-PARITY-001 재검증 | ⬜ 미작성 |
+| [SPEC-LEGACY-PARITY-002](./SPEC-LEGACY-PARITY-002/spec.md) | 회원 | SPEC-MEMBER-PARITY-001 재검증 | 📝 draft |
 | SPEC-LEGACY-PARITY-003 | 콘텐츠 | SPEC-CONTENT-PARITY-001 흡수 | ⬜ 미작성 |
 | SPEC-LEGACY-PARITY-004 | 즐겨찾기 UI (추가·정렬·삭제 동작만) | SPEC-ADMIN-MENU-PARITY-001 재검증 | ⬜ 미작성 |
 | SPEC-LEGACY-PARITY-005 | 설정 (일반 설정 + 시스템 설정 7개 + 도메인) | — (신규) | ⬜ 미작성 |

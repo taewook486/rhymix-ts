@@ -89,3 +89,7 @@
 - 확정 목업 3건: 약관 저장·삭제(`admin/members/terms/actions.ts`), 보안 화면 CAPTCHA 저장(`admin/settings/security/actions.ts`). 무쓰기 후보 16건은 본문 확인 결과 정상. → moai2 가 수리.
 - 참고(새 결함 아님): 자동 로그인 신뢰 마커는 프로세스 메모리 Map(`packages/auth/src/autologin-marker.ts:22`)이라 다중 인스턴스에서 동작하지 않는다 — 이미 `@MX:WARN` 으로 기록된 알려진 제약.
 - 한계: 스캐너는 `export function POST` 형태만 찾았다(화살표 함수 export 는 미검사).
+
+## 영역 간 인계 목록
+
+- 002 → 007·008 인계(메일 수신 동의·SMS 가입 항목은 007, 회원 기능 토글별 숨김·차단과 스크랩·저장함·내 글·내 댓글 구현은 008): `.moai/specs/SPEC-LEGACY-PARITY-002/plan.md` A.7 표가 원본이다. 007·008 SPEC 작성 때 이 표를 입력으로 쓴다.
